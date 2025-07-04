@@ -112,3 +112,8 @@ otel_data/
 *.pid
 *.seed
 *.pid.lock
+# Turborepo
+.turbo
+
+# Sentry Config File
+.env.sentry-build-plugin
