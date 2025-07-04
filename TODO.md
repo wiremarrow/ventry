@@ -1,0 +1,1046 @@
+# Ventry AI-Native Inventory Management System - Implementation TODO
+
+## 🎯 Project Overview
+This TODO outlines the complete implementation roadmap for Ventry, an AI-native inventory management system built with NestJS backend, Next.js frontend, and AI agents for intelligent automation.
+
+## 📊 Current Status
+✅ **Phase 0 COMPLETE** - Foundation & CI/CD Setup (2024-01-04)
+- All foundation tasks completed
+- Monorepo with Turborepo configured
+- CI/CD pipelines ready
+
+✅ **Stack Enhancement COMPLETE** - Lightweight Development Stack (2024-01-04)
+- Playwright E2E testing configured with sharding
+- SQLite for zero-setup development
+- Vercel deployment for Next.js
+- Sentry error tracking integrated
+- Optional Docker (PostgreSQL available when needed)
+- Comprehensive testing and deployment documentation
+
+**Ready to proceed with Phase 1: Core Backend Infrastructure**
+
+## 📋 Implementation Phases
+
+---
+
+## Phase 0: Foundation & CI/CD Setup (Week 1-2) ✅ COMPLETED
+
+### 0.1 Project Scaffolding & Monorepo Setup
+- [x] **0.1.1** Initialize Git repository with proper .gitignore
+  - Add Node.js, TypeScript, Docker, and IDE-specific ignores
+  - Include environment files, build outputs, and dependency directories
+  - Add AI-specific ignores (model files, logs, cache directories)
+
+- [x] **0.1.2** Create pnpm workspace configuration
+  - Create `pnpm-workspace.yaml` with apps and packages structure
+  - Configure workspace dependencies and shared scripts
+  - Set up version management strategy
+
+- [x] **0.1.3** Configure Turborepo for monorepo management
+  - Create `turbo.json` with optimized build pipelines
+  - Define task dependencies: build, test, lint, typecheck, dev
+  - Configure remote caching for CI/CD optimization
+  - Set up parallel execution for independent tasks
+
+- [x] **0.1.4** Create directory structure
+  ```
+  ventry/
+  ├── apps/
+  │   ├── backend/
+  │   ├── web/
+  │   └── docs/
+  ├── packages/
+  │   ├── shared/
+  │   ├── ui/
+  │   └── database/
+  ├── tools/
+  │   └── scripts/
+  └── docs/
+  ```
+
+### 0.2 Docker Development Environment
+- [x] **0.2.1** Create Docker Compose configuration
+  - PostgreSQL 14+ service with persistent volumes
+  - Redis service for caching and session management
+  - pgAdmin for database management (dev only)
+  - Volume mounts for source code hot-reloading
+
+- [x] **0.2.2** Create Dockerfiles for each application
+  - Multi-stage builds for production optimization
+  - Node.js 18+ Alpine base images
+  - Proper layer caching for dependency installation
+  - Security best practices (non-root user, minimal attack surface)
+
+- [x] **0.2.3** Development environment scripts
+  - `scripts/dev-setup.sh` for initial environment setup
+  - `scripts/reset-db.sh` for database reset and seeding
+  - `scripts/backup-db.sh` for database backup utilities
+  - Health check scripts for all services
+
+### 0.3 Code Quality & Development Tools
+- [x] **0.3.1** ESLint configuration
+  - Shared ESLint config in `packages/eslint-config`
+  - TypeScript-specific rules for strict type checking
+  - React/Next.js specific rules for frontend
+  - NestJS specific rules for backend
+  - Import sorting and unused import detection
+
+- [x] **0.3.2** Prettier configuration
+  - Shared Prettier config for consistent formatting
+  - Integration with ESLint for conflict resolution
+  - Pre-commit formatting hooks
+  - IDE integration instructions
+
+- [x] **0.3.3** Husky pre-commit hooks
+  - Install and configure Husky
+  - Pre-commit: lint-staged for incremental linting
+  - Pre-commit: TypeScript compilation check
+  - Pre-commit: test execution for changed files
+  - Commit message validation (Conventional Commits)
+
+- [x] **0.3.4** TypeScript configuration
+  - Root `tsconfig.json` with strict mode enabled
+  - Shared `tsconfig.base.json` for consistent settings
+  - Path mapping for internal packages
+  - Workspace-specific TypeScript configs
+
+### 0.4 GitHub Actions CI/CD Pipeline
+- [x] **0.4.1** Create CI workflow (`.github/workflows/ci.yml`)
+  - Trigger on push to main and pull requests
+  - Matrix strategy for Node.js versions (18, 20)
+  - Dependency caching with pnpm
+  - Turborepo remote caching setup
+  - Parallel execution of lint, typecheck, test, build
+
+- [x] **0.4.2** Create deployment workflow (`.github/workflows/deploy.yml`)
+  - Staging deployment on merge to main
+  - Production deployment on tag creation
+  - Docker image building and registry push
+  - Database migration automation
+  - Environment-specific secret management
+
+- [x] **0.4.3** Create security workflow (`.github/workflows/security.yml`)
+  - Dependency vulnerability scanning (npm audit)
+  - SAST scanning with CodeQL
+  - Secret scanning and leak detection
+  - License compliance checking
+
+- [x] **0.4.4** Branch protection rules
+  - Require PR reviews for main branch
+  - Require CI checks to pass before merge
+  - Require up-to-date branches before merge
+  - Dismiss stale reviews on new commits
+
+### 0.5 Documentation & Project Setup
+- [x] **0.5.1** Create development documentation
+  - `docs/DEVELOPMENT.md` with setup instructions
+  - `docs/ARCHITECTURE.md` with system overview
+  - `docs/CONTRIBUTING.md` with contribution guidelines
+  - `docs/API.md` placeholder for API documentation
+
+- [x] **0.5.2** Environment configuration templates
+  - `.env.example` with all required variables
+  - `docker-compose.override.yml.example` for local customization
+  - Development vs production configuration documentation
+  - Security considerations for environment variables
+
+- [x] **0.5.3** Package.json scripts organization
+  - Root package.json with workspace-level scripts
+  - Consistent script naming across packages
+  - Development shortcuts (dev, build, test, lint)
+  - Production deployment scripts
+
+---
+
+## Phase 1: Core Backend Infrastructure (Week 3-4)
+
+### 1.1 NestJS Application Setup
+- [ ] **1.1.1** Initialize NestJS backend application
+  - Create `apps/backend` with NestJS CLI
+  - Configure TypeScript with strict mode
+  - Set up basic project structure (src/, test/, dist/)
+  - Configure module resolution for monorepo
+
+- [ ] **1.1.2** Core NestJS modules setup
+  - `AppModule` as root module with global configuration
+  - `ConfigModule` for environment variable management
+  - `LoggerModule` with structured logging (Winston)
+  - `HealthModule` for health checks and monitoring
+
+- [ ] **1.1.3** Global middleware and interceptors
+  - Request logging middleware with correlation IDs
+  - Error handling with proper HTTP status codes
+  - Response transformation interceptor
+  - CORS configuration for frontend integration
+
+- [ ] **1.1.4** Validation and serialization
+  - Global validation pipe with class-validator
+  - DTO classes for request/response validation
+  - Transform interceptor for consistent API responses
+  - Custom validation decorators for business rules
+
+### 1.2 Database Setup with Prisma
+- [ ] **1.2.1** Prisma configuration and setup
+  - Initialize Prisma in `packages/database`
+  - Configure PostgreSQL connection
+  - Set up Prisma Client generation
+  - Database URL configuration for different environments
+
+- [ ] **1.2.2** Core database schema design
+  ```prisma
+  // User management
+  model User {
+    id        String   @id @default(cuid())
+    email     String   @unique
+    password  String
+    role      Role     @default(USER)
+    profile   Profile?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+  }
+
+  // Inventory core entities
+  model Product {
+    id          String   @id @default(cuid())
+    sku         String   @unique
+    name        String
+    description String?
+    categoryId  String
+    category    Category @relation(fields: [categoryId], references: [id])
+    // ... additional fields
+  }
+
+  model Category {
+    id       String    @id @default(cuid())
+    name     String
+    parentId String?
+    parent   Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+    children Category[] @relation("CategoryHierarchy")
+    products Product[]
+  }
+
+  model Location {
+    id          String @id @default(cuid())
+    name        String
+    address     String
+    type        LocationType
+    isActive    Boolean @default(true)
+    stockLevels StockLevel[]
+  }
+
+  model StockLevel {
+    id         String   @id @default(cuid())
+    productId  String
+    locationId String
+    quantity   Int
+    reserved   Int      @default(0)
+    product    Product  @relation(fields: [productId], references: [id])
+    location   Location @relation(fields: [locationId], references: [id])
+    updatedAt  DateTime @updatedAt
+    @@unique([productId, locationId])
+  }
+
+  model StockMovement {
+    id         String      @id @default(cuid())
+    productId  String
+    locationId String
+    type       MovementType
+    quantity   Int
+    reference  String?     // PO number, invoice, etc.
+    reason     String?
+    userId     String
+    product    Product     @relation(fields: [productId], references: [id])
+    location   Location    @relation(fields: [locationId], references: [id])
+    user       User        @relation(fields: [userId], references: [id])
+    createdAt  DateTime    @default(now())
+  }
+
+  // AI-specific tables
+  model AgentLog {
+    id        String    @id @default(cuid())
+    agentType AgentType
+    input     Json
+    output    Json
+    metadata  Json?
+    userId    String?
+    user      User?     @relation(fields: [userId], references: [id])
+    createdAt DateTime  @default(now())
+  }
+
+  model Forecast {
+    id         String   @id @default(cuid())
+    productId  String
+    locationId String
+    period     String   // YYYY-MM format
+    predicted  Float
+    confidence Float
+    algorithm  String
+    product    Product  @relation(fields: [productId], references: [id])
+    location   Location @relation(fields: [locationId], references: [id])
+    createdAt  DateTime @default(now())
+  }
+
+  model AnomalyEvent {
+    id         String      @id @default(cuid())
+    type       AnomalyType
+    severity   Severity
+    productId  String?
+    locationId String?
+    detected   Json
+    resolved   Boolean     @default(false)
+    product    Product?    @relation(fields: [productId], references: [id])
+    location   Location?   @relation(fields: [locationId], references: [id])
+    createdAt  DateTime    @default(now())
+  }
+  ```
+
+- [ ] **1.2.3** Database migrations and seeding
+  - Initial migration with core schema
+  - Seed script with sample data for development
+  - Migration scripts for schema evolution
+  - Data integrity constraints and indexes
+
+- [ ] **1.2.4** Prisma service integration
+  - `PrismaService` as injectable provider
+  - Connection pooling configuration
+  - Transaction management utilities
+  - Database health checks
+
+### 1.3 Authentication & Authorization
+- [ ] **1.3.1** JWT authentication setup
+  - JWT strategy with passport-jwt
+  - Token generation and validation
+  - Refresh token implementation
+  - Token blacklisting for logout
+
+- [ ] **1.3.2** Role-based access control (RBAC)
+  - Define roles: ADMIN, MANAGER, USER, VIEWER
+  - Permission system for granular access
+  - Decorators for route protection
+  - Resource-based authorization
+
+- [ ] **1.3.3** Authentication endpoints
+  - POST /auth/login - User authentication
+  - POST /auth/register - User registration
+  - POST /auth/refresh - Token refresh
+  - POST /auth/logout - User logout
+  - GET /auth/profile - User profile
+
+- [ ] **1.3.4** Password security
+  - Bcrypt for password hashing
+  - Password strength validation
+  - Password reset functionality
+  - Account lockout after failed attempts
+
+### 1.4 API Documentation & Testing
+- [ ] **1.4.1** OpenAPI/Swagger setup
+  - Swagger module configuration
+  - API documentation with decorators
+  - Request/response examples
+  - Authentication documentation
+
+- [ ] **1.4.2** API versioning strategy
+  - Version header or URL versioning
+  - Backward compatibility guidelines
+  - Deprecation process documentation
+  - Migration guides for API changes
+
+- [ ] **1.4.3** Integration testing setup
+  - Test database configuration
+  - Supertest for API testing
+  - Test data factories
+  - Database cleanup between tests
+
+- [ ] **1.4.4** API rate limiting and security
+  - Rate limiting by IP and user
+  - Request throttling for expensive operations
+  - Input sanitization and validation
+  - SQL injection prevention
+
+---
+
+## Phase 2: Frontend Foundation (Week 5-6)
+
+### 2.1 Next.js 14 Application Setup
+- [ ] **2.1.1** Initialize Next.js application
+  - Create `apps/web` with Next.js 14 App Router
+  - Configure TypeScript with strict mode
+  - Set up project structure (app/, components/, lib/, utils/)
+  - Configure absolute imports and path aliases
+
+- [ ] **2.1.2** App Router configuration
+  - Root layout with global providers
+  - Loading and error boundaries
+  - Route groups for organization
+  - Metadata API for SEO optimization
+
+- [ ] **2.1.3** Environment configuration
+  - Next.js environment variables setup
+  - Runtime configuration for different environments
+  - Public vs private environment variables
+  - API endpoint configuration
+
+- [ ] **2.1.4** Build and deployment configuration
+  - Next.js config optimization
+  - Bundle analyzer setup
+  - Performance monitoring configuration
+  - Static export configuration if needed
+
+### 2.2 Tailwind CSS & shadcn/ui Setup
+- [ ] **2.2.1** Tailwind CSS configuration
+  - Install and configure Tailwind CSS
+  - Custom design system configuration
+  - Responsive breakpoints setup
+  - Dark mode configuration
+
+- [ ] **2.2.2** shadcn/ui component library
+  - Initialize shadcn/ui in `packages/ui`
+  - Install core components (Button, Input, Card, etc.)
+  - Theme configuration and customization
+  - Component documentation and examples
+
+- [ ] **2.2.3** Design system implementation
+  - Color palette and typography
+  - Spacing and sizing scales
+  - Component variants and states
+  - Accessibility compliance (WCAG 2.1)
+
+- [ ] **2.2.4** UI component organization
+  - Atomic design principles
+  - Shared components in packages/ui
+  - App-specific components in apps/web
+  - Storybook setup for component development
+
+### 2.3 State Management & Data Fetching
+- [ ] **2.3.1** React Context setup
+  - Authentication context
+  - Theme context for dark/light mode
+  - Global app state management
+  - Context providers organization
+
+- [ ] **2.3.2** TanStack Query (React Query) setup
+  - Query client configuration
+  - API client integration
+  - Caching strategies
+  - Optimistic updates implementation
+
+- [ ] **2.3.3** API client configuration
+  - Axios or fetch wrapper
+  - Request/response interceptors
+  - Error handling and retry logic
+  - Authentication header management
+
+- [ ] **2.3.4** Form handling
+  - React Hook Form integration
+  - Zod schema validation
+  - Form components and validation
+  - Error message handling
+
+### 2.4 Routing & Navigation
+- [ ] **2.4.1** App Router structure
+  ```
+  app/
+  ├── (auth)/
+  │   ├── login/
+  │   └── register/
+  ├── (dashboard)/
+  │   ├── dashboard/
+  │   ├── inventory/
+  │   ├── suppliers/
+  │   ├── reports/
+  │   └── settings/
+  ├── chat/
+  └── api/
+  ```
+
+- [ ] **2.4.2** Navigation components
+  - Sidebar navigation with collapsible menu
+  - Breadcrumb navigation
+  - Tab navigation for sub-pages
+  - Mobile-responsive navigation
+
+- [ ] **2.4.3** Route protection
+  - Authentication guards
+  - Role-based route access
+  - Redirect logic for unauthorized access
+  - Loading states during authentication
+
+- [ ] **2.4.4** SEO and metadata
+  - Dynamic metadata generation
+  - Open Graph tags
+  - Structured data implementation
+  - Sitemap generation
+
+### 2.5 Real-time Features Foundation
+- [ ] **2.5.1** WebSocket client setup
+  - Socket.io client configuration
+  - Connection management
+  - Event handling system
+  - Reconnection logic
+
+- [ ] **2.5.2** Real-time state synchronization
+  - WebSocket integration with React Query
+  - Optimistic updates for real-time data
+  - Conflict resolution strategies
+  - Connection status indicators
+
+- [ ] **2.5.3** Notification system
+  - Toast notifications for user feedback
+  - Real-time alerts for critical events
+  - Notification persistence and history
+  - Push notification setup (future)
+
+- [ ] **2.5.4** Live data components
+  - Real-time dashboard widgets
+  - Live stock level indicators
+  - Activity feeds with real-time updates
+  - Performance monitoring displays
+
+---
+
+## Phase 3: Core Inventory Features (Week 7-8)
+
+### 3.1 Products Management
+- [ ] **3.1.1** Product CRUD operations
+  - `ProductsController` with full CRUD endpoints
+  - `ProductsService` with business logic
+  - Product DTO classes for validation
+  - Product search and filtering
+
+- [ ] **3.1.2** Product frontend components
+  - Product list with pagination and filtering
+  - Product creation and editing forms
+  - Product detail view with image gallery
+  - Product import/export functionality
+
+- [ ] **3.1.3** Product categorization
+  - Category hierarchy management
+  - Category-based product filtering
+  - Category tree visualization
+  - Product category assignment
+
+- [ ] **3.1.4** Product attributes and specifications
+  - Custom attribute definitions
+  - Attribute value management
+  - Attribute-based search and filtering
+  - Attribute validation and constraints
+
+### 3.2 Stock Management
+- [ ] **3.2.1** Stock level tracking
+  - Real-time stock level updates
+  - Multi-location stock management
+  - Reserved stock tracking
+  - Stock level history
+
+- [ ] **3.2.2** Stock movement operations
+  - Stock adjustment transactions
+  - Transfer between locations
+  - Stock movement audit trail
+  - Batch stock operations
+
+- [ ] **3.2.3** Stock alerts and notifications
+  - Low stock threshold configuration
+  - Automated alert generation
+  - Stock alert dashboard
+  - Email notifications for critical alerts
+
+- [ ] **3.2.4** Stock reconciliation
+  - Physical count vs system count
+  - Variance reporting and analysis
+  - Stock adjustment workflows
+  - Reconciliation history tracking
+
+### 3.3 Supplier Management
+- [ ] **3.3.1** Supplier CRUD operations
+  - Supplier profile management
+  - Contact information tracking
+  - Supplier performance metrics
+  - Supplier categorization
+
+- [ ] **3.3.2** Purchase order management
+  - Purchase order creation and editing
+  - Approval workflow implementation
+  - Purchase order tracking
+  - Receiving and fulfillment tracking
+
+- [ ] **3.3.3** Supplier relationship management
+  - Supplier performance scoring
+  - Lead time tracking
+  - Price history and comparison
+  - Supplier communication log
+
+- [ ] **3.3.4** Procurement automation
+  - Automated reorder point calculation
+  - Purchase order generation
+  - Supplier selection algorithms
+  - Contract and pricing management
+
+### 3.4 Location Management
+- [ ] **3.4.1** Location hierarchy
+  - Warehouse and zone management
+  - Location-based stock tracking
+  - Location capacity management
+  - Location performance analytics
+
+- [ ] **3.4.2** Location operations
+  - Stock transfers between locations
+  - Location-specific pricing
+  - Location access control
+  - Location operational hours
+
+- [ ] **3.4.3** Location analytics
+  - Location performance metrics
+  - Space utilization analysis
+  - Location profitability analysis
+  - Movement pattern analysis
+
+- [ ] **3.4.4** Location optimization
+  - Optimal stock placement
+  - Location efficiency metrics
+  - Automated location recommendations
+  - Location-based forecasting
+
+### 3.5 Dashboard & Analytics
+- [ ] **3.5.1** Real-time dashboard
+  - Key performance indicators (KPIs)
+  - Stock level overview
+  - Recent activity feed
+  - Alert notifications panel
+
+- [ ] **3.5.2** Inventory analytics
+  - Stock turnover analysis
+  - ABC analysis implementation
+  - Demand pattern analysis
+  - Seasonal trend identification
+
+- [ ] **3.5.3** Reporting system
+  - Standard report templates
+  - Custom report builder
+  - Scheduled report generation
+  - Report export functionality
+
+- [ ] **3.5.4** Performance monitoring
+  - System performance metrics
+  - User activity tracking
+  - API performance monitoring
+  - Database query optimization
+
+---
+
+## Phase 4: AI Integration Foundation (Week 9-10)
+
+### 4.1 LLM Service Infrastructure
+- [ ] **4.1.1** LLM service wrapper
+  - `LLMService` as configurable provider
+  - Support for OpenAI and Anthropic APIs
+  - Request/response standardization
+  - Error handling and retry logic
+
+- [ ] **4.1.2** Prompt template system
+  - Template storage in `packages/shared/prompts/`
+  - Variable substitution system
+  - Template versioning and management
+  - A/B testing framework for prompts
+
+- [ ] **4.1.3** LLM usage monitoring
+  - Request logging and analytics
+  - Cost tracking and budgeting
+  - Performance metrics (latency, tokens)
+  - Usage alerts and quotas
+
+- [ ] **4.1.4** LLM response processing
+  - Response parsing and validation
+  - Structured output extraction
+  - Fallback mechanisms for failures
+  - Response caching strategies
+
+### 4.2 Stock Advisor Agent
+- [ ] **4.2.1** Stock Advisor service implementation
+  ```typescript
+  @Injectable()
+  export class StockAdvisorService {
+    async generateRecommendation(productId: string): Promise<ReorderRecommendation> {
+      // 1. Fetch product and historical data
+      const product = await this.prisma.product.findUnique({
+        where: { id: productId },
+        include: {
+          stockMovements: {
+            where: { createdAt: { gte: sixMonthsAgo } },
+            orderBy: { createdAt: 'desc' }
+          },
+          stockLevels: true,
+          supplier: true
+        }
+      });
+
+      // 2. Calculate key metrics
+      const metrics = this.calculateMetrics(product);
+      
+      // 3. Generate structured prompt
+      const prompt = this.promptTemplates.stockAdvisor({
+        product,
+        metrics,
+        currentStock: product.stockLevels.reduce((sum, level) => sum + level.quantity, 0),
+        salesHistory: product.stockMovements.filter(m => m.type === 'OUT')
+      });
+
+      // 4. Call LLM with chain-of-thought reasoning
+      const response = await this.llmService.complete(prompt);
+      
+      // 5. Parse and validate response
+      const recommendation = this.parseRecommendation(response);
+      
+      // 6. Log action to AgentLogs
+      await this.logAgentAction('STOCK_ADVISOR', { productId }, recommendation);
+      
+      return recommendation;
+    }
+  }
+  ```
+
+- [ ] **4.2.2** Stock Advisor API endpoints
+  - POST /api/agents/stock-advisor/recommendation
+  - GET /api/agents/stock-advisor/history
+  - POST /api/agents/stock-advisor/feedback
+  - GET /api/agents/stock-advisor/metrics
+
+- [ ] **4.2.3** Stock Advisor frontend integration
+  - Recommendation display component
+  - Request form with product selection
+  - Recommendation history viewer
+  - Feedback collection interface
+
+- [ ] **4.2.4** Stock Advisor prompt engineering
+  - Chain-of-thought reasoning prompts
+  - Few-shot examples for consistency
+  - Prompt optimization and testing
+  - Business rule integration
+
+### 4.3 Agent Logging & Monitoring
+- [ ] **4.3.1** Agent logging system
+  - Structured logging for all agent actions
+  - Request/response data storage
+  - Performance metrics collection
+  - Error tracking and alerting
+
+- [ ] **4.3.2** Agent monitoring dashboard
+  - Real-time agent activity feed
+  - Performance metrics visualization
+  - Error rate and success rate tracking
+  - Usage patterns analysis
+
+- [ ] **4.3.3** Agent feedback system
+  - User feedback collection
+  - Recommendation quality scoring
+  - Feedback-based model improvement
+  - A/B testing for prompt variations
+
+- [ ] **4.3.4** Agent audit trail
+  - Complete action history
+  - Decision reasoning capture
+  - Compliance and governance tracking
+  - Data lineage for recommendations
+
+### 4.4 Event-Driven Architecture
+- [ ] **4.4.1** Event system implementation
+  - Event emitter service
+  - Event handler registration
+  - Event persistence and replay
+  - Event-driven workflow orchestration
+
+- [ ] **4.4.2** Stock threshold events
+  - Low stock detection events
+  - Automated agent trigger system
+  - Event-based notification system
+  - Event correlation and aggregation
+
+- [ ] **4.4.3** Background job processing
+  - Queue system for async tasks
+  - Job scheduling and execution
+  - Job retry and failure handling
+  - Job monitoring and alerting
+
+- [ ] **4.4.4** Workflow automation
+  - Workflow definition system
+  - Conditional logic and branching
+  - Human-in-the-loop workflows
+  - Workflow performance tracking
+
+### 4.5 AI Security & Compliance
+- [ ] **4.5.1** Input validation and sanitization
+  - Prompt injection prevention
+  - Input length and content validation
+  - Malicious content detection
+  - Rate limiting for AI endpoints
+
+- [ ] **4.5.2** Output validation and filtering
+  - Response content validation
+  - Harmful content filtering
+  - Business rule compliance checking
+  - Output format standardization
+
+- [ ] **4.5.3** AI decision auditing
+  - Decision reasoning capture
+  - Bias detection and mitigation
+  - Fairness and transparency measures
+  - Regulatory compliance tracking
+
+- [ ] **4.5.4** Privacy and data protection
+  - Data anonymization for AI training
+  - PII detection and handling
+  - Data retention policies
+  - Consent management for AI features
+
+---
+
+## Phase 5: Advanced Features & Testing (Week 11-12)
+
+### 5.1 Forecast Agent Implementation
+- [ ] **5.1.1** Time-series forecasting service
+  - Historical data preparation
+  - Statistical forecasting models
+  - Seasonal pattern detection
+  - Trend analysis algorithms
+
+- [ ] **5.1.2** Forecast agent LLM integration
+  - Prompt engineering for forecasting
+  - External factor consideration
+  - Forecast explanation generation
+  - Confidence interval calculation
+
+- [ ] **5.1.3** Forecast API and frontend
+  - Forecast generation endpoints
+  - Forecast visualization components
+  - Forecast accuracy tracking
+  - Forecast adjustment interface
+
+- [ ] **5.1.4** Forecast accuracy monitoring
+  - Actual vs predicted tracking
+  - Model performance metrics
+  - Forecast error analysis
+  - Model retraining triggers
+
+### 5.2 Anomaly Detection Agent
+- [ ] **5.2.1** Anomaly detection algorithms
+  - Statistical anomaly detection
+  - Machine learning-based detection
+  - Pattern recognition systems
+  - Threshold-based alerts
+
+- [ ] **5.2.2** Anomaly agent implementation
+  - Real-time anomaly monitoring
+  - Anomaly classification system
+  - Investigation workflow
+  - False positive reduction
+
+- [ ] **5.2.3** Anomaly response system
+  - Automated alert generation
+  - Escalation procedures
+  - Investigation tracking
+  - Resolution workflows
+
+- [ ] **5.2.4** Anomaly analytics
+  - Anomaly trend analysis
+  - Root cause identification
+  - Prevention recommendations
+  - Impact assessment
+
+### 5.3 Conversational Agent
+- [ ] **5.3.1** Chat interface backend
+  - WebSocket server for real-time chat
+  - Message processing pipeline
+  - Context management system
+  - Session persistence
+
+- [ ] **5.3.2** Natural language processing
+  - Intent recognition system
+  - Entity extraction
+  - Query parsing and understanding
+  - Response generation
+
+- [ ] **5.3.3** Chat interface frontend
+  - Real-time chat component
+  - Message history display
+  - File upload and sharing
+  - Voice input integration
+
+- [ ] **5.3.4** Conversational AI features
+  - Context-aware responses
+  - Multi-turn conversations
+  - Action execution from chat
+  - Conversation analytics
+
+### 5.4 Comprehensive Testing Suite
+- [ ] **5.4.1** Backend testing
+  - Unit tests for all services
+  - Integration tests for APIs
+  - E2E tests for critical workflows
+  - Performance testing
+
+- [ ] **5.4.2** Frontend testing
+  - Component unit tests
+  - User interaction tests
+  - Visual regression testing
+  - Accessibility testing
+
+- [ ] **5.4.3** AI agent testing
+  - Mock LLM response testing
+  - Prompt validation testing
+  - Agent behavior testing
+  - Performance benchmarking
+
+- [ ] **5.4.4** System integration testing
+  - End-to-end workflow testing
+  - Cross-service integration testing
+  - Database consistency testing
+  - Real-time feature testing
+
+### 5.5 Performance Optimization
+- [ ] **5.5.1** Backend optimization
+  - Database query optimization
+  - API response caching
+  - Background job optimization
+  - Memory usage optimization
+
+- [ ] **5.5.2** Frontend optimization
+  - Code splitting and lazy loading
+  - Image optimization
+  - Bundle size optimization
+  - Runtime performance optimization
+
+- [ ] **5.5.3** AI system optimization
+  - LLM request optimization
+  - Prompt efficiency improvement
+  - Response caching strategies
+  - Model inference optimization
+
+- [ ] **5.5.4** Infrastructure optimization
+  - Docker image optimization
+  - Database indexing
+  - CDN configuration
+  - Load balancing setup
+
+---
+
+## 📊 Success Metrics & Acceptance Criteria
+
+### Phase 0 Success Metrics
+- [ ] CI/CD pipeline successfully builds and deploys
+- [ ] All code quality checks pass (lint, typecheck, test)
+- [ ] Docker environment starts without errors
+- [ ] Development setup completed in under 10 minutes
+
+### Phase 1 Success Metrics
+- [ ] All API endpoints documented and tested
+- [ ] Database migrations execute successfully
+- [ ] Authentication system fully functional
+- [ ] API response time under 200ms for simple queries
+
+### Phase 2 Success Metrics
+- [ ] Frontend application loads and navigates correctly
+- [ ] All UI components render properly
+- [ ] Real-time features work without lag
+- [ ] Mobile responsiveness achieved
+
+### Phase 3 Success Metrics
+- [ ] All inventory operations complete successfully
+- [ ] Dashboard updates in real-time
+- [ ] Search and filtering work efficiently
+- [ ] Data export/import functions correctly
+
+### Phase 4 Success Metrics
+- [ ] Stock Advisor provides accurate recommendations
+- [ ] LLM integration works reliably
+- [ ] Agent logging captures all actions
+- [ ] Event-driven workflows execute correctly
+
+### Phase 5 Success Metrics
+- [ ] All AI agents function as specified
+- [ ] Test coverage exceeds 80%
+- [ ] Performance benchmarks met
+- [ ] Security audit passes
+
+## 🔧 Technical Debt & Maintenance
+
+### Regular Maintenance Tasks
+- [ ] **Weekly**: Dependency updates and security patches
+- [ ] **Monthly**: Performance monitoring and optimization
+- [ ] **Quarterly**: Security audit and penetration testing
+- [ ] **Annually**: Technology stack evaluation and updates
+
+### Technical Debt Prevention
+- [ ] Code review requirements for all changes
+- [ ] Automated testing for new features
+- [ ] Documentation updates with code changes
+- [ ] Regular refactoring sessions
+
+### Monitoring & Alerting
+- [ ] Application performance monitoring
+- [ ] Error tracking and alerting
+- [ ] Business metrics monitoring
+- [ ] User experience monitoring
+
+## 📋 Implementation Notes for AI Coding Agents
+
+### Code Style Guidelines
+- Use TypeScript with strict mode enabled
+- Follow ESLint and Prettier configurations
+- Use conventional commit messages
+- Implement proper error handling
+- Write comprehensive tests
+
+### Architecture Patterns
+- Use dependency injection for services
+- Implement repository pattern for data access
+- Use event-driven architecture for loose coupling
+- Follow clean architecture principles
+- Implement proper logging and monitoring
+
+### AI Integration Best Practices
+- Validate all LLM inputs and outputs
+- Implement proper rate limiting
+- Use structured prompts for consistency
+- Log all AI decisions for auditing
+- Implement fallback mechanisms
+
+### Security Considerations
+- Sanitize all user inputs
+- Implement proper authentication/authorization
+- Use parameterized queries to prevent SQL injection
+- Implement rate limiting on all endpoints
+- Regular security audits and updates
+
+### Performance Considerations
+- Use database indexes for frequently queried columns
+- Implement proper caching strategies
+- Use connection pooling for database connections
+- Optimize bundle sizes for frontend
+- Monitor and profile performance regularly
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites Checklist
+- [ ] Node.js 18+ installed
+- [ ] pnpm 8+ installed
+- [ ] Docker and Docker Compose installed
+- [ ] Git configured with proper credentials
+- [ ] IDE configured with recommended extensions
+
+### First Steps
+1. Clone the repository
+2. Run `pnpm install` to install dependencies
+3. Copy `.env.example` to `.env` and configure
+4. Run `docker-compose up -d` to start services
+5. Run `pnpm dev` to start development servers
+
+### Development Workflow
+1. Create feature branch from main
+2. Implement changes with tests
+3. Run quality checks locally
+4. Submit pull request
+5. Wait for CI/CD pipeline to complete
+6. Merge after approval
+
+This comprehensive TODO provides clear, actionable tasks for implementing the Ventry AI-Native Inventory Management System. Each task includes specific technical requirements, acceptance criteria, and implementation guidance for AI coding agents to execute effectively.

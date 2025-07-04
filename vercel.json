@@ -1,0 +1,64 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/**.ts": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_APP_URL": "@app_url"
+  },
+  "build": {
+    "env": {
+      "DATABASE_URL": "@database_url",
+      "OPENAI_API_KEY": "@openai_api_key",
+      "ANTHROPIC_API_KEY": "@anthropic_api_key",
+      "SENTRY_DSN": "@sentry_dsn",
+      "SENTRY_AUTH_TOKEN": "@sentry_auth_token"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ],
+  "github": {
+    "enabled": true,
+    "autoAlias": true
+  }
+}

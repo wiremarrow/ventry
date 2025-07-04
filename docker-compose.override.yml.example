@@ -1,0 +1,25 @@
+# Example Docker Compose override file for local development customization
+# Copy this file to docker-compose.override.yml and customize as needed
+
+version: '3.8'
+
+services:
+  postgres:
+    # Example: Use a different port for PostgreSQL
+    # ports:
+    #   - "5433:5432"
+    
+    # Example: Mount initialization scripts
+    # volumes:
+    #   - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+
+  redis:
+    # Example: Add Redis configuration
+    # command: redis-server --appendonly yes --requirepass your_redis_password
+
+  # Example: Add additional development services
+  # mailhog:
+  #   image: mailhog/mailhog:latest
+  #   ports:
+  #     - "1025:1025"
+  #     - "8025:8025"

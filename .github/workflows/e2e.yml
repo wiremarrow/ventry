@@ -1,0 +1,89 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run E2E tests nightly
+    - cron: '0 2 * * *'
+
+jobs:
+  e2e-tests:
+    name: E2E Tests - ${{ matrix.project }}
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+        shardIndex: [1, 2]
+        shardTotal: [2]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright Browsers
+        run: pnpm playwright:install
+
+      - name: Build application
+        run: pnpm build
+        env:
+          NODE_ENV: test
+
+      - name: Run Playwright tests
+        run: pnpm playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3001
+          DATABASE_URL: file:./test.db
+          NODE_ENV: test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-results-${{ matrix.project }}-${{ matrix.shardIndex }}
+          path: |
+            e2e/test-results/
+            e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload test videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: playwright-videos-${{ matrix.project }}-${{ matrix.shardIndex }}
+          path: e2e/test-results/**/video.webm
+          retention-days: 7
+
+  e2e-report:
+    name: E2E Test Report
+    if: always()
+    needs: [e2e-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Publish test report
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./playwright-results-chromium-1/playwright-report
+          destination_dir: playwright-report

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "globalEnv": ["NODE_ENV", "DATABASE_URL", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"],
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "out/**"],
+      "env": ["NODE_ENV", "DATABASE_URL"]
+    },
+    "dev": {
+      "dependsOn": ["^db:generate"],
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV"]
+    },
+    "lint": {
+      "outputs": []
+    },
+    "typecheck": {
+      "dependsOn": ["^build"],
+      "outputs": []
+    },
+    "db:generate": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma"]
+    },
+    "db:push": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma"]
+    },
+    "db:migrate": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma", "prisma/migrations/**"]
+    },
+    "db:seed": {
+      "cache": false,
+      "dependsOn": ["db:generate"]
+    },
+    "clean": {
+      "cache": false
+    }
+  }
+}

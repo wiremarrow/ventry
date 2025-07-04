@@ -1,0 +1,1 @@
+**MANDATORY**: After implementing/debugging any feature or task, update **both** `README.md` and `TODO.md` **before** opening a PR. PRs missing either update will be **rejected**.
