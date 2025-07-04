@@ -30,7 +30,7 @@ ventry/
 - **Testing**: Jest for unit tests, Playwright for E2E with browser sharding
 - **Deployment**: Vercel for frontend, containerized backend services
 - **Monitoring**: Sentry for error tracking and performance insights
-- **CI/CD**: Comprehensive GitHub Actions pipeline with quality gates
+- **CI/CD**: Enterprise-grade GitHub Actions pipeline with 13 mandatory status checks
 - **AI Integration**: OpenAI/Anthropic SDK with configurable providers
 
 ## 🧠 AI Agent Architecture
@@ -219,6 +219,7 @@ pnpm build
 - TypeScript setup
 - GitHub Actions CI/CD pipelines
 - Development scripts and tooling
+- **NEW**: Automated CI/CD setup scripts (90% automation)
 
 ✅ **Stack Enhancement Complete**: Lightweight Development Experience
 - **Testing**: Jest for unit tests + Playwright for E2E tests
@@ -270,6 +271,20 @@ SMTP_CONFIG="..."
 - **Progressive Loading**: Skeleton states, lazy loading
 
 ## 🚀 Deployment & DevOps
+
+### Automated CI/CD Setup (NEW!)
+We provide automated scripts that configure ~90% of the GitHub CI/CD setup:
+
+```bash
+# Configure repository settings, branch protection, and security features
+./tools/scripts/setup-github-repo.sh
+
+# Set up all required secrets interactively
+./tools/scripts/setup-ci-secrets.sh
+
+# Validate your CI/CD configuration
+./tools/scripts/validate-ci-setup.sh
+```
 
 ### Comprehensive CI/CD Pipeline
 Our unified CI/CD pipeline enforces rigorous quality standards through multiple validation stages:

@@ -2,11 +2,29 @@
 
 This guide walks you through setting up the external services and configurations required for the CI/CD pipelines to work properly.
 
+> **🚀 NEW: Automated Setup Available!** We now provide scripts that automate ~90% of the CI/CD configuration. See Step 2 for quick setup.
+
+## What's Automated vs Manual
+
+### ✅ Fully Automated (via scripts)
+- Branch protection with all 13 required status checks
+- Security features (vulnerability alerts, Dependabot)
+- Environment creation (staging, production)
+- Secret configuration via CLI prompts
+- Setup validation and verification
+
+### ⚠️ Still Manual (external services)
+- Creating accounts on external services (Turbo, Vercel, Sentry)
+- Getting API tokens from these services
+- Linking Vercel project (`vercel link`)
+- Database provisioning
+
 ## Prerequisites
 
 - GitHub repository created and code pushed
 - Admin access to the repository settings
 - Accounts on required third-party services (optional but recommended)
+- GitHub CLI (`gh`) installed and authenticated
 
 ## Step 1: Initialize Git Repository
 
@@ -20,11 +38,42 @@ git remote add origin https://github.com/YOUR_USERNAME/ventry.git
 git push -u origin main
 ```
 
-## Step 2: GitHub Actions Secrets
+## Step 2: Automated CI/CD Setup (NEW! 🚀)
+
+### Quick Setup with Automation Scripts
+
+We now provide automated scripts that configure ~90% of the CI/CD setup:
+
+```bash
+# Step 1: Configure GitHub repository settings
+# This script automates:
+# - Branch protection with all 13 required status checks
+# - Security features (vulnerability alerts, Dependabot)
+# - Environment creation (staging, production)
+# - Security scanning configuration
+./tools/scripts/setup-github-repo.sh
+
+# Step 2: Configure all required secrets
+# This script sets up:
+# - Turborepo caching (TURBO_TOKEN, TURBO_TEAM)
+# - Vercel deployment (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID)
+# - Sentry monitoring (SENTRY_DSN, SENTRY_AUTH_TOKEN)
+# - Optional services (Codecov, Snyk, Slack)
+# - Environment-specific database URLs
+./tools/scripts/setup-ci-secrets.sh
+
+# Step 3: Validate your setup
+# This script verifies:
+# - All 13 status checks are configured
+# - Required secrets are present
+# - Branch protection is enabled
+# - Security features are active
+./tools/scripts/validate-ci-setup.sh
+```
 
 ### Using GitHub CLI (Recommended)
 
-Run our helper script:
+If you prefer to run just the secrets setup:
 ```bash
 ./tools/scripts/setup-ci-secrets.sh
 ```
@@ -75,6 +124,16 @@ Click **New environment** → Name it `production` → Add secrets:
 
 ## Step 4: Branch Protection Rules
 
+> **Note**: If you ran `./tools/scripts/setup-github-repo.sh`, branch protection is already configured! Skip to Step 5.
+
+### Automated Setup (Recommended)
+
+The `setup-github-repo.sh` script automatically configures branch protection with all 13 required status checks. The configuration is stored in `tools/scripts/branch-protection.json`.
+
+### Manual Setup
+
+If you prefer manual configuration or need to customize:
+
 1. Go to **Settings** → **Branches**
 2. Click **Add rule**
 3. Branch name pattern: `main`
@@ -115,7 +174,19 @@ Click **New environment** → Name it `production` → Add secrets:
 
 ## Step 5: Enable Security Features
 
-Go to **Settings** → **Security & analysis**:
+> **Note**: If you ran `./tools/scripts/setup-github-repo.sh`, most security features are already enabled!
+
+### Automated Setup
+
+The setup script automatically enables:
+- ✅ Vulnerability alerts
+- ✅ Automated security fixes
+- ✅ Dependabot configuration (creates `.github/dependabot.yml`)
+- ✅ Secret scanning (if available on your plan)
+
+### Manual Verification
+
+Go to **Settings** → **Security & analysis** to verify or adjust:
 
 1. **Dependency graph**: ✅ Enable
 2. **Dependabot**:
@@ -236,6 +307,22 @@ Add these secrets:
 - `ECR_REPOSITORY`
 
 ## Step 9: Verify Setup
+
+### Automated Validation
+
+Run the validation script to check your setup:
+
+```bash
+./tools/scripts/validate-ci-setup.sh
+```
+
+This script verifies:
+- ✅ All 13 required status checks are configured
+- ✅ Required secrets are present
+- ✅ Environments are created
+- ✅ Branch protection is enabled
+- ✅ Security features are active
+- ✅ Recent workflow runs status
 
 ### Create a Test PR
 

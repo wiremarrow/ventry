@@ -18,7 +18,23 @@
 
 ### 🔄 Next Steps (In Order)
 
-#### 1. Set Up Branch Protection Rules
+#### 1. Run Automated CI/CD Setup Scripts (NEW! 🚀)
+
+We now provide automated scripts that configure ~90% of the CI/CD setup:
+
+```bash
+# Step 1: Configure GitHub repository settings
+# This automates branch protection, security features, and environments
+./tools/scripts/setup-github-repo.sh
+
+# Step 2: Configure all required secrets interactively
+./tools/scripts/setup-ci-secrets.sh
+
+# Step 3: Validate your setup
+./tools/scripts/validate-ci-setup.sh
+```
+
+#### 1a. Manual Branch Protection Setup (If Automation Fails)
 
 **Go to:** https://github.com/wiremarrow/ventry/settings/branches
 

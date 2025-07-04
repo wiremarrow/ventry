@@ -58,6 +58,19 @@ echo "🔑 Required Secrets:"
 set_secret "TURBO_TOKEN" "Turbo token (from turbo.build)"
 set_secret "TURBO_TEAM" "Turbo team name"
 
+# Deployment secrets
+echo ""
+echo "🚀 Deployment Secrets:"
+set_secret "VERCEL_TOKEN" "Vercel token (from account settings)"
+set_secret "VERCEL_ORG_ID" "Vercel organization ID"
+set_secret "VERCEL_PROJECT_ID" "Vercel project ID"
+
+# Monitoring secrets
+echo ""
+echo "📊 Monitoring Secrets:"
+set_secret "SENTRY_DSN" "Sentry DSN (from project settings)"
+set_secret "SENTRY_AUTH_TOKEN" "Sentry auth token"
+
 # Optional secrets
 echo ""
 echo "🔑 Optional Secrets:"
@@ -91,11 +104,11 @@ if [[ $setup_env =~ ^[Yy]$ ]]; then
 fi
 
 echo ""
-echo "🎉 CI/CD configuration complete!"
+echo "🎉 CI/CD secrets configuration complete!"
 echo ""
 echo "Next steps:"
-echo "1. Go to Settings → Branches to set up branch protection"
-echo "2. Go to Settings → Security & analysis to enable Dependabot"
-echo "3. Create a test PR to verify the CI pipeline"
+echo "1. Run ./setup-github-repo.sh to configure branch protection automatically"
+echo "2. Create a test PR to verify the CI pipeline"
+echo "3. Set up external services (Vercel project, Sentry project)"
 echo ""
 echo "For detailed instructions, see: docs/CI_SETUP.md"
