@@ -5,9 +5,27 @@ Ventry uses a comprehensive testing strategy with Jest for unit tests and Playwr
 ## Testing Stack
 
 - **Unit Tests**: Jest with TypeScript support
-- **E2E Tests**: Playwright for browser automation
-- **Coverage**: Built-in with Jest
-- **CI Integration**: Automated testing on every PR
+- **Integration Tests**: PostgreSQL service containers  
+- **E2E Tests**: Playwright with browser matrix and sharding
+- **Coverage**: Built-in with Jest + threshold gates
+- **CI Integration**: Comprehensive 13-check pipeline on every PR
+
+## Advanced Testing Features
+
+### Browser Matrix Testing
+- **Chromium**: Primary browser for modern web standards
+- **Firefox**: Gecko engine compatibility testing
+- **WebKit**: Safari/iOS compatibility testing
+
+### Test Sharding
+- **Parallel Execution**: 2 shards per browser = 6 parallel E2E jobs
+- **Faster CI**: Reduces E2E test time by ~50%
+- **Artifact Management**: Test results and videos preserved per shard
+
+### PostgreSQL Integration Testing
+- **Real Database**: PostgreSQL 16 service container in CI
+- **Health Checks**: Ensures database is ready before tests
+- **Migration Testing**: Validates schema changes work correctly
 
 ## Running Tests
 
@@ -48,6 +66,12 @@ pnpm playwright test e2e/tests/auth.spec.ts
 
 # Run tests for specific browser
 pnpm playwright test --project=chromium
+pnpm playwright test --project=firefox
+pnpm playwright test --project=webkit
+
+# Run tests with sharding (like CI)
+pnpm playwright test --project=chromium --shard=1/2
+pnpm playwright test --project=chromium --shard=2/2
 pnpm playwright test --project=firefox
 pnpm playwright test --project=webkit
 ```
@@ -194,16 +218,31 @@ ventry/
 
 ### GitHub Actions
 
-Tests run automatically on:
+Our unified CI pipeline runs comprehensive tests on:
 - Every push to `main`
 - Every pull request
-- Nightly schedule (E2E tests)
+
+#### Required Status Checks (13 total)
+1. **Documentation Check** - Enforces README.md/TODO.md updates
+2. **Lint and Type Check** - ESLint + TypeScript validation
+3. **Unit Tests (18)** - Jest testing on Node.js 18
+4. **Unit Tests (20)** - Jest testing on Node.js 20
+5. **PostgreSQL Integration Tests** - Real database operations
+6. **E2E Tests - chromium (1)** - Browser testing, shard 1 of 2
+7. **E2E Tests - chromium (2)** - Browser testing, shard 2 of 2
+8. **E2E Tests - firefox (1)** - Browser testing, shard 1 of 2
+9. **E2E Tests - firefox (2)** - Browser testing, shard 2 of 2
+10. **E2E Tests - webkit (1)** - Browser testing, shard 1 of 2
+11. **E2E Tests - webkit (2)** - Browser testing, shard 2 of 2
+12. **Build** - Production build validation
+13. **Coverage Gate** - Test coverage threshold validation
 
 ### Test Reports
 
-- **Unit test coverage**: Uploaded to Codecov
-- **E2E test results**: Available as artifacts
-- **Playwright report**: Published to GitHub Pages
+- **Unit test coverage**: Uploaded to Codecov with threshold gates
+- **E2E test results**: Artifacts preserved per browser/shard
+- **Test videos**: Failure recordings for debugging
+- **Coverage reports**: Integrated with PR status checks
 
 ## Debugging Tests
 

@@ -49,7 +49,7 @@ EOF
 echo "✅ GitHub repository setup complete!"
 echo ""
 echo "📋 Next steps:"
-echo "1. Add repository secrets (see EXTERNAL_INTEGRATIONS_SETUP.md)"
+echo "1. Add repository secrets (see SETUP_GUIDE.md)"
 echo "2. Set up branch protection rules manually in GitHub UI"
 echo "3. Configure external services (Vercel, Sentry, Database)"
 echo ""

@@ -23,12 +23,14 @@ ventry/
 ```
 
 ### Technology Stack
-- **Package Management**: pnpm + Turborepo
-- **Backend**: NestJS + Prisma + PostgreSQL
-- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui
-- **Database**: PostgreSQL with Prisma ORM
-- **Testing**: Jest (backend & frontend)
-- **Containerization**: Docker + Docker Compose
+- **Package Management**: pnpm + Turborepo for monorepo management
+- **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
+- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui for modern UI
+- **Database**: PostgreSQL for production, SQLite for development (zero setup)
+- **Testing**: Jest for unit tests, Playwright for E2E with browser sharding
+- **Deployment**: Vercel for frontend, containerized backend services
+- **Monitoring**: Sentry for error tracking and performance insights
+- **CI/CD**: Comprehensive GitHub Actions pipeline with quality gates
 - **AI Integration**: OpenAI/Anthropic SDK with configurable providers
 
 ## 🧠 AI Agent Architecture
@@ -269,11 +271,29 @@ SMTP_CONFIG="..."
 
 ## 🚀 Deployment & DevOps
 
-### CI/CD Pipeline
-- **GitHub Actions**: Automated testing, building, deployment
-- **Docker Images**: Containerized applications
-- **Environment Promotion**: Dev → Staging → Production
-- **Database Migrations**: Automated schema updates
+### Comprehensive CI/CD Pipeline
+Our unified CI/CD pipeline enforces rigorous quality standards through multiple validation stages:
+
+#### **Quality Gates & Required Status Checks**
+1. **Documentation Check**: Enforces README.md and TODO.md updates for feature PRs
+2. **Lint and Type Check**: ESLint + TypeScript strict mode validation
+3. **Unit Tests**: Jest testing on Node.js 18 & 20 with coverage reporting
+4. **PostgreSQL Integration Tests**: Database operations with real PostgreSQL service
+5. **E2E Tests**: Playwright testing across Chromium, Firefox, and WebKit with sharding
+6. **Build**: Production-ready builds with Sentry integration
+7. **Coverage Gate**: Validates test coverage thresholds
+
+#### **Advanced Testing Strategy**
+- **Browser Matrix**: Parallel E2E testing across 3 browsers × 2 shards = 6 test jobs
+- **Database Testing**: Both SQLite (development) and PostgreSQL (production) validation
+- **Artifact Management**: Test results, videos, and build artifacts preserved
+- **Optional Docker Build**: Triggered only when Docker files change
+
+#### **Deployment Pipeline**
+- **Frontend**: Automatic Vercel deployment with preview environments
+- **Backend**: Containerized services with automated migrations
+- **Environment Promotion**: Staging → Production with approval gates
+- **Monitoring**: Sentry integration for error tracking and performance
 
 ### Monitoring & Observability
 - **Application Monitoring**: Error tracking, performance metrics

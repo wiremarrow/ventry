@@ -83,11 +83,23 @@ Click **New environment** → Name it `production` → Add secrets:
 ### Required Status Checks
 - ✅ Require status checks to pass before merging
 - ✅ Require branches to be up to date before merging
-- Select these status checks:
-  - `lint-and-typecheck`
-  - `test (20)` (Node.js 20 test job)
-  - `build`
-  - `docker-build`
+- Select these status checks (add after first CI run):
+  - **Documentation Check** - Enforces README.md/TODO.md updates on feature PRs
+  - **Lint and Type Check** - ESLint + TypeScript validation
+  - **Unit Tests (18)** - Jest testing on Node.js 18
+  - **Unit Tests (20)** - Jest testing on Node.js 20
+  - **PostgreSQL Integration Tests** - Database operations with real PostgreSQL service
+  - **E2E Tests - chromium (1)** - Playwright E2E testing, shard 1 of 2
+  - **E2E Tests - chromium (2)** - Playwright E2E testing, shard 2 of 2
+  - **E2E Tests - firefox (1)** - Playwright E2E testing, shard 1 of 2
+  - **E2E Tests - firefox (2)** - Playwright E2E testing, shard 2 of 2
+  - **E2E Tests - webkit (1)** - Playwright E2E testing, shard 1 of 2
+  - **E2E Tests - webkit (2)** - Playwright E2E testing, shard 2 of 2
+  - **Build** - Production build with Sentry integration
+  - **Coverage Gate** - Test coverage threshold validation
+
+### Optional Checks
+- **Docker Build** - Only runs when Docker files change, not required for merge
 
 ### Pull Request Requirements
 - ✅ Require a pull request before merging
@@ -149,7 +161,61 @@ turbo link
 4. Go to Account Settings → API Token
 5. Copy token and add as `SNYK_TOKEN` in GitHub Secrets
 
-## Step 7: Container Registry Configuration
+## Step 7: Understanding the Unified CI Pipeline
+
+### Key Features
+
+Our CI pipeline includes several advanced features:
+
+#### 1. Documentation Enforcement
+- **docs-check** job enforces README.md and TODO.md updates
+- Only applies to feature PRs (feat:, fix:, refactor:, perf:)
+- Prevents incomplete documentation from reaching main branch
+
+#### 2. Enhanced Testing Strategy
+- **Unit Tests**: Matrix strategy across Node.js 18 & 20
+- **Integration Tests**: Real PostgreSQL service container
+- **E2E Tests**: Browser matrix (3 browsers) × sharding (2 shards) = 6 parallel jobs
+- **Coverage**: Codecov integration with threshold gates
+
+#### 3. Advanced E2E Testing
+- Browser matrix testing (Chromium, Firefox, WebKit)
+- Test sharding for parallel execution
+- Artifact management for test results and videos
+- Build step before E2E tests for realistic testing
+
+#### 4. Production-Ready Build
+- Sentry environment variables for error tracking
+- Proper dependency chains (depends on docs-check + lint)
+- Artifact uploads for deployment
+
+#### 5. PostgreSQL Integration
+- Dedicated PostgreSQL integration testing
+- Real database service with health checks
+- Migration testing before integration tests
+
+### Quality Gates Summary
+
+#### Branch Protection Requirements
+- Pull request reviews required
+- All 13 status checks must pass
+- Branches must be up to date
+- Conversation resolution required
+- Linear history enforced
+
+#### Testing Coverage
+- **Unit Testing**: Cross-platform (Node 18 & 20)
+- **Integration Testing**: Real database operations
+- **E2E Testing**: Cross-browser (Chromium, Firefox, WebKit)
+- **Performance Testing**: Build validation
+- **Security Testing**: Static analysis via CI
+
+#### Documentation Standards
+- Feature PRs must update README.md AND TODO.md
+- Prevents documentation drift
+- Enforces CLAUDE.md requirements
+
+## Step 8: Container Registry Configuration
 
 The workflows use GitHub Container Registry by default. No additional setup required!
 
@@ -169,7 +235,7 @@ Add these secrets:
 - `AWS_REGION`
 - `ECR_REPOSITORY`
 
-## Step 8: Verify Setup
+## Step 9: Verify Setup
 
 ### Create a Test PR
 
@@ -189,12 +255,21 @@ git push origin test/ci-verification
 ### Check GitHub PR
 
 1. Go to GitHub and create a Pull Request
-2. Verify all checks are running:
+2. Verify all 13+ checks are running:
+   - ✅ Documentation Check
    - ✅ Lint and Type Check
-   - ✅ Test (matrix for Node 18 & 20)
+   - ✅ Unit Tests (18)
+   - ✅ Unit Tests (20)
+   - ✅ PostgreSQL Integration Tests
+   - ✅ E2E Tests - chromium (1)
+   - ✅ E2E Tests - chromium (2)
+   - ✅ E2E Tests - firefox (1)
+   - ✅ E2E Tests - firefox (2)
+   - ✅ E2E Tests - webkit (1)
+   - ✅ E2E Tests - webkit (2)
    - ✅ Build
-   - ✅ Docker Build
-   - ✅ Security scans
+   - ✅ Coverage Gate
+   - ⚠️ Docker Build (optional, only if Docker files changed)
 
 ### Deployment Test
 
