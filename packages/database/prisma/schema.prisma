@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  firstName   String
+  lastName    String
+  password    String
+  role        Role     @default(USER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+
+  // Relationships
+  createdProducts     Product[]         @relation("CreatedByUser")
+  updatedProducts     Product[]         @relation("UpdatedByUser")
+  inventoryMovements  InventoryMovement[]
+  auditLogs          AuditLog[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  description String?
+  category    Category @relation(fields: [categoryId], references: [id])
+  categoryId  String
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  cost        Decimal? @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   User     @relation("CreatedByUser", fields: [createdById], references: [id])
+  createdById String
+  updatedBy   User     @relation("UpdatedByUser", fields: [updatedById], references: [id])
+  updatedById String
+
+  // Relationships
+  inventoryItems     InventoryItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@map("products")
+}
+
+model Location {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  inventoryItems InventoryItem[]
+
+  @@map("locations")
+}
+
+model InventoryItem {
+  id            String   @id @default(cuid())
+  product       Product  @relation(fields: [productId], references: [id])
+  productId     String
+  location      Location @relation(fields: [locationId], references: [id])
+  locationId    String
+  quantity      Int      @default(0)
+  reservedQty   Int      @default(0)
+  reorderPoint  Int      @default(0)
+  maxStock      Int?
+  lastCountDate DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  movements InventoryMovement[]
+
+  @@unique([productId, locationId])
+  @@map("inventory_items")
+}
+
+model InventoryMovement {
+  id              String              @id @default(cuid())
+  inventoryItem   InventoryItem       @relation(fields: [inventoryItemId], references: [id])
+  inventoryItemId String
+  product         Product             @relation(fields: [productId], references: [id])
+  productId       String
+  type            InventoryMovementType
+  quantity        Int
+  previousQty     Int
+  newQty          Int
+  reference       String?
+  notes           String?
+  createdAt       DateTime            @default(now())
+  createdBy       User                @relation(fields: [createdById], references: [id])
+  createdById     String
+
+  @@map("inventory_movements")
+}
+
+model AuditLog {
+  id        String     @id @default(cuid())
+  entity    String     // Table name
+  entityId  String     // Record ID
+  action    AuditAction
+  oldValues Json?
+  newValues Json?
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now())
+
+  @@map("audit_logs")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  USER
+}
+
+enum InventoryMovementType {
+  INBOUND
+  OUTBOUND
+  ADJUSTMENT
+  TRANSFER
+  RETURN
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
