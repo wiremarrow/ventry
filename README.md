@@ -27,7 +27,10 @@ ventry/
 - **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
 - **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui for modern UI
 - **Database**: PostgreSQL for all environments (consistent development to production)
-- **Testing**: Jest for unit tests, Playwright for E2E with browser sharding
+- **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
+  - **Unit Tests**: Jest with 80% coverage thresholds for services and controllers
+  - **Integration Tests**: Real PostgreSQL database operations with proper isolation
+  - **E2E Tests**: Playwright across 3 browsers (Chromium, Firefox, WebKit) with sharding
 - **Deployment**: Vercel for frontend, containerized backend services
 - **Monitoring**: Sentry for error tracking and performance insights
 - **CI/CD**: Enterprise-grade GitHub Actions pipeline with 13 mandatory status checks
@@ -204,8 +207,18 @@ cd ventry
 # Start development servers
 pnpm dev
 
-# Run tests
-pnpm test
+# Run tests (3-tier testing strategy)
+pnpm test                    # Unit tests across all packages
+pnpm test:integration        # PostgreSQL integration tests
+pnpm test:e2e               # Multi-browser E2E tests
+
+# Backend-specific testing with coverage
+pnpm test:cov               # Unit tests with coverage thresholds (backend only)
+# OR: pnpm --filter @ventry/backend test:cov
+
+# Run all tests for CI
+pnpm lint                   # ESLint validation
+pnpm typecheck             # TypeScript strict mode validation
 
 # Build for production
 pnpm build
@@ -218,8 +231,11 @@ pnpm build
 - **Backend**: Full-featured NestJS REST API with authentication
 - **Frontend**: Next.js dashboard with real-time inventory statistics
 - **Authentication**: JWT-based auth with role-based access control
-- **Testing**: Updated E2E tests covering authentication and navigation
-- **CI/CD**: Production-ready pipeline with 13 status checks
+- **Testing**: Comprehensive 3-tier testing strategy implemented:
+  - **Unit Tests**: 61 tests across services with 80% coverage requirements
+  - **Integration Tests**: 20 tests with real PostgreSQL database operations  
+  - **E2E Tests**: 115 tests across 3 browsers with full user workflow coverage
+- **CI/CD**: Production-ready pipeline with 13 mandatory status checks
 
 ✅ **Phase 0 Complete**: Foundation & CI/CD Setup
 - Monorepo structure with Turborepo
@@ -386,6 +402,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 pnpm dev           # Start all services
 pnpm build         # Build all packages
 pnpm test          # Run all tests
+pnpm test:cov      # Backend tests with coverage
 pnpm lint          # Check code quality
 pnpm typecheck     # Type checking
 

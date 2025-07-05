@@ -99,8 +99,9 @@ pnpm test
 # Run specific package tests
 pnpm --filter @ventry/backend test
 
-# Run with coverage
-pnpm test:coverage
+# Run with coverage (backend-specific)
+pnpm test:cov
+# OR from root: pnpm --filter @ventry/backend test:cov
 ```
 
 #### Writing Tests

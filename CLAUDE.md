@@ -78,6 +78,10 @@ pnpm test                    # Unit tests (Node 18 & 20)
 pnpm test:integration        # PostgreSQL integration
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
+
+# Backend-specific commands (run from /apps/backend or use filter)
+pnpm test:cov               # Unit tests with coverage thresholds
+# OR: pnpm --filter @ventry/backend test:cov
 ```
 
 ### **Database Testing Requirements**
