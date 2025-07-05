@@ -297,6 +297,10 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Authentication state persistence across page reloads
 - Token management in both localStorage and cookies
 - Hydration handling for SSR/CSR compatibility
+- Sentry initialization fixed with instrumentation.ts
+- Cookie restoration on app hydration
+- Navigation timing after login success
+- Debug logging added for troubleshooting
 
 ### Project Status
 

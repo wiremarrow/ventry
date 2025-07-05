@@ -68,8 +68,11 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - User context and breadcrumb trails
   - Login form error capture with detailed context
   - Protected route tracking
-  - Test page at `/sentry-test` for verification
+  - Test page at `/sentry-test` for verification (now accessible without auth)
   - Performance monitoring enabled
+  - Debug mode enabled for initialization troubleshooting
+  - Fixed initialization with instrumentation.ts
+  - Cookie sync on hydration for middleware compatibility
 
 🚀 **Phase 2 Ready**: AI Integration Foundation
 All Phase 1 infrastructure is complete and validated. The system is now ready for AI agent integration with:
