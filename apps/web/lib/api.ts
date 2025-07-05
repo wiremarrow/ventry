@@ -3,11 +3,14 @@ import { API_ENDPOINTS } from '@ventry/shared';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api';
 
+console.log('[API Client] Base URL:', API_BASE_URL);
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Important for CORS with cookies
 });
 
 api.interceptors.request.use((config) => {
