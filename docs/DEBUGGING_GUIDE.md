@@ -102,6 +102,13 @@ In development, Next.js shows:
 3. Check backend JWT_SECRET matches
 4. Verify CORS configuration
 
+#### Issue: Login returns 401 "Invalid credentials"
+**Solution**: Database needs demo users
+```bash
+pnpm db:seed
+```
+Creates: admin@ventry.com/admin123, manager@ventry.com/manager123, user@ventry.com/user123
+
 #### Issue: CORS errors
 **Debug Steps:**
 1. Verify FRONTEND_URL in backend .env
