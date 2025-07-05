@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Category, Prisma } from '@ventry/database';
+import { Category } from '@ventry/database';
 import { CategoryRequest } from '@ventry/shared';
 
 @Injectable()

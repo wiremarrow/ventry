@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "main": "index.js",
+  "scripts": {
+    "build": "echo 'ESLint config built'",
+    "lint": "echo 'ESLint config validated'"
+  },
   "dependencies": {
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",

@@ -55,7 +55,8 @@ pnpm --filter @ventry/web dev
 |---------|-------------|
 | `pnpm dev` | Start all development servers |
 | `pnpm build` | Build all packages for production |
-| `pnpm test` | Run unit tests with Jest |
+| `pnpm test` | Run unit tests with Jest (excludes integration tests) |
+| `pnpm test:integration` | Run integration tests with PostgreSQL |
 | `pnpm test:e2e` | Run E2E tests with Playwright |
 | `pnpm test:e2e:ui` | Run E2E tests with interactive UI |
 | `pnpm lint` | Run ESLint on all packages |
@@ -172,16 +173,20 @@ pnpm lint && pnpm typecheck && pnpm test
 **Filter Examples**
 ```bash
 # From root directory
-pnpm --filter @ventry/backend test:cov      # Backend coverage
-pnpm --filter @ventry/backend test:watch    # Backend watch mode
-pnpm --filter @ventry/web test              # Frontend tests
+pnpm --filter @ventry/backend test:cov          # Backend coverage
+pnpm --filter @ventry/backend test:integration  # Backend integration tests
+pnpm --filter @ventry/backend test:watch        # Backend watch mode
+pnpm --filter @ventry/web test                  # Frontend tests
 ```
 
 ### Running Tests
 
 ```bash
-# Run all tests
+# Run all unit tests (excludes integration tests)
 pnpm test
+
+# Run integration tests with PostgreSQL
+pnpm test:integration
 
 # Run tests in watch mode
 pnpm test:watch
@@ -191,7 +196,8 @@ pnpm test:cov
 # OR from root: pnpm --filter @ventry/backend test:cov
 
 # Run tests for specific package
-pnpm --filter @ventry/backend test
+pnpm --filter @ventry/backend test              # Unit tests only
+pnpm --filter @ventry/backend test:integration  # Integration tests only
 ```
 
 ### Writing Tests

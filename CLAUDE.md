@@ -74,14 +74,16 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 # MANDATORY: All must pass
 pnpm lint                    # ESLint validation
 pnpm typecheck              # TypeScript strict mode
-pnpm test                    # Unit tests (Node 18 & 20)
-pnpm test:integration        # PostgreSQL integration
+pnpm test                    # Unit tests (excludes integration)
+pnpm test:integration        # PostgreSQL integration tests
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
 
 # Backend-specific commands (run from /apps/backend or use filter)
 pnpm test:cov               # Unit tests with coverage thresholds
+pnpm test:integration       # Integration tests with PostgreSQL
 # OR: pnpm --filter @ventry/backend test:cov
+# OR: pnpm --filter @ventry/backend test:integration
 ```
 
 ### **Database Testing Requirements**
@@ -131,7 +133,7 @@ pnpm format                # Format code
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
 - **Backend**: NestJS + Prisma + PostgreSQL
-- **Frontend**: Next.js 14 App Router + TypeScript + Tailwind + shadcn/ui
+- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
 - **Testing**: Jest (unit) + Playwright (E2E) + PostgreSQL (integration)
 - **Deployment**: Vercel (frontend) + containerized backend
 - **Monitoring**: Sentry error tracking + performance
@@ -199,7 +201,7 @@ ventry/
 ✅ All 13 CI status checks are **GREEN**  
 ✅ README.md and TODO.md are **UPDATED**  
 ✅ All browsers pass E2E tests  
-✅ Both SQLite and PostgreSQL work  
+✅ PostgreSQL integration tests pass  
 ✅ Production build succeeds  
 ✅ Documentation is **1-TO-1** with implementation  
 ✅ No security vulnerabilities introduced  

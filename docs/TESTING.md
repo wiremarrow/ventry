@@ -32,37 +32,48 @@ Ventry uses a comprehensive testing strategy with Jest for unit tests and Playwr
 ### Root vs Package-Specific Commands
 
 **Root Level (via Turborepo)**
-- `pnpm test` - Runs tests across all packages in parallel
+- `pnpm test` - Runs unit tests across all packages (excludes integration tests)
+- `pnpm test:integration` - Runs integration tests with PostgreSQL
 - `pnpm lint` - Lints all packages 
 - `pnpm typecheck` - Type checks all packages
 
 **Backend Package Specific**
-- `pnpm test:cov` - Unit tests with coverage (only available in backend)
+- `pnpm test:cov` - Unit tests with coverage (excludes integration tests)
 - `pnpm test:integration` - Integration tests with PostgreSQL
-- `pnpm test:watch` - Watch mode for backend tests
+- `pnpm test:watch` - Watch mode for backend unit tests
 
 **Using Filters (from root)**
 - `pnpm --filter @ventry/backend test:cov` - Backend coverage from root
+- `pnpm --filter @ventry/backend test:integration` - Backend integration tests from root
 - `pnpm --filter @ventry/web test` - Frontend tests from root
+
+**💡 Pro Tips:**
+- Always run `pnpm test:integration` before committing to catch database issues
+- Use `pnpm test:cov` to ensure you meet the 80% coverage threshold
+- Run tests in this order for CI simulation: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build`
 
 ## Running Tests
 
 ### Unit Tests (Jest)
 
 ```bash
-# Run all unit tests
+# Run all unit tests (excludes integration tests)
 pnpm test
+
+# Run integration tests with PostgreSQL
+pnpm test:integration
 
 # Run tests in watch mode
 pnpm test:watch
 
-# Run tests with coverage (backend-specific)
+# Run tests with coverage (backend-specific, excludes integration)
 pnpm test:cov
 
 # Run tests for a specific package
-pnpm --filter @ventry/backend test
-pnpm --filter @ventry/backend test:cov  # Backend coverage
-pnpm --filter @ventry/web test
+pnpm --filter @ventry/backend test              # Unit tests only
+pnpm --filter @ventry/backend test:integration  # Integration tests only
+pnpm --filter @ventry/backend test:cov          # Coverage report
+pnpm --filter @ventry/web test                  # Frontend tests
 ```
 
 ### E2E Tests (Playwright)
@@ -319,37 +330,61 @@ test('should handle concurrent users', async ({ page }) => {
 
 ## Database Testing
 
-### SQLite for Tests
+### PostgreSQL Integration Tests
 
-Tests use SQLite by default for speed:
+Integration tests use PostgreSQL for real database operations:
 
 ```typescript
-// In test setup
-process.env.DATABASE_URL = 'file:./test.db';
+// In integration test setup (test-setup-integration.ts)
+process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
 
 // Clean between tests
 beforeEach(async () => {
-  await prisma.$executeRaw`DELETE FROM products`;
+  // Clean up in reverse order of dependencies
+  await prisma.auditLog.deleteMany();
+  await prisma.inventoryMovement.deleteMany();
+  await prisma.inventoryItem.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
+  await prisma.location.deleteMany();
+  await prisma.user.deleteMany();
 });
 ```
+
+### Test Configuration Separation
+
+- **Unit Tests**: Use Jest default config with `test-setup.ts`
+- **Integration Tests**: Use `jest.integration.config.js` with `test-setup-integration.ts`
+- **Proper Isolation**: Unit tests exclude `*.integration.spec.ts` files
 
 ### Test Data Management
 
 ```typescript
-// e2e/fixtures/seed.ts
-export async function seedTestData() {
-  await prisma.user.create({
-    data: testUser.admin,
-  });
-  
-  await prisma.product.createMany({
-    data: testProducts,
-  });
-}
+// Integration test data setup
+const testUserData = {
+  email: 'test@example.com',
+  username: 'testuser',
+  firstName: 'Test',
+  lastName: 'User',
+  password: 'hashedpassword',
+  role: 'USER' as const,
+};
 
-// Use in tests
-test.beforeAll(async () => {
-  await seedTestData();
+const testCategoryData = {
+  name: 'Electronics',
+  description: 'Electronic devices',
+};
+
+// Use in integration tests
+beforeEach(async () => {
+  // Clean database first
+  await cleanDatabase();
+  
+  // Create test user
+  const user = await prisma.user.create({ data: testUserData });
+  
+  // Create test category
+  const category = await prisma.category.create({ data: testCategoryData });
 });
 ```
 
@@ -367,6 +402,42 @@ Monitor test execution time:
 - Unit tests: < 5 minutes
 - E2E tests: < 15 minutes per shard
 - Total CI time: < 20 minutes
+
+## Common Testing Issues & Solutions
+
+### Integration Test Failures
+
+**Issue**: `Authentication failed against database server`
+```bash
+# Solution: Ensure PostgreSQL is running
+./tools/scripts/switch-db.sh start
+```
+
+**Issue**: `Foreign key constraint violated`
+```bash
+# Solution: Tests are trying to create records with missing dependencies
+# Check test setup creates all required parent records (users, categories, locations)
+```
+
+### Unit vs Integration Test Confusion
+
+**Issue**: Tests run with wrong setup file
+```bash
+# ✅ Correct: Unit tests exclude integration tests
+pnpm test                    # Uses test-setup.ts, excludes *.integration.spec.ts
+
+# ✅ Correct: Integration tests use separate config  
+pnpm test:integration        # Uses jest.integration.config.js and test-setup-integration.ts
+```
+
+### Performance Issues
+
+**Issue**: Tests running slowly
+```bash
+# Solution: Run tests in parallel and use appropriate test type
+pnpm test                    # Fast unit tests (no database)
+pnpm test:integration        # Slower integration tests (real database)
+```
 
 ## Resources
 

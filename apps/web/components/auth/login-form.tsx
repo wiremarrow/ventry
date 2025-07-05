@@ -32,8 +32,11 @@ export function LoginForm() {
       
       login(user, accessToken, refreshToken);
       window.location.href = '/dashboard';
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } catch (err: unknown) {
+      const errorMessage = 
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
+        'Login failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
