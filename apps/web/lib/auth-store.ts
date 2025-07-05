@@ -8,23 +8,30 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isHydrated: boolean;
   login: (user: UserProfile, accessToken: string, refreshToken: string) => void;
   logout: () => void;
   setUser: (user: UserProfile) => void;
   setLoading: (loading: boolean) => void;
+  setHydrated: () => void;
+  token: string | null; // Alias for accessToken for compatibility
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, _get) => ({
+    (set, get) => ({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      isHydrated: false,
+      get token() {
+        return get().accessToken;
+      },
       login: (user, accessToken, refreshToken) => {
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
+        // Also set cookie for middleware
+        document.cookie = `auth-token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
         set({
           user,
           accessToken,
@@ -33,8 +40,8 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       logout: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // Clear cookie
+        document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         set({
           user: null,
           accessToken: null,
@@ -44,13 +51,19 @@ export const useAuthStore = create<AuthState>()(
       },
       setUser: (user) => set({ user }),
       setLoading: (loading) => set({ isLoading: loading }),
+      setHydrated: () => set({ isHydrated: true }),
     }),
     {
       name: 'auth-storage',
       partialize: (state) => ({
         user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated();
+      },
     }
   )
 );

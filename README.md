@@ -229,20 +229,85 @@ pnpm typecheck             # TypeScript strict mode validation
 pnpm build
 ```
 
+## 🔧 Technical Configuration
+
+### Frontend Styling (Tailwind CSS v4)
+
+Ventry uses **Tailwind CSS v4** with modern configuration:
+
+```css
+/* apps/web/app/globals.css */
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-primary: #1e293b;
+  --color-secondary: #f1f5f9;
+  /* ... additional design tokens */
+}
+```
+
+**Key Features:**
+- Modern `@theme` block instead of traditional config file
+- Professional shadcn/ui components with consistent design system
+- Responsive card-based login interface
+- Full TypeScript integration with component props
+
+### Development Environment
+
+**Ports Configuration:**
+- **Frontend**: http://localhost:6061 (Next.js with Tailwind CSS v4)
+- **Backend**: http://localhost:6060 (NestJS API with Swagger docs)
+- **Database**: PostgreSQL on port 5487 (via Docker)
+
+**Known Issues & Workarounds:**
+- **Turbopack**: Disabled due to monorepo compatibility issues with pnpm workspaces
+- **ESLint 9**: Custom configuration for Next.js 15 compatibility
+- **Node.js Type Stripping**: Experimental warning (no functional impact)
+
+See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration information.
+
+### Authentication & Security Features
+
+**Authentication System:**
+- JWT-based authentication with secure token management
+- Role-based access control (Admin, Manager, User)
+- Protected routes with Next.js middleware
+- Automatic token refresh mechanism
+- Persistent authentication state with Zustand
+- Secure cookie storage for middleware protection
+
+**Debugging & Monitoring:**
+- Enhanced debugging utilities in `lib/debug.ts`
+- Sentry integration for error tracking
+- Component render tracking with `useWhyDidYouUpdate`
+- API error logging with context
+- Performance measurement utilities
+- Development-only debug logging
+
+**Known Issues Fixed:**
+- Login redirect loop resolved with proper route protection
+- Authentication state persistence across page reloads
+- Token management in both localStorage and cookies
+- Hydration handling for SSR/CSR compatibility
+
 ### Project Status
 
-✅ **Phase 1 COMPLETE**: Core Backend Infrastructure (2025-07-05)
+✅ **Phase 1 COMPLETE**: Core Backend Infrastructure + Professional UI (2025-07-05)
 - **Database**: Complete Prisma schema with PostgreSQL enums and inventory management models
 - **Backend**: Full-featured NestJS REST API with comprehensive authentication system
-- **Frontend**: Next.js 15 + React 19 dashboard with responsive design and real-time features
+- **Frontend**: Next.js 15 + React 19 dashboard with professional shadcn/ui components and responsive design
+- **UI/UX**: Tailwind CSS v4 with modern card-based login interface and professional styling
 - **Authentication**: JWT-based auth with role-based access control (Admin/Manager/User)
+- **Development Environment**: Fully operational with ports 6060 (backend) and 6061 (frontend)
 - **Testing**: Production-ready 3-tier testing strategy validated:
   - **Unit Tests**: 253 tests across 18 test suites with strict coverage requirements
   - **Integration Tests**: 20 tests with real PostgreSQL database operations and proper isolation
   - **E2E Tests**: 115 tests across 3 browsers (Chromium, Firefox, WebKit) with sharding
 - **CI/CD**: Enterprise-grade pipeline with 13 mandatory status checks ready for production
 - **Code Quality**: Custom ESLint 9 configuration with TypeScript ESLint v8 for Next.js 15 compatibility
-- **Technology Stack**: Modern stack with Next.js 15, React 19, NestJS, PostgreSQL
+- **Technology Stack**: Modern stack with Next.js 15, React 19, NestJS, PostgreSQL, Tailwind CSS v4
 
 ✅ **Phase 0 Complete**: Foundation & CI/CD Setup
 - Monorepo structure with Turborepo
