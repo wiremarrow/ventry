@@ -18,6 +18,11 @@
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
     },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV", "DATABASE_URL"]
+    },
     "lint": {
       "outputs": []
     },

@@ -11,6 +11,10 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e/tests',
+  /* Only run .spec.ts files in the e2e directory */
+  testMatch: ['**/e2e/tests/**/*.spec.ts'],
+  /* Ignore Jest test files from other directories */
+  testIgnore: ['**/node_modules/**', '**/apps/**', '**/packages/**', '**/src/**'],
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */

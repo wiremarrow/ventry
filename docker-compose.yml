@@ -5,7 +5,7 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5487:5432"
     environment:
       POSTGRES_USER: ventry
       POSTGRES_PASSWORD: ventry_dev_password

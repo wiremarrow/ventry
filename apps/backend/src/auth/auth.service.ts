@@ -30,7 +30,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { password: _, ...result } = user;
+    const { password: _password, ...result } = user;
     return result;
   }
 

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
-import { Location, Prisma } from '@ventry/database';
+import { Location } from '@ventry/database';
 import { LocationRequest } from '@ventry/shared';
 
 @Injectable()

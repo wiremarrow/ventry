@@ -185,7 +185,7 @@ Once all steps are complete, you can start development:
 # Clone and setup (for new contributors)
 git clone https://github.com/wiremarrow/ventry.git
 cd ventry
-./tools/scripts/dev-setup-sqlite.sh
+./tools/scripts/dev-setup.sh
 pnpm dev
 ```
 
