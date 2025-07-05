@@ -39,25 +39,10 @@ export const API_ENDPOINTS = {
   HEALTH: '/health',
 } as const;
 
-export const ROLES = {
-  ADMIN: 'ADMIN',
-  MANAGER: 'MANAGER',
-  USER: 'USER',
-} as const;
-
-export const INVENTORY_MOVEMENT_TYPES = {
-  INBOUND: 'INBOUND',
-  OUTBOUND: 'OUTBOUND',
-  ADJUSTMENT: 'ADJUSTMENT',
-  TRANSFER: 'TRANSFER',
-  RETURN: 'RETURN',
-} as const;
-
-export const AUDIT_ACTIONS = {
-  CREATE: 'CREATE',
-  UPDATE: 'UPDATE',
-  DELETE: 'DELETE',
-} as const;
+// Enums moved to @ventry/database for proper type safety:
+// - Role enum 
+// - InventoryMovementType enum
+// - AuditAction enum
 
 export const PAGINATION_DEFAULTS = {
   PAGE: 1,

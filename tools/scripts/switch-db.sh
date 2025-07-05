@@ -1,51 +1,59 @@
 #!/bin/bash
 
-# Database Switching Utility
+# Database Configuration Utility (PostgreSQL Only)
 set -e
 
-echo "🔄 Database Configuration Switcher"
-echo "================================="
+echo "🐘 PostgreSQL Configuration Utility"
+echo "===================================="
 
 # Function to show current database
 show_current() {
     if [ -f .env ]; then
         current_db=$(grep "DATABASE_URL" .env | head -1)
-        if [[ $current_db == *"file:"* ]]; then
-            echo "📦 Currently using: SQLite"
-        elif [[ $current_db == *"postgresql:"* ]]; then
+        if [[ $current_db == *"postgresql:"* ]]; then
             echo "🐘 Currently using: PostgreSQL"
+            echo "   $current_db"
         else
-            echo "❓ Unknown database configuration"
+            echo "❓ Unknown database configuration - should be PostgreSQL"
+            echo "   $current_db"
         fi
-        echo "   $current_db"
     else
         echo "❌ No .env file found"
     fi
 }
 
-# Function to switch to SQLite
-use_sqlite() {
-    echo "🔄 Switching to SQLite..."
-    cp .env.development .env
-    echo "✅ Now using SQLite (./dev.db)"
-    echo "   No Docker required!"
-}
-
-# Function to switch to PostgreSQL
-use_postgres() {
-    echo "🔄 Switching to PostgreSQL..."
+# Function to ensure PostgreSQL configuration
+ensure_postgres() {
+    echo "🔄 Setting up PostgreSQL configuration..."
     cp .env.example .env
     echo "✅ Now using PostgreSQL"
     echo "   Remember to start Docker: docker-compose up -d postgres"
 }
 
+# Function to start PostgreSQL
+start_postgres() {
+    echo "🚀 Starting PostgreSQL with Docker..."
+    docker-compose up -d postgres
+    echo "✅ PostgreSQL started"
+}
+
+# Function to stop PostgreSQL
+stop_postgres() {
+    echo "🛑 Stopping PostgreSQL..."
+    docker-compose down postgres
+    echo "✅ PostgreSQL stopped"
+}
+
 # Main menu
 case "${1:-}" in
-    sqlite)
-        use_sqlite
+    setup|postgres|postgresql)
+        ensure_postgres
         ;;
-    postgres|postgresql)
-        use_postgres
+    start)
+        start_postgres
+        ;;
+    stop)
+        stop_postgres
         ;;
     status)
         show_current
@@ -54,15 +62,17 @@ case "${1:-}" in
         echo ""
         show_current
         echo ""
-        echo "Usage: $0 [sqlite|postgres|status]"
+        echo "Usage: $0 [setup|start|stop|status]"
         echo ""
         echo "Commands:"
-        echo "  sqlite    - Switch to SQLite (no Docker needed)"
-        echo "  postgres  - Switch to PostgreSQL (requires Docker)"
-        echo "  status    - Show current database configuration"
+        echo "  setup   - Setup PostgreSQL configuration (.env)"
+        echo "  start   - Start PostgreSQL with Docker"
+        echo "  stop    - Stop PostgreSQL"
+        echo "  status  - Show current database configuration"
         echo ""
         echo "Examples:"
-        echo "  $0 sqlite   # Use SQLite for development"
-        echo "  $0 postgres # Use PostgreSQL with Docker"
+        echo "  $0 setup  # Setup PostgreSQL configuration"
+        echo "  $0 start  # Start PostgreSQL with Docker"
+        echo "  $0 stop   # Stop PostgreSQL"
         ;;
 esac

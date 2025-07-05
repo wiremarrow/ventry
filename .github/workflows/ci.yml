@@ -179,6 +179,20 @@ jobs:
     name: E2E Tests - ${{ matrix.project }}
     timeout-minutes: 30
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ventry_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -211,10 +225,15 @@ jobs:
         env:
           NODE_ENV: test
 
+      - name: Run database migrations
+        run: pnpm db:push
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
+
       - name: Run Playwright tests
         run: pnpm playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
         env:
-          DATABASE_URL: file:./test.db
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
           CI: true
 
       - name: Upload test results

@@ -1,12 +1,11 @@
-import { UserProfile } from '../types/auth';
-import { ROLES } from '../constants';
+import { UserProfile, Role } from '../types/auth';
 
-export const hasRole = (user: UserProfile, role: keyof typeof ROLES): boolean => {
+export const hasRole = (user: UserProfile, role: Role): boolean => {
   return user.role === role;
 };
 
-export const hasAnyRole = (user: UserProfile, roles: (keyof typeof ROLES)[]): boolean => {
-  return roles.includes(user.role as keyof typeof ROLES);
+export const hasAnyRole = (user: UserProfile, roles: Role[]): boolean => {
+  return roles.includes(user.role);
 };
 
 export const isAdmin = (user: UserProfile): boolean => {
