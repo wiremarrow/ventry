@@ -301,6 +301,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Cookie restoration on app hydration
 - Navigation timing after login success
 - Debug logging added for troubleshooting
+- Test users seeded in database (admin@ventry.com / admin123)
 
 ### Project Status
 

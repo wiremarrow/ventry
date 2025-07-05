@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,7 +24,15 @@ export function LoginForm() {
     formState: { errors },
   } = useForm<LoginRequest>({
     resolver: zodResolver(LoginSchema),
+    mode: 'onChange', // Show errors as user types
   });
+
+  // Log validation errors
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      console.log('[LoginForm] Validation errors:', errors);
+    }
+  }, [errors]);
 
   const onSubmit = async (data: LoginRequest) => {
     console.log('[LoginForm] onSubmit called!');
@@ -144,6 +152,49 @@ export function LoginForm() {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
+        
+        {/* Test button to verify click handlers work */}
+        <div className="mt-4 space-y-2">
+          <button 
+            onClick={() => {
+              console.log('[LoginForm] Test button clicked!');
+              alert('Test button clicked! Check console.');
+            }}
+            className="w-full p-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+          >
+            Test Button (Click Me)
+          </button>
+          
+          <button
+            onClick={() => {
+              console.log('[LoginForm] Manual submit test');
+              handleSubmit(onSubmit)();
+            }}
+            className="w-full p-2 bg-blue-200 hover:bg-blue-300 rounded text-sm"
+          >
+            Manual Submit Test
+          </button>
+          
+          <button
+            onClick={async () => {
+              console.log('[LoginForm] Direct API test');
+              try {
+                const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
+                  email: 'admin@ventry.com',
+                  password: 'admin123'
+                });
+                console.log('[LoginForm] Direct API response:', response);
+                alert('API call successful! Check console.');
+              } catch (err) {
+                console.error('[LoginForm] Direct API error:', err);
+                alert('API call failed! Check console.');
+              }
+            }}
+            className="w-full p-2 bg-green-200 hover:bg-green-300 rounded text-sm"
+          >
+            Direct API Test
+          </button>
+        </div>
       </CardContent>
       <CardFooter className="text-center text-sm text-gray-600">
         <div className="w-full">
