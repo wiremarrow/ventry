@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
+import * as Sentry from '@sentry/nextjs';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,6 +19,16 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
     // If no user or token, redirect to login
     if (!user || !token) {
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'User not authenticated, redirecting to login',
+        level: 'info',
+        data: {
+          hasUser: !!user,
+          hasToken: !!token,
+          isHydrated,
+        },
+      });
       router.push('/login');
     }
   }, [user, token, isHydrated, router]);
