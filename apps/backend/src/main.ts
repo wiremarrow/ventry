@@ -12,7 +12,7 @@ async function bootstrap() {
   // Security
   app.use(helmet());
   app.enableCors({
-    origin: configService.get('FRONTEND_URL') || 'http://localhost:3000',
+    origin: configService.get('FRONTEND_URL') || 'http://localhost:6061',
     credentials: true,
   });
 
@@ -39,7 +39,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = configService.get('PORT') || 3001;
+  const port = configService.get('PORT') || 6060;
   await app.listen(port);
   
   console.log(`🚀 Ventry API running on port ${port}`);

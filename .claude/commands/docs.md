@@ -1,0 +1,1 @@
+Load all Markdown files in the current directory and in /docs into memory.
