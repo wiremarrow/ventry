@@ -38,11 +38,16 @@ Sentry.init({
   beforeSend(event, hint) {
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('[Sentry Client] Event:', event);
-      console.error('[Sentry Client] Hint:', hint);
+      console.log('[Sentry Client] Event captured:', event?.message || event?.event_id);
+      if (hint?.originalException) {
+        console.log('[Sentry Client] Original error:', hint.originalException);
+      }
     }
     return event;
   },
 });
 
 console.log('[Sentry Client] Initialization complete');
+
+// Export the required hook for router transitions
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
