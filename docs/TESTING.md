@@ -27,6 +27,24 @@ Ventry uses a comprehensive testing strategy with Jest for unit tests and Playwr
 - **Health Checks**: Ensures database is ready before tests
 - **Migration Testing**: Validates schema changes work correctly
 
+## Command Reference
+
+### Root vs Package-Specific Commands
+
+**Root Level (via Turborepo)**
+- `pnpm test` - Runs tests across all packages in parallel
+- `pnpm lint` - Lints all packages 
+- `pnpm typecheck` - Type checks all packages
+
+**Backend Package Specific**
+- `pnpm test:cov` - Unit tests with coverage (only available in backend)
+- `pnpm test:integration` - Integration tests with PostgreSQL
+- `pnpm test:watch` - Watch mode for backend tests
+
+**Using Filters (from root)**
+- `pnpm --filter @ventry/backend test:cov` - Backend coverage from root
+- `pnpm --filter @ventry/web test` - Frontend tests from root
+
 ## Running Tests
 
 ### Unit Tests (Jest)
@@ -38,11 +56,12 @@ pnpm test
 # Run tests in watch mode
 pnpm test:watch
 
-# Run tests with coverage
-pnpm test:coverage
+# Run tests with coverage (backend-specific)
+pnpm test:cov
 
 # Run tests for a specific package
 pnpm --filter @ventry/backend test
+pnpm --filter @ventry/backend test:cov  # Backend coverage
 pnpm --filter @ventry/web test
 ```
 

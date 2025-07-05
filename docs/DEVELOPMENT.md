@@ -156,6 +156,27 @@ pnpm lint && pnpm typecheck && pnpm test
 
 ## Testing
 
+### Command Scope Reference
+
+**Root Level Commands (via Turborepo)**
+- Run across all packages in parallel
+- Use when you want to test/check everything
+- Example: `pnpm test`, `pnpm lint`, `pnpm typecheck`
+
+**Package-Specific Commands**
+- Run only in specific package context
+- Use when working on specific features
+- Navigate to package dir OR use `--filter` flag
+- Example: `pnpm test:cov` (backend only), `pnpm test:integration`
+
+**Filter Examples**
+```bash
+# From root directory
+pnpm --filter @ventry/backend test:cov      # Backend coverage
+pnpm --filter @ventry/backend test:watch    # Backend watch mode
+pnpm --filter @ventry/web test              # Frontend tests
+```
+
 ### Running Tests
 
 ```bash
@@ -165,8 +186,9 @@ pnpm test
 # Run tests in watch mode
 pnpm test:watch
 
-# Run tests with coverage
-pnpm test:coverage
+# Run tests with coverage (backend-specific)
+pnpm test:cov
+# OR from root: pnpm --filter @ventry/backend test:cov
 
 # Run tests for specific package
 pnpm --filter @ventry/backend test
