@@ -27,18 +27,10 @@ export function LoginForm() {
     mode: 'onChange', // Show errors as user types
   });
 
-  // Log validation errors
-  useEffect(() => {
-    if (Object.keys(errors).length > 0) {
-      console.log('[LoginForm] Validation errors:', errors);
-    }
-  }, [errors]);
 
   const onSubmit = async (data: LoginRequest) => {
-    console.log('[LoginForm] onSubmit called!');
     setIsLoading(true);
     setError('');
-    componentLog('LoginForm', 'Attempting login with:', data.email);
 
     // Add Sentry breadcrumb
     Sentry.addBreadcrumb({
@@ -49,17 +41,9 @@ export function LoginForm() {
     });
 
     try {
-      console.log('[LoginForm] Making API call to:', API_ENDPOINTS.AUTH.LOGIN);
-      console.log('[LoginForm] With data:', { email: data.email, password: '***' });
       
       const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, data);
-      
-      console.log('[LoginForm] API response received:', response.status);
-      console.log('[LoginForm] Response data:', response.data);
-      
       const { user, accessToken, refreshToken } = response.data;
-      
-      componentLog('LoginForm', 'Login successful:', user);
       
       // Set Sentry user context
       Sentry.setUser({
@@ -77,11 +61,10 @@ export function LoginForm() {
         level: 'info',
       });
       
-      // Small delay to ensure cookie is set before navigation
+      // Small delay to ensure state is saved
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Use Next.js router for navigation
-      console.log('[LoginForm] Navigating to dashboard...');
+      // Navigate to dashboard
       router.push('/dashboard');
     } catch (err: unknown) {
       logApiError(API_ENDPOINTS.AUTH.LOGIN, err);
@@ -152,49 +135,6 @@ export function LoginForm() {
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
-        
-        {/* Test button to verify click handlers work */}
-        <div className="mt-4 space-y-2">
-          <button 
-            onClick={() => {
-              console.log('[LoginForm] Test button clicked!');
-              alert('Test button clicked! Check console.');
-            }}
-            className="w-full p-2 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-          >
-            Test Button (Click Me)
-          </button>
-          
-          <button
-            onClick={() => {
-              console.log('[LoginForm] Manual submit test');
-              handleSubmit(onSubmit)();
-            }}
-            className="w-full p-2 bg-blue-200 hover:bg-blue-300 rounded text-sm"
-          >
-            Manual Submit Test
-          </button>
-          
-          <button
-            onClick={async () => {
-              console.log('[LoginForm] Direct API test');
-              try {
-                const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, {
-                  email: 'admin@ventry.com',
-                  password: 'admin123'
-                });
-                console.log('[LoginForm] Direct API response:', response);
-                alert('API call successful! Check console.');
-              } catch (err) {
-                console.error('[LoginForm] Direct API error:', err);
-                alert('API call failed! Check console.');
-              }
-            }}
-            className="w-full p-2 bg-green-200 hover:bg-green-300 rounded text-sm"
-          >
-            Direct API Test
-          </button>
-        </div>
       </CardContent>
       <CardFooter className="text-center text-sm text-gray-600">
         <div className="w-full">
