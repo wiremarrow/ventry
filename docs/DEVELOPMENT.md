@@ -44,6 +44,11 @@ Required:
 # Start all services in development mode
 pnpm dev
 
+# Access the application:
+# Frontend (Next.js): http://localhost:6061
+# Backend API (NestJS): http://localhost:6060
+# API Documentation: http://localhost:6060/api (Swagger/OpenAPI)
+
 # Or start specific apps
 pnpm --filter @ventry/backend dev
 pnpm --filter @ventry/web dev
@@ -216,6 +221,7 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
    ```
 
 2. Attach your debugger to port 9229
+3. Backend runs on http://localhost:6060
 
 ### Frontend (Next.js)
 
@@ -225,6 +231,7 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
    ```
 
 2. Use Chrome DevTools or VS Code debugger
+3. Frontend runs on http://localhost:6061
 
 ### Database
 
@@ -261,8 +268,10 @@ import typescriptParser from '@typescript-eslint/parser';
 
 1. **Port already in use**
    ```bash
-   # Find process using port
-   lsof -i :3000
+   # Find process using port (backend)
+   lsof -i :6060
+   # Find process using port (frontend)
+   lsof -i :6061
    # Kill process
    kill -9 <PID>
    ```

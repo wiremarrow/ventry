@@ -207,6 +207,11 @@ cd ventry
 # Start development servers
 pnpm dev
 
+# Access the application:
+# Frontend (Next.js): http://localhost:6061
+# Backend API (NestJS): http://localhost:6060
+# API Documentation: http://localhost:6060/api (Swagger/OpenAPI)
+
 # Run tests (3-tier testing strategy)
 pnpm test                    # Unit tests across all packages
 pnpm test:integration        # PostgreSQL integration tests
@@ -267,6 +272,10 @@ pnpm build
 ```env
 # Database
 DATABASE_URL="postgresql://..."
+
+# Application Ports
+PORT="6060"                      # Backend API server
+FRONTEND_URL="http://localhost:6061"  # Frontend application
 
 # AI Providers
 OPENAI_API_KEY="sk-..."
