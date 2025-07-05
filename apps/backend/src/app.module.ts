@@ -16,6 +16,7 @@ import { HealthModule } from './health/health.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.local', '.env', '../../.env'],
     }),
     ThrottlerModule.forRoot([
       {

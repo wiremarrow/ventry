@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema, type LoginRequest } from '@ventry/shared';
@@ -8,10 +9,12 @@ import { Button, Input, Label, Card, CardHeader, CardTitle, CardContent, CardFoo
 import { useAuthStore } from '@/lib/auth-store';
 import api from '@/lib/api';
 import { API_ENDPOINTS } from '@ventry/shared';
+import { logApiError, componentLog } from '@/lib/debug';
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
   const login = useAuthStore((state) => state.login);
 
   const {
@@ -25,17 +28,22 @@ export function LoginForm() {
   const onSubmit = async (data: LoginRequest) => {
     setIsLoading(true);
     setError('');
+    componentLog('LoginForm', 'Attempting login with:', data.email);
 
     try {
       const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, data);
       const { user, accessToken, refreshToken } = response.data;
       
+      componentLog('LoginForm', 'Login successful:', user);
       login(user, accessToken, refreshToken);
-      window.location.href = '/dashboard';
+      
+      // Use Next.js router for navigation
+      router.push('/dashboard');
     } catch (err: unknown) {
+      logApiError(API_ENDPOINTS.AUTH.LOGIN, err);
       const errorMessage = 
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
-        'Login failed. Please try again.';
+        'Login failed. Please check your credentials and try again.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);

@@ -1,10 +1,14 @@
+'use client';
+
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 export default function DashboardPage() {
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600">Overview of your inventory management system</p>
@@ -64,5 +68,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </DashboardLayout>
+    </ProtectedRoute>
   );
 }

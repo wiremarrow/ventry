@@ -262,6 +262,57 @@ import typescriptParser from '@typescript-eslint/parser';
 
 **Future Action**: When Next.js updates `eslint-config-next` for ESLint 9 support, we should migrate back to the standard configuration.
 
+### Turbopack Compatibility Issue (Next.js 15 + pnpm + Monorepo)
+
+**Issue**: Turbopack fails with "Next.js package not found" error in monorepo setups using pnpm workspaces.
+
+**Error**: 
+```
+[Error [TurbopackInternalError]: Next.js package not found
+Debug info:
+- Execution of get_next_package failed
+- Next.js package not found
+```
+
+**Root Cause**: Known bug in Turbopack with module resolution in monorepo environments, particularly with pnpm's unique node_modules structure.
+
+**Current Workaround**: Turbopack disabled in development mode. Frontend runs with standard webpack dev server:
+```json
+{
+  "scripts": {
+    "dev": "next dev --port 6061"
+  }
+}
+```
+
+**Attempted Solutions**:
+- ✅ Clean dependency installation (deleted pnpm-lock.yaml, node_modules, reinstalled)
+- ✅ Updated Next.js config from `experimental.turbo` to `turbopack` (Next.js 15 stable format)
+- ❌ Issue persists despite proper configuration
+
+**Performance Impact**: 
+- ⚠️ Slower compilation compared to Turbopack
+- ⚠️ Slower hot module replacement
+- ✅ Stable development experience
+
+**Tracking**: Multiple GitHub issues confirm this is an ongoing problem:
+- [vercel/next.js#55987](https://github.com/vercel/next.js/discussions/55987)
+- [vercel/next.js#56887](https://github.com/vercel/next.js/issues/56887)
+- [vercel/next.js#74731](https://github.com/vercel/next.js/issues/74731)
+
+**Future Action**: Monitor Next.js releases for Turbopack monorepo fixes. Re-enable with `--turbopack` flag when resolved.
+
+### Node.js Type Stripping Warning (Backend)
+
+**Issue**: Backend shows experimental warning during startup:
+```
+(node:79903) ExperimentalWarning: Type Stripping is an experimental feature
+```
+
+**Impact**: No functional impact, development works normally.
+
+**Status**: Informational warning only, does not affect functionality.
+
 ## Troubleshooting
 
 ### Common Issues
