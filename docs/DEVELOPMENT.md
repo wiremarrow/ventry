@@ -232,6 +232,29 @@ Access pgAdmin at http://localhost:5050:
 - Email: `admin@ventry.local`
 - Password: `pgadmin_dev_password`
 
+## Known Issues & Technical Decisions
+
+### ESLint 9 Compatibility (Next.js 15)
+
+**Issue**: Next.js 15 requires ESLint 9, but `eslint-config-next` includes TypeScript ESLint v6.21.0 which is incompatible, causing `context.getScope is not a function` errors.
+
+**Current Solution**: 
+We've implemented a custom ESLint configuration that bypasses the Next.js config:
+
+```javascript
+// apps/web/eslint.config.mjs
+import typescriptEslint from '@typescript-eslint/eslint-plugin';
+import typescriptParser from '@typescript-eslint/parser';
+```
+
+**Trade-offs**:
+- ✅ Fixes ESLint 9 compatibility with TypeScript ESLint v8.35.1
+- ✅ Maintains essential TypeScript and React linting
+- ⚠️ Loses Next.js-specific linting rules (image optimization, font loading, etc.)
+- ⚠️ Requires manual maintenance instead of inheriting Next.js defaults
+
+**Future Action**: When Next.js updates `eslint-config-next` for ESLint 9 support, we should migrate back to the standard configuration.
+
 ## Troubleshooting
 
 ### Common Issues

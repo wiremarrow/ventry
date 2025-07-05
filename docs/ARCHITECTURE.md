@@ -215,6 +215,21 @@ app/
 - Static generation where possible
 - Progressive enhancement
 
+## Technical Decisions & Trade-offs
+
+### ESLint Configuration Strategy
+
+Due to incompatibility between Next.js 15 (requires ESLint 9) and eslint-config-next (uses TypeScript ESLint v6), we maintain a custom ESLint configuration:
+
+**Decision**: Use TypeScript ESLint v8 with custom flat config instead of Next.js defaults
+**Rationale**: Enables Next.js 15 adoption while maintaining type-safe linting
+**Impact**: 
+- Lose some Next.js-specific linting rules
+- Gain compatibility with latest tooling
+- Must maintain custom configuration
+
+**Migration Path**: Return to standard Next.js ESLint config when official ESLint 9 support is released.
+
 ## Monitoring & Observability
 
 ### Metrics
