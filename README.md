@@ -25,7 +25,7 @@ ventry/
 ### Technology Stack
 - **Package Management**: pnpm + Turborepo for monorepo management
 - **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
-- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui for modern UI
+- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui for modern UI
 - **Database**: PostgreSQL for all environments (consistent development to production)
 - **Testing**: Jest for unit tests, Playwright for E2E with browser sharding
 - **Deployment**: Vercel for frontend, containerized backend services
