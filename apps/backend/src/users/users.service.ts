@@ -12,7 +12,7 @@ export class UsersService {
     });
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<Omit<User, 'password'>[]> {
     return this.database.user.findMany({
       select: {
         id: true,
@@ -25,7 +25,6 @@ export class UsersService {
         createdAt: true,
         updatedAt: true,
         lastLoginAt: true,
-        password: false,
       },
     });
   }

@@ -81,10 +81,10 @@ pnpm build                  # Production build
 ```
 
 ### **Database Testing Requirements**
-- **Development**: SQLite (`file:./dev.db`) for instant setup
+- **Development**: PostgreSQL 16 with Docker for consistent environment
 - **CI Integration**: PostgreSQL 16 service container  
 - **ALWAYS** test migrations with `pnpm db:push`
-- **ALWAYS** test both SQLite and PostgreSQL compatibility
+- **ALWAYS** use PostgreSQL for all environments (dev, test, prod)
 
 ### **E2E Testing Requirements**
 - **Browser Matrix**: Chromium, Firefox, WebKit (ALL must pass)
@@ -103,20 +103,17 @@ pnpm build                  # Production build
 
 ### **First Time Setup**
 ```bash
-# Quick start (SQLite, no Docker)
-./tools/scripts/dev-setup-sqlite.sh
-pnpm dev
-
-# Full setup (PostgreSQL + Docker)  
+# Complete setup (PostgreSQL + Docker)  
 ./tools/scripts/dev-setup.sh
 pnpm dev
 ```
 
 ### **Database Management**
 ```bash
-./tools/scripts/switch-db.sh status    # Check current DB
-./tools/scripts/switch-db.sh sqlite    # Switch to SQLite  
-./tools/scripts/switch-db.sh postgres  # Switch to PostgreSQL
+./tools/scripts/switch-db.sh status    # Check current DB status
+./tools/scripts/switch-db.sh setup     # Setup PostgreSQL configuration
+./tools/scripts/switch-db.sh start     # Start PostgreSQL with Docker
+./tools/scripts/switch-db.sh stop      # Stop PostgreSQL
 ```
 
 ### **Daily Workflow Commands**
@@ -129,7 +126,7 @@ pnpm format                # Format code
 
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
-- **Backend**: NestJS + Prisma + PostgreSQL/SQLite
+- **Backend**: NestJS + Prisma + PostgreSQL
 - **Frontend**: Next.js 14 App Router + TypeScript + Tailwind + shadcn/ui
 - **Testing**: Jest (unit) + Playwright (E2E) + PostgreSQL (integration)
 - **Deployment**: Vercel (frontend) + containerized backend
@@ -140,7 +137,7 @@ pnpm format                # Format code
 ## 🚀 DEPLOYMENT - PRODUCTION READINESS
 
 ### **Environment Setup**
-- **Development**: SQLite + local services
+- **Development**: PostgreSQL + Docker + local services
 - **Staging**: PostgreSQL + preview deployments  
 - **Production**: PostgreSQL + Sentry + full monitoring
 

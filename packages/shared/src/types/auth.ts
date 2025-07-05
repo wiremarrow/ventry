@@ -22,6 +22,9 @@ export type LoginRequest = z.infer<typeof LoginSchema>;
 export type RegisterRequest = z.infer<typeof RegisterSchema>;
 export type ChangePasswordRequest = z.infer<typeof ChangePasswordSchema>;
 
+// Role type matches the database enum but is defined here for type safety
+export type Role = 'ADMIN' | 'MANAGER' | 'USER';
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
@@ -34,7 +37,7 @@ export interface UserProfile {
   username: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER';
+  role: Role;
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;

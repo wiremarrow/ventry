@@ -37,12 +37,13 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 
 ✅ **Phase 1 COMPLETE** - Core Backend Infrastructure (2025-07-04)
 - Complete NestJS backend with full REST API implementation
-- Comprehensive Prisma database schema with inventory models
+- Comprehensive Prisma database schema with inventory models and proper PostgreSQL enums
 - JWT authentication with role-based access control (Admin/Manager/User)
 - Next.js frontend with responsive dashboard and login system
 - Real-time inventory statistics display
 - Updated E2E test coverage for authentication and navigation
 - Production-ready monorepo with workspace package dependencies
+- **NEW**: Migrated from SQLite to PostgreSQL-only for all environments with proper TypeScript enum support
 
 **Ready to proceed with Phase 2: AI Integration**
 

@@ -60,9 +60,9 @@ until docker-compose exec -T postgres pg_isready -U ventry -d ventry_dev &> /dev
 done
 echo " Ready!"
 
-# Initialize database (will be implemented later)
-# echo "🗄️ Initializing database..."
-# pnpm db:push
+# Initialize database
+echo "🗄️ Initializing database..."
+pnpm db:push
 
 echo "✨ Development environment setup complete!"
 echo ""

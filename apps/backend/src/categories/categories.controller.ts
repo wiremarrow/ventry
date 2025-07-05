@@ -4,8 +4,8 @@ import { CategoriesService } from './categories.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role } from '@ventry/database';
 import { CategoryRequest } from '@ventry/shared';
+import { Role } from '@ventry/database';
 
 @ApiTags('Categories')
 @Controller('categories')

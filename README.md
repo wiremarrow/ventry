@@ -26,7 +26,7 @@ ventry/
 - **Package Management**: pnpm + Turborepo for monorepo management
 - **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
 - **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui for modern UI
-- **Database**: PostgreSQL for production, SQLite for development (zero setup)
+- **Database**: PostgreSQL for all environments (consistent development to production)
 - **Testing**: Jest for unit tests, Playwright for E2E with browser sharding
 - **Deployment**: Vercel for frontend, containerized backend services
 - **Monitoring**: Sentry for error tracking and performance insights
@@ -232,10 +232,10 @@ pnpm build
 
 ✅ **Stack Enhancement Complete**: Lightweight Development Experience
 - **Testing**: Jest for unit tests + Playwright for E2E tests
-- **Database**: SQLite for development (zero setup) + PostgreSQL for production
+- **Database**: PostgreSQL for all environments with Docker for development
 - **Deployment**: Vercel for Next.js frontend
 - **Monitoring**: Sentry for error tracking and performance insights
-- **Development**: Optional Docker - use SQLite for instant setup
+- **Development**: Docker-based PostgreSQL for consistent environments
 
 ### Environment Configuration
 ```env
@@ -309,7 +309,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 
 #### **Advanced Testing Strategy**
 - **Browser Matrix**: Parallel E2E testing across 3 browsers × 2 shards = 6 test jobs
-- **Database Testing**: Both SQLite (development) and PostgreSQL (production) validation
+- **Database Testing**: PostgreSQL validation across all environments
 - **Artifact Management**: Test results, videos, and build artifacts preserved
 - **Optional Docker Build**: Triggered only when Docker files change
 

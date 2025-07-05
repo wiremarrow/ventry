@@ -1,5 +1,5 @@
 export * from '@prisma/client';
-export { PrismaClient } from '@prisma/client';
+export { PrismaClient, Role, InventoryMovementType, AuditAction } from '@prisma/client';
 
 // Re-export types for easier imports
 export type {
@@ -10,7 +10,4 @@ export type {
   InventoryItem,
   InventoryMovement,
   AuditLog,
-  Role,
-  InventoryMovementType,
-  AuditAction,
 } from '@prisma/client';

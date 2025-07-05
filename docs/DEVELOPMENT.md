@@ -8,8 +8,8 @@ Before you begin, ensure you have the following installed:
 - **pnpm** (v8 or higher) - Install with `npm install -g pnpm@8`
 - **Git**
 
-Optional (for full-stack development):
-- **Docker** and **Docker Compose** (only if using PostgreSQL/Redis locally)
+Required:
+- **Docker** and **Docker Compose** for PostgreSQL and Redis
 
 ## Initial Setup
 
@@ -19,24 +19,14 @@ Optional (for full-stack development):
    cd ventry
    ```
 
-2. **Choose your setup method**
-
-   **Option A: SQLite (Recommended for quick start)**
-   ```bash
-   ./tools/scripts/dev-setup-sqlite.sh
-   ```
-   - Zero configuration required
-   - No Docker needed
-   - Database stored in `./dev.db`
-   - Perfect for development
-
-   **Option B: PostgreSQL with Docker**
+2. **Run the automated setup script**
    ```bash
    ./tools/scripts/dev-setup.sh
    ```
-   - Full production-like environment
-   - Requires Docker
-   - Includes PostgreSQL and Redis
+   - Sets up PostgreSQL and Redis with Docker
+   - Installs all dependencies
+   - Initializes database schema
+   - Creates environment configuration
 
 3. **Configure environment variables**
    
@@ -83,19 +73,22 @@ pnpm --filter @ventry/web dev
 | `./tools/scripts/reset-db.sh` | Reset database (WARNING: Deletes all data) |
 | `./tools/scripts/backup-db.sh` | Create database backup |
 
-### Database Switching
+### Database Management
 
-Switch between SQLite and PostgreSQL:
+Manage PostgreSQL database:
 
 ```bash
-# Check current database
+# Check current database status
 ./tools/scripts/switch-db.sh status
 
-# Switch to SQLite (instant, no Docker)
-./tools/scripts/switch-db.sh sqlite
+# Setup PostgreSQL configuration
+./tools/scripts/switch-db.sh setup
 
-# Switch to PostgreSQL (requires Docker)
-./tools/scripts/switch-db.sh postgres
+# Start PostgreSQL with Docker
+./tools/scripts/switch-db.sh start
+
+# Stop PostgreSQL
+./tools/scripts/switch-db.sh stop
 ```
 
 ### Docker Services (Optional)
