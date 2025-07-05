@@ -25,7 +25,7 @@ ventry/
 ### Technology Stack
 - **Package Management**: pnpm + Turborepo for monorepo management
 - **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
-- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui for modern UI
+- **Frontend**: Next.js 15 + React 18 + TypeScript + Tailwind CSS v4 + shadcn/ui for modern UI
 - **Database**: PostgreSQL for all environments (consistent development to production)
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: Jest with 80% coverage thresholds for services and controllers
@@ -308,7 +308,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 ✅ **Phase 1 COMPLETE**: Core Backend Infrastructure + Professional UI (2025-07-05)
 - **Database**: Complete Prisma schema with PostgreSQL enums and inventory management models
 - **Backend**: Full-featured NestJS REST API with comprehensive authentication system
-- **Frontend**: Next.js 15 + React 19 dashboard with professional shadcn/ui components and responsive design
+- **Frontend**: Next.js 15 + React 18 dashboard with professional shadcn/ui components and responsive design
 - **UI/UX**: Tailwind CSS v4 with modern card-based login interface and professional styling
 - **Authentication**: JWT-based auth with role-based access control (Admin/Manager/User)
 - **Development Environment**: Fully operational with ports 6060 (backend) and 6061 (frontend)
@@ -318,7 +318,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **E2E Tests**: 115 tests across 3 browsers (Chromium, Firefox, WebKit) with sharding
 - **CI/CD**: Enterprise-grade pipeline with 13 mandatory status checks ready for production
 - **Code Quality**: Custom ESLint 9 configuration with TypeScript ESLint v8 for Next.js 15 compatibility
-- **Technology Stack**: Modern stack with Next.js 15, React 19, NestJS, PostgreSQL, Tailwind CSS v4
+- **Technology Stack**: Modern stack with Next.js 15, React 18, NestJS, PostgreSQL, Tailwind CSS v4
 
 ✅ **Phase 0 Complete**: Foundation & CI/CD Setup
 - Monorepo structure with Turborepo
@@ -334,7 +334,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **Database Schema**: Extensible design supports AI-specific tables (AgentLog, Forecast, AnomalyEvent)
 - **Authentication System**: Role-based access control ready for AI agent permissions
 - **Testing Framework**: Comprehensive testing infrastructure ready for AI agent testing
-- **Frontend Platform**: Modern React 19 foundation ready for conversational AI interfaces
+- **Frontend Platform**: Modern React 18 foundation ready for conversational AI interfaces
 - **Real-time Capabilities**: WebSocket infrastructure ready for AI agent real-time updates
 
 ✅ **Stack Enhancement Complete**: Lightweight Development Experience
