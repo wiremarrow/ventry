@@ -27,6 +27,7 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginRequest) => {
+    console.log('[LoginForm] onSubmit called!');
     setIsLoading(true);
     setError('');
     componentLog('LoginForm', 'Attempting login with:', data.email);
@@ -40,7 +41,14 @@ export function LoginForm() {
     });
 
     try {
+      console.log('[LoginForm] Making API call to:', API_ENDPOINTS.AUTH.LOGIN);
+      console.log('[LoginForm] With data:', { email: data.email, password: '***' });
+      
       const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, data);
+      
+      console.log('[LoginForm] API response received:', response.status);
+      console.log('[LoginForm] Response data:', response.data);
+      
       const { user, accessToken, refreshToken } = response.data;
       
       componentLog('LoginForm', 'Login successful:', user);
