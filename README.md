@@ -25,7 +25,7 @@ ventry/
 ### Technology Stack
 - **Package Management**: pnpm + Turborepo for monorepo management
 - **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
-- **Frontend**: Next.js 15 + React 18 + TypeScript + Tailwind CSS v4 + shadcn/ui for modern UI
+- **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui for modern UI
 - **Database**: PostgreSQL for all environments (consistent development to production)
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: Jest with 80% coverage thresholds for services and controllers
@@ -231,33 +231,42 @@ pnpm build
 
 ## 🔧 Technical Configuration
 
-### Frontend Styling (Tailwind CSS v4)
+### Frontend Styling (Tailwind CSS v3.4.0)
 
-Ventry uses **Tailwind CSS v4** with modern configuration:
+Ventry uses **Tailwind CSS v3.4.0** for optimal shadcn/ui compatibility:
 
 ```css
 /* apps/web/app/globals.css */
-@import 'tailwindcss';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --color-background: #ffffff;
-  --color-foreground: #0f172a;
-  --color-primary: #1e293b;
-  --color-secondary: #f1f5f9;
-  /* ... additional design tokens */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 215 78% 24%;
+    --secondary: 210 40% 96%;
+    /* ... additional design tokens */
+  }
 }
 ```
 
 **Key Features:**
-- Modern `@theme` block instead of traditional config file
+- Tailwind CSS v3 syntax optimized for shadcn/ui component compatibility
 - Professional shadcn/ui components with consistent design system
-- Responsive card-based login interface
+- Responsive card-based login interface with proper hover effects
 - Full TypeScript integration with component props
+
+**Migration Notes:**
+- Downgraded from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility
+- React downgraded from 19.0.0 to 18.3.1 for @radix-ui/react-slot compatibility
+- All shadcn/ui components now render correctly with proper styling
 
 ### Development Environment
 
 **Ports Configuration:**
-- **Frontend**: http://localhost:6061 (Next.js with Tailwind CSS v4)
+- **Frontend**: http://localhost:6061 (Next.js with Tailwind CSS v3.4.0)
 - **Backend**: http://localhost:6060 (NestJS API with Swagger docs)
 - **Database**: PostgreSQL on port 5487 (via Docker)
 
@@ -292,16 +301,17 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Performance measurement utilities
 - Development-only debug logging
 
-**Known Issues Fixed:**
-- Login redirect loop resolved with proper route protection
-- Authentication state persistence across page reloads
-- Token management in both localStorage and cookies
-- Hydration handling for SSR/CSR compatibility
-- Sentry initialization fixed with instrumentation.ts
-- Cookie restoration on app hydration
-- Navigation timing after login success
-- Debug logging added for troubleshooting
-- Test users seeded in database (admin@ventry.com / admin123)
+**Recent Fixes (2025-07-05):**
+- ✅ **Login Authentication Bug**: Fixed infinite redirect loop on login
+- ✅ **shadcn/ui Button Component**: Fixed button click events not working
+- ✅ **CSS Framework Compatibility**: Migrated from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility  
+- ✅ **React Version Compatibility**: Downgraded from React 19 to 18.3.1 for @radix-ui/react-slot compatibility
+- ✅ **Dashboard Loading Issue**: Fixed infinite loading spinner in ProtectedRoute component
+- ✅ **API Token Management**: Fixed axios interceptor to use Zustand auth store instead of localStorage
+- ✅ **Authentication State Persistence**: Proper hydration handling across page reloads
+- ✅ **Cookie Management**: Secure cookie setting for middleware authentication
+- ✅ **Sentry Integration**: Complete error tracking setup with instrumentation
+- ✅ **Navigation Flow**: Optimized login-to-dashboard navigation timing
 
 ### Project Status
 
@@ -318,7 +328,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **E2E Tests**: 115 tests across 3 browsers (Chromium, Firefox, WebKit) with sharding
 - **CI/CD**: Enterprise-grade pipeline with 13 mandatory status checks ready for production
 - **Code Quality**: Custom ESLint 9 configuration with TypeScript ESLint v8 for Next.js 15 compatibility
-- **Technology Stack**: Modern stack with Next.js 15, React 18, NestJS, PostgreSQL, Tailwind CSS v4
+- **Technology Stack**: Modern stack with Next.js 15, React 18.3.1, NestJS, PostgreSQL, Tailwind CSS v3.4.0
 
 ✅ **Phase 0 Complete**: Foundation & CI/CD Setup
 - Monorepo structure with Turborepo

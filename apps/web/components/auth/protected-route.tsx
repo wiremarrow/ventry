@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/auth-store';
 import * as Sentry from '@sentry/nextjs';
@@ -11,30 +11,38 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
-  const { user, token, isHydrated } = useAuthStore();
+  const { user, accessToken, isAuthenticated } = useAuthStore();
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Wait for hydration to complete before checking auth
-    if (!isHydrated) return;
+    // Use a timeout to prevent infinite loading if hydration fails
+    const checkAuth = async () => {
+      // Give Zustand time to hydrate from localStorage
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Check authentication status
+      const authState = useAuthStore.getState();
+      if (!authState.isAuthenticated || !authState.accessToken || !authState.user) {
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          message: 'User not authenticated, redirecting to login',
+          level: 'info',
+          data: {
+            hasUser: !!authState.user,
+            hasToken: !!authState.accessToken,
+            isAuthenticated: authState.isAuthenticated,
+          },
+        });
+        router.push('/login');
+      }
+      setIsChecking(false);
+    };
 
-    // If no user or token, redirect to login
-    if (!user || !token) {
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'User not authenticated, redirecting to login',
-        level: 'info',
-        data: {
-          hasUser: !!user,
-          hasToken: !!token,
-          isHydrated,
-        },
-      });
-      router.push('/login');
-    }
-  }, [user, token, isHydrated, router]);
+    checkAuth();
+  }, [router]);
 
-  // Show loading state while hydrating
-  if (!isHydrated) {
+  // Show loading state while checking auth
+  if (isChecking) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -43,7 +51,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Show loading state while redirecting
-  if (!user || !token) {
+  if (!isAuthenticated || !user || !accessToken) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

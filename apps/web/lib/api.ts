@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { API_ENDPOINTS } from '@ventry/shared';
+import { useAuthStore } from './auth-store';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api';
 
@@ -14,7 +15,8 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  // Get token from auth store instead of localStorage
+  const token = useAuthStore.getState().accessToken;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,22 +31,24 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
-      const refreshToken = localStorage.getItem('refreshToken');
+      const authState = useAuthStore.getState();
+      const refreshToken = authState.refreshToken;
       if (refreshToken) {
         try {
           const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, {
             refreshToken,
           });
           
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
+          const { accessToken, refreshToken: newRefreshToken, user } = response.data;
+          
+          // Update auth store with new tokens
+          authState.login(user, accessToken, newRefreshToken);
           
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         } catch (_refreshError) {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          // Clear auth state on refresh failure
+          authState.logout();
           window.location.href = '/login';
         }
       } else {

@@ -133,7 +133,7 @@ pnpm format                # Format code
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
 - **Backend**: NestJS + Prisma + PostgreSQL
-- **Frontend**: Next.js 15 + React 19 + TypeScript + Tailwind CSS v4 + shadcn/ui
+- **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui
 - **Testing**: Jest (unit) + Playwright (E2E) + PostgreSQL (integration)
 - **Deployment**: Vercel (frontend) + containerized backend
 - **Monitoring**: Sentry error tracking + performance
