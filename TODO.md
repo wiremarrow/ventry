@@ -67,6 +67,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - Token persistence in Zustand store and cookies
   - Proper hydration handling for SSR/CSR
   - Enhanced debugging utilities for troubleshooting
+  - **401 "Invalid credentials" error fixed**: Database seeding requirement for demo users (admin@ventry.com/admin123, manager@ventry.com/manager123, user@ventry.com/user123)
 - **Sentry Integration Complete**:
   - Full error tracking with stack traces
   - User context and breadcrumb trails

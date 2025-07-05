@@ -204,6 +204,9 @@ cd ventry
 # - Start Docker services
 # - Prepare the development environment
 
+# Ensure demo users exist for login testing
+pnpm db:seed
+
 # Start development servers
 pnpm dev
 
