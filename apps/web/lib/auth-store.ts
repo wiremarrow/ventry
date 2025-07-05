@@ -30,14 +30,21 @@ export const useAuthStore = create<AuthState>()(
         return get().accessToken;
       },
       login: (user, accessToken, refreshToken) => {
+        console.log('[Auth Store] Login called with user:', user.email);
+        
         // Also set cookie for middleware
-        document.cookie = `auth-token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
+        const cookieString = `auth-token=${accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
+        document.cookie = cookieString;
+        console.log('[Auth Store] Set auth-token cookie');
+        
         set({
           user,
           accessToken,
           refreshToken,
           isAuthenticated: true,
         });
+        
+        console.log('[Auth Store] Auth state updated - isAuthenticated: true');
       },
       logout: () => {
         // Clear cookie
@@ -63,6 +70,12 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated();
+        
+        // Restore cookie from persisted token on hydration
+        if (state?.accessToken) {
+          document.cookie = `auth-token=${state.accessToken}; path=/; max-age=${7 * 24 * 60 * 60}`; // 7 days
+          console.log('[Auth Store] Restored auth-token cookie from persisted state');
+        }
       },
     }
   )

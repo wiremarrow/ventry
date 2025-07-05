@@ -61,7 +61,11 @@ export function LoginForm() {
         level: 'info',
       });
       
+      // Small delay to ensure cookie is set before navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Use Next.js router for navigation
+      console.log('[LoginForm] Navigating to dashboard...');
       router.push('/dashboard');
     } catch (err: unknown) {
       logApiError(API_ENDPOINTS.AUTH.LOGIN, err);

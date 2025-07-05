@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api',
   },
+  experimental: {
+    instrumentationHook: true,
+  },
   turbopack: {
     rules: {
       '*.svg': {
