@@ -183,9 +183,6 @@ jobs:
       - name: Deploy database migrations
         run: pnpm db:migrate:deploy
 
-      - name: Seed test database
-        run: pnpm db:seed
-
       - name: Run integration tests
         run: pnpm test:integration
         env:

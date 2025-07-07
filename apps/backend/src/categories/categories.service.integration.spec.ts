@@ -3,6 +3,13 @@ import { ConfigModule } from '@nestjs/config';
 import { CategoriesService } from './categories.service';
 import { DatabaseService } from '../database/database.service';
 import { PrismaClient } from '@ventry/database';
+import { 
+  createTestUser, 
+  createTestCategory, 
+  createTestProduct,
+  createTestDataContext,
+  cleanTestData 
+} from '../test-helpers/factories';
 
 describe('CategoriesService Integration', () => {
   let service: CategoriesService;
@@ -22,35 +29,18 @@ describe('CategoriesService Integration', () => {
     service = module.get<CategoriesService>(CategoriesService);
     databaseService = module.get<DatabaseService>(DatabaseService);
     prisma = databaseService as any;
-
-    await cleanDatabase();
   });
 
   afterAll(async () => {
-    await cleanDatabase();
+    // Clean up any remaining test data
+    await cleanTestData(prisma);
     await databaseService.$disconnect();
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    // Clean up test data before each test for isolation
+    await cleanTestData(prisma);
   });
-
-  async function cleanDatabase() {
-    try {
-      // Clean up in reverse order of dependencies
-      // Use deleteMany with error handling for tables that might not exist
-      await prisma.auditLog.deleteMany().catch(() => {});
-      await prisma.inventoryMovement.deleteMany().catch(() => {});
-      await prisma.inventoryItem.deleteMany().catch(() => {});
-      await prisma.product.deleteMany().catch(() => {});
-      await prisma.category.deleteMany().catch(() => {});
-      await prisma.location.deleteMany().catch(() => {});
-      await prisma.user.deleteMany().catch(() => {});
-    } catch (error) {
-      // Ignore cleanup errors - tables might not exist yet
-      console.warn('Database cleanup warning:', error.message);
-    }
-  }
 
   describe('CRUD Operations', () => {
     it('should create and find category', async () => {
@@ -222,49 +212,23 @@ describe('CategoriesService Integration', () => {
 
   describe('Database Relationships', () => {
     it('should include product count in category listing', async () => {
-      const categoryData = {
-        name: 'Category with Count',
-        description: 'Testing product count',
-        isActive: true,
-      };
+      // Create test data using factories
+      const testUser = await createTestUser(prisma);
+      const testCategory = await createTestCategory(prisma);
 
-      const createdCategory = await service.create(categoryData);
-
-      // Create a user for product creation
-      const productUser = await prisma.user.create({
-        data: {
-          email: 'productuser@test.com',
-          username: 'productuser',
-          firstName: 'Product',
-          lastName: 'User',
-          password: 'password',
-        },
-      });
-
-      // Create some products
+      // Create some products using the factory
       for (let i = 1; i <= 3; i++) {
-        await prisma.product.create({
-          data: {
-            name: `Product ${i}`,
-            description: `Product ${i} description`,
-            sku: `PROD-${i}`,
-            category: {
-              connect: { id: createdCategory.id }
-            },
-            createdBy: {
-              connect: { id: productUser.id }
-            },
-            updatedBy: {
-              connect: { id: productUser.id }
-            },
-            unitPrice: 10.00 * i,
-            isActive: true,
-          },
+        await createTestProduct(prisma, {
+          categoryId: testCategory.id,
+          createdById: testUser.id,
+        }, {
+          name: `Test Product ${i}`,
+          unitPrice: 10.00 * i,
         });
       }
 
       const categories = await service.findAll();
-      const categoryWithCount = categories.find(cat => cat.id === createdCategory.id);
+      const categoryWithCount = categories.find(cat => cat.id === testCategory.id);
 
       expect(categoryWithCount).toBeDefined();
       expect((categoryWithCount as any)._count?.products).toBe(3);

@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { DatabaseService } from '../database/database.service';
 import { PrismaClient } from '@ventry/database';
+import { createTestUser, cleanTestData } from '../test-helpers/factories';
 
 describe('UsersService Integration', () => {
   let service: UsersService;
@@ -22,111 +23,77 @@ describe('UsersService Integration', () => {
     service = module.get<UsersService>(UsersService);
     databaseService = module.get<DatabaseService>(DatabaseService);
     prisma = databaseService as any; // Access underlying Prisma client
-
-    // Clean up test data
-    await cleanDatabase();
   });
 
   afterAll(async () => {
-    await cleanDatabase();
+    // Clean up any remaining test data
+    await cleanTestData(prisma);
     await databaseService.$disconnect();
   });
 
   beforeEach(async () => {
-    await cleanDatabase();
+    // Clean up test data before each test for isolation
+    await cleanTestData(prisma);
   });
-
-  async function cleanDatabase() {
-    try {
-      // Clean up in reverse order of dependencies
-      // Use deleteMany with error handling for tables that might not exist
-      await prisma.auditLog.deleteMany().catch(() => {});
-      await prisma.inventoryMovement.deleteMany().catch(() => {});
-      await prisma.inventoryItem.deleteMany().catch(() => {});
-      await prisma.product.deleteMany().catch(() => {});
-      await prisma.category.deleteMany().catch(() => {});
-      await prisma.location.deleteMany().catch(() => {});
-      await prisma.user.deleteMany().catch(() => {});
-    } catch (error) {
-      // Ignore cleanup errors - tables might not exist yet
-      console.warn('Database cleanup warning:', error.message);
-    }
-  }
 
   describe('CRUD Operations', () => {
     it('should create and find user by email', async () => {
-      const userData = {
-        email: 'integration@test.com',
-        username: 'integrationuser',
+      // Create test user data with guaranteed unique identifiers
+      const testUser = await createTestUser(prisma, {
         firstName: 'Integration',
         lastName: 'Test',
-        password: 'hashedpassword123',
-      };
+      });
 
-      const createdUser = await service.create(userData);
-
-      expect(createdUser).toBeDefined();
-      expect(createdUser.email).toBe(userData.email);
-      expect(createdUser.username).toBe(userData.username);
-      expect(createdUser.role).toBe('USER'); // Default role
-
-      const foundUser = await service.findByEmail(userData.email);
+      // Test finding by email
+      const foundUser = await service.findByEmail(testUser.email);
       expect(foundUser).toBeDefined();
-      expect(foundUser!.id).toBe(createdUser.id);
-      expect(foundUser!.password).toBe(userData.password);
+      expect(foundUser!.id).toBe(testUser.id);
+      expect(foundUser!.email).toBe(testUser.email);
+      expect(foundUser!.username).toBe(testUser.username);
+      expect(foundUser!.role).toBe('USER'); // Default role
     });
 
     it('should find user by username', async () => {
-      const userData = {
-        email: 'username@test.com',
-        username: 'uniqueusername',
+      // Create test user with unique username
+      const testUser = await createTestUser(prisma, {
         firstName: 'Username',
         lastName: 'Test',
-        password: 'hashedpassword123',
-      };
+      });
 
-      const createdUser = await service.create(userData);
-      const foundUser = await service.findByUsername(userData.username);
+      const foundUser = await service.findByUsername(testUser.username);
 
       expect(foundUser).toBeDefined();
-      expect(foundUser!.id).toBe(createdUser.id);
-      expect(foundUser!.email).toBe(userData.email);
+      expect(foundUser!.id).toBe(testUser.id);
+      expect(foundUser!.email).toBe(testUser.email);
     });
 
     it('should update user information', async () => {
-      const userData = {
-        email: 'update@test.com',
-        username: 'updateuser',
-        firstName: 'Update',
-        lastName: 'Test',
-        password: 'hashedpassword123',
-      };
-
-      const createdUser = await service.create(userData);
-      
-      const updatedUser = await service.update(createdUser.id, {
-        firstName: 'Updated',
+      // Create test user
+      const testUser = await createTestUser(prisma, {
+        firstName: 'Original',
         lastName: 'Name',
+      });
+      
+      const updatedUser = await service.update(testUser.id, {
+        firstName: 'Updated',
+        lastName: 'NewName',
       });
 
       expect(updatedUser.firstName).toBe('Updated');
-      expect(updatedUser.lastName).toBe('Name');
-      expect(updatedUser.email).toBe(userData.email); // Unchanged
+      expect(updatedUser.lastName).toBe('NewName');
+      expect(updatedUser.email).toBe(testUser.email); // Unchanged
     });
 
     it('should update last login time', async () => {
-      const userData = {
-        email: 'lastlogin@test.com',
-        username: 'lastloginuser',
+      // Create test user
+      const testUser = await createTestUser(prisma, {
         firstName: 'LastLogin',
         lastName: 'Test',
-        password: 'hashedpassword123',
-      };
+      });
+      
+      expect(testUser.lastLoginAt).toBeNull();
 
-      const createdUser = await service.create(userData);
-      expect(createdUser.lastLoginAt).toBeNull();
-
-      const updatedUser = await service.updateLastLogin(createdUser.id);
+      const updatedUser = await service.updateLastLogin(testUser.id);
       expect(updatedUser.lastLoginAt).toBeDefined();
       expect(updatedUser.lastLoginAt).toBeInstanceOf(Date);
     });
@@ -224,29 +191,31 @@ describe('UsersService Integration', () => {
     });
 
     it('should handle unique constraint violations', async () => {
-      const userData = {
-        email: 'unique@test.com',
-        username: 'uniqueuser',
+      // Create initial test user
+      const testUser = await createTestUser(prisma, {
         firstName: 'Unique',
         lastName: 'Test',
-        password: 'password',
-      };
-
-      await service.create(userData);
+      });
 
       // Try to create user with same email
       await expect(
         service.create({
-          ...userData,
+          email: testUser.email, // Same email
           username: 'differentusername',
+          firstName: 'Different',
+          lastName: 'User',
+          password: 'password',
         })
       ).rejects.toThrow();
 
       // Try to create user with same username
       await expect(
         service.create({
-          ...userData,
           email: 'different@test.com',
+          username: testUser.username, // Same username
+          firstName: 'Different',
+          lastName: 'User',
+          password: 'password',
         })
       ).rejects.toThrow();
     });

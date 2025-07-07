@@ -18,10 +18,4 @@ if (!process.env.DATABASE_URL) {
   console.log('🚀 Integration Tests: Using environment-provided database:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@'));
 }
 
-// Suppress console logs during tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+// Note: Console logging enabled for integration tests to show factory operations and debugging information
