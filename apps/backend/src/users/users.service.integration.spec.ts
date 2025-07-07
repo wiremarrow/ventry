@@ -37,14 +37,20 @@ describe('UsersService Integration', () => {
   });
 
   async function cleanDatabase() {
-    // Clean up in reverse order of dependencies
-    await prisma.auditLog.deleteMany();
-    await prisma.inventoryMovement.deleteMany();
-    await prisma.inventoryItem.deleteMany();
-    await prisma.product.deleteMany();
-    await prisma.category.deleteMany();
-    await prisma.location.deleteMany();
-    await prisma.user.deleteMany();
+    try {
+      // Clean up in reverse order of dependencies
+      // Use deleteMany with error handling for tables that might not exist
+      await prisma.auditLog.deleteMany().catch(() => {});
+      await prisma.inventoryMovement.deleteMany().catch(() => {});
+      await prisma.inventoryItem.deleteMany().catch(() => {});
+      await prisma.product.deleteMany().catch(() => {});
+      await prisma.category.deleteMany().catch(() => {});
+      await prisma.location.deleteMany().catch(() => {});
+      await prisma.user.deleteMany().catch(() => {});
+    } catch (error) {
+      // Ignore cleanup errors - tables might not exist yet
+      console.warn('Database cleanup warning:', error.message);
+    }
   }
 
   describe('CRUD Operations', () => {
