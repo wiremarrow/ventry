@@ -233,6 +233,27 @@ pnpm typecheck             # TypeScript strict mode validation
 pnpm build
 ```
 
+### Environment Variable Configuration
+
+**Enterprise-Grade Database Strategy**: All tests respect environment-provided `DATABASE_URL` for CI/CD compatibility while providing sensible local development fallbacks.
+
+**Integration Tests** (`pnpm test:integration`):
+- **CI Environment**: Uses dynamic database from `DATABASE_URL` environment variable
+- **Local Development**: Falls back to `postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev`
+- **Debugging**: Check console output for database connection details
+
+**Unit Tests** (`pnpm test` / `pnpm test:cov`):
+- **CI Environment**: Respects any environment-provided `DATABASE_URL`
+- **Local Development**: Falls back to local development database
+- **Architecture**: Most unit tests use mocked services, some may require real database
+
+**Environment Variable Precedence**:
+1. **CI-provided `DATABASE_URL`** (highest priority) - enables enterprise database strategy
+2. **Local `.env` files** - for development convenience
+3. **Test setup fallbacks** (lowest priority) - ensures tests always have a database URL
+
+This pattern follows **12-Factor App principles** and ensures seamless operation across development, CI, and production environments.
+
 ## 🔧 Technical Configuration
 
 ### Frontend Styling (Tailwind CSS v3.4.0)

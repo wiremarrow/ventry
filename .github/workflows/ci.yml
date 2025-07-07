@@ -187,6 +187,7 @@ jobs:
         run: pnpm test:integration
         env:
           NODE_ENV: test
+          DATABASE_URL: ${{ env.DATABASE_URL }}
 
   playwright-tests:
     name: E2E Tests - ${{ matrix.project }}

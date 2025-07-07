@@ -6,8 +6,17 @@ process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-integration';
 process.env.JWT_EXPIRES_IN = '1h';
 
-// Use development database for integration tests (same as dev)
-process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
+// Enterprise-grade database configuration:
+// - Respect CI-provided DATABASE_URL (for dynamic test databases)
+// - Fallback to local development database only when not set
+// - This enables the enterprise database strategy in CI while maintaining local dev workflow
+if (!process.env.DATABASE_URL) {
+  // Local development fallback - only used when DATABASE_URL is not provided by CI/environment
+  process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
+  console.log('🔧 Integration Tests: Using local development database fallback');
+} else {
+  console.log('🚀 Integration Tests: Using environment-provided database:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@'));
+}
 
 // Suppress console logs during tests
 global.console = {
