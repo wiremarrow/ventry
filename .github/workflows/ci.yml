@@ -121,7 +121,7 @@ jobs:
           DATABASE_URL: file:./test.db
 
       - name: Run unit tests
-        run: pnpm test -- --coverage
+        run: pnpm test:cov
         env:
           NODE_ENV: test
           DATABASE_URL: file:./test.db
@@ -142,7 +142,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: ventry_integration_test
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
@@ -169,21 +169,22 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Test Database
+        run: |
+          DB_NAME="ventry_integration_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          createdb -h localhost -U postgres $DB_NAME
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/$DB_NAME" >> $GITHUB_ENV
+
       - name: Generate Prisma client
         run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_integration_test
 
-      - name: Run database migrations
-        run: pnpm db:push
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_integration_test
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy
 
       - name: Run integration tests
         run: pnpm test:integration
         env:
           NODE_ENV: test
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_integration_test
 
   playwright-tests:
     name: E2E Tests - ${{ matrix.project }}
@@ -195,7 +196,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: ventry_e2e_test
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
@@ -227,10 +228,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Test Database
+        run: |
+          DB_NAME="ventry_e2e_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_${{ matrix.project }}_${{ matrix.shard }}"
+          createdb -h localhost -U postgres $DB_NAME
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/$DB_NAME" >> $GITHUB_ENV
+
       - name: Generate Prisma client
         run: pnpm db:generate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_e2e_test
 
       - name: Install Playwright browsers
         run: pnpm playwright:install --with-deps ${{ matrix.project }}
@@ -240,20 +245,15 @@ jobs:
         env:
           NODE_ENV: test
 
-      - name: Run database migrations
-        run: pnpm db:push
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_e2e_test
+      - name: Deploy database migrations
+        run: pnpm db:migrate:deploy
 
       - name: Seed test database
         run: pnpm db:seed
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_e2e_test
 
       - name: Run Playwright tests
         run: pnpm playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_e2e_test
           NEXT_PUBLIC_API_URL: http://localhost:6060/api
           JWT_SECRET: test-secret-key
           NODE_ENV: test

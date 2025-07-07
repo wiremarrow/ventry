@@ -18,6 +18,11 @@
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
     },
+    "test:cov": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV"]
+    },
     "test:integration": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
@@ -41,6 +46,11 @@
     "db:migrate": {
       "cache": false,
       "inputs": ["prisma/schema.prisma", "prisma/migrations/**"]
+    },
+    "db:migrate:deploy": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma", "prisma/migrations/**"],
+      "dependsOn": ["db:generate"]
     },
     "db:seed": {
       "cache": false,
