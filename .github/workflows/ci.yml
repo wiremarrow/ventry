@@ -84,6 +84,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: file:./lint.db
+
       - name: Run linter
         run: pnpm lint
 
@@ -164,6 +169,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
+
       - name: Run database migrations
         run: pnpm db:push
         env:
@@ -216,6 +226,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
 
       - name: Install Playwright browsers
         run: pnpm playwright:install --with-deps ${{ matrix.project }}
@@ -283,6 +298,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm db:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Build all packages
         run: pnpm build
