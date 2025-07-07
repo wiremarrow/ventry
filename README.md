@@ -321,6 +321,11 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **Solution**: Smart navigation logic with endpoint-specific error handling
   - **Results**: 4/5 browsers now passing consistently (only Mobile Safari has test environment timing issues)
   - **Performance**: Tests execute reliably in ~1.5s vs previous 30s timeout risks
+- ✅ **CI/CD Pipeline Improvements (2025-07-07)**: Enhanced build reliability and test isolation
+  - **GitHub Actions**: Upgraded upload-artifact from deprecated v3 to v4
+  - **Prisma Generation**: Added missing db:generate steps to all CI jobs for proper type generation
+  - **Database Isolation**: Separate test databases for integration and E2E tests to prevent conflicts
+  - **Unit Test Optimization**: Streamlined to Node.js 20 only for consistency and performance
 
 ### Project Status
 
@@ -441,8 +446,9 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 #### **Advanced Testing Strategy**
 - **Browser Matrix**: Parallel E2E testing across 5 browsers × 2 shards = 10 test jobs (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari)
 - **E2E Reliability**: Fixed critical authentication error handling ensuring consistent cross-browser execution
-- **Database Testing**: PostgreSQL validation across all environments
-- **Artifact Management**: Test results, videos, and build artifacts preserved
+- **Database Testing**: PostgreSQL validation across all environments with isolated test databases
+- **Database Isolation**: Separate databases for integration (`ventry_integration_test`) and E2E (`ventry_e2e_test`) tests
+- **Artifact Management**: Test results, videos, and build artifacts preserved with upload-artifact v4
 - **Optional Docker Build**: Triggered only when Docker files change
 
 #### **Deployment Pipeline**
