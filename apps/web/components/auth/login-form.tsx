@@ -18,6 +18,7 @@ export function LoginForm() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
 
+
   const {
     register,
     handleSubmit,
@@ -28,7 +29,8 @@ export function LoginForm() {
   });
 
 
-  const onSubmit = async (data: LoginRequest) => {
+  const onSubmit = async (data: LoginRequest, event?: React.BaseSyntheticEvent) => {
+    event?.preventDefault();
     setIsLoading(true);
     setError('');
 
@@ -84,6 +86,7 @@ export function LoginForm() {
       const errorMessage = 
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
         'Login failed. Please check your credentials and try again.';
+      
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -96,7 +99,7 @@ export function LoginForm() {
         <CardTitle className="text-2xl text-center">Sign In to Ventry</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -131,7 +134,11 @@ export function LoginForm() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading}
+          >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>

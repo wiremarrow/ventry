@@ -83,10 +83,27 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:6061',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @ventry/backend dev',
+      url: 'http://localhost:6060/api/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      env: {
+        PORT: '6060',
+        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev',
+        JWT_SECRET: 'test-secret-key',
+        NODE_ENV: 'test',
+      },
+    },
+    {
+      command: 'pnpm --filter web dev',
+      url: 'http://localhost:6061',
+      reuseExistingServer: !process.env.CI,
+      timeout: 120 * 1000,
+      env: {
+        NEXT_PUBLIC_API_URL: 'http://localhost:6060/api',
+      },
+    },
+  ],
 });

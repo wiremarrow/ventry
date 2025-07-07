@@ -9,7 +9,7 @@
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts",
+    "db:seed": "ts-node --transpile-only prisma/seed.ts",
     "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
@@ -18,10 +18,12 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^24.0.10",
     "prisma": "^5.20.0",
+    "ts-node": "^10.9.1",
     "tsx": "^4.19.1"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "ts-node --transpile-only prisma/seed.ts"
   }
 }
