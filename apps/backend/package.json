@@ -14,7 +14,7 @@
     "test": "jest --passWithNoTests",
     "test:integration": "jest --config ./jest.integration.config.js",
     "test:watch": "jest --watch",
-    "test:cov": "jest --coverage --testPathIgnorePatterns='.*\\.integration\\.spec\\.ts$'",
+    "test:cov": "jest --coverage --testPathIgnorePatterns='.*\\.integration\\.spec\\.ts$' --coveragePathIgnorePatterns='<rootDir>/src/test-helpers/'",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "db:generate": "prisma generate --schema=../../packages/database/prisma/schema.prisma",
     "db:push": "prisma db push --schema=../../packages/database/prisma/schema.prisma",

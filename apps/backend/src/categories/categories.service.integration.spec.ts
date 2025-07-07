@@ -7,7 +7,6 @@ import {
   createTestUser, 
   createTestCategory, 
   createTestProduct,
-  createTestDataContext,
   cleanTestData 
 } from '../test-helpers/factories';
 
