@@ -99,65 +99,46 @@ describe('UsersService Integration', () => {
     });
 
     it('should deactivate user (soft delete)', async () => {
-      const userData = {
-        email: 'deactivate@test.com',
-        username: 'deactivateuser',
+      // Create test user using factory
+      const testUser = await createTestUser(prisma, {
         firstName: 'Deactivate',
         lastName: 'Test',
-        password: 'hashedpassword123',
-      };
+      });
+      expect(testUser.isActive).toBe(true);
 
-      const createdUser = await service.create(userData);
-      expect(createdUser.isActive).toBe(true);
-
-      const deactivatedUser = await service.remove(createdUser.id);
+      const deactivatedUser = await service.remove(testUser.id);
       expect(deactivatedUser.isActive).toBe(false);
 
       // User should still exist in database but be inactive
-      const foundUser = await service.findById(createdUser.id);
+      const foundUser = await service.findById(testUser.id);
       expect(foundUser).toBeDefined();
       expect(foundUser!.isActive).toBe(false);
     });
 
     it('should hard delete user', async () => {
-      const userData = {
-        email: 'delete@test.com',
-        username: 'deleteuser',
+      // Create test user using factory
+      const testUser = await createTestUser(prisma, {
         firstName: 'Delete',
         lastName: 'Test',
-        password: 'hashedpassword123',
-      };
-
-      const createdUser = await service.create(userData);
+      });
       
-      await service.delete(createdUser.id);
+      await service.delete(testUser.id);
 
       // User should no longer exist in database
-      const foundUser = await service.findById(createdUser.id);
+      const foundUser = await service.findById(testUser.id);
       expect(foundUser).toBeNull();
     });
 
     it('should list all users excluding passwords', async () => {
-      const users = [
-        {
-          email: 'user1@test.com',
-          username: 'user1',
-          firstName: 'User',
-          lastName: 'One',
-          password: 'password1',
-        },
-        {
-          email: 'user2@test.com',
-          username: 'user2',
-          firstName: 'User',
-          lastName: 'Two',
-          password: 'password2',
-        },
-      ];
-
-      for (const userData of users) {
-        await service.create(userData);
-      }
+      // Create test users using factory
+      const testUser1 = await createTestUser(prisma, {
+        firstName: 'User',
+        lastName: 'One',
+      });
+      const testUser2 = await createTestUser(prisma, {
+        firstName: 'User',
+        lastName: 'Two',
+      });
 
       const allUsers = await service.findAll();
       expect(allUsers).toHaveLength(2);
@@ -168,6 +149,11 @@ describe('UsersService Integration', () => {
         expect(user).toHaveProperty('email');
         expect(user).toHaveProperty('username');
       });
+
+      // Verify our test users are in the results
+      const userIds = allUsers.map(user => user.id);
+      expect(userIds).toContain(testUser1.id);
+      expect(userIds).toContain(testUser2.id);
     });
   });
 
@@ -191,11 +177,16 @@ describe('UsersService Integration', () => {
     });
 
     it('should handle unique constraint violations', async () => {
-      // Create initial test user
-      const testUser = await createTestUser(prisma, {
+      // Create initial test user using a service call to ensure it's in the database
+      const initialUserData = {
+        email: 'unique-test@example.com',
+        username: 'uniquetestuser',
         firstName: 'Unique',
         lastName: 'Test',
-      });
+        password: 'password123',
+      };
+      
+      const testUser = await service.create(initialUserData);
 
       // Try to create user with same email
       await expect(

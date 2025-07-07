@@ -130,6 +130,22 @@ describe('InventoryService', () => {
         },
       });
     });
+
+    it('should throw original error for non-P2002 database errors', async () => {
+      const createInventoryDto = {
+        productId: 'prod1',
+        locationId: 'loc1',
+        quantity: 100,
+        reservedQty: 0,
+        reorderPoint: 10,
+        maxStock: 500,
+      };
+
+      const databaseError = new Error('Database connection failed');
+      mockDatabaseService.inventoryItem.create.mockRejectedValue(databaseError);
+
+      await expect(service.create(createInventoryDto)).rejects.toThrow(databaseError);
+    });
   });
 
   describe('findAll', () => {

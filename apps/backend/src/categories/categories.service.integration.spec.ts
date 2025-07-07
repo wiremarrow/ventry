@@ -62,21 +62,31 @@ describe('CategoriesService Integration', () => {
     });
 
     it('should list all categories', async () => {
-      const categories = [
-        { name: 'Books', description: 'Books and literature', isActive: true },
-        { name: 'Clothing', description: 'Apparel and accessories', isActive: true },
-        { name: 'Sports', description: 'Sports equipment', isActive: false },
-      ];
-
-      for (const categoryData of categories) {
-        await service.create(categoryData);
-      }
+      // Create test categories using factory
+      const testCategory1 = await createTestCategory(prisma, {
+        name: 'Test Books Category',
+        description: 'Books and literature',
+        isActive: true,
+      });
+      const testCategory2 = await createTestCategory(prisma, {
+        name: 'Test Clothing Category',
+        description: 'Apparel and accessories',
+        isActive: true,
+      });
+      const testCategory3 = await createTestCategory(prisma, {
+        name: 'Test Sports Category',
+        description: 'Sports equipment',
+        isActive: false,
+      });
 
       const allCategories = await service.findAll();
       expect(allCategories).toHaveLength(3);
 
-      const categoryNames = allCategories.map(cat => cat.name).sort();
-      expect(categoryNames).toEqual(['Books', 'Clothing', 'Sports']);
+      // Verify our test categories are in the results
+      const categoryIds = allCategories.map(cat => cat.id);
+      expect(categoryIds).toContain(testCategory1.id);
+      expect(categoryIds).toContain(testCategory2.id);
+      expect(categoryIds).toContain(testCategory3.id);
     });
 
     it('should update category', async () => {
@@ -102,73 +112,41 @@ describe('CategoriesService Integration', () => {
     });
 
     it('should remove category when no products exist', async () => {
-      const categoryData = {
-        name: 'Empty Category',
+      // Create test category using factory
+      const testCategory = await createTestCategory(prisma, {
+        name: 'Empty Category to Remove',
         description: 'Category with no products',
         isActive: true,
-      };
+      });
 
-      const createdCategory = await service.create(categoryData);
-
-      await service.remove(createdCategory.id);
+      await service.remove(testCategory.id);
 
       // Category should be deleted
-      await expect(service.findById(createdCategory.id))
+      await expect(service.findById(testCategory.id))
         .rejects.toThrow('Category not found');
     });
 
     it('should prevent deletion of category with products', async () => {
-      // First create a user for the product
-      const user = await prisma.user.create({
-        data: {
-          email: 'test@example.com',
-          username: 'testuser',
-          firstName: 'Test',
-          lastName: 'User',
-          password: 'password',
-        },
-      });
-
-      // Create a location for the product
-      const _location = await prisma.location.create({
-        data: {
-          name: 'Test Location',
-          description: 'Test location description',
-          address: '123 Test St',
-          isActive: true,
-        },
-      });
-
-      const categoryData = {
+      // Create test data using factories
+      const testUser = await createTestUser(prisma);
+      const testCategory = await createTestCategory(prisma, {
         name: 'Category with Products',
         description: 'This category has products',
         isActive: true,
-      };
+      });
 
-      const createdCategory = await service.create(categoryData);
-
-      // Create a product in this category
-      await prisma.product.create({
-        data: {
-          name: 'Test Product',
-          description: 'A test product',
-          sku: 'TEST-001',
-          category: {
-            connect: { id: createdCategory.id }
-          },
-          createdBy: {
-            connect: { id: user.id }
-          },
-          updatedBy: {
-            connect: { id: user.id }
-          },
-          unitPrice: 10.99,
-          isActive: true,
-        },
+      // Create a product in this category using factory
+      await createTestProduct(prisma, {
+        categoryId: testCategory.id,
+        createdById: testUser.id,
+      }, {
+        name: 'Test Product',
+        description: 'A test product',
+        unitPrice: 10.99,
       });
 
       // Should throw error when trying to delete category with products
-      await expect(service.remove(createdCategory.id))
+      await expect(service.remove(testCategory.id))
         .rejects.toThrow('Cannot delete category with existing products');
     });
   });

@@ -90,7 +90,9 @@
       "**/*.(t|j)s",
       "!**/*.spec.ts",
       "!**/*.interface.ts",
-      "!**/main.ts"
+      "!**/main.ts",
+      "!**/test-setup*.ts",
+      "!**/test-helpers/**"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
