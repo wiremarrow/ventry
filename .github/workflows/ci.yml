@@ -169,11 +169,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Test Database
+      - name: Setup Test Databases
         run: |
-          DB_NAME="ventry_integration_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
-          createdb -h localhost -U postgres $DB_NAME
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/$DB_NAME" >> $GITHUB_ENV
+          # Create multiple databases for Jest workers (default is number of CPU cores, typically 2-4 in CI)
+          # We'll create enough databases to handle parallel execution
+          BASE_NAME="ventry_integration_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          
+          # Create databases for workers 1-4 (covers most CI environments)
+          for i in {1..4}; do
+            DB_NAME="${BASE_NAME}_worker_${i}"
+            createdb -h localhost -U postgres $DB_NAME
+            echo "Created database: $DB_NAME"
+          done
+          
+          # Set the base DATABASE_URL pattern (worker ID will be appended at runtime)
+          echo "DATABASE_URL_BASE=postgresql://postgres:postgres@localhost:5432/${BASE_NAME}" >> $GITHUB_ENV
         env:
           PGPASSWORD: postgres
 
@@ -181,13 +191,24 @@ jobs:
         run: pnpm db:generate
 
       - name: Deploy database migrations
-        run: pnpm db:migrate:deploy
+        run: |
+          # Deploy migrations to all worker databases
+          BASE_NAME="ventry_integration_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          
+          for i in {1..4}; do
+            DB_NAME="${BASE_NAME}_worker_${i}"
+            export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/$DB_NAME"
+            echo "Deploying migrations to: $DB_NAME"
+            pnpm db:migrate:deploy
+          done
+        env:
+          PGPASSWORD: postgres
 
       - name: Run integration tests
         run: pnpm test:integration
         env:
           NODE_ENV: test
-          DATABASE_URL: ${{ env.DATABASE_URL }}
+          DATABASE_URL_BASE: ${{ env.DATABASE_URL_BASE }}
 
   playwright-tests:
     name: E2E Tests - ${{ matrix.project }}

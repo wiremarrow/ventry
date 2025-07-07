@@ -16,5 +16,5 @@ module.exports = {
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/test-setup-integration.ts'],
   testTimeout: 30000,
-  maxWorkers: 1, // Force sequential execution
+  // Removed maxWorkers: 1 - now using proper database-per-worker isolation
 };

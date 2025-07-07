@@ -23,13 +23,14 @@ describe('UsersService Integration', () => {
   });
 
   afterAll(async () => {
-    // Clean up any remaining test data
+    // Clean up any remaining test data from this worker's database
     await cleanTestData(databaseService);
     await databaseService.$disconnect();
   });
 
   beforeEach(async () => {
-    // Clean up test data before each test for isolation
+    // Clean up test data before each test for isolation within this worker
+    // Each worker has its own database, so no interference between workers
     await cleanTestData(databaseService);
   });
 
