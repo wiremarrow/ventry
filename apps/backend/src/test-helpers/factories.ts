@@ -1,4 +1,4 @@
-import { PrismaClient } from '@ventry/database';
+import { DatabaseService } from '../database/database.service';
 
 /**
  * Test Data Factories for Integration Tests
@@ -23,10 +23,10 @@ const generateUniqueId = () => `${Date.now()}-${Math.random().toString(36).subst
 /**
  * Create a test user with unique email and username
  */
-export const createTestUser = async (prisma: PrismaClient, overrides: any = {}) => {
+export const createTestUser = async (prisma: DatabaseService, overrides: any = {}) => {
   const uniqueId = generateUniqueId();
   
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       email: `test-user-${uniqueId}@example.com`,
       username: `testuser-${uniqueId}`,
@@ -37,12 +37,13 @@ export const createTestUser = async (prisma: PrismaClient, overrides: any = {}) 
       ...overrides,
     },
   });
+  return user;
 };
 
 /**
  * Create a test admin user
  */
-export const createTestAdmin = async (prisma: PrismaClient, overrides: any = {}) => {
+export const createTestAdmin = async (prisma: DatabaseService, overrides: any = {}) => {
   return createTestUser(prisma, {
     role: 'ADMIN',
     firstName: 'Test',
@@ -54,7 +55,7 @@ export const createTestAdmin = async (prisma: PrismaClient, overrides: any = {})
 /**
  * Create a test manager user
  */
-export const createTestManager = async (prisma: PrismaClient, overrides: any = {}) => {
+export const createTestManager = async (prisma: DatabaseService, overrides: any = {}) => {
   return createTestUser(prisma, {
     role: 'MANAGER',
     firstName: 'Test',
@@ -66,22 +67,23 @@ export const createTestManager = async (prisma: PrismaClient, overrides: any = {
 /**
  * Create a test category with unique name
  */
-export const createTestCategory = async (prisma: PrismaClient, overrides: any = {}) => {
+export const createTestCategory = async (prisma: DatabaseService, overrides: any = {}) => {
   const uniqueId = generateUniqueId();
   
-  return prisma.category.create({
+  const category = await prisma.category.create({
     data: {
       name: `Test Category ${uniqueId}`,
       description: `Test category for integration testing`,
       ...overrides,
     },
   });
+  return category;
 };
 
 /**
  * Create a test location with unique name
  */
-export const createTestLocation = async (prisma: PrismaClient, overrides: any = {}) => {
+export const createTestLocation = async (prisma: DatabaseService, overrides: any = {}) => {
   const uniqueId = generateUniqueId();
   
   return prisma.location.create({
@@ -98,7 +100,7 @@ export const createTestLocation = async (prisma: PrismaClient, overrides: any = 
  * Create a test product with required relationships
  */
 export const createTestProduct = async (
-  prisma: PrismaClient, 
+  prisma: DatabaseService, 
   options: {
     categoryId: string;
     createdById: string;
@@ -127,7 +129,7 @@ export const createTestProduct = async (
  * Create a test inventory item for a product at a location
  */
 export const createTestInventoryItem = async (
-  prisma: PrismaClient,
+  prisma: DatabaseService,
   options: {
     productId: string;
     locationId: string;
@@ -150,7 +152,7 @@ export const createTestInventoryItem = async (
  * Create a complete test setup with user, category, location, and product
  * Useful for tests that need a full data context
  */
-export const createTestDataContext = async (prisma: PrismaClient) => {
+export const createTestDataContext = async (prisma: DatabaseService) => {
   const user = await createTestAdmin(prisma);
   const category = await createTestCategory(prisma);
   const location = await createTestLocation(prisma);
@@ -171,18 +173,18 @@ export const createTestDataContext = async (prisma: PrismaClient) => {
  * Clean up test data by deleting all records in dependency order
  * Use this sparingly - prefer transaction rollback for better performance
  */
-export const cleanTestData = async (prisma: PrismaClient) => {
+export const cleanTestData = async (prisma: DatabaseService) => {
   try {
     // Delete in reverse dependency order
-    await prisma.auditLog.deleteMany({}).catch(() => {});
-    await prisma.inventoryMovement.deleteMany({}).catch(() => {});
-    await prisma.inventoryItem.deleteMany({}).catch(() => {});
-    await prisma.product.deleteMany({}).catch(() => {});
-    await prisma.category.deleteMany({}).catch(() => {});
-    await prisma.location.deleteMany({}).catch(() => {});
-    await prisma.user.deleteMany({}).catch(() => {});
+    await prisma.auditLog.deleteMany({});
+    await prisma.inventoryMovement.deleteMany({});
+    await prisma.inventoryItem.deleteMany({});
+    await prisma.product.deleteMany({});
+    await prisma.category.deleteMany({});
+    await prisma.location.deleteMany({});
+    await prisma.user.deleteMany({});
   } catch (error) {
-    // Ignore cleanup errors in test environment
-    console.warn('Test cleanup warning:', error.message);
+    console.error('Test cleanup error:', error);
+    throw error;
   }
 };

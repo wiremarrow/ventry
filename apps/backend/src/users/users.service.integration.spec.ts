@@ -2,13 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
 import { DatabaseService } from '../database/database.service';
-import { PrismaClient } from '@ventry/database';
 import { createTestUser, cleanTestData } from '../test-helpers/factories';
 
 describe('UsersService Integration', () => {
   let service: UsersService;
   let databaseService: DatabaseService;
-  let prisma: PrismaClient;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -22,24 +20,23 @@ describe('UsersService Integration', () => {
 
     service = module.get<UsersService>(UsersService);
     databaseService = module.get<DatabaseService>(DatabaseService);
-    prisma = databaseService as any; // Access underlying Prisma client
   });
 
   afterAll(async () => {
     // Clean up any remaining test data
-    await cleanTestData(prisma);
+    await cleanTestData(databaseService);
     await databaseService.$disconnect();
   });
 
   beforeEach(async () => {
     // Clean up test data before each test for isolation
-    await cleanTestData(prisma);
+    await cleanTestData(databaseService);
   });
 
   describe('CRUD Operations', () => {
     it('should create and find user by email', async () => {
       // Create test user data with guaranteed unique identifiers
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'Integration',
         lastName: 'Test',
       });
@@ -55,7 +52,7 @@ describe('UsersService Integration', () => {
 
     it('should find user by username', async () => {
       // Create test user with unique username
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'Username',
         lastName: 'Test',
       });
@@ -69,7 +66,7 @@ describe('UsersService Integration', () => {
 
     it('should update user information', async () => {
       // Create test user
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'Original',
         lastName: 'Name',
       });
@@ -86,7 +83,7 @@ describe('UsersService Integration', () => {
 
     it('should update last login time', async () => {
       // Create test user
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'LastLogin',
         lastName: 'Test',
       });
@@ -100,7 +97,7 @@ describe('UsersService Integration', () => {
 
     it('should deactivate user (soft delete)', async () => {
       // Create test user using factory
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'Deactivate',
         lastName: 'Test',
       });
@@ -117,7 +114,7 @@ describe('UsersService Integration', () => {
 
     it('should hard delete user', async () => {
       // Create test user using factory
-      const testUser = await createTestUser(prisma, {
+      const testUser = await createTestUser(databaseService, {
         firstName: 'Delete',
         lastName: 'Test',
       });
@@ -131,11 +128,11 @@ describe('UsersService Integration', () => {
 
     it('should list all users excluding passwords', async () => {
       // Create test users using factory
-      const testUser1 = await createTestUser(prisma, {
+      const testUser1 = await createTestUser(databaseService, {
         firstName: 'User',
         lastName: 'One',
       });
-      const testUser2 = await createTestUser(prisma, {
+      const testUser2 = await createTestUser(databaseService, {
         firstName: 'User',
         lastName: 'Two',
       });

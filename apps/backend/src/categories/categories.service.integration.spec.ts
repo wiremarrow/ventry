@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { CategoriesService } from './categories.service';
 import { DatabaseService } from '../database/database.service';
-import { PrismaClient } from '@ventry/database';
 import { 
   createTestUser, 
   createTestCategory, 
@@ -13,7 +12,6 @@ import {
 describe('CategoriesService Integration', () => {
   let service: CategoriesService;
   let databaseService: DatabaseService;
-  let prisma: PrismaClient;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,18 +25,17 @@ describe('CategoriesService Integration', () => {
 
     service = module.get<CategoriesService>(CategoriesService);
     databaseService = module.get<DatabaseService>(DatabaseService);
-    prisma = databaseService as any;
   });
 
   afterAll(async () => {
     // Clean up any remaining test data
-    await cleanTestData(prisma);
+    await cleanTestData(databaseService);
     await databaseService.$disconnect();
   });
 
   beforeEach(async () => {
     // Clean up test data before each test for isolation
-    await cleanTestData(prisma);
+    await cleanTestData(databaseService);
   });
 
   describe('CRUD Operations', () => {
@@ -63,17 +60,17 @@ describe('CategoriesService Integration', () => {
 
     it('should list all categories', async () => {
       // Create test categories using factory
-      const testCategory1 = await createTestCategory(prisma, {
+      const testCategory1 = await createTestCategory(databaseService, {
         name: 'Test Books Category',
         description: 'Books and literature',
         isActive: true,
       });
-      const testCategory2 = await createTestCategory(prisma, {
+      const testCategory2 = await createTestCategory(databaseService, {
         name: 'Test Clothing Category',
         description: 'Apparel and accessories',
         isActive: true,
       });
-      const testCategory3 = await createTestCategory(prisma, {
+      const testCategory3 = await createTestCategory(databaseService, {
         name: 'Test Sports Category',
         description: 'Sports equipment',
         isActive: false,
@@ -113,7 +110,7 @@ describe('CategoriesService Integration', () => {
 
     it('should remove category when no products exist', async () => {
       // Create test category using factory
-      const testCategory = await createTestCategory(prisma, {
+      const testCategory = await createTestCategory(databaseService, {
         name: 'Empty Category to Remove',
         description: 'Category with no products',
         isActive: true,
@@ -128,15 +125,15 @@ describe('CategoriesService Integration', () => {
 
     it('should prevent deletion of category with products', async () => {
       // Create test data using factories
-      const testUser = await createTestUser(prisma);
-      const testCategory = await createTestCategory(prisma, {
+      const testUser = await createTestUser(databaseService);
+      const testCategory = await createTestCategory(databaseService, {
         name: 'Category with Products',
         description: 'This category has products',
         isActive: true,
       });
 
       // Create a product in this category using factory
-      await createTestProduct(prisma, {
+      await createTestProduct(databaseService, {
         categoryId: testCategory.id,
         createdById: testUser.id,
       }, {
@@ -190,12 +187,12 @@ describe('CategoriesService Integration', () => {
   describe('Database Relationships', () => {
     it('should include product count in category listing', async () => {
       // Create test data using factories
-      const testUser = await createTestUser(prisma);
-      const testCategory = await createTestCategory(prisma);
+      const testUser = await createTestUser(databaseService);
+      const testCategory = await createTestCategory(databaseService);
 
       // Create some products using the factory
       for (let i = 1; i <= 3; i++) {
-        await createTestProduct(prisma, {
+        await createTestProduct(databaseService, {
           categoryId: testCategory.id,
           createdById: testUser.id,
         }, {
