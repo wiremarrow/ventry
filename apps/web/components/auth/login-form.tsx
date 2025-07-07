@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,7 @@ import { Button, Input, Label, Card, CardHeader, CardTitle, CardContent, CardFoo
 import { useAuthStore } from '@/lib/auth-store';
 import api from '@/lib/api';
 import { API_ENDPOINTS } from '@ventry/shared';
-import { logApiError, componentLog } from '@/lib/debug';
+import { logApiError } from '@/lib/debug';
 import * as Sentry from '@sentry/nextjs';
 
 export function LoginForm() {
