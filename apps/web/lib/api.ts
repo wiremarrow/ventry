@@ -33,6 +33,7 @@ api.interceptors.response.use(
       
       const authState = useAuthStore.getState();
       const refreshToken = authState.refreshToken;
+      
       if (refreshToken) {
         try {
           const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, {
@@ -49,10 +50,24 @@ api.interceptors.response.use(
         } catch (_refreshError) {
           // Clear auth state on refresh failure
           authState.logout();
-          window.location.href = '/login';
+          
+          // Only redirect if not already on login page
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
       } else {
-        window.location.href = '/login';
+        // Check if this is a login endpoint error (user trying to login with invalid credentials)
+        const isLoginEndpoint = originalRequest.url?.includes('/auth/login');
+        
+        if (isLoginEndpoint) {
+          // Don't redirect for login endpoint errors - let the login component handle it
+        } else {
+          // Only redirect if not already on login page
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
       }
     }
     

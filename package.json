@@ -7,6 +7,7 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "test": "turbo test",
+    "test:cov": "turbo test:cov",
     "test:integration": "turbo test:integration",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -15,8 +16,10 @@
     "typecheck": "turbo typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
     "clean": "turbo clean && rm -rf node_modules",
+    "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
     "db:migrate": "turbo db:migrate",
+    "db:migrate:deploy": "turbo db:migrate:deploy",
     "db:seed": "turbo db:seed",
     "prepare": "husky install",
     "playwright:install": "playwright install --with-deps",
@@ -48,7 +51,7 @@
   },
   "packageManager": "pnpm@8.10.0",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "pnpm": ">=8.0.0"
   }
 }

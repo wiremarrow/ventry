@@ -9,7 +9,7 @@
 **MANDATORY**: After implementing/debugging ANY feature or task, update **BOTH** `README.md` and `TODO.md` **BEFORE** opening a PR. PRs missing either update will be **REJECTED** by CI.
 
 ### **CI/CD PIPELINE COMPLIANCE**
-**MANDATORY**: ALL 13 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
+**MANDATORY**: ALL 12 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
 
 ### **TESTING REQUIREMENT** 
 **MANDATORY**: **ALL** tests must pass across **ALL** browsers (Chromium, Firefox, WebKit). **NEVER** merge with failing E2E tests.
@@ -19,23 +19,22 @@
 
 ---
 
-## 🔧 CI/CD SYSTEM - 13 REQUIRED STATUS CHECKS
+## 🔧 CI/CD SYSTEM - 12 REQUIRED STATUS CHECKS
 
 These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 
 1. **Documentation Check** - README.md + TODO.md updates for feat/fix/refactor/perf PRs
 2. **Lint and Type Check** - ESLint + TypeScript strict validation  
-3. **Unit Tests (18)** - Jest on Node.js 18
-4. **Unit Tests (20)** - Jest on Node.js 20
-5. **PostgreSQL Integration Tests** - Real database operations
-6. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
-7. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
-8. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
-9. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
-10. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
-11. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
-12. **Build** - Production build with Sentry integration
-13. **Coverage Gate** - Test coverage threshold validation
+3. **Unit Tests** - Vitest on Node.js 20 LTS
+4. **PostgreSQL Integration Tests** - Real database operations
+5. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
+6. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
+7. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
+8. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
+9. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
+10. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
+11. **Build** - Production build with Sentry integration
+12. **Coverage Gate** - Test coverage threshold validation
 
 ### **Optional Checks**
 - **Docker Build** - Only runs when Docker files change
@@ -74,13 +73,13 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 # MANDATORY: All must pass
 pnpm lint                    # ESLint validation
 pnpm typecheck              # TypeScript strict mode
-pnpm test                    # Unit tests (excludes integration)
+pnpm test                    # Vitest unit tests (excludes integration)
 pnpm test:integration        # PostgreSQL integration tests
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
 
 # Backend-specific commands (run from /apps/backend or use filter)
-pnpm test:cov               # Unit tests with coverage thresholds
+pnpm test:cov               # Vitest unit tests with coverage thresholds
 pnpm test:integration       # Integration tests with PostgreSQL
 # OR: pnpm --filter @ventry/backend test:cov
 # OR: pnpm --filter @ventry/backend test:integration
@@ -89,8 +88,18 @@ pnpm test:integration       # Integration tests with PostgreSQL
 ### **Database Testing Requirements**
 - **Development**: PostgreSQL 16 with Docker for consistent environment
 - **CI Integration**: PostgreSQL 16 service container  
+- **Integration Test Database**: Separate `ventry_integration_test` database for isolated testing
 - **ALWAYS** test migrations with `pnpm db:push`
 - **ALWAYS** use PostgreSQL for all environments (dev, test, prod)
+
+### **Integration Test Database Setup**
+```bash
+# Create integration test database schema (one-time setup)
+DATABASE_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test" pnpm --filter @ventry/database db:push
+
+# Run integration tests (uses isolated database)
+pnpm --filter @ventry/backend test:integration
+```
 
 ### **E2E Testing Requirements**
 - **Browser Matrix**: Chromium, Firefox, WebKit (ALL must pass)
@@ -132,10 +141,12 @@ pnpm format                # Format code
 
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
-- **Backend**: NestJS + Prisma + PostgreSQL
+- **Backend**: **tRPC + Fastify** + Prisma + PostgreSQL
 - **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui
-- **Testing**: Jest (unit) + Playwright (E2E) + PostgreSQL (integration)
-- **Deployment**: Vercel (frontend) + containerized backend
+- **API Layer**: **tRPC v11** with full-stack TypeScript type inference
+- **Testing**: **Vitest** (unit) + Playwright (E2E) + PostgreSQL (integration)
+- **Deployment**: Vercel (frontend) + containerized Fastify backend
+- **Architecture**: **ESM-only** monorepo with workspace dependencies
 - **Monitoring**: Sentry error tracking + performance
 
 ---
@@ -148,7 +159,7 @@ pnpm format                # Format code
 - **Production**: PostgreSQL + Sentry + full monitoring
 
 ### **Branch Protection Rules**
-- **main** branch: 13 status checks + PR reviews + linear history
+- **main** branch: 12 status checks + PR reviews + linear history
 - **Feature branches**: Full CI validation required
 - **NEVER** force push to main
 - **NEVER** bypass status checks
@@ -166,8 +177,8 @@ pnpm format                # Format code
 ```
 ventry/
 ├── apps/
-│   ├── backend/          # NestJS API (Phase 1 implementation)
-│   ├── web/              # Next.js frontend (Phase 2 implementation)  
+│   ├── backend/          # tRPC + Fastify API (Phase 1 implementation)
+│   ├── web/              # Next.js frontend (Phase 1 implementation)  
 │   └── docs/             # Documentation site (future)
 ├── packages/
 │   ├── shared/           # Types, utils, constants
@@ -179,7 +190,7 @@ ventry/
 ```
 
 ### **Key Files**
-- `.github/workflows/ci.yml` - Unified CI pipeline (13 checks)
+- `.github/workflows/ci.yml` - Unified CI pipeline (12 checks)
 - `playwright.config.ts` - E2E testing configuration
 - `vercel.json` - Deployment configuration
 - `turbo.json` - Monorepo build pipeline
@@ -190,7 +201,7 @@ ventry/
 ## ⚠️ CONSEQUENCES - WHAT HAPPENS IF YOU VIOLATE THESE RULES
 
 1. **Missing Documentation Updates** → CI `docs-check` job **FAILS** → PR **BLOCKED**
-2. **Failing Tests** → 13 status checks **FAIL** → PR **BLOCKED**  
+2. **Failing Tests** → 12 status checks **FAIL** → PR **BLOCKED**  
 3. **Poor Code Quality** → Lint/TypeScript checks **FAIL** → PR **BLOCKED**
 4. **Architecture Violations** → Code review **REJECTION** → Rework required
 
@@ -198,7 +209,7 @@ ventry/
 
 ## 🎯 SUCCESS CRITERIA - WHEN YOU'VE DONE IT RIGHT
 
-✅ All 13 CI status checks are **GREEN**  
+✅ All 12 CI status checks are **GREEN**  
 ✅ README.md and TODO.md are **UPDATED**  
 ✅ All browsers pass E2E tests  
 ✅ PostgreSQL integration tests pass  
@@ -236,6 +247,80 @@ ventry/
 **WARNING**: An outdated charter misleads future developers. When in doubt, update CLAUDE.md!
 
 **REMEMBER**: This charter is your source of truth. Keep it accurate, keep it current, keep it authoritative.
+
+---
+
+## 🔧 tRPC DEVELOPMENT - MANDATORY PATTERNS
+
+### **Workspace Dependencies**
+```json
+// apps/web/package.json
+{
+  "dependencies": {
+    "@ventry/backend": "workspace:*",  // Required for AppRouter types
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3"
+  }
+}
+```
+
+### **Type-Safe API Flow**
+1. **Backend**: Define tRPC procedures with Zod schemas
+2. **Export**: AppRouter type automatically generated
+3. **Frontend**: Import AppRouter type for full inference
+4. **Client**: `trpc.auth.login.useMutation()` fully typed
+
+### **ESM Architecture**
+- **Full ESM**: No CommonJS compatibility layer
+- **Build First**: Backend must build before frontend
+- **Type Generation**: Automatic .d.ts files for type inference
+
+### **Common Issues & Solutions**
+- **"useContext collision"**: Check procedures don't return `any` types
+- **Module resolution**: Ensure workspace dependencies are correct
+- **Build order**: Always build backend before frontend in CI
+- **Type errors**: Verify AppRouter export in backend index.ts
+
+### **Development Commands**
+```bash
+# Backend development
+pnpm --filter @ventry/backend dev    # Start tRPC + Fastify server
+pnpm --filter @ventry/backend build  # Build for type generation
+pnpm --filter @ventry/backend test:cov  # Run Vitest with coverage
+
+# Frontend development (requires backend to be built first)
+pnpm --filter @ventry/web dev        # Start Next.js development
+pnpm --filter @ventry/web build      # Build for production
+```
+
+### **Testing Patterns & Guidelines**
+
+#### **When to Use Each Test Type**
+- **Unit Tests** (`*.test.ts`): Test individual tRPC procedures, utilities, business logic
+- **Integration Tests** (`*.integration.spec.ts`): Test procedures with real database operations
+- **E2E Tests** (`e2e/*.spec.ts`): Test complete user workflows via browser automation
+
+#### **tRPC Testing Best Practices**
+```typescript
+// Unit Tests - Use createDirectCaller for mocked dependencies
+import { createDirectCaller } from '../test-utils/trpc-test-client.js';
+
+const caller = await createDirectCaller({
+  user: { id: '1', email: 'test@example.com', role: 'USER' },
+  prisma: mockPrisma
+});
+
+// Integration Tests - Use createIntegrationContext for real database
+import { createIntegrationContext } from '../test-utils/trpc-test-client.js';
+
+const ctx = await createIntegrationContext();
+const caller = appRouter.createCaller(ctx);
+```
+
+#### **Database Testing Strategy**
+- **Unit Tests**: Use mocked Prisma client for fast, isolated testing
+- **Integration Tests**: Use real `ventry_integration_test` database for actual data operations
+- **E2E Tests**: Use dedicated E2E database with full application stack
 
 ---
 

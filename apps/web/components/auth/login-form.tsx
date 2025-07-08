@@ -1,22 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoginSchema, type LoginRequest } from '@ventry/shared';
+import { z } from 'zod';
 import { Button, Input, Label, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import api from '@/lib/api';
-import { API_ENDPOINTS } from '@ventry/shared';
-import { logApiError, componentLog } from '@/lib/debug';
+import { trpc } from '@/lib/trpc';
 import * as Sentry from '@sentry/nextjs';
 
+const LoginSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+});
+
+type LoginRequest = z.infer<typeof LoginSchema>;
+
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+
 
   const {
     register,
@@ -28,8 +33,46 @@ export function LoginForm() {
   });
 
 
-  const onSubmit = async (data: LoginRequest) => {
-    setIsLoading(true);
+  const loginMutation = trpc.auth.login.useMutation({
+    onSuccess: (data) => {
+      const { user, access_token } = data;
+      
+      // Set Sentry user context
+      Sentry.setUser({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+      });
+
+      // For now, we'll use the access_token as both access and refresh token
+      // In a real app, you'd handle refresh tokens properly
+      login(user, access_token, access_token);
+      
+      // Add success breadcrumb
+      Sentry.addBreadcrumb({
+        category: 'auth',
+        message: 'Login successful',
+        level: 'info',
+      });
+      
+      // Navigate to dashboard
+      router.push('/dashboard');
+    },
+    onError: (error) => {
+      // Capture the error in Sentry
+      Sentry.captureException(error, {
+        tags: {
+          component: 'LoginForm',
+          action: 'login',
+        },
+      });
+
+      setError(error.message || 'Login failed. Please check your credentials and try again.');
+    },
+  });
+
+  const onSubmit = async (data: LoginRequest, event?: React.BaseSyntheticEvent) => {
+    event?.preventDefault();
     setError('');
 
     // Add Sentry breadcrumb
@@ -40,54 +83,7 @@ export function LoginForm() {
       data: { email: data.email },
     });
 
-    try {
-      
-      const response = await api.post(API_ENDPOINTS.AUTH.LOGIN, data);
-      const { user, accessToken, refreshToken } = response.data;
-      
-      // Set Sentry user context
-      Sentry.setUser({
-        id: user.id,
-        email: user.email,
-        username: user.email,
-      });
-
-      login(user, accessToken, refreshToken);
-      
-      // Add success breadcrumb
-      Sentry.addBreadcrumb({
-        category: 'auth',
-        message: 'Login successful',
-        level: 'info',
-      });
-      
-      // Small delay to ensure state is saved
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Navigate to dashboard
-      router.push('/dashboard');
-    } catch (err: unknown) {
-      logApiError(API_ENDPOINTS.AUTH.LOGIN, err);
-      
-      // Capture the error in Sentry
-      Sentry.captureException(err, {
-        tags: {
-          component: 'LoginForm',
-          action: 'login',
-        },
-        extra: {
-          email: data.email,
-          endpoint: API_ENDPOINTS.AUTH.LOGIN,
-        },
-      });
-
-      const errorMessage = 
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 
-        'Login failed. Please check your credentials and try again.';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
+    loginMutation.mutate(data);
   };
 
   return (
@@ -96,7 +92,7 @@ export function LoginForm() {
         <CardTitle className="text-2xl text-center">Sign In to Ventry</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -104,7 +100,7 @@ export function LoginForm() {
               type="email"
               placeholder="Enter your email"
               {...register('email')}
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
             />
             {errors.email && (
               <p className="text-sm text-red-600">{errors.email.message}</p>
@@ -118,7 +114,7 @@ export function LoginForm() {
               type="password"
               placeholder="Enter your password"
               {...register('password')}
-              disabled={isLoading}
+              disabled={loginMutation.isPending}
             />
             {errors.password && (
               <p className="text-sm text-red-600">{errors.password.message}</p>
@@ -131,8 +127,12 @@ export function LoginForm() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={loginMutation.isPending}
+          >
+            {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>
       </CardContent>
