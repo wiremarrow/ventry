@@ -86,7 +86,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @ventry/backend dev',
-      url: 'http://localhost:6060/api/health',
+      url: 'http://localhost:6060/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       env: {
