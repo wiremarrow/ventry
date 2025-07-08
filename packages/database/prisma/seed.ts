@@ -7,16 +7,8 @@ async function main() {
   console.log('🌱 Starting database seed...');
 
   try {
-    // Clear existing data in development/test environments only
-    if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
-      console.log('🧹 Cleaning existing seed data for fresh start...');
-      await prisma.inventoryMovement.deleteMany();
-      await prisma.inventoryItem.deleteMany();
-      await prisma.product.deleteMany();
-      await prisma.category.deleteMany();
-      await prisma.location.deleteMany();
-      await prisma.user.deleteMany();
-    }
+    // Enterprise-grade idempotent seeding - works safely with existing data
+    console.log('🔧 Using idempotent operations for enterprise-grade reliability...');
 
     // Create admin user (idempotent - safe for CI/CD)
     const adminPassword = await bcrypt.hash('admin123', 10);
