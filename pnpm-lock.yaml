@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@ventry/database':
+        specifier: workspace:*
+        version: link:packages/database
     devDependencies:
       '@playwright/test':
         specifier: ^1.40.0

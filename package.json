@@ -26,6 +26,9 @@
     "ci:setup": "./tools/scripts/setup-github-repo.sh && ./tools/scripts/setup-ci-secrets.sh",
     "ci:validate": "./tools/scripts/validate-ci-setup.sh"
   },
+  "dependencies": {
+    "@ventry/database": "workspace:*"
+  },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
     "@sentry/nextjs": "^9.35.0",

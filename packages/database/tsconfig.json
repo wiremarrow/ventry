@@ -2,10 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "noUnusedLocals": false
   },
   "include": [
     "index.ts",
+    "client.ts",
     "prisma/**/*"
   ],
   "exclude": [
