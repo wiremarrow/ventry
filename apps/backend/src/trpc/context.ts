@@ -14,9 +14,13 @@ export type AuthenticatedUser = {
 };
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
-  // Get token from Authorization header
+  // Get token from httpOnly cookie (primary) or Authorization header (fallback)
+  const cookieToken = req.cookies?.['auth-token'];
   const authorization = req.headers.authorization;
-  const token = authorization?.replace('Bearer ', '');
+  const headerToken = authorization?.replace('Bearer ', '');
+  
+  // Prefer cookie token for security, fallback to header for API clients
+  const token = cookieToken || headerToken;
   
   let user: AuthenticatedUser | null = null;
   if (token) {

@@ -8,7 +8,7 @@ import { prisma } from '@ventry/database';
  * Runs once after all tests to clean up test data
  */
 
-async function globalTeardown(config: FullConfig) {
+async function globalTeardown(_config: FullConfig) {
   console.log('\n🧹 E2E Global Teardown Starting...\n');
 
   try {

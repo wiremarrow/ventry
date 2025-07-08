@@ -2,10 +2,9 @@ import { test as base, Page } from '@playwright/test';
 import { 
   createTestUser, 
   TestUserData, 
-  clearBrowserStorage,
-  createTestUsers,
+  clearAuthState,
 } from '../utils/test-helpers';
-import { cleanupTestDataForUser, cleanupAllTestData } from '../utils/db-cleanup';
+import { cleanupTestDataForUser } from '../utils/db-cleanup';
 
 /**
  * Custom test fixtures for E2E tests
@@ -84,8 +83,8 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Clear storage
-    await clearBrowserStorage(page);
+    // Clear authentication state
+    await clearAuthState(page);
 
     // Login as admin
     await page.goto('/login');
@@ -107,8 +106,8 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Clear storage
-    await clearBrowserStorage(page);
+    // Clear authentication state
+    await clearAuthState(page);
 
     // Login as manager
     await page.goto('/login');
@@ -130,8 +129,8 @@ export const test = base.extend<TestFixtures>({
     const context = await browser.newContext();
     const page = await context.newPage();
 
-    // Clear storage
-    await clearBrowserStorage(page);
+    // Clear authentication state
+    await clearAuthState(page);
 
     // Login as user
     await page.goto('/login');
@@ -150,13 +149,16 @@ export const test = base.extend<TestFixtures>({
 
   // Clean page with storage cleared
   cleanPage: async ({ page }, use) => {
-    // Clear all browser storage before test
-    await clearBrowserStorage(page);
+    // Navigate to a page first to ensure DOM is available
+    await page.goto('/login');
+    
+    // Clear authentication state before test
+    await clearAuthState(page);
     
     await use(page);
     
-    // Clear again after test
-    await clearBrowserStorage(page);
+    // Clear authentication state after test
+    await clearAuthState(page);
   },
 });
 
@@ -177,8 +179,8 @@ export async function createAuthenticatedPage(
     lastName: role,
   });
 
-  // Clear storage and login
-  await clearBrowserStorage(page);
+  // Clear authentication state and login
+  await clearAuthState(page);
   await page.goto('/login');
   await page.fill('input[type="email"]', user.email);
   await page.fill('input[type="password"]', user.password);
@@ -187,7 +189,7 @@ export async function createAuthenticatedPage(
 
   // Cleanup function
   const cleanup = async () => {
-    await clearBrowserStorage(page);
+    await clearAuthState(page);
     await context.close();
     await cleanupTestDataForUser(user.id);
   };

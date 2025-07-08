@@ -35,7 +35,7 @@ export function LoginForm() {
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
-      const { user, access_token } = data;
+      const { user } = data;
       
       // Set Sentry user context
       Sentry.setUser({
@@ -44,9 +44,8 @@ export function LoginForm() {
         username: user.username,
       });
 
-      // For now, we'll use the access_token as both access and refresh token
-      // In a real app, you'd handle refresh tokens properly
-      login(user, access_token, access_token);
+      // Login with user info only - tokens handled by httpOnly cookies
+      login(user);
       
       // Add success breadcrumb
       Sentry.addBreadcrumb({

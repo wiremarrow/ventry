@@ -34,8 +34,8 @@ const userSchema = z.object({
 });
 
 const authResponseSchema = z.object({
-  access_token: z.string(),
   user: userSchema,
+  success: z.boolean(),
 });
 
 export const authRouter = createTRPCRouter({
@@ -73,8 +73,17 @@ export const authRouter = createTRPCRouter({
         role: user.role,
       });
 
+      // Set httpOnly cookie directly (compression disabled, so no conflict)
+      ctx.res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+
       return {
-        access_token: token,
+        success: true,
         user: {
           id: user.id,
           email: user.email,
@@ -141,8 +150,17 @@ export const authRouter = createTRPCRouter({
         role: user.role,
       });
 
+      // Set httpOnly cookie directly (compression disabled, so no conflict)
+      ctx.res.cookie('auth-token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        path: '/',
+      });
+
       return {
-        access_token: token,
+        success: true,
         user: {
           id: user.id,
           email: user.email,
@@ -160,6 +178,14 @@ export const authRouter = createTRPCRouter({
     .output(userSchema)
     .query(({ ctx }) => {
       return ctx.user;
+    }),
+
+  logout: publicProcedure
+    .output(z.object({ success: z.boolean() }))
+    .mutation(async ({ ctx: _ctx }) => {
+      return { 
+        success: true
+      };
     }),
 
   refreshToken: publicProcedure

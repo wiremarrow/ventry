@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "rootDir": ".",
     "noEmit": true,
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test"],
+    "lib": ["DOM", "ES2022"]
   },
   "include": [
     "**/*.ts",

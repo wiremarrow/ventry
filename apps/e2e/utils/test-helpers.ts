@@ -1,6 +1,5 @@
-import { prisma } from '@ventry/database';
+import { prisma, Role } from '@ventry/database';
 import bcrypt from 'bcryptjs';
-import { Role } from '@prisma/client';
 
 /**
  * E2E Test Helpers
@@ -93,7 +92,7 @@ export async function createTestUsers() {
 }
 
 // Test product creation
-export async function createTestProduct(userId: string, overrides: any = {}) {
+export async function createTestProduct(userId: string, overrides: Record<string, any> = {}): Promise<any> {
   const testId = generateTestId();
   
   // Ensure we have a test category
@@ -153,24 +152,28 @@ export async function getTestLocation() {
   return location;
 }
 
-// Login helper - returns access token
-export async function loginUser(email: string, password: string): Promise<string> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api';
+// Login helper - authenticates user and returns success status
+// Authentication token is automatically set as httpOnly cookie by backend
+export async function loginUser(email: string, password: string): Promise<boolean> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060';
   
-  const response = await fetch(`${baseUrl}/auth/login`, {
+  const response = await fetch(`${baseUrl}/trpc/auth.login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ email, password }),
+    credentials: 'include', // Important for receiving cookies
+    body: JSON.stringify({ 
+      json: { email, password }
+    }),
   });
 
   if (!response.ok) {
     throw new Error(`Login failed: ${response.statusText}`);
   }
 
-  const data = await response.json();
-  return data.access_token;
+  const data = await response.json() as { result: { data: { json: { success: boolean } } } };
+  return data.result.data.json.success;
 }
 
 // Wait for element with retry
@@ -184,16 +187,36 @@ export async function waitForElement(page: any, selector: string, options: any =
   return page.waitForSelector(selector, defaultOptions);
 }
 
-// Clear all browser storage
-export async function clearBrowserStorage(page: any) {
-  await page.evaluate(() => {
-    localStorage.clear();
-    sessionStorage.clear();
-  });
-  
-  // Clear all cookies
+// Clear authentication state (cookies only)
+export async function clearAuthState(page: any) {
+  // Clear cookies since auth is JWT-based via tRPC
   const context = page.context();
   await context.clearCookies();
+}
+
+// Clear all browser storage (for test cleanup only, not auth)
+export async function clearBrowserStorage(page: any) {
+  // Clear auth state first
+  await clearAuthState(page);
+  
+  // Clear browser storage for test isolation (non-auth data)
+  // Safely handle localStorage access
+  try {
+    await page.evaluate(() => {
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.clear();
+        }
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          window.sessionStorage.clear();
+        }
+      } catch (e) {
+        // Ignore storage access errors
+      }
+    });
+  } catch (error) {
+    // Ignore page evaluation errors
+  }
 }
 
 // Take screenshot on failure

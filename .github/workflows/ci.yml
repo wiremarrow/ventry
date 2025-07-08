@@ -264,7 +264,7 @@ jobs:
         run: pnpm db:generate
 
       - name: Install Playwright browsers
-        run: pnpm playwright:install --with-deps ${{ matrix.project }}
+        run: pnpm --filter @ventry/e2e install --with-deps ${{ matrix.project }}
 
       - name: Build application
         run: pnpm build
@@ -278,7 +278,7 @@ jobs:
         run: pnpm db:seed
 
       - name: Run Playwright tests
-        run: pnpm playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
+        run: pnpm --filter @ventry/e2e test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
         env:
           NEXT_PUBLIC_API_URL: http://localhost:6060/api
           JWT_SECRET: test-secret-key
@@ -291,8 +291,8 @@ jobs:
         with:
           name: playwright-results-${{ matrix.project }}-${{ matrix.shard }}
           path: |
-            e2e/test-results/
-            e2e/playwright-report/
+            apps/e2e/test-results/
+            apps/e2e/playwright-report/
           retention-days: 7
 
       - name: Upload test videos
@@ -300,7 +300,7 @@ jobs:
         if: failure()
         with:
           name: playwright-videos-${{ matrix.project }}-${{ matrix.shard }}
-          path: e2e/test-results/**/video.webm
+          path: apps/e2e/test-results/**/video.webm
           retention-days: 7
 
   build:

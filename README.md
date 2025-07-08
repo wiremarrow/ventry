@@ -10,8 +10,9 @@ Ventry is an ambitious AI-native inventory management system designed to revolut
 ```
 ventry/
 ├── apps/
-│   ├── backend/          # NestJS API server
+│   ├── backend/          # tRPC + Fastify API server
 │   ├── web/              # Next.js frontend
+│   ├── e2e/              # Playwright E2E tests (dedicated workspace package)
 │   └── docs/             # Documentation site
 ├── packages/
 │   ├── shared/           # Shared types, constants, utils
@@ -31,8 +32,8 @@ ventry/
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: **Vitest** with 80% coverage thresholds for tRPC procedures and services
   - **Integration Tests**: Real PostgreSQL database operations with proper isolation
-  - **E2E Tests**: Playwright across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with sharding
-  - **E2E Reliability**: Fixed authentication error handling ensuring consistent test execution
+  - **E2E Tests**: Dedicated `@ventry/e2e` workspace package with Playwright across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with sharding
+  - **E2E Architecture**: Enterprise-grade test isolation with proper workspace dependency resolution and automated cleanup
 - **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights
 - **CI/CD**: Enterprise-grade GitHub Actions pipeline with 13 mandatory status checks
@@ -340,12 +341,12 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 ### Authentication & Security Features
 
 **Authentication System:**
-- JWT-based authentication with secure token management
+- **httpOnly Cookie Authentication** with maximum security (XSS protection)
+- **Pure tRPC Architecture** - no legacy REST patterns for auth
 - Role-based access control (Admin, Manager, User)
-- Protected routes with Next.js middleware
-- Automatic token refresh mechanism
-- Persistent authentication state with Zustand
-- Secure cookie storage for middleware protection
+- Protected routes with Next.js middleware reading httpOnly cookies
+- Automatic cookie management by browser (no manual token handling)
+- Persistent user profile state with Zustand (tokens server-managed only)
 
 **Debugging & Monitoring:**
 - Enhanced debugging utilities in `lib/debug.ts`

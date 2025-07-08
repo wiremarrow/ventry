@@ -5,6 +5,8 @@ import helmet from '@fastify/helmet';
 import compress from '@fastify/compress';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
+import cookie from '@fastify/cookie';
+import superjson from 'superjson';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './trpc/context.js';
 import { appRouter, type AppRouter } from './routers/app.js';
@@ -36,7 +38,8 @@ await server.register(helmet, {
   contentSecurityPolicy: false, // Disable for API
 });
 
-await server.register(compress);
+// Temporarily disable compression to fix Response object serialization issue
+// await server.register(compress);
 
 await server.register(rateLimit, {
   max: 100,
@@ -45,17 +48,31 @@ await server.register(rateLimit, {
 
 await server.register(websocket);
 
+// Register cookie plugin for authentication
+await server.register(cookie, {
+  secret: process.env.COOKIE_SECRET || 'ventry-cookie-secret', // Change in production
+  parseOptions: {},
+});
+
 // Register tRPC
 await server.register(fastifyTRPCPlugin, {
   prefix: '/trpc',
   trpcOptions: {
     router: appRouter,
     createContext,
+    transformer: superjson,
     onError({ path, error }) {
-      // Log errors in production
-      if (process.env.NODE_ENV === 'production') {
-        console.error(`Error in tRPC handler on path '${path}':`, error);
-      }
+      // Log all tRPC errors for debugging (not just production)
+      console.error(`❌ tRPC Error on path '${path}':`, {
+        message: error.message,
+        code: error.code,
+        cause: error.cause,
+        stack: error.stack,
+      });
+      
+      // Log the full error details
+      console.error('Full error object:', error);
+      console.error('Error stack:', error.stack);
     },
   } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });

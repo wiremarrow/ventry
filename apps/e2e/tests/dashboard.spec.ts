@@ -13,8 +13,15 @@ test.describe('Dashboard', () => {
   });
 
   test('should display dashboard with stats cards', async ({ page }) => {
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    // Wait for dashboard to fully load
+    await page.waitForLoadState('networkidle');
+    
+    // Check dashboard title - use exact text match
+    await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
     await expect(page.locator('text=Overview of your inventory management system')).toBeVisible();
+    
+    // Wait for stats cards to load
+    await page.waitForSelector('text=Total Products', { timeout: 10000 });
     
     // Check for stats cards
     await expect(page.locator('text=Total Products')).toBeVisible();
@@ -67,21 +74,24 @@ test.describe('Dashboard', () => {
     
     // Should redirect to login page
     await expect(page).toHaveURL(/.*login/);
-    await expect(page.locator('h2')).toContainText('Sign In to Ventry');
+    await expect(page.locator('h2')).toContainText('Welcome to Ventry');
   });
 
   test('should navigate to inventory page from quick actions', async ({ page }) => {
     await page.click('text=View Inventory');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*inventory/);
   });
 
   test('should navigate to products page from quick actions', async ({ page }) => {
     await page.click('text=Manage Products');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*products/);
   });
 
   test('should navigate to movements page from quick actions', async ({ page }) => {
     await page.click('text=Recent Movements');
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*movements/);
   });
 });

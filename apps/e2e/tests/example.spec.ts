@@ -39,7 +39,7 @@ test.describe('Ventry Application', () => {
   });
 
   test('should show 404 for non-existent pages', async ({ page }) => {
-    const response = await page.goto('/non-existent-page');
+    await page.goto('/non-existent-page');
     
     // Check response status (Next.js returns 200 for client-side routing, but shows 404 content)
     // We'll check for typical 404 behavior in Next.js

@@ -2,37 +2,46 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '@/lib/auth-store';
-import api from '@/lib/api';
+import { trpc } from '@/lib/trpc';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, setLoading, accessToken } = useAuthStore();
+  const { setUser, setLoading, isHydrated, isAuthenticated } = useAuthStore();
+
+  // Only run auth check after hydration is complete and add delay to prevent race condition
+  const { data: user, error, isLoading } = trpc.auth.me.useQuery(
+    undefined,
+    {
+      enabled: isHydrated, // Only enable after hydration
+      retry: false, // Don't retry on auth failures
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    }
+  );
 
   useEffect(() => {
-    const initAuth = async () => {
-      // Check if we have a token
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
+    if (!isHydrated) return;
 
-      try {
-        setLoading(true);
-        // Verify token is still valid by fetching user profile
-        const response = await api.get('/auth/profile');
-        if (response.data) {
-          setUser(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user profile:', error);
-        // Token is invalid, clear auth state
+    if (isLoading) {
+      setLoading(true);
+      return;
+    }
+
+    setLoading(false);
+
+    if (error) {
+      // Only logout if we're not already authenticated (prevents race condition)
+      // This prevents clearing auth state immediately after login
+      if (!isAuthenticated) {
         useAuthStore.getState().logout();
-      } finally {
-        setLoading(false);
       }
-    };
+      return;
+    }
 
-    initAuth();
-  }, [accessToken, setUser, setLoading]);
+    if (user) {
+      // Authentication successful - set user
+      setUser(user);
+    }
+  }, [user, error, isLoading, isHydrated, setUser, setLoading, isAuthenticated]);
 
   return <>{children}</>;
 }

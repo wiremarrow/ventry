@@ -10,19 +10,9 @@ export const trpcClient = trpc.createClient({
     httpBatchLink({
       url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',
       transformer: superjson,
-      headers: () => {
-        // Get auth token from auth store
-        if (typeof window !== 'undefined') {
-          // Import dynamically to avoid SSR issues
-          const { useAuthStore } = require('@/lib/auth-store');
-          const token = useAuthStore.getState().accessToken;
-          if (token) {
-            return {
-              Authorization: `Bearer ${token}`,
-            };
-          }
-        }
-        return {};
+      // Include credentials for httpOnly cookies
+      fetchOptions: {
+        credentials: 'include',
       },
     }),
   ],

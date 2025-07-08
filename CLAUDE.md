@@ -178,20 +178,21 @@ pnpm format                # Format code
 ventry/
 ├── apps/
 │   ├── backend/          # tRPC + Fastify API (Phase 1 implementation)
-│   ├── web/              # Next.js frontend (Phase 1 implementation)  
+│   ├── web/              # Next.js frontend (Phase 1 implementation)
+│   ├── e2e/              # Playwright E2E tests (dedicated workspace package)
 │   └── docs/             # Documentation site (future)
 ├── packages/
 │   ├── shared/           # Types, utils, constants
 │   ├── ui/               # shadcn/ui components
 │   └── database/         # Prisma schema (Phase 1)
-├── e2e/                  # Playwright tests
 ├── docs/                 # Development documentation
 └── tools/scripts/        # Automation scripts
 ```
 
 ### **Key Files**
-- `.github/workflows/ci.yml` - Unified CI pipeline (12 checks)
-- `playwright.config.ts` - E2E testing configuration
+- `.github/workflows/ci.yml` - Unified CI pipeline (13 checks)
+- `apps/e2e/playwright.config.ts` - E2E testing configuration
+- `playwright.config.ts` - Root delegation to E2E package
 - `vercel.json` - Deployment configuration
 - `turbo.json` - Monorepo build pipeline
 - `package.json` - Root scripts and dependencies

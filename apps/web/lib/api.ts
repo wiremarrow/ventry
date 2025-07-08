@@ -1,6 +1,9 @@
 import axios from 'axios';
-import { API_ENDPOINTS } from '@ventry/shared';
 import { useAuthStore } from './auth-store';
+
+// Legacy REST API client - DEPRECATED
+// Use tRPC for new functionality
+// This exists only for components that haven't been migrated to tRPC yet
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api';
 
@@ -14,60 +17,20 @@ export const api = axios.create({
   withCredentials: true, // Important for CORS with cookies
 });
 
-api.interceptors.request.use((config) => {
-  // Get token from auth store instead of localStorage
-  const token = useAuthStore.getState().accessToken;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// No longer need to add Authorization headers - using httpOnly cookies
 
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
+    // For 401 errors, just logout and redirect
+    // No token refresh since we're moving to tRPC
+    if (error.response?.status === 401) {
       const authState = useAuthStore.getState();
-      const refreshToken = authState.refreshToken;
+      authState.logout();
       
-      if (refreshToken) {
-        try {
-          const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.AUTH.REFRESH}`, {
-            refreshToken,
-          });
-          
-          const { accessToken, refreshToken: newRefreshToken, user } = response.data;
-          
-          // Update auth store with new tokens
-          authState.login(user, accessToken, newRefreshToken);
-          
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        } catch (_refreshError) {
-          // Clear auth state on refresh failure
-          authState.logout();
-          
-          // Only redirect if not already on login page
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }
-      } else {
-        // Check if this is a login endpoint error (user trying to login with invalid credentials)
-        const isLoginEndpoint = originalRequest.url?.includes('/auth/login');
-        
-        if (isLoginEndpoint) {
-          // Don't redirect for login endpoint errors - let the login component handle it
-        } else {
-          // Only redirect if not already on login page
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
-        }
+      // Only redirect if not already on login page
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        window.location.href = '/login';
       }
     }
     

@@ -43,7 +43,7 @@ async function globalSetup(config: FullConfig) {
     console.log('\n✅ E2E Global Setup Complete!\n');
 
     // Store config for use in tests if needed
-    process.env.E2E_BASE_URL = config.use?.baseURL || 'http://localhost:6061';
+    process.env.E2E_BASE_URL = (config.projects?.[0]?.use?.baseURL) || 'http://localhost:6061';
     process.env.E2E_SETUP_COMPLETE = 'true';
 
   } catch (error) {

@@ -4,8 +4,7 @@ import { useState } from 'react';
 import { LogOut, Menu, Package, User } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import api from '@/lib/api';
-import { API_ENDPOINTS } from '@ventry/shared';
+import { trpc } from '@/lib/trpc';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,16 +14,25 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await api.post(API_ENDPOINTS.AUTH.LOGOUT);
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
       logout();
       window.location.href = '/login';
-    }
+    },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      // Still logout on client side even if server logout fails
+      logout();
+      window.location.href = '/login';
+    },
+    onSettled: () => {
+      setIsLoggingOut(false);
+    },
+  });
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    logoutMutation.mutate();
   };
 
   return (

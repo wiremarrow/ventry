@@ -43,6 +43,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Dashboard Loading Fix COMPLETE** - Fixed ProtectedRoute Infinite Loading (2025-07-05)
 ✅ **shadcn/ui Button Fix COMPLETE** - Button Click Events and Hover Effects Working (2025-07-05)
 ✅ **E2E Test Fix COMPLETE** - Login Error Handling and Page Reload Issues Resolved (2025-07-07)
+✅ **E2E Architecture Modernization COMPLETE** - Enterprise Workspace Package Structure (2025-07-08)
 ✅ **tRPC Migration COMPLETE** - NestJS to tRPC + Fastify Migration (2025-07-08)
 - **Complete tRPC + Fastify backend** with end-to-end type-safe API architecture
 - **Comprehensive Prisma database schema** with inventory models and proper PostgreSQL enums
@@ -58,7 +59,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **Enterprise-grade testing infrastructure**:
   - **Unit Tests**: **Vitest** with 253 tests across 18 test suites and strict coverage requirements
   - **Integration Tests**: 20 tests with real PostgreSQL database operations and proper isolation
-  - **E2E Tests**: 115 tests across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with sharding
+  - **E2E Tests**: 135 tests across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with dedicated `@ventry/e2e` workspace package
   - **E2E Reliability**: Fixed critical authentication error handling ensuring tests pass consistently
   - **Coverage Reporting**: Automated coverage thresholds and comprehensive reporting with Vitest
   - **Test Infrastructure**: Professional-grade mocking, database cleanup, and environment isolation
@@ -102,6 +103,16 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Form Standards**: Standardized HTML form submission patterns for cross-browser compatibility
   - **State Management**: Pure React state without localStorage workarounds
   - **Performance**: E2E tests now execute in ~1.5s vs previous 30s timeout risks
+- **E2E Architecture Modernization Complete (2025-07-08)**:
+  - **Dedicated Workspace Package**: Created `@ventry/e2e` workspace package following monorepo best practices
+  - **ESM Module Resolution**: Fixed database package compilation from CommonJS to ES2022 modules for proper workspace imports
+  - **Proper Dependencies**: E2E package declares explicit workspace dependencies (`@ventry/database`, `@ventry/shared`)
+  - **Monorepo Structure**: Moved from root `e2e/` to `apps/e2e/` following established patterns (backend, web, e2e)
+  - **Build Pipeline Integration**: Updated turbo.json with proper `test:e2e` task and dependency chains
+  - **CI/CD Compatibility**: Updated GitHub Actions for new package structure and workspace filtering
+  - **Backward Compatibility**: Root-level Playwright commands still work via configuration delegation
+  - **Race Condition Fix**: Removed duplicate `db:seed` script from backend package to prevent conflicts
+  - **Enterprise Grade**: Clean separation of concerns with proper TypeScript compilation and workspace isolation
 - **CI/CD Pipeline Optimization Complete**:
   - **GitHub Actions Upgrade**: Updated upload-artifact from deprecated v3 to v4
   - **Prisma Client Generation**: Added missing db:generate steps to all 4 CI jobs (lint, unit, integration, E2E)

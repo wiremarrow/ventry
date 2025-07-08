@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/base.fixture';
-import { createTestUser, clearBrowserStorage } from '../utils/test-helpers';
+import { createTestUser, clearAuthState } from '../utils/test-helpers';
 import { cleanupTestDataForUser } from '../utils/db-cleanup';
 
 test.describe('Authentication', () => {
@@ -10,6 +10,7 @@ test.describe('Authentication', () => {
   test('should display login form', async ({ cleanPage: page }) => {
     await expect(page).toHaveTitle(/Ventry/);
     await expect(page.locator('h2')).toContainText('Welcome to Ventry');
+    await expect(page.locator('text=AI-native inventory management system')).toBeVisible();
     
     // Check form elements
     await expect(page.locator('input[type="email"]')).toBeVisible();
@@ -52,8 +53,18 @@ test.describe('Authentication', () => {
       
       await page.click('button:has-text("Sign In")');
       
+      // Wait for navigation or error
+      await page.waitForTimeout(2000);
+      
+      // Check if there's an error message
+      const errorElement = page.locator('.text-red-600');
+      if (await errorElement.count() > 0) {
+        const errorText = await errorElement.first().innerText();
+        throw new Error(`Login failed with error: ${errorText}`);
+      }
+      
       // Should redirect to dashboard
-      await expect(page).toHaveURL(/.*dashboard/);
+      await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
       await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
       
       // Verify user info is displayed
@@ -77,19 +88,10 @@ test.describe('Authentication', () => {
       await page.fill('input[type="email"]', testUser.email);
       await page.fill('input[type="password"]', 'WrongPassword123!');
       
-      // Use Promise.all to wait for API response before clicking
-      const [loginResponse] = await Promise.all([
-        page.waitForResponse(response => 
-          response.url().includes('/api/auth/login') && 
-          response.status() === 401
-        ),
-        page.click('button:has-text("Sign In")')
-      ]);
+      // Click sign in and wait for tRPC response
+      await page.click('button:has-text("Sign In")');
       
-      // Verify the API response
-      expect(loginResponse.status()).toBe(401);
-      
-      // Wait for any potential page reload/navigation to complete
+      // Wait for error message to appear
       await page.waitForLoadState('networkidle');
       
       // Should show error message
@@ -110,7 +112,7 @@ test.describe('Authentication', () => {
     
     // Should redirect to login
     await expect(page).toHaveURL(/.*login/);
-    await expect(page.locator('h2')).toContainText('Sign In to Ventry');
+    await expect(page.locator('h2')).toContainText('Welcome to Ventry');
   });
 
   test('should clear error messages on new input', async ({ cleanPage: page }) => {
@@ -161,7 +163,7 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL(/.*login/);
     } finally {
       // Cleanup
-      await clearBrowserStorage(page);
+      await clearAuthState(page);
       await context.close();
       await cleanupTestDataForUser(testUser.id);
     }
@@ -196,7 +198,7 @@ test.describe('Authentication', () => {
       await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
     } finally {
       // Cleanup
-      await clearBrowserStorage(page);
+      await clearAuthState(page);
       await context.close();
       await cleanupTestDataForUser(testUser.id);
     }
