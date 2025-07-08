@@ -1,9 +1,10 @@
-// Global test setup
-import 'reflect-metadata';
+// Global test setup for ESM + tRPC + Vitest
+import { vi } from 'vitest';
 
 // Mock environment variables
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.NODE_ENV = 'test';
 
 // Enterprise-grade database configuration for unit tests:
 // - Respect any environment-provided DATABASE_URL
@@ -17,10 +18,12 @@ if (!process.env.DATABASE_URL) {
   console.log('🚀 Unit Tests: Using environment-provided database:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@'));
 }
 
-// Suppress console logs during tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+// Suppress console logs during tests unless explicitly needed
+if (process.env.VITEST_VERBOSE !== 'true') {
+  global.console = {
+    ...console,
+    log: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
+}

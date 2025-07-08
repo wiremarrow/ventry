@@ -24,18 +24,20 @@ ventry/
 
 ### Technology Stack
 - **Package Management**: pnpm + Turborepo for monorepo management
-- **Backend**: NestJS + Prisma + PostgreSQL for scalable API architecture
+- **Backend**: **tRPC + Fastify + Prisma + PostgreSQL** for end-to-end type-safe API architecture
 - **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui for modern UI
+- **API Layer**: **tRPC v11** with full-stack TypeScript type inference and runtime safety
 - **Database**: PostgreSQL for all environments (consistent development to production)
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
-  - **Unit Tests**: Jest with 80% coverage thresholds for services and controllers
+  - **Unit Tests**: **Vitest** with 80% coverage thresholds for tRPC procedures and services
   - **Integration Tests**: Real PostgreSQL database operations with proper isolation
   - **E2E Tests**: Playwright across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with sharding
   - **E2E Reliability**: Fixed authentication error handling ensuring consistent test execution
-- **Deployment**: Vercel for frontend, containerized backend services
+- **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights
 - **CI/CD**: Enterprise-grade GitHub Actions pipeline with 13 mandatory status checks
 - **AI Integration**: OpenAI/Anthropic SDK with configurable providers
+- **Architecture**: **ESM-only** monorepo with workspace dependencies for type sharing
 
 ## 🧠 AI Agent Architecture
 
@@ -67,18 +69,26 @@ ventry/
 
 ### AI Integration Pattern
 ```typescript
-// Agent Service Pattern
-@Injectable()
-export class StockAdvisorService {
-  async generateRecommendation(productId: string): Promise<ReorderRecommendation> {
-    // 1. Fetch historical data via Prisma
-    // 2. Apply business logic and context
-    // 3. Generate structured prompt
-    // 4. Call LLM with chain-of-thought reasoning
-    // 5. Parse and validate response
-    // 6. Log action to AgentLogs
-  }
-}
+// tRPC Agent Procedure Pattern
+export const agentsRouter = createTRPCRouter({
+  stockAdvisor: protectedProcedure
+    .input(z.object({ productId: z.string() }))
+    .output(reorderRecommendationSchema)
+    .mutation(async ({ ctx, input }) => {
+      // 1. Fetch historical data via Prisma
+      const product = await ctx.prisma.product.findUnique({
+        where: { id: input.productId },
+        include: { stockMovements: true, stockLevels: true }
+      });
+      
+      // 2. Apply business logic and context
+      // 3. Generate structured prompt
+      // 4. Call LLM with chain-of-thought reasoning
+      // 5. Parse and validate response with Zod
+      // 6. Log action to AgentLogs
+      return recommendation;
+    }),
+});
 ```
 
 ## 🔄 Automated Workflows
@@ -133,13 +143,13 @@ model AnomalyEvent { ... }
 model ChatSession { ... }
 ```
 
-### NestJS Modules
-- **InventoryModule**: Core inventory operations
-- **ProductsModule**: Product catalog management
-- **SuppliersModule**: Supplier relationship management
-- **AgentsModule**: AI agent orchestration
-- **AuthModule**: Authentication & authorization
-- **NotificationsModule**: Email/SMS alerts
+### tRPC Router Architecture
+- **authRouter**: Authentication & authorization procedures
+- **usersRouter**: User management with role-based access
+- **productsRouter**: Product catalog management with pagination
+- **categoriesRouter**: Category hierarchy operations
+- **healthRouter**: System health checks and monitoring
+- **agentsRouter**: AI agent orchestration (future implementation)
 
 ### Next.js App Router Structure
 ```
@@ -181,6 +191,31 @@ app/
 - **Rate Limiting**: LLM API usage controls
 - **Audit Trail**: All AI decisions logged
 
+## 🏗️ tRPC Architecture Details
+
+### **Workspace Dependencies**
+```json
+// apps/web/package.json
+{
+  "dependencies": {
+    "@ventry/backend": "workspace:*",  // Required for AppRouter types
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3"
+  }
+}
+```
+
+### **Type-Safe API Flow**
+1. **Backend**: Define tRPC procedures with Zod schemas
+2. **Export**: AppRouter type automatically generated
+3. **Frontend**: Import AppRouter type for full inference
+4. **Client**: `trpc.auth.login.useMutation()` fully typed
+
+### **ESM Architecture**
+- **Full ESM**: No CommonJS compatibility layer
+- **Build First**: Backend must build before frontend
+- **Type Generation**: Automatic .d.ts files for type inference
+
 ## 📦 Development Setup
 
 ### Prerequisites
@@ -213,16 +248,16 @@ pnpm dev
 
 # Access the application:
 # Frontend (Next.js): http://localhost:6061
-# Backend API (NestJS): http://localhost:6060
-# API Documentation: http://localhost:6060/api (Swagger/OpenAPI)
+# Backend API (tRPC + Fastify): http://localhost:6060
+# tRPC Endpoints: http://localhost:6060/trpc
 
 # Run tests (3-tier testing strategy)
-pnpm test                    # Unit tests across all packages
+pnpm test                    # Vitest unit tests across all packages
 pnpm test:integration        # PostgreSQL integration tests
 pnpm test:e2e               # Multi-browser E2E tests
 
 # Backend-specific testing with coverage
-pnpm test:cov               # Unit tests with coverage thresholds (backend only)
+pnpm test:cov               # Vitest unit tests with coverage thresholds (backend only)
 # OR: pnpm --filter @ventry/backend test:cov
 
 # Run all tests for CI

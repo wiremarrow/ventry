@@ -25,8 +25,8 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 
 1. **Documentation Check** - README.md + TODO.md updates for feat/fix/refactor/perf PRs
 2. **Lint and Type Check** - ESLint + TypeScript strict validation  
-3. **Unit Tests (18)** - Jest on Node.js 18
-4. **Unit Tests (20)** - Jest on Node.js 20
+3. **Unit Tests (18)** - Vitest on Node.js 18
+4. **Unit Tests (20)** - Vitest on Node.js 20
 5. **PostgreSQL Integration Tests** - Real database operations
 6. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
 7. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
@@ -74,13 +74,13 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 # MANDATORY: All must pass
 pnpm lint                    # ESLint validation
 pnpm typecheck              # TypeScript strict mode
-pnpm test                    # Unit tests (excludes integration)
+pnpm test                    # Vitest unit tests (excludes integration)
 pnpm test:integration        # PostgreSQL integration tests
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
 
 # Backend-specific commands (run from /apps/backend or use filter)
-pnpm test:cov               # Unit tests with coverage thresholds
+pnpm test:cov               # Vitest unit tests with coverage thresholds
 pnpm test:integration       # Integration tests with PostgreSQL
 # OR: pnpm --filter @ventry/backend test:cov
 # OR: pnpm --filter @ventry/backend test:integration
@@ -132,10 +132,12 @@ pnpm format                # Format code
 
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
-- **Backend**: NestJS + Prisma + PostgreSQL
+- **Backend**: **tRPC + Fastify** + Prisma + PostgreSQL
 - **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui
-- **Testing**: Jest (unit) + Playwright (E2E) + PostgreSQL (integration)
-- **Deployment**: Vercel (frontend) + containerized backend
+- **API Layer**: **tRPC v11** with full-stack TypeScript type inference
+- **Testing**: **Vitest** (unit) + Playwright (E2E) + PostgreSQL (integration)
+- **Deployment**: Vercel (frontend) + containerized Fastify backend
+- **Architecture**: **ESM-only** monorepo with workspace dependencies
 - **Monitoring**: Sentry error tracking + performance
 
 ---
@@ -166,8 +168,8 @@ pnpm format                # Format code
 ```
 ventry/
 ├── apps/
-│   ├── backend/          # NestJS API (Phase 1 implementation)
-│   ├── web/              # Next.js frontend (Phase 2 implementation)  
+│   ├── backend/          # tRPC + Fastify API (Phase 1 implementation)
+│   ├── web/              # Next.js frontend (Phase 1 implementation)  
 │   └── docs/             # Documentation site (future)
 ├── packages/
 │   ├── shared/           # Types, utils, constants
@@ -236,6 +238,51 @@ ventry/
 **WARNING**: An outdated charter misleads future developers. When in doubt, update CLAUDE.md!
 
 **REMEMBER**: This charter is your source of truth. Keep it accurate, keep it current, keep it authoritative.
+
+---
+
+## 🔧 tRPC DEVELOPMENT - MANDATORY PATTERNS
+
+### **Workspace Dependencies**
+```json
+// apps/web/package.json
+{
+  "dependencies": {
+    "@ventry/backend": "workspace:*",  // Required for AppRouter types
+    "@trpc/client": "^11.4.3",
+    "@trpc/react-query": "^11.4.3"
+  }
+}
+```
+
+### **Type-Safe API Flow**
+1. **Backend**: Define tRPC procedures with Zod schemas
+2. **Export**: AppRouter type automatically generated
+3. **Frontend**: Import AppRouter type for full inference
+4. **Client**: `trpc.auth.login.useMutation()` fully typed
+
+### **ESM Architecture**
+- **Full ESM**: No CommonJS compatibility layer
+- **Build First**: Backend must build before frontend
+- **Type Generation**: Automatic .d.ts files for type inference
+
+### **Common Issues & Solutions**
+- **"useContext collision"**: Check procedures don't return `any` types
+- **Module resolution**: Ensure workspace dependencies are correct
+- **Build order**: Always build backend before frontend in CI
+- **Type errors**: Verify AppRouter export in backend index.ts
+
+### **Development Commands**
+```bash
+# Backend development
+pnpm --filter @ventry/backend dev    # Start tRPC + Fastify server
+pnpm --filter @ventry/backend build  # Build for type generation
+pnpm --filter @ventry/backend test:cov  # Run Vitest with coverage
+
+# Frontend development (requires backend to be built first)
+pnpm --filter @ventry/web dev        # Start Next.js development
+pnpm --filter @ventry/web build      # Build for production
+```
 
 ---
 
