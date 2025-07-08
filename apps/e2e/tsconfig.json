@@ -3,18 +3,17 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": ".",
-    "noUnusedLocals": false,
-    "module": "ES2022",
-    "target": "ES2022",
-    "moduleResolution": "node"
+    "noEmit": true,
+    "types": ["node", "@playwright/test"]
   },
   "include": [
-    "index.ts",
-    "client.ts",
-    "prisma/**/*"
+    "**/*.ts",
+    "playwright.config.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "playwright-report",
+    "test-results"
   ]
 }
