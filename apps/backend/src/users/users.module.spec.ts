@@ -1,4 +1,4 @@
-import { UsersModule } from './users.module';
+import { UsersModule } from './users.module.js';
 
 describe('UsersModule', () => {
   it('should be defined', () => {

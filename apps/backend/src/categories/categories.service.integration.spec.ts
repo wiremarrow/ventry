@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { CategoriesService } from './categories.service';
-import { DatabaseService } from '../database/database.service';
+import { CategoriesService } from './categories.service.js';
+import { DatabaseService } from '../database/database.service.js';
 import { 
   createTestUser, 
   createTestCategory, 
   createTestProduct,
   cleanTestData 
-} from '../test-helpers/factories';
+} from '../test-helpers/factories.js';
 
 describe('CategoriesService Integration', () => {
   let service: CategoriesService;

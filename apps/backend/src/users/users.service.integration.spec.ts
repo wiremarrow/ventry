@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { UsersService } from './users.service';
-import { DatabaseService } from '../database/database.service';
-import { createTestUser, cleanTestData } from '../test-helpers/factories';
+import { UsersService } from './users.service.js';
+import { DatabaseService } from '../database/database.service.js';
+import { createTestUser, cleanTestData } from '../test-helpers/factories.js';
 
 describe('UsersService Integration', () => {
   let service: UsersService;

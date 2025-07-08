@@ -1,6 +1,6 @@
-import { AppModule } from './app.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { AppModule } from './app.module.js';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 
 describe('AppModule', () => {
   it('should be defined', () => {

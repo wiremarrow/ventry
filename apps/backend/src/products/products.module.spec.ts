@@ -1,4 +1,4 @@
-import { ProductsModule } from './products.module';
+import { ProductsModule } from './products.module.js';
 
 describe('ProductsModule', () => {
   it('should be defined', () => {

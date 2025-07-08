@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from './jwt.strategy.js';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../../users/users.service';
+import { UsersService } from '../../users/users.service.js';
 
 const mockUsersService = {
   findById: jest.fn(),

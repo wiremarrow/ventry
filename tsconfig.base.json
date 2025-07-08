@@ -30,8 +30,7 @@
     "baseUrl": ".",
     "paths": {
       "@ventry/shared/*": ["packages/shared/src/*"],
-      "@ventry/ui/*": ["packages/ui/src/*"],
-      "@ventry/database": ["packages/database/index.ts"]
+      "@ventry/ui/*": ["packages/ui/src/*"]
     }
   },
   "exclude": ["node_modules", "dist", "build", ".turbo", "coverage"]

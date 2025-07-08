@@ -1,4 +1,4 @@
-import { CategoriesModule } from './categories.module';
+import { CategoriesModule } from './categories.module.js';
 
 describe('CategoriesModule', () => {
   it('should be defined', () => {

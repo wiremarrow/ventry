@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { LocationsController } from './locations.controller';
-import { LocationsService } from './locations.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { LocationsController } from './locations.controller.js';
+import { LocationsService } from './locations.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
 const mockLocationsService = {

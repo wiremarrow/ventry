@@ -1,8 +1,8 @@
 import { Controller, Post, Body, UseGuards, Get, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { LoginRequest, RegisterRequest, RefreshTokenRequest } from '@ventry/shared';
 
 @ApiTags('Authentication')

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HealthService } from './health.service';
-import { DatabaseService } from '../database/database.service';
+import { HealthService } from './health.service.js';
+import { DatabaseService } from '../database/database.service.js';
 
 const mockDatabaseService = {
   getHealth: jest.fn(),

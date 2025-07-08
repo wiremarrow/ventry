@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../database/database.service.js';
 import { User, Prisma } from '@ventry/database';
 
 @Injectable()

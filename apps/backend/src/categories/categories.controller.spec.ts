@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { CategoriesController } from './categories.controller';
-import { CategoriesService } from './categories.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { CategoriesController } from './categories.controller.js';
+import { CategoriesService } from './categories.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { NotFoundException, ConflictException } from '@nestjs/common';
 
 const mockCategoriesService = {

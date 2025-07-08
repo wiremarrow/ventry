@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthController } from './auth.controller.js';
+import { AuthService } from './auth.service.js';
+import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 
 const mockAuthService = {
   login: jest.fn(),

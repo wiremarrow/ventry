@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { CategoriesService } from './categories.service';
-import { DatabaseService } from '../database/database.service';
+import { CategoriesService } from './categories.service.js';
+import { DatabaseService } from '../database/database.service.js';
 
 // Mock the DatabaseService properly
 const mockDatabaseService = {

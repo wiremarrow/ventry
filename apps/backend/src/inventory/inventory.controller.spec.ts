@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { InventoryController } from './inventory.controller';
-import { InventoryService } from './inventory.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
+import { InventoryController } from './inventory.controller.js';
+import { InventoryService } from './inventory.service.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 

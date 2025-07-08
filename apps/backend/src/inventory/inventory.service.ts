@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../database/database.service.js';
 import { InventoryItem, InventoryMovement, Prisma } from '@ventry/database';
 import { InventoryItemRequest, InventoryMovementRequest, InventoryAdjustmentRequest, InventoryTransferRequest } from '@ventry/shared';
 

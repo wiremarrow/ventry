@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import * as _bcrypt from 'bcryptjs';
-import { UsersService } from './users.service';
-import { DatabaseService } from '../database/database.service';
+import { UsersService } from './users.service.js';
+import { DatabaseService } from '../database/database.service.js';
 
 jest.mock('bcryptjs');
 

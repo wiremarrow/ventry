@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../database/database.service.js';
 import { Product, Prisma } from '@ventry/database';
 import { ProductRequest } from '@ventry/shared';
 

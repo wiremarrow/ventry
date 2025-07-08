@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
+import { DatabaseService } from '../database/database.service.js';
 import { Category } from '@ventry/database';
 import { CategoryRequest } from '@ventry/shared';
 

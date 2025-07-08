@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { Reflector } from '@nestjs/core';
-import { RolesGuard } from './roles.guard';
+import { RolesGuard } from './roles.guard.js';
 import { ExecutionContext } from '@nestjs/common';
 import { Role } from '@ventry/database';
 

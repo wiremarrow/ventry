@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { CategoriesModule } from './categories/categories.module';
-import { ProductsModule } from './products/products.module';
-import { LocationsModule } from './locations/locations.module';
-import { InventoryModule } from './inventory/inventory.module';
-import { HealthModule } from './health/health.module';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
+import { DatabaseModule } from './database/database.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UsersModule } from './users/users.module.js';
+import { CategoriesModule } from './categories/categories.module.js';
+import { ProductsModule } from './products/products.module.js';
+import { LocationsModule } from './locations/locations.module.js';
+import { InventoryModule } from './inventory/inventory.module.js';
+import { HealthModule } from './health/health.module.js';
 
 @Module({
   imports: [

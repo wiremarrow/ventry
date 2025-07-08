@@ -1,4 +1,4 @@
-import { LocationsModule } from './locations.module';
+import { LocationsModule } from './locations.module.js';
 
 describe('LocationsModule', () => {
   it('should be defined', () => {

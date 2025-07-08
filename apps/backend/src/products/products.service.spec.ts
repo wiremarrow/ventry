@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ConflictException } from '@nestjs/common';
-import { ProductsService } from './products.service';
-import { DatabaseService } from '../database/database.service';
+import { ProductsService } from './products.service.js';
+import { DatabaseService } from '../database/database.service.js';
 
 const mockDatabaseService = {
   product: {

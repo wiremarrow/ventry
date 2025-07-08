@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { InventoryService } from './inventory.service';
-import { DatabaseService } from '../database/database.service';
+import { InventoryService } from './inventory.service.js';
+import { DatabaseService } from '../database/database.service.js';
 
 const mockDatabaseService = {
   inventoryItem: {

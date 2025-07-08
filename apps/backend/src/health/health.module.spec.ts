@@ -1,4 +1,4 @@
-import { HealthModule } from './health.module';
+import { HealthModule } from './health.module.js';
 
 describe('HealthModule', () => {
   it('should be defined', () => {
