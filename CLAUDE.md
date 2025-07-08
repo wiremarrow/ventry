@@ -9,7 +9,7 @@
 **MANDATORY**: After implementing/debugging ANY feature or task, update **BOTH** `README.md` and `TODO.md` **BEFORE** opening a PR. PRs missing either update will be **REJECTED** by CI.
 
 ### **CI/CD PIPELINE COMPLIANCE**
-**MANDATORY**: ALL 13 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
+**MANDATORY**: ALL 12 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
 
 ### **TESTING REQUIREMENT** 
 **MANDATORY**: **ALL** tests must pass across **ALL** browsers (Chromium, Firefox, WebKit). **NEVER** merge with failing E2E tests.
@@ -19,23 +19,22 @@
 
 ---
 
-## 🔧 CI/CD SYSTEM - 13 REQUIRED STATUS CHECKS
+## 🔧 CI/CD SYSTEM - 12 REQUIRED STATUS CHECKS
 
 These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 
 1. **Documentation Check** - README.md + TODO.md updates for feat/fix/refactor/perf PRs
 2. **Lint and Type Check** - ESLint + TypeScript strict validation  
-3. **Unit Tests (18)** - Vitest on Node.js 18
-4. **Unit Tests (20)** - Vitest on Node.js 20
-5. **PostgreSQL Integration Tests** - Real database operations
-6. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
-7. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
-8. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
-9. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
-10. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
-11. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
-12. **Build** - Production build with Sentry integration
-13. **Coverage Gate** - Test coverage threshold validation
+3. **Unit Tests** - Vitest on Node.js 20 LTS
+4. **PostgreSQL Integration Tests** - Real database operations
+5. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
+6. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
+7. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
+8. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
+9. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
+10. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
+11. **Build** - Production build with Sentry integration
+12. **Coverage Gate** - Test coverage threshold validation
 
 ### **Optional Checks**
 - **Docker Build** - Only runs when Docker files change
@@ -160,7 +159,7 @@ pnpm format                # Format code
 - **Production**: PostgreSQL + Sentry + full monitoring
 
 ### **Branch Protection Rules**
-- **main** branch: 13 status checks + PR reviews + linear history
+- **main** branch: 12 status checks + PR reviews + linear history
 - **Feature branches**: Full CI validation required
 - **NEVER** force push to main
 - **NEVER** bypass status checks
@@ -191,7 +190,7 @@ ventry/
 ```
 
 ### **Key Files**
-- `.github/workflows/ci.yml` - Unified CI pipeline (13 checks)
+- `.github/workflows/ci.yml` - Unified CI pipeline (12 checks)
 - `playwright.config.ts` - E2E testing configuration
 - `vercel.json` - Deployment configuration
 - `turbo.json` - Monorepo build pipeline
@@ -202,7 +201,7 @@ ventry/
 ## ⚠️ CONSEQUENCES - WHAT HAPPENS IF YOU VIOLATE THESE RULES
 
 1. **Missing Documentation Updates** → CI `docs-check` job **FAILS** → PR **BLOCKED**
-2. **Failing Tests** → 13 status checks **FAIL** → PR **BLOCKED**  
+2. **Failing Tests** → 12 status checks **FAIL** → PR **BLOCKED**  
 3. **Poor Code Quality** → Lint/TypeScript checks **FAIL** → PR **BLOCKED**
 4. **Architecture Violations** → Code review **REJECTION** → Rework required
 
@@ -210,7 +209,7 @@ ventry/
 
 ## 🎯 SUCCESS CRITERIA - WHEN YOU'VE DONE IT RIGHT
 
-✅ All 13 CI status checks are **GREEN**  
+✅ All 12 CI status checks are **GREEN**  
 ✅ README.md and TODO.md are **UPDATED**  
 ✅ All browsers pass E2E tests  
 ✅ PostgreSQL integration tests pass  
