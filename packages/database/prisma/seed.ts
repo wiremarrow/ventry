@@ -18,10 +18,12 @@ async function main() {
       await prisma.user.deleteMany();
     }
 
-    // Create admin user
+    // Create admin user (idempotent - safe for CI/CD)
     const adminPassword = await bcrypt.hash('admin123', 10);
-    const admin = await prisma.user.create({
-      data: {
+    const admin = await prisma.user.upsert({
+      where: { email: 'admin@ventry.com' },
+      update: {}, // Don't modify existing user in CI environments
+      create: {
         email: 'admin@ventry.com',
         username: 'admin',
         firstName: 'Admin',
@@ -31,10 +33,12 @@ async function main() {
       },
     });
 
-    // Create manager user
+    // Create manager user (idempotent - safe for CI/CD)
     const managerPassword = await bcrypt.hash('manager123', 10);
-    const manager = await prisma.user.create({
-      data: {
+    const manager = await prisma.user.upsert({
+      where: { email: 'manager@ventry.com' },
+      update: {}, // Don't modify existing user in CI environments
+      create: {
         email: 'manager@ventry.com',
         username: 'manager',
         firstName: 'Manager',
@@ -44,10 +48,12 @@ async function main() {
       },
     });
 
-    // Create regular user
+    // Create regular user (idempotent - safe for CI/CD)
     const userPassword = await bcrypt.hash('user123', 10);
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      where: { email: 'user@ventry.com' },
+      update: {}, // Don't modify existing user in CI environments
+      create: {
         email: 'user@ventry.com',
         username: 'user',
         firstName: 'Regular',
@@ -57,48 +63,60 @@ async function main() {
       },
     });
 
-    // Create categories
-    const electronicsCategory = await prisma.category.create({
-      data: {
+    // Create categories (idempotent - safe for CI/CD)
+    const electronicsCategory = await prisma.category.upsert({
+      where: { name: 'Electronics' },
+      update: {},
+      create: {
         name: 'Electronics',
         description: 'Electronic devices and components',
       },
     });
 
-    const furnitureCategory = await prisma.category.create({
-      data: {
+    const furnitureCategory = await prisma.category.upsert({
+      where: { name: 'Furniture' },
+      update: {},
+      create: {
         name: 'Furniture',
         description: 'Office and home furniture',
       },
     });
 
-    const suppliesCategory = await prisma.category.create({
-      data: {
+    const suppliesCategory = await prisma.category.upsert({
+      where: { name: 'Office Supplies' },
+      update: {},
+      create: {
         name: 'Office Supplies',
         description: 'General office supplies and stationery',
       },
     });
 
-    // Create locations
-    const warehouse = await prisma.location.create({
-      data: {
+    // Create locations (idempotent - safe for CI/CD)
+    const warehouse = await prisma.location.upsert({
+      where: { name: 'Main Warehouse' },
+      update: {},
+      create: {
         name: 'Main Warehouse',
         description: 'Primary storage facility',
         address: '123 Industrial Ave, Storage City, SC 12345',
       },
     });
 
-    const showroom = await prisma.location.create({
-      data: {
+    const showroom = await prisma.location.upsert({
+      where: { name: 'Showroom' },
+      update: {},
+      create: {
         name: 'Showroom',
         description: 'Customer display area',
         address: '456 Retail St, Display City, DC 67890',
       },
     });
 
-    // Create products
-    const laptop = await prisma.product.create({
-      data: {
+    // Create products (idempotent - safe for CI/CD)
+    const laptop = await prisma.product.upsert({
+      where: { sku: 'LAP-001' },
+      update: {},
+      create: {
         sku: 'LAP-001',
         name: 'Business Laptop',
         description: 'High-performance laptop for business use',
@@ -110,8 +128,10 @@ async function main() {
       },
     });
 
-    const monitor = await prisma.product.create({
-      data: {
+    const monitor = await prisma.product.upsert({
+      where: { sku: 'MON-001' },
+      update: {},
+      create: {
         sku: 'MON-001',
         name: '24" Monitor',
         description: '24-inch LED monitor with 1080p resolution',
@@ -123,8 +143,10 @@ async function main() {
       },
     });
 
-    const chair = await prisma.product.create({
-      data: {
+    const chair = await prisma.product.upsert({
+      where: { sku: 'CHR-001' },
+      update: {},
+      create: {
         sku: 'CHR-001',
         name: 'Office Chair',
         description: 'Ergonomic office chair with lumbar support',
@@ -136,8 +158,10 @@ async function main() {
       },
     });
 
-    const desk = await prisma.product.create({
-      data: {
+    const desk = await prisma.product.upsert({
+      where: { sku: 'DSK-001' },
+      update: {},
+      create: {
         sku: 'DSK-001',
         name: 'Standing Desk',
         description: 'Adjustable height standing desk',
@@ -149,8 +173,10 @@ async function main() {
       },
     });
 
-    const pens = await prisma.product.create({
-      data: {
+    const pens = await prisma.product.upsert({
+      where: { sku: 'PEN-001' },
+      update: {},
+      create: {
         sku: 'PEN-001',
         name: 'Ballpoint Pens (Pack of 12)',
         description: 'Blue ballpoint pens, pack of 12',
@@ -162,9 +188,16 @@ async function main() {
       },
     });
 
-    // Create inventory items
-    const laptopInventory = await prisma.inventoryItem.create({
-      data: {
+    // Create inventory items (idempotent - safe for CI/CD)
+    const laptopInventory = await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: laptop.id,
+          locationId: warehouse.id,
+        },
+      },
+      update: {},
+      create: {
         productId: laptop.id,
         locationId: warehouse.id,
         quantity: 25,
@@ -173,8 +206,15 @@ async function main() {
       },
     });
 
-    const monitorInventory = await prisma.inventoryItem.create({
-      data: {
+    const monitorInventory = await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: monitor.id,
+          locationId: warehouse.id,
+        },
+      },
+      update: {},
+      create: {
         productId: monitor.id,
         locationId: warehouse.id,
         quantity: 40,
@@ -183,8 +223,15 @@ async function main() {
       },
     });
 
-    const chairInventory = await prisma.inventoryItem.create({
-      data: {
+    const chairInventory = await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: chair.id,
+          locationId: warehouse.id,
+        },
+      },
+      update: {},
+      create: {
         productId: chair.id,
         locationId: warehouse.id,
         quantity: 15,
@@ -193,8 +240,15 @@ async function main() {
       },
     });
 
-    const deskInventory = await prisma.inventoryItem.create({
-      data: {
+    const deskInventory = await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: desk.id,
+          locationId: warehouse.id,
+        },
+      },
+      update: {},
+      create: {
         productId: desk.id,
         locationId: warehouse.id,
         quantity: 8,
@@ -203,8 +257,15 @@ async function main() {
       },
     });
 
-    const pensInventory = await prisma.inventoryItem.create({
-      data: {
+    const pensInventory = await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: pens.id,
+          locationId: warehouse.id,
+        },
+      },
+      update: {},
+      create: {
         productId: pens.id,
         locationId: warehouse.id,
         quantity: 100,
@@ -213,9 +274,16 @@ async function main() {
       },
     });
 
-    // Create some showroom inventory
-    await prisma.inventoryItem.create({
-      data: {
+    // Create some showroom inventory (idempotent - safe for CI/CD)
+    await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: laptop.id,
+          locationId: showroom.id,
+        },
+      },
+      update: {},
+      create: {
         productId: laptop.id,
         locationId: showroom.id,
         quantity: 3,
@@ -224,8 +292,15 @@ async function main() {
       },
     });
 
-    await prisma.inventoryItem.create({
-      data: {
+    await prisma.inventoryItem.upsert({
+      where: {
+        productId_locationId: {
+          productId: monitor.id,
+          locationId: showroom.id,
+        },
+      },
+      update: {},
+      create: {
         productId: monitor.id,
         locationId: showroom.id,
         quantity: 5,
