@@ -89,8 +89,18 @@ pnpm test:integration       # Integration tests with PostgreSQL
 ### **Database Testing Requirements**
 - **Development**: PostgreSQL 16 with Docker for consistent environment
 - **CI Integration**: PostgreSQL 16 service container  
+- **Integration Test Database**: Separate `ventry_integration_test` database for isolated testing
 - **ALWAYS** test migrations with `pnpm db:push`
 - **ALWAYS** use PostgreSQL for all environments (dev, test, prod)
+
+### **Integration Test Database Setup**
+```bash
+# Create integration test database schema (one-time setup)
+DATABASE_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test" pnpm --filter @ventry/database db:push
+
+# Run integration tests (uses isolated database)
+pnpm --filter @ventry/backend test:integration
+```
 
 ### **E2E Testing Requirements**
 - **Browser Matrix**: Chromium, Firefox, WebKit (ALL must pass)
@@ -283,6 +293,35 @@ pnpm --filter @ventry/backend test:cov  # Run Vitest with coverage
 pnpm --filter @ventry/web dev        # Start Next.js development
 pnpm --filter @ventry/web build      # Build for production
 ```
+
+### **Testing Patterns & Guidelines**
+
+#### **When to Use Each Test Type**
+- **Unit Tests** (`*.test.ts`): Test individual tRPC procedures, utilities, business logic
+- **Integration Tests** (`*.integration.spec.ts`): Test procedures with real database operations
+- **E2E Tests** (`e2e/*.spec.ts`): Test complete user workflows via browser automation
+
+#### **tRPC Testing Best Practices**
+```typescript
+// Unit Tests - Use createDirectCaller for mocked dependencies
+import { createDirectCaller } from '../test-utils/trpc-test-client.js';
+
+const caller = await createDirectCaller({
+  user: { id: '1', email: 'test@example.com', role: 'USER' },
+  prisma: mockPrisma
+});
+
+// Integration Tests - Use createIntegrationContext for real database
+import { createIntegrationContext } from '../test-utils/trpc-test-client.js';
+
+const ctx = await createIntegrationContext();
+const caller = appRouter.createCaller(ctx);
+```
+
+#### **Database Testing Strategy**
+- **Unit Tests**: Use mocked Prisma client for fast, isolated testing
+- **Integration Tests**: Use real `ventry_integration_test` database for actual data operations
+- **E2E Tests**: Use dedicated E2E database with full application stack
 
 ---
 

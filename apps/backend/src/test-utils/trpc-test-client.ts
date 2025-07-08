@@ -35,11 +35,25 @@ export async function createDirectCaller(contextOverride?: Partial<Awaited<Retur
 }
 
 // Helper to create authenticated context
-export function createAuthenticatedContext(user: { id: string; email: string; role: string }) {
+export async function createAuthenticatedContext(user: { id: string; email: string; role: string }) {
   return {
     user,
-    prisma: require('@ventry/database').prisma,
+    prisma: (await import('@ventry/database')).prisma,
     req: {} as any,
     res: {} as any,
   };
+}
+
+// Helper for integration tests - creates proper context with mock request/response
+export async function createIntegrationContext(authToken?: string) {
+  const mockReq = {
+    headers: authToken ? { authorization: `Bearer ${authToken}` } : {}
+  };
+  const mockRes = {};
+  
+  return await createContext({ 
+    req: mockReq as any, 
+    res: mockRes as any,
+    info: {} as any
+  });
 }

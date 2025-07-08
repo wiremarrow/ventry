@@ -3,6 +3,20 @@ import { createDirectCaller } from '../test-utils/trpc-test-client.js';
 import { mockUser, mockAuthenticatedUser, mockProduct, createMockProduct } from '../test-utils/test-data.js';
 
 // Mock @ventry/database
+vi.mock('@ventry/database', () => {
+  const mockPrisma = {
+    product: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  };
+  
+  return { prisma: mockPrisma };
+});
+
+// Access the mocked prisma for tests
 const mockPrisma = {
   product: {
     findMany: vi.fn(),
@@ -11,10 +25,6 @@ const mockPrisma = {
     update: vi.fn(),
   },
 };
-
-vi.mock('@ventry/database', () => ({
-  prisma: mockPrisma,
-}));
 
 describe('Products Router', () => {
   let caller: Awaited<ReturnType<typeof createDirectCaller>>;

@@ -61,7 +61,7 @@ await server.register(fastifyTRPCPlugin, {
 });
 
 // Health check endpoint (outside of tRPC for simplicity)
-server.get('/health', async (request, reply) => {
+server.get('/health', async (_request, _reply) => {
   return {
     status: 'healthy',
     timestamp: new Date().toISOString(),
@@ -70,7 +70,7 @@ server.get('/health', async (request, reply) => {
 });
 
 // Root endpoint
-server.get('/', async (request, reply) => {
+server.get('/', async (_request, _reply) => {
   return {
     name: 'Ventry API',
     version: '1.0.0',

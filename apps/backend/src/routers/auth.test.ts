@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
 import { createDirectCaller } from '../test-utils/trpc-test-client.js';
 import { mockUser, mockAuthenticatedUser } from '../test-utils/test-data.js';
@@ -13,6 +12,20 @@ vi.mock('bcryptjs', () => ({
 }));
 
 // Mock @ventry/database
+vi.mock('@ventry/database', () => {
+  const mockPrisma = {
+    user: {
+      findUnique: vi.fn(),
+      findFirst: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+  };
+  
+  return { prisma: mockPrisma };
+});
+
+// Access the mocked prisma for tests
 const mockPrisma = {
   user: {
     findUnique: vi.fn(),
@@ -21,10 +34,6 @@ const mockPrisma = {
     update: vi.fn(),
   },
 };
-
-vi.mock('@ventry/database', () => ({
-  prisma: mockPrisma,
-}));
 
 describe('Auth Router', () => {
   let caller: Awaited<ReturnType<typeof createDirectCaller>>;
@@ -124,6 +133,8 @@ describe('Auth Router', () => {
           firstName: true,
           lastName: true,
           role: true,
+          isActive: true,
+          createdAt: true,
         },
       });
     });

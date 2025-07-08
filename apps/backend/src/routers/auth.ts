@@ -164,7 +164,7 @@ export const authRouter = createTRPCRouter({
 
   refreshToken: publicProcedure
     .input(refreshTokenSchema)
-    .mutation(async ({ ctx, input }) => {
+    .mutation(async ({ ctx: _ctx, input: _input }) => {
       // In a real app, you'd verify the refresh token
       // For now, let's just decode and create a new access token
       throw new TRPCError({
