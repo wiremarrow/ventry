@@ -73,8 +73,7 @@ if gh api repos/$REPO/branches/main/protection >/dev/null 2>&1; then
     EXPECTED_CHECKS=(
         "Documentation Check"
         "Lint and Type Check"
-        "Unit Tests (18)"
-        "Unit Tests (20)"
+        "Unit Tests"
         "PostgreSQL Integration Tests"
         "E2E Tests - chromium (1)"
         "E2E Tests - chromium (2)"
