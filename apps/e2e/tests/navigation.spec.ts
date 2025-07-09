@@ -14,35 +14,35 @@ test.describe('Navigation', () => {
     // Test navigation to different sections
     
     // Navigate to Inventory
-    await page.click('text=Inventory');
+    await page.getByRole('link', { name: 'Inventory' }).click();
     await expect(page).toHaveURL(/.*inventory/);
     
     // Navigate to Products  
-    await page.click('text=Products');
+    await page.getByRole('link', { name: 'Products' }).click();
     await expect(page).toHaveURL(/.*products/);
     
     // Navigate to Categories
-    await page.click('text=Categories');
+    await page.getByRole('link', { name: 'Categories' }).click();
     await expect(page).toHaveURL(/.*categories/);
     
     // Navigate to Locations
-    await page.click('text=Locations');
+    await page.getByRole('link', { name: 'Locations' }).click();
     await expect(page).toHaveURL(/.*locations/);
     
     // Navigate to Movements
-    await page.click('text=Movements');
+    await page.getByRole('link', { name: 'Movements' }).click();
     await expect(page).toHaveURL(/.*movements/);
     
     // Navigate to Reports
-    await page.click('text=Reports');
+    await page.getByRole('link', { name: 'Reports' }).click();
     await expect(page).toHaveURL(/.*reports/);
     
     // Navigate to Users
-    await page.click('text=Users');
+    await page.getByRole('link', { name: 'Users' }).click();
     await expect(page).toHaveURL(/.*users/);
     
     // Navigate back to Dashboard
-    await page.click('text=Dashboard');
+    await page.getByRole('link', { name: 'Dashboard' }).click();
     await expect(page).toHaveURL(/.*dashboard/);
   });
 
@@ -52,7 +52,7 @@ test.describe('Navigation', () => {
     await expect(dashboardLink).toHaveClass(/bg-blue-100/);
     
     // Navigate to inventory and check it becomes active
-    await page.click('text=Inventory');
+    await page.getByRole('link', { name: 'Inventory' }).click();
     const inventoryLink = page.locator('a[href="/inventory"]');
     await expect(inventoryLink).toHaveClass(/bg-blue-100/);
   });

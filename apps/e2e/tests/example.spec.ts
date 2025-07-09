@@ -7,7 +7,7 @@ test.describe('Ventry Application', () => {
     // Should redirect to login page
     await expect(page).toHaveURL(/.*login/);
     await expect(page).toHaveTitle(/Ventry/);
-    await expect(page.locator('h2')).toContainText('Sign In to Ventry');
+    await expect(page.locator('h2')).toContainText('Welcome to Ventry');
   });
 
   test('should redirect to dashboard when authenticated', async ({ page }) => {
