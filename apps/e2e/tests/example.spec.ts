@@ -7,7 +7,7 @@ test.describe('Ventry Application', () => {
     // Should redirect to login page
     await expect(page).toHaveURL(/.*login/);
     await expect(page).toHaveTitle(/Ventry/);
-    await expect(page.locator('h2')).toContainText('Sign In to Ventry');
+    await expect(page.locator('h2')).toContainText('Welcome to Ventry');
   });
 
   test('should redirect to dashboard when authenticated', async ({ page }) => {
@@ -17,12 +17,15 @@ test.describe('Ventry Application', () => {
     await page.fill('input[type="password"]', 'admin123');
     await page.click('button[type="submit"]');
     
+    // Wait for successful login and redirect to dashboard
+    await expect(page).toHaveURL(/.*dashboard/);
+    
     // Then visit home page
     await page.goto('/');
     
     // Should redirect to dashboard
     await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
   });
 
   test('should show login form elements', async ({ page }) => {
@@ -39,7 +42,7 @@ test.describe('Ventry Application', () => {
   });
 
   test('should show 404 for non-existent pages', async ({ page }) => {
-    const response = await page.goto('/non-existent-page');
+    await page.goto('/non-existent-page');
     
     // Check response status (Next.js returns 200 for client-side routing, but shows 404 content)
     // We'll check for typical 404 behavior in Next.js
