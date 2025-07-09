@@ -40,7 +40,7 @@ describe('Auth Router Integration', () => {
         password: 'password123',
       });
 
-      expect(result).toHaveProperty('access_token');
+      expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('user');
       expect(result.user).toMatchObject({
         email: 'test@integration.test',
@@ -106,7 +106,7 @@ describe('Auth Router Integration', () => {
         password: 'password123',
       });
 
-      expect(result).toHaveProperty('access_token');
+      expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('user');
       expect(result.user.email).toBe('login@integration.test');
     });

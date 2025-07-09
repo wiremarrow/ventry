@@ -2,11 +2,10 @@ import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
-import compress from '@fastify/compress';
+// import compress from '@fastify/compress';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
 import cookie from '@fastify/cookie';
-import superjson from 'superjson';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './trpc/context.js';
 import { appRouter, type AppRouter } from './routers/app.js';
@@ -60,7 +59,6 @@ await server.register(fastifyTRPCPlugin, {
   trpcOptions: {
     router: appRouter,
     createContext,
-    transformer: superjson,
     onError({ path, error }) {
       // Log all tRPC errors for debugging (not just production)
       console.error(`❌ tRPC Error on path '${path}':`, {

@@ -1,4 +1,3 @@
-import { TRPCError } from '@trpc/server';
 import { t } from '../trpc.js';
 
 interface CookieOptions {
@@ -28,15 +27,15 @@ export const cookieMiddleware = t.middleware(({ ctx, next }) => {
       req: ctx.req,
       res: ctx.res,
       // Add a helper function to set cookies safely
-      setCookie: (name: string, value: string, options: CookieOptions = {}) => {
-        const defaultOptions: CookieOptions = {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-          path: '/',
-          ...options,
-        };
+      setCookie: (name: string, value: string, _options: CookieOptions = {}) => {
+        // const defaultOptions: CookieOptions = {
+        //   httpOnly: true,
+        //   secure: process.env.NODE_ENV === 'production',
+        //   sameSite: 'strict',
+        //   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        //   path: '/',
+        //   ...options,
+        // };
 
         try {
           // Temporarily disable cookie setting to isolate the issue

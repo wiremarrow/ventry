@@ -1,5 +1,5 @@
 import { test, expect } from '../fixtures/base.fixture';
-import { createTestUser, clearAuthState } from '../utils/test-helpers';
+import { createTestUser } from '../utils/test-helpers';
 import { cleanupTestDataForUser } from '../utils/db-cleanup';
 
 test.describe('Authentication', () => {

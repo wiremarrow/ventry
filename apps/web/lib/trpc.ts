@@ -1,5 +1,5 @@
 import { createTRPCReact } from '@trpc/react-query';
-import { httpBatchLink, httpLink } from '@trpc/client';
+import { httpLink } from '@trpc/client';
 import superjson from 'superjson';
 import type { AppRouter } from '@ventry/backend';
 
@@ -12,9 +12,7 @@ export const trpcClient = trpc.createClient({
       url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',
       transformer: superjson,
       // Include credentials for httpOnly cookies
-      fetchOptions: {
-        credentials: 'include',
-      },
+      fetch: (url, options) => fetch(url, { ...options, credentials: 'include' }),
     }),
     // httpBatchLink({
     //   url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',

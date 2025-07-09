@@ -55,7 +55,7 @@ describe('Auth Router', () => {
         password: 'password123',
       });
 
-      expect(result).toHaveProperty('access_token');
+      expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('user');
       expect(result.user.email).toBe('test@example.com');
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
@@ -116,7 +116,7 @@ describe('Auth Router', () => {
         password: 'password123',
       });
 
-      expect(result).toHaveProperty('access_token');
+      expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('user');
       expect(mockPrisma.user.create).toHaveBeenCalledWith({
         data: {
