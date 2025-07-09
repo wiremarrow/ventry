@@ -102,7 +102,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       env: {
-        NEXT_PUBLIC_API_URL: 'http://localhost:6060/trpc',
+        NEXT_PUBLIC_API_URL: '/api/trpc',
       },
     },
   ],

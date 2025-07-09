@@ -439,6 +439,77 @@ pnpm test                    # Fast unit tests (no database)
 pnpm test:integration        # Slower integration tests (real database)
 ```
 
+## E2E Testing Troubleshooting
+
+### Cookie Authentication Issues
+
+If E2E tests fail with authentication errors after login:
+
+1. **Ensure frontend server is restarted after proxy configuration changes**
+   - The Next.js proxy configuration must be loaded for cookies to work
+   - If using `reuseExistingServer: true`, stop and restart the frontend server
+
+2. **Check that NEXT_PUBLIC_API_URL is set correctly**
+   - For E2E tests: `/api/trpc` (uses proxy)
+   - For direct backend access: `http://localhost:6060/trpc`
+
+3. **Verify Next.js rewrites are configured**
+   ```typescript
+   // next.config.ts
+   async rewrites() {
+     return [{
+       source: '/api/trpc/:path*',
+       destination: 'http://localhost:6060/trpc/:path*',
+     }];
+   }
+   ```
+
+4. **Browser Cookie Restrictions**
+   - Playwright doesn't store cross-origin cookies between different ports
+   - Even with `Domain=localhost`, cookies won't be shared between localhost:6060 and localhost:6061
+   - The proxy solution makes all requests appear same-origin
+
+### Context Cleanup Errors
+
+**Issue**: `Failed to find browser context` errors
+```typescript
+// ❌ Wrong - Don't clear cookies on closing contexts
+await clearAuthState(page);
+await context.close();
+
+// ✅ Correct - Just close the context
+await context.close(); // This automatically cleans up all storage
+```
+
+**Key Points**:
+- Closing a browser context automatically cleans up all storage including cookies
+- Don't perform operations on contexts that are about to be closed
+- Each test should create its own isolated context
+
+### Authentication Test Patterns
+
+**Successful Login Test**:
+```typescript
+test('should successfully login', async ({ page }) => {
+  await page.fill('input[type="email"]', testUser.email);
+  await page.fill('input[type="password"]', testUser.password);
+  await page.click('button:has-text("Sign In")');
+  
+  // Wait for navigation instead of checking for errors
+  await page.waitForURL(/.*dashboard/, { timeout: 10000 });
+  
+  // Verify dashboard loaded
+  await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
+});
+```
+
+### Common E2E Pitfalls
+
+1. **Port Mismatch**: Ensure backend runs on 6060 and frontend on 6061
+2. **Environment Variables**: Check `NEXT_PUBLIC_API_URL` in playwright.config.ts
+3. **Server Startup**: Wait for both servers to be ready before tests
+4. **Cookie Persistence**: Use browser contexts for isolated test sessions
+
 ## Resources
 
 - [Jest Documentation](https://jestjs.io/docs/getting-started)

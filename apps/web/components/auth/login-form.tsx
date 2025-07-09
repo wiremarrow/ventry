@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, Input, Label, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
 import { trpc } from '@/lib/trpc';
@@ -20,6 +21,7 @@ type LoginRequest = z.infer<typeof LoginSchema>;
 export function LoginForm() {
   const [error, setError] = useState('');
   const router = useRouter();
+  const queryClient = useQueryClient();
   const login = useAuthStore((state) => state.login);
 
 
@@ -46,6 +48,9 @@ export function LoginForm() {
 
       // Login with user info only - tokens handled by httpOnly cookies
       login(user);
+      
+      // Invalidate auth.me query to refetch with new authentication
+      queryClient.invalidateQueries({ queryKey: [['auth', 'me']] });
       
       // Add success breadcrumb
       Sentry.addBreadcrumb({

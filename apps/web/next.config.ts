@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  // Add rewrites to proxy API requests to avoid cross-origin cookie issues
+  async rewrites() {
+    return [
+      {
+        source: '/api/trpc/:path*',
+        destination: 'http://localhost:6060/trpc/:path*',
+      },
+    ];
+  },
 };
 
 // Sentry options

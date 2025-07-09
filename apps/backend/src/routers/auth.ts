@@ -73,14 +73,38 @@ export const authRouter = createTRPCRouter({
         role: user.role,
       });
 
-      // Set httpOnly cookie directly (compression disabled, so no conflict)
-      ctx.res.cookie('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', // Changed from 'strict' to 'lax' for E2E test compatibility
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-      });
+      // Diagnostic: Check what methods are available on ctx.res
+      console.log('ctx.res type:', typeof ctx.res);
+      console.log('Has header method?', typeof ctx.res.header);
+      console.log('Has setCookie?', typeof ctx.res.setCookie);
+      
+      // Set httpOnly cookie using Fastify's header method
+      if (typeof ctx.res.header === 'function') {
+        // Use Fastify's header method to set cookie - no Domain needed for proxy setup
+        const cookieValue = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+        ctx.res.header('Set-Cookie', cookieValue);
+        console.log('Set cookie using header method (proxied setup)');
+        
+        // Verify the header was set
+        const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
+        console.log('Response headers after setting cookie:', headers);
+      } else if (typeof ctx.res.setCookie === 'function') {
+        // Fallback to setCookie if header method doesn't exist
+        ctx.res.setCookie('auth-token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
+        });
+        console.log('Set cookie using setCookie method (proxied setup)');
+      } else {
+        console.error('No method available to set cookies on ctx.res!');
+        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(ctx.res)));
+      }
+      
+      // Add logging to verify cookie is being set
+      console.log('Setting auth cookie for user:', user.email);
 
       return {
         success: true,
@@ -150,14 +174,38 @@ export const authRouter = createTRPCRouter({
         role: user.role,
       });
 
-      // Set httpOnly cookie directly (compression disabled, so no conflict)
-      ctx.res.cookie('auth-token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax', // Changed from 'strict' to 'lax' for E2E test compatibility
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-      });
+      // Diagnostic: Check what methods are available on ctx.res
+      console.log('ctx.res type:', typeof ctx.res);
+      console.log('Has header method?', typeof ctx.res.header);
+      console.log('Has setCookie?', typeof ctx.res.setCookie);
+      
+      // Set httpOnly cookie using Fastify's header method
+      if (typeof ctx.res.header === 'function') {
+        // Use Fastify's header method to set cookie - no Domain needed for proxy setup
+        const cookieValue = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+        ctx.res.header('Set-Cookie', cookieValue);
+        console.log('Set cookie using header method (proxied setup)');
+        
+        // Verify the header was set
+        const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
+        console.log('Response headers after setting cookie:', headers);
+      } else if (typeof ctx.res.setCookie === 'function') {
+        // Fallback to setCookie if header method doesn't exist
+        ctx.res.setCookie('auth-token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
+        });
+        console.log('Set cookie using setCookie method (proxied setup)');
+      } else {
+        console.error('No method available to set cookies on ctx.res!');
+        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(ctx.res)));
+      }
+      
+      // Add logging to verify cookie is being set
+      console.log('Setting auth cookie for user:', user.email);
 
       return {
         success: true,

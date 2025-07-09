@@ -7,37 +7,36 @@ Ventry is built as a modern monorepo application using microservices principles 
 ```mermaid
 graph TB
     subgraph "Frontend"
-        WEB[Next.js Web App]
+        WEB[Next.js Web App<br/>Port: 6061]
+        PROXY[Next.js Proxy<br/>/api/trpc/*]
         UI[Shared UI Components]
     end
     
     subgraph "Backend Services"
-        API[NestJS API Server]
-        AGENTS[AI Agents Module]
-        AUTH[Auth Module]
-        INV[Inventory Module]
+        API[tRPC + Fastify Server<br/>Port: 6060]
+        AUTH[Auth Router]
+        USERS[Users Router]
+        PRODUCTS[Products Router]
+        AGENTS[AI Agents<br/>(Future)]
     end
     
     subgraph "Data Layer"
         DB[(PostgreSQL)]
-        CACHE[(Redis)]
-        QUEUE[Bull Queue]
+        PRISMA[Prisma ORM]
     end
     
     subgraph "External Services"
         AI[AI Providers<br/>OpenAI/Anthropic]
-        EMAIL[Email Service]
-        STORAGE[Object Storage]
+        EMAIL[Email Service<br/>(Planned)]
+        SENTRY[Sentry Monitoring]
     end
     
-    WEB --> API
-    API --> DB
-    API --> CACHE
-    API --> QUEUE
+    WEB --> PROXY
+    PROXY --> API
+    API --> PRISMA
+    PRISMA --> DB
+    API --> SENTRY
     AGENTS --> AI
-    AUTH --> CACHE
-    API --> EMAIL
-    API --> STORAGE
 ```
 
 ## Technology Stack
@@ -52,14 +51,14 @@ graph TB
 - **Forms**: React Hook Form + Zod
 
 ### Backend
-- **Framework**: NestJS
+- **Framework**: tRPC + Fastify (migrated from NestJS)
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
-- **Caching**: Redis
-- **Queue**: Bull (Redis-based)
-- **Authentication**: JWT with Passport
-- **Real-time**: Socket.io
-- **API Documentation**: OpenAPI/Swagger
+- **Authentication**: JWT with httpOnly cookies
+- **API Layer**: tRPC v11 for end-to-end type safety
+- **Real-time**: WebSocket support via Fastify
+- **Caching**: Redis (planned)
+- **Queue**: Bull (planned)
 
 ### Infrastructure
 - **Monorepo**: Turborepo
@@ -177,9 +176,32 @@ app/
 ### Authentication Flow
 1. User logs in with credentials
 2. Server validates and generates JWT
-3. Client stores JWT securely
-4. JWT sent with each request
-5. Server validates JWT and authorizes
+3. JWT stored in httpOnly cookie (secure)
+4. Cookie automatically sent with requests (credentials: 'include')
+5. Server validates JWT from cookie and authorizes
+
+### Cookie-Based Authentication
+- **JWT Storage**: httpOnly cookies prevent XSS attacks
+- **Same-Origin Requests**: Next.js proxy ensures cookies work in development
+- **Cookie Settings**: `SameSite=Lax`, `HttpOnly`, `Secure` (in production)
+- **Automatic Handling**: No manual token management in frontend
+
+### API Proxy Pattern
+```typescript
+// next.config.ts
+async rewrites() {
+  return [{
+    source: '/api/trpc/:path*',
+    destination: 'http://localhost:6060/trpc/:path*',
+  }];
+}
+```
+
+**Why Proxy?**
+- Browsers block cross-origin cookies (even different ports)
+- Proxy makes all requests appear from same origin (localhost:6061)
+- Enables secure httpOnly cookie authentication in development
+- Production uses same pattern with proper domain configuration
 
 ### Data Protection
 - Encryption at rest (database)

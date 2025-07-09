@@ -34,6 +34,8 @@ ventry/
   - **Integration Tests**: Real PostgreSQL database operations with proper isolation
   - **E2E Tests**: Dedicated `@ventry/e2e` workspace package with Playwright across 5 browsers (Chromium, Firefox, WebKit, Mobile Chrome, Mobile Safari) with sharding
   - **E2E Architecture**: Enterprise-grade test isolation with proper workspace dependency resolution and automated cleanup
+- **Authentication**: httpOnly cookie-based JWT with Next.js proxy for same-origin requests
+- **API Proxy**: Next.js rewrites ensure same-origin requests for cookie authentication (avoids cross-port CORS issues)
 - **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights
 - **CI/CD**: Enterprise-grade GitHub Actions pipeline with 13 mandatory status checks

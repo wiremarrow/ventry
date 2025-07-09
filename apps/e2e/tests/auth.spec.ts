@@ -53,18 +53,10 @@ test.describe('Authentication', () => {
       
       await page.click('button:has-text("Sign In")');
       
-      // Wait for navigation or error
-      await page.waitForTimeout(2000);
+      // Wait for navigation to dashboard
+      await page.waitForURL(/.*dashboard/, { timeout: 10000 });
       
-      // Check if there's an error message
-      const errorElement = page.locator('.text-red-600');
-      if (await errorElement.count() > 0) {
-        const errorText = await errorElement.first().innerText();
-        throw new Error(`Login failed with error: ${errorText}`);
-      }
-      
-      // Should redirect to dashboard
-      await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
+      // Verify we're on the dashboard
       await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
       
       // Verify user info is displayed
@@ -163,7 +155,6 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL(/.*login/);
     } finally {
       // Cleanup
-      await clearAuthState(page);
       await context.close();
       await cleanupTestDataForUser(testUser.id);
     }
@@ -198,7 +189,6 @@ test.describe('Authentication', () => {
       await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
     } finally {
       // Cleanup
-      await clearAuthState(page);
       await context.close();
       await cleanupTestDataForUser(testUser.id);
     }

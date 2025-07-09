@@ -126,6 +126,22 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Package.json Scripts**: Added db:migrate:deploy commands to root, backend, and database packages
   - **Turbo.json Pipeline**: Added test:cov and db:migrate:deploy task configurations with proper dependencies
   - **Scalable Pattern**: Enterprise-grade database management suitable for large PostgreSQL setups and startup growth
+✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
+  - **Root Cause**: Cross-origin cookie restrictions between backend (localhost:6060) and frontend (localhost:6061) ports preventing httpOnly cookies from being stored/sent
+  - **Browser Behavior**: Modern browsers treat different ports as different origins, blocking cookie sharing even with Domain=localhost
+  - **Solution**: Next.js proxy configuration routing `/api/trpc/*` to backend, making all requests appear same-origin
+  - **Implementation**: 
+    - Added rewrites to next.config.ts: `/api/trpc/:path*` → `http://localhost:6060/trpc/:path*`
+    - Updated E2E playwright.config.ts NEXT_PUBLIC_API_URL from `http://localhost:6060/trpc` to `/api/trpc`
+    - Removed Domain=localhost from cookies (no longer needed with proxy)
+    - Fixed test error handling that was masking the real authentication issue
+    - Removed problematic clearCookies() calls on closing browser contexts
+  - **Results**: All 9 auth E2E tests now passing consistently across all browsers
+  - **Performance**: E2E tests execute reliably without timeout issues
+  - **Lessons**: 
+    - Browser security prevents cookie sharing across ports even with same domain
+    - Playwright browser contexts automatically clean up cookies when closed
+    - Proxy pattern is the proper solution for cookie-based auth in development
 
 🚀 **Phase 2 Ready**: AI Integration Foundation
 All Phase 1 infrastructure is complete and validated. The system is now ready for AI agent integration with:
