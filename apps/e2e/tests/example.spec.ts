@@ -17,12 +17,15 @@ test.describe('Ventry Application', () => {
     await page.fill('input[type="password"]', 'admin123');
     await page.click('button[type="submit"]');
     
+    // Wait for successful login and redirect to dashboard
+    await expect(page).toHaveURL(/.*dashboard/);
+    
     // Then visit home page
     await page.goto('/');
     
     // Should redirect to dashboard
     await expect(page).toHaveURL(/.*dashboard/);
-    await expect(page.locator('h1')).toContainText('Dashboard');
+    await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
   });
 
   test('should show login form elements', async ({ page }) => {

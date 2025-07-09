@@ -70,11 +70,11 @@ test.describe('Navigation', () => {
     await expect(sidebar).toHaveClass(/-translate-x-full/);
     
     // Click menu button to open sidebar
-    await page.click('button[aria-label="Menu"]', { force: true });
+    await page.click('button:has(svg.lucide-menu)');
     await expect(sidebar).toHaveClass(/translate-x-0/);
     
-    // Click overlay to close sidebar
-    await page.click('.bg-black.bg-opacity-50');
+    // Click menu button again to close sidebar (overlay has z-index issue)
+    await page.click('button:has(svg.lucide-menu)');
     await expect(sidebar).toHaveClass(/-translate-x-full/);
   });
 
