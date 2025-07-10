@@ -132,7 +132,7 @@ app/
 
 ### Request Flow
 1. Client makes request to Next.js app
-2. Next.js app calls NestJS API
+2. Next.js app calls tRPC API
 3. API validates request (DTO validation)
 4. API checks authentication/authorization
 5. Service layer processes business logic

@@ -1,13 +1,13 @@
 # Testing Guide
 
-Ventry uses a comprehensive testing strategy with Jest for unit tests and Playwright for E2E tests.
+Ventry uses a comprehensive testing strategy with Vitest for unit tests and Playwright for E2E tests.
 
 ## Testing Stack
 
-- **Unit Tests**: Jest with TypeScript support
+- **Unit Tests**: Vitest with TypeScript support
 - **Integration Tests**: PostgreSQL service containers  
 - **E2E Tests**: Playwright with browser matrix and sharding
-- **Coverage**: Built-in with Jest + threshold gates
+- **Coverage**: Built-in with Vitest + threshold gates
 - **CI Integration**: Comprehensive 13-check pipeline on every PR
 
 ## Advanced Testing Features
@@ -54,7 +54,7 @@ Ventry uses a comprehensive testing strategy with Jest for unit tests and Playwr
 
 ## Running Tests
 
-### Unit Tests (Jest)
+### Unit Tests (Vitest)
 
 ```bash
 # Run all unit tests (excludes integration tests)
@@ -111,34 +111,62 @@ pnpm playwright test --project=webkit
 ### Unit Test Example
 
 ```typescript
-// product.service.spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { ProductService } from './product.service';
+// products.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { createDirectCaller } from '../test-utils/trpc-test-client';
+import { mockProducts, mockCategories } from '../test-utils/test-data';
 
-describe('ProductService', () => {
-  let service: ProductService;
+describe('Products Router', () => {
+  let caller: Awaited<ReturnType<typeof createDirectCaller>>;
+  const mockPrisma = {
+    product: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [ProductService],
-    }).compile();
-
-    service = module.get<ProductService>(ProductService);
+    vi.clearAllMocks();
+    caller = await createDirectCaller({ 
+      user: { id: '1', email: 'test@example.com', role: 'ADMIN' },
+      prisma: mockPrisma as any 
+    });
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('should list products', async () => {
+    mockPrisma.product.findMany.mockResolvedValue(mockProducts);
+
+    const result = await caller.products.list();
+    
+    expect(result).toHaveLength(3);
+    expect(result[0].name).toBe('Widget Pro');
   });
 
   it('should create a product', async () => {
-    const product = await service.create({
+    const newProduct = {
+      id: '4',
       name: 'Test Product',
       sku: 'TEST-001',
       price: 99.99,
+      categoryId: '1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    
+    mockPrisma.product.create.mockResolvedValue(newProduct);
+
+    const result = await caller.products.create({
+      name: 'Test Product',
+      sku: 'TEST-001',
+      price: 99.99,
+      categoryId: '1',
     });
     
-    expect(product).toHaveProperty('id');
-    expect(product.name).toBe('Test Product');
+    expect(result).toHaveProperty('id');
+    expect(result.name).toBe('Test Product');
   });
 });
 ```
@@ -255,8 +283,7 @@ Our unified CI pipeline runs comprehensive tests on:
 #### Required Status Checks (13 total)
 1. **Documentation Check** - Enforces README.md/TODO.md updates
 2. **Lint and Type Check** - ESLint + TypeScript validation
-3. **Unit Tests (18)** - Jest testing on Node.js 18
-4. **Unit Tests (20)** - Jest testing on Node.js 20
+3. **Unit Tests** - Vitest testing on Node.js 20 LTS
 5. **PostgreSQL Integration Tests** - Real database operations
 6. **E2E Tests - chromium (1)** - Browser testing, shard 1 of 2
 7. **E2E Tests - chromium (2)** - Browser testing, shard 2 of 2
@@ -276,17 +303,21 @@ Our unified CI pipeline runs comprehensive tests on:
 
 ## Debugging Tests
 
-### Jest Debugging
+### Vitest Debugging
 
 ```bash
 # Run specific test file
-pnpm jest src/products/product.service.spec.ts
+pnpm vitest run src/routers/products.test.ts
 
 # Run tests matching pattern
-pnpm jest --testNamePattern="should create"
+pnpm vitest run -t "should create"
+
+# Run in watch mode
+pnpm vitest
 
 # Debug in VS Code
-# Add breakpoint and use "Jest: Debug" command
+# Add breakpoint and use "Debug: JavaScript Debug Terminal"
+# Then run: pnpm vitest run
 ```
 
 ### Playwright Debugging
@@ -353,8 +384,8 @@ beforeEach(async () => {
 
 ### Test Configuration Separation
 
-- **Unit Tests**: Use Jest default config with `test-setup.ts`
-- **Integration Tests**: Use `jest.integration.config.js` with `test-setup-integration.ts`
+- **Unit Tests**: Use Vitest default config with `vitest.config.ts`
+- **Integration Tests**: Use `vitest.integration.config.ts` with separate database
 - **Proper Isolation**: Unit tests exclude `*.integration.spec.ts` files
 
 ### Test Data Management
@@ -512,8 +543,8 @@ test('should successfully login', async ({ page }) => {
 
 ## Resources
 
-- [Jest Documentation](https://jestjs.io/docs/getting-started)
+- [Vitest Documentation](https://vitest.dev/guide/)
 - [Playwright Documentation](https://playwright.dev/docs/intro)
 - [Testing Library](https://testing-library.com/)
-- [VS Code Jest Extension](https://marketplace.visualstudio.com/items?itemName=Orta.vscode-jest)
+- [VS Code Vitest Extension](https://marketplace.visualstudio.com/items?itemName=ZixuanChen.vitest-explorer)
 - [Playwright VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-playwright.playwright)

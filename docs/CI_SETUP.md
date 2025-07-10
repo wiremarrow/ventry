@@ -145,8 +145,7 @@ If you prefer manual configuration or need to customize:
 - Select these status checks (add after first CI run):
   - **Documentation Check** - Enforces README.md/TODO.md updates on feature PRs
   - **Lint and Type Check** - ESLint + TypeScript validation
-  - **Unit Tests (18)** - Jest testing on Node.js 18
-  - **Unit Tests (20)** - Jest testing on Node.js 20
+  - **Unit Tests** - Vitest testing on Node.js 20 LTS
   - **PostgreSQL Integration Tests** - Database operations with real PostgreSQL service
   - **E2E Tests - chromium (1)** - Playwright E2E testing, shard 1 of 2
   - **E2E Tests - chromium (2)** - Playwright E2E testing, shard 2 of 2

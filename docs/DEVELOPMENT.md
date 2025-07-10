@@ -46,8 +46,8 @@ pnpm dev
 
 # Access the application:
 # Frontend (Next.js): http://localhost:6061
-# Backend API (NestJS): http://localhost:6060
-# API Documentation: http://localhost:6060/api (Swagger/OpenAPI)
+# Backend API (tRPC + Fastify): http://localhost:6060
+# tRPC endpoints: http://localhost:6060/trpc
 
 # Or start specific apps
 pnpm --filter @ventry/backend dev
@@ -60,7 +60,7 @@ pnpm --filter @ventry/web dev
 |---------|-------------|
 | `pnpm dev` | Start all development servers |
 | `pnpm build` | Build all packages for production |
-| `pnpm test` | Run unit tests with Jest (excludes integration tests) |
+| `pnpm test` | Run unit tests with Vitest (excludes integration tests) |
 | `pnpm test:integration` | Run integration tests with PostgreSQL |
 | `pnpm test:e2e` | Run E2E tests with Playwright |
 | `pnpm test:e2e:ui` | Run E2E tests with interactive UI |
@@ -122,8 +122,9 @@ docker-compose down -v
 ```
 ventry/
 ├── apps/
-│   ├── backend/         # NestJS API server
+│   ├── backend/         # tRPC + Fastify API server
 │   ├── web/            # Next.js frontend
+│   ├── e2e/            # Playwright E2E tests (dedicated workspace)
 │   └── docs/           # Documentation site
 ├── packages/
 │   ├── shared/         # Shared types, constants, utilities
@@ -213,15 +214,16 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
 
 ## Debugging
 
-### Backend (NestJS)
+### Backend (tRPC + Fastify)
 
 1. Start the backend in debug mode:
    ```bash
-   pnpm --filter @ventry/backend dev:debug
+   pnpm --filter @ventry/backend dev
    ```
 
-2. Attach your debugger to port 9229
+2. The tRPC server includes built-in debugging capabilities
 3. Backend runs on http://localhost:6060
+4. Access tRPC procedures at http://localhost:6060/trpc
 
 ### Frontend (Next.js)
 
@@ -313,6 +315,37 @@ Debug info:
 
 **Status**: Informational warning only, does not affect functionality.
 
+### tRPC + Fastify Architecture
+
+**Key Benefits**:
+- End-to-end type safety between frontend and backend
+- No code generation required - types are inferred automatically
+- Better performance than REST with automatic batching
+- Built-in error handling and validation with Zod
+
+**Development Workflow**:
+1. Define procedures in `apps/backend/src/routers/`
+2. Export router types through `AppRouter`
+3. Frontend imports types via workspace dependency
+4. Full IntelliSense and type checking in frontend
+
+**Common Patterns**:
+```typescript
+// Backend: Define a procedure
+export const productsRouter = createTRPCRouter({
+  list: protectedProcedure
+    .input(z.object({ limit: z.number().optional() }))
+    .query(async ({ ctx, input }) => {
+      return ctx.prisma.product.findMany({
+        take: input.limit,
+      });
+    }),
+});
+
+// Frontend: Use with full type safety
+const { data } = trpc.products.list.useQuery({ limit: 10 });
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -372,8 +405,10 @@ Example: `feat(backend): add stock advisor agent endpoint`
 
 ## Resources
 
-- [NestJS Documentation](https://docs.nestjs.com/)
+- [tRPC Documentation](https://trpc.io/docs)
+- [Fastify Documentation](https://fastify.dev/docs/latest/)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Turborepo Documentation](https://turbo.build/repo/docs)
 - [pnpm Documentation](https://pnpm.io/)
+- [Vitest Documentation](https://vitest.dev/guide/)

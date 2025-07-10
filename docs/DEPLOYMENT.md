@@ -5,7 +5,7 @@ Ventry supports multiple deployment strategies with Vercel as the primary platfo
 ## Deployment Overview
 
 - **Frontend (Next.js)**: Vercel (automatic deployments)
-- **Backend (NestJS)**: Docker containers (various platforms)
+- **Backend (tRPC + Fastify)**: Docker containers (various platforms)
 - **Database**: PostgreSQL (managed service recommended)
 - **Monitoring**: Sentry (automatic integration)
 

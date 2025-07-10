@@ -186,7 +186,7 @@ When contributing to AI agent features:
 
 ## Project-Specific Guidelines
 
-### Backend (NestJS)
+### Backend (tRPC + Fastify)
 - Use dependency injection
 - Follow module boundaries
 - Implement DTOs for validation
