@@ -18,6 +18,11 @@
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
     },
+    "test:fast": {
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV"],
+      "cache": false
+    },
     "test:cov": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
@@ -32,6 +37,17 @@
       "dependsOn": ["^build"],
       "outputs": ["playwright-report/**", "test-results/**"],
       "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"]
+    },
+    "test:ui": {
+      "dependsOn": ["^build"],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"]
+    },
+    "test:debug": {
+      "dependsOn": ["^build"],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"],
+      "cache": false
     },
     "lint": {
       "outputs": []
