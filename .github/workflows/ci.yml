@@ -120,7 +120,7 @@ jobs:
         env:
           DATABASE_URL: file:./test.db
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         run: pnpm test:cov
         env:
           NODE_ENV: test
@@ -264,7 +264,7 @@ jobs:
         run: pnpm db:generate
 
       - name: Install Playwright browsers
-        run: pnpm --filter @ventry/e2e install --with-deps ${{ matrix.project }}
+        run: pnpm playwright:install
 
       - name: Build application
         run: pnpm build
@@ -278,7 +278,7 @@ jobs:
         run: pnpm db:seed
 
       - name: Run Playwright tests
-        run: pnpm --filter @ventry/e2e test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
+        run: pnpm test:e2e -- --project=${{ matrix.project }} --shard=${{ matrix.shard }}/${{ matrix.total-shards }}
         env:
           NEXT_PUBLIC_API_URL: http://localhost:6060/api
           JWT_SECRET: test-secret-key
