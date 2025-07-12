@@ -282,6 +282,22 @@ pnpm dev
 # Frontend (Next.js): http://localhost:6061
 # Backend API (tRPC + Fastify): http://localhost:6060
 # tRPC Endpoints: http://localhost:6060/trpc
+```
+
+### Supabase Migration Setup (Optional - Phase 2)
+```bash
+# Set up Supabase for enhanced features
+./tools/scripts/setup-supabase.sh
+
+# This will:
+# - Initialize Supabase project
+# - Link to your Supabase instance
+# - Apply database schema
+# - Set up Row Level Security
+# - Generate TypeScript types
+
+# Run data migration from existing schema
+pnpm tsx tools/scripts/migrate-to-supabase.ts
 
 # Run tests (3-tier testing strategy)
 pnpm test                    # Vitest unit tests across all packages
