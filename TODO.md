@@ -143,13 +143,14 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
     - Playwright browser contexts automatically clean up cookies when closed
     - Proxy pattern is the proper solution for cookie-based auth in development
 
-🚀 **Phase 2 Ready**: AI Integration Foundation
-All Phase 1 infrastructure is complete and validated. The system is now ready for AI agent integration with:
-- Robust backend API foundation for AI service integration
-- Extensible database schema ready for AI-specific tables
+🚀 **Phase 2 In Progress**: Supabase Migration & AI Integration Foundation
+All Phase 1 infrastructure is complete and validated. Currently migrating to Supabase for enhanced capabilities:
+- Comprehensive inventory management schema with 40+ tables designed
+- Migration plan documented for gradual Supabase integration
+- Real-time inventory tracking with Supabase subscriptions planned
+- Row Level Security (RLS) policies for enterprise-grade security
+- Robust backend API foundation ready for AI service integration
 - Modern React 18 frontend ready for conversational interfaces
-- Comprehensive testing framework ready for AI agent validation
-- Real-time capabilities for AI agent notifications and updates
 
 ## 📋 Implementation Phases
 
@@ -536,41 +537,82 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
 
 ---
 
-## Phase 2: AI Integration (Week 7-8)
+## Phase 2: Supabase Migration (Week 7-8) 🚧 IN PROGRESS
 
-### 2.1 AI Agent Foundation
-- [ ] **2.1.1** Agent infrastructure setup
+### 2.0 Supabase Integration
+- [x] **2.0.1** Analyze Supabase feasibility and create migration plan
+  - Documented comprehensive migration strategy
+  - Created 40+ table schema for inventory management
+  - Planned gradual migration approach (3-4 weeks)
+  - Identified key benefits: realtime, RLS, storage
+
+- [x] **2.0.2** Create new Prisma schema with inventory tables
+  - Items, Categories, UnitOfMeasure, Lots, SerialNumbers
+  - Warehouses, Locations, Inventory tracking
+  - Procurement: Suppliers, PurchaseOrders, Receipts
+  - Sales: Customers, Orders, Shipments, Returns
+  - POS transactions and discount management
+  - Audit logs and notifications
+
+- [ ] **2.0.3** Setup Supabase project and authentication
+  - Initialize Supabase project
+  - Configure environment variables
+  - Implement auth migration strategy
+  - Test Supabase connection with Prisma
+
+- [ ] **2.0.4** Implement Row Level Security policies
+  - User role-based access policies
+  - Multi-tenant data isolation
+  - Inventory operation permissions
+  - Audit trail security
+
+- [ ] **2.0.5** Integrate Supabase realtime features
+  - Live inventory updates across locations
+  - Stock movement notifications
+  - Collaborative features
+  - WebSocket integration with tRPC
+
+- [ ] **2.0.6** Migrate data and update tRPC procedures
+  - Data migration scripts
+  - Update tRPC routers for new models
+  - Test all CRUD operations
+  - Performance optimization
+
+## Phase 3: AI Integration (Week 9-10)
+
+### 3.1 AI Agent Foundation
+- [ ] **3.1.1** Agent infrastructure setup
   - Create AI agent base classes and interfaces
   - Implement agent execution framework
   - Set up LLM provider abstraction (OpenAI/Anthropic)
   - Configure agent logging and monitoring
 
-- [ ] **2.1.2** Stock Advisor Agent implementation
+- [ ] **3.1.2** Stock Advisor Agent implementation
   - Implement reorder quantity recommendation logic
   - Historical sales analysis algorithms
   - Seasonality detection and trend analysis
   - Integration with tRPC backend procedures
 
-- [ ] **2.1.3** Forecast Agent implementation
+- [ ] **3.1.3** Forecast Agent implementation
   - Time-series forecasting algorithms
   - Demand prediction with confidence intervals
   - External factor integration (seasonality, trends)
   - tRPC procedures for forecast generation
 
-- [ ] **2.1.4** Anomaly Detection Agent
+- [ ] **3.1.4** Anomaly Detection Agent
   - Statistical anomaly detection algorithms
   - Stock movement pattern analysis
   - Alert generation and notification system
   - Integration with existing inventory monitoring
 
-### 2.2 Conversational AI Interface
-- [ ] **2.2.1** Chat interface implementation
+### 3.2 Conversational AI Interface
+- [ ] **3.2.1** Chat interface implementation
   - Real-time chat UI with streaming responses
   - Natural language query processing
   - Intent recognition and context management
   - Integration with existing shadcn/ui components
 
-- [ ] **2.2.2** Agent orchestration system
+- [ ] **3.2.2** Agent orchestration system
   - Agent routing based on user queries
   - Multi-agent conversation handling
   - Context preservation across interactions
@@ -578,45 +620,45 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
   - Theme configuration and customization
   - Component documentation and examples
 
-- [ ] **2.2.3** Design system implementation
+- [ ] **3.2.3** Design system implementation
   - Color palette and typography
   - Spacing and sizing scales
   - Component variants and states
   - Accessibility compliance (WCAG 2.1)
 
-- [ ] **2.2.4** UI component organization
+- [ ] **3.2.4** UI component organization
   - Atomic design principles
   - Shared components in packages/ui
   - App-specific components in apps/web
   - Storybook setup for component development
 
-### 2.3 State Management & Data Fetching
-- [ ] **2.3.1** React Context setup
+### 3.3 State Management & Data Fetching
+- [ ] **3.3.1** React Context setup
   - Authentication context
   - Theme context for dark/light mode
   - Global app state management
   - Context providers organization
 
-- [ ] **2.3.2** TanStack Query (React Query) setup
+- [ ] **3.3.2** TanStack Query (React Query) setup
   - Query client configuration
   - API client integration
   - Caching strategies
   - Optimistic updates implementation
 
-- [ ] **2.3.3** API client configuration
+- [ ] **3.3.3** API client configuration
   - Axios or fetch wrapper
   - Request/response interceptors
   - Error handling and retry logic
   - Authentication header management
 
-- [ ] **2.3.4** Form handling
+- [ ] **3.3.4** Form handling
   - React Hook Form integration
   - Zod schema validation
   - Form components and validation
   - Error message handling
 
-### 2.4 Routing & Navigation
-- [ ] **2.4.1** App Router structure
+### 3.4 Routing & Navigation
+- [ ] **3.4.1** App Router structure
   ```
   app/
   ├── (auth)/
@@ -632,44 +674,44 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
   └── api/
   ```
 
-- [ ] **2.4.2** Navigation components
+- [ ] **3.4.2** Navigation components
   - Sidebar navigation with collapsible menu
   - Breadcrumb navigation
   - Tab navigation for sub-pages
   - Mobile-responsive navigation
 
-- [ ] **2.4.3** Route protection
+- [ ] **3.4.3** Route protection
   - Authentication guards
   - Role-based route access
   - Redirect logic for unauthorized access
   - Loading states during authentication
 
-- [ ] **2.4.4** SEO and metadata
+- [ ] **3.4.4** SEO and metadata
   - Dynamic metadata generation
   - Open Graph tags
   - Structured data implementation
   - Sitemap generation
 
-### 2.5 Real-time Features Foundation
-- [ ] **2.5.1** WebSocket client setup
+### 3.5 Real-time Features Foundation
+- [ ] **3.5.1** WebSocket client setup
   - Socket.io client configuration
   - Connection management
   - Event handling system
   - Reconnection logic
 
-- [ ] **2.5.2** Real-time state synchronization
+- [ ] **3.5.2** Real-time state synchronization
   - WebSocket integration with React Query
   - Optimistic updates for real-time data
   - Conflict resolution strategies
   - Connection status indicators
 
-- [ ] **2.5.3** Notification system
+- [ ] **3.5.3** Notification system
   - Toast notifications for user feedback
   - Real-time alerts for critical events
   - Notification persistence and history
   - Push notification setup (future)
 
-- [ ] **2.5.4** Live data components
+- [ ] **3.5.4** Live data components
   - Real-time dashboard widgets
   - Live stock level indicators
   - Activity feeds with real-time updates
@@ -677,7 +719,7 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
 
 ---
 
-## Phase 3: Core Inventory Features (Week 7-8)
+## Phase 4: Core Inventory Features (Week 11-12)
 
 ### 3.1 Products Management
 - [ ] **3.1.1** Product CRUD operations
@@ -806,7 +848,7 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
 
 ---
 
-## Phase 4: AI Integration Foundation (Week 9-10)
+## Phase 5: AI Agent Implementation (Week 13-14)
 
 ### 4.1 LLM Service Infrastructure
 - [ ] **4.1.1** LLM service wrapper
@@ -972,7 +1014,7 @@ All Phase 1 infrastructure is complete and validated. The system is now ready fo
 
 ---
 
-## Phase 5: Advanced Features & Testing (Week 11-12)
+## Phase 6: Advanced Features & Testing (Week 15-16)
 
 ### 5.1 Forecast Agent Implementation
 - [ ] **5.1.1** Time-series forecasting service
