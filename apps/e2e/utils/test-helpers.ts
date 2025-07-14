@@ -1,5 +1,6 @@
 import { prisma, Role } from '@ventry/database';
 import bcrypt from 'bcryptjs';
+import { seedTestInventory } from './seed-inventory';
 
 /**
  * E2E Test Helpers
@@ -27,6 +28,8 @@ export interface TestUserData {
   firstName: string;
   lastName: string;
   role: Role;
+  createOrganization?: boolean;
+  seedInventory?: boolean;
 }
 
 export async function createTestUser(overrides: Partial<TestUserData> = {}): Promise<TestUserData & { id: string }> {
@@ -53,6 +56,27 @@ export async function createTestUser(overrides: Partial<TestUserData> = {}): Pro
       role: userData.role,
     },
   });
+
+  // Create organization if requested
+  if (userData.createOrganization) {
+    const org = await prisma.organization.create({
+      data: {
+        name: `Test Org ${testId}`,
+        slug: `test-org-${testId}`,
+        members: {
+          create: {
+            userId: user.id,
+            role: 'OWNER',
+          },
+        },
+      },
+    });
+
+    // Seed inventory data if requested
+    if (userData.seedInventory) {
+      await seedTestInventory(org.id);
+    }
+  }
 
   return {
     id: user.id,
