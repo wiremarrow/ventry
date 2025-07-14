@@ -1,18 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, Button, Badge, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { 
   ArrowLeft, 
   Edit,
@@ -27,10 +16,10 @@ import {
   DollarSign,
   AlertCircle
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();

@@ -4,19 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { Card, Input, Label, Button } from '@ventry/ui';
 import { 
   Building2, 
   ArrowLeft,
   Sparkles
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(100),
@@ -67,7 +64,7 @@ export default function NewOrganizationPage() {
   };
 
   // Auto-generate slug from name
-  const name = watch('name');
+  const _name = watch('name');
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     register('name').onChange(e);

@@ -1,35 +1,20 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Card, Button, Badge, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { 
   ArrowLeft, 
-  Building, 
   Mail, 
   Phone, 
   Globe, 
-  MapPin,
-  Package,
   DollarSign,
   Calendar,
   Edit,
   FileText
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 export default function CustomerDetailPage() {
   const params = useParams();

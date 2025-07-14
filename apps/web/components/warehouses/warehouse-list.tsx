@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@ventry/ui';
-import { Badge } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
 import {
@@ -22,8 +21,6 @@ import {
   DropdownMenuTrigger,
 } from '@ventry/ui';
 import {
-  ChevronLeft,
-  ChevronRight,
   Warehouse,
   AlertTriangle,
   MoreHorizontal,
@@ -33,6 +30,7 @@ import {
   MapPin,
 } from 'lucide-react';
 import { EditWarehouseDialog } from './edit-warehouse-dialog';
+import { WarehouseDetailsDialog } from './warehouse-details-dialog';
 import { toast } from 'sonner';
 
 interface WarehouseListProps {
@@ -40,23 +38,20 @@ interface WarehouseListProps {
 }
 
 export function WarehouseList({ searchTerm }: WarehouseListProps) {
-  const [page, setPage] = useState(1);
-  const [editingWarehouse, setEditingWarehouse] = useState<any>(null);
-  const limit = 20;
+  const [editingWarehouse, setEditingWarehouse] = useState<unknown>(null);
+  const [detailsWarehouseId, setDetailsWarehouseId] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
 
   // Fetch warehouses
-  const { data, isLoading, error } = trpc.warehouses.list.useQuery({
-    search: searchTerm,
-    page,
-    limit,
+  const { data: warehouses, isLoading, error } = trpc.warehouses.list.useQuery({
+    includeStats: true,
   });
 
   // Mutations
-  const archiveMutation = trpc.warehouses.archive.useMutation({
+  const deleteMutation = trpc.warehouses.delete.useMutation({
     onSuccess: () => {
-      toast.success('Warehouse archived successfully');
+      toast.success('Warehouse deleted successfully');
       utils.warehouses.list.invalidate();
     },
     onError: (error) => {
@@ -76,16 +71,12 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
     );
   }
 
-  const formatCapacity = (capacity: number | null) => {
-    if (!capacity) return 'Unlimited';
-    return capacity.toLocaleString();
-  };
-
-  const getUtilizationColor = (percentage: number) => {
-    if (percentage >= 90) return 'text-red-600 bg-red-100';
-    if (percentage >= 75) return 'text-yellow-600 bg-yellow-100';
-    return 'text-green-600 bg-green-100';
-  };
+  // Filter warehouses based on search term
+  const filteredWarehouses = warehouses?.filter(warehouse =>
+    warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    warehouse.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    warehouse.city.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   return (
     <>
@@ -95,12 +86,11 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
             <TableRow>
               <TableHead>Warehouse</TableHead>
               <TableHead>Code</TableHead>
-              <TableHead>Type</TableHead>
               <TableHead>Location</TableHead>
-              <TableHead>Manager</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead className="text-right">Locations</TableHead>
               <TableHead className="text-right">Capacity</TableHead>
               <TableHead className="text-right">Utilization</TableHead>
-              <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -109,15 +99,15 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
               // Loading skeletons
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={7}>
                     <Skeleton className="h-8 w-full" />
                   </TableCell>
                 </TableRow>
               ))
-            ) : data?.warehouses.length === 0 ? (
+            ) : filteredWarehouses.length === 0 ? (
               // Empty state
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={7} className="text-center py-8">
                   <Warehouse className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No warehouses found</p>
                   <p className="text-gray-600 text-sm mt-1">
@@ -127,26 +117,23 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
               </TableRow>
             ) : (
               // Warehouse rows
-              data?.warehouses.map((warehouse) => {
-                const utilization = warehouse.capacity 
-                  ? Math.round((warehouse._count.inventory / warehouse.capacity) * 100)
-                  : 0;
+              filteredWarehouses.map((warehouse) => {
+                const locationCount = warehouse._count?.locations || 0;
+                const totalCapacity = warehouse.stats?.totalCapacity || 0;
+                const utilization = warehouse.stats?.utilizationRate || 0;
                 
                 return (
                   <TableRow key={warehouse.id}>
                     <TableCell>
                       <div>
                         <p className="font-medium text-gray-900">{warehouse.name}</p>
-                        {warehouse.description && (
-                          <p className="text-sm text-gray-600 line-clamp-1">{warehouse.description}</p>
+                        {warehouse.notes && (
+                          <p className="text-sm text-gray-600 line-clamp-1">{warehouse.notes}</p>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <code className="text-sm">{warehouse.code}</code>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm capitalize">{warehouse.type.toLowerCase()}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -157,24 +144,26 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">{warehouse.manager || '-'}</span>
+                      <span className="text-sm">{warehouse.phone || '-'}</span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {formatCapacity(warehouse.capacity)}
+                      <span className="text-sm font-medium">{locationCount}</span>
                     </TableCell>
                     <TableCell className="text-right">
-                      {warehouse.capacity ? (
-                        <span className={`text-sm font-medium px-2 py-1 rounded ${getUtilizationColor(utilization)}`}>
+                      <span className="text-sm">{totalCapacity > 0 ? totalCapacity.toLocaleString() : '-'}</span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {totalCapacity > 0 ? (
+                        <span className={`text-sm font-medium px-2 py-1 rounded ${
+                          utilization >= 90 ? 'text-red-600 bg-red-100' :
+                          utilization >= 75 ? 'text-yellow-600 bg-yellow-100' :
+                          'text-green-600 bg-green-100'
+                        }`}>
                           {utilization}%
                         </span>
                       ) : (
                         '-'
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={warehouse.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                        {warehouse.status}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -191,22 +180,21 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setDetailsWarehouseId(warehouse.id)}>
                             <BarChart className="mr-2 h-4 w-4" />
-                            View Analytics
+                            View Details
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() =>
-                              archiveMutation.mutate({
+                              deleteMutation.mutate({
                                 id: warehouse.id,
-                                reason: 'Archived from UI',
                               })
                             }
                             className="text-red-600"
                           >
                             <Archive className="mr-2 h-4 w-4" />
-                            Archive
+                            Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -218,35 +206,6 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
           </TableBody>
         </Table>
 
-        {/* Pagination */}
-        {data && data.pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              Showing {(page - 1) * limit + 1} to{' '}
-              {Math.min(page * limit, data.pagination.total)} of {data.pagination.total} warehouses
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page - 1)}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(page + 1)}
-                disabled={page >= data.pagination.totalPages}
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Edit Warehouse Dialog */}
@@ -254,6 +213,13 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
         warehouse={editingWarehouse}
         open={!!editingWarehouse}
         onOpenChange={(open) => !open && setEditingWarehouse(null)}
+      />
+
+      {/* Warehouse Details Dialog */}
+      <WarehouseDetailsDialog
+        warehouseId={detailsWarehouseId}
+        open={!!detailsWarehouseId}
+        onOpenChange={(open) => !open && setDetailsWarehouseId(null)}
       />
     </>
   );

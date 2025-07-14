@@ -1,30 +1,21 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, Input, Label, Button, Tabs, TabsContent, TabsList, TabsTrigger, Badge, Skeleton } from '@ventry/ui';
 import { 
   Building2, 
-  Globe, 
-  Mail, 
   Calendar,
   CreditCard,
   AlertCircle,
   Save
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const organizationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -36,7 +27,7 @@ const organizationSchema = z.object({
 type OrganizationFormData = z.infer<typeof organizationSchema>;
 
 export default function OrganizationSettingsPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { currentOrganization } = useOrganization();
 
   const { data: organization, isLoading, refetch } = trpc.organizations.get.useQuery(

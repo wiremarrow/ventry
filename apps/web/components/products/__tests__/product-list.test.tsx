@@ -40,7 +40,7 @@ vi.mock('sonner', () => ({
 
 // Mock the edit dialog
 vi.mock('../edit-product-dialog', () => ({
-  EditProductDialog: ({ product, open, onOpenChange }: any) => 
+  EditProductDialog: ({ open }: { open: boolean }) => 
     open ? <div data-testid="edit-dialog">Edit Dialog</div> : null,
 }));
 

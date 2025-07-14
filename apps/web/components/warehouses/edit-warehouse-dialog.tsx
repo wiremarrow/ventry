@@ -15,7 +15,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -24,31 +23,39 @@ import {
 import { Input } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Textarea } from '@ventry/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
-import { Switch } from '@ventry/ui';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
 const updateWarehouseSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().optional(),
-  type: z.enum(['MAIN', 'DISTRIBUTION', 'RETAIL', 'COLD_STORAGE', 'BONDED']),
-  address: z.string().min(1, 'Address is required'),
+  line1: z.string().min(1, 'Address is required'),
+  line2: z.string().optional(),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   country: z.string().min(1, 'Country is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  manager: z.string().optional(),
-  capacity: z.number().int().min(0).optional(),
-  isActive: z.boolean().default(true),
+  notes: z.string().optional(),
 });
 
 type UpdateWarehouseFormData = z.infer<typeof updateWarehouseSchema>;
 
+interface WarehouseData {
+  id: string;
+  code: string;
+  name: string;
+  line1: string;
+  line2?: string | null;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  phone?: string | null;
+  notes?: string | null;
+}
+
 interface EditWarehouseDialogProps {
-  warehouse: any;
+  warehouse: WarehouseData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -76,18 +83,14 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
     if (warehouse) {
       form.reset({
         name: warehouse.name,
-        description: warehouse.description || '',
-        type: warehouse.type,
-        address: warehouse.address,
+        line1: warehouse.line1,
+        line2: warehouse.line2 || '',
         city: warehouse.city,
         state: warehouse.state,
         country: warehouse.country,
         postalCode: warehouse.postalCode,
         phone: warehouse.phone || '',
-        email: warehouse.email || '',
-        manager: warehouse.manager || '',
-        capacity: warehouse.capacity || 0,
-        isActive: warehouse.status === 'ACTIVE',
+        notes: warehouse.notes || '',
       });
     }
   }, [warehouse, form]);
@@ -98,7 +101,6 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
     updateMutation.mutate({
       id: warehouse.id,
       ...data,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
     });
   };
 
@@ -116,36 +118,9 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Warehouse Code</p>
-                <p className="text-sm text-gray-600">{warehouse.code}</p>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="MAIN">Main Warehouse</SelectItem>
-                        <SelectItem value="DISTRIBUTION">Distribution Center</SelectItem>
-                        <SelectItem value="RETAIL">Retail Location</SelectItem>
-                        <SelectItem value="COLD_STORAGE">Cold Storage</SelectItem>
-                        <SelectItem value="BONDED">Bonded Warehouse</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Warehouse Code</p>
+              <p className="text-sm text-gray-600">{warehouse.code}</p>
             </div>
 
             <FormField
@@ -164,13 +139,13 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
 
             <FormField
               control={form.control}
-              name="description"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter warehouse description..."
+                      placeholder="Enter warehouse notes..."
                       {...field}
                     />
                   </FormControl>
@@ -184,12 +159,26 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
               
               <FormField
                 control={form.control}
-                name="address"
+                name="line1"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address *</FormLabel>
+                    <FormLabel>Address Line 1 *</FormLabel>
                     <FormControl>
                       <Input placeholder="123 Main Street" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="line2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address Line 2</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Suite 100, Floor 2" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -258,93 +247,16 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Contact Information</h4>
               
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1 (555) 123-4567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="warehouse@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
-                name="manager"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Manager</FormLabel>
+                    <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="+1 (555) 123-4567" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-4 border-t pt-4">
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Storage Capacity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="10000"
-                        {...field}
-                        value={field.value || ''}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Maximum storage capacity (leave empty for unlimited)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Active</FormLabel>
-                      <FormDescription>
-                        Warehouse is operational and can receive inventory
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

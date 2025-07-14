@@ -1,10 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
+import { Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton, Badge } from '@ventry/ui';
 import {
   LineChart,
   Line,
@@ -32,9 +29,9 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { formatCurrency } from '@/lib/utils';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // Chart colors
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];

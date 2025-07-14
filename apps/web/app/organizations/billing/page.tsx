@@ -1,13 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, Button, Badge, Skeleton } from '@ventry/ui';
 import { 
   CreditCard, 
-  Calendar,
   AlertCircle,
   Check,
   ArrowRight,
@@ -15,10 +11,10 @@ import {
   FileText,
   TrendingUp
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
-import ProtectedRoute from '@/components/auth/protected-route';
+import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const plans = [
   {
@@ -81,7 +77,7 @@ const plans = [
 ];
 
 export default function OrganizationBillingPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { currentOrganization } = useOrganization();
 
   const { data: organization, isLoading } = trpc.organizations.get.useQuery(

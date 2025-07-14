@@ -14,7 +14,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -23,26 +22,20 @@ import {
 import { Input } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Textarea } from '@ventry/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
-import { Switch } from '@ventry/ui';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
 const createWarehouseSchema = z.object({
   code: z.string().min(1, 'Code is required').max(20),
   name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().optional(),
-  type: z.enum(['MAIN', 'DISTRIBUTION', 'RETAIL', 'COLD_STORAGE', 'BONDED']),
-  address: z.string().min(1, 'Address is required'),
+  line1: z.string().min(1, 'Address is required'),
+  line2: z.string().optional(),
   city: z.string().min(1, 'City is required'),
   state: z.string().min(1, 'State is required'),
   country: z.string().min(1, 'Country is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   phone: z.string().optional(),
-  email: z.string().email().optional().or(z.literal('')),
-  manager: z.string().optional(),
-  capacity: z.number().int().min(0).optional(),
-  isActive: z.boolean().default(true),
+  notes: z.string().optional(),
 });
 
 type CreateWarehouseFormData = z.infer<typeof createWarehouseSchema>;
@@ -72,25 +65,19 @@ export function CreateWarehouseDialog({ open, onOpenChange }: CreateWarehouseDia
     defaultValues: {
       code: '',
       name: '',
-      description: '',
-      type: 'MAIN',
-      address: '',
+      line1: '',
+      line2: '',
       city: '',
       state: '',
       country: 'USA',
       postalCode: '',
       phone: '',
-      email: '',
-      manager: '',
-      isActive: true,
+      notes: '',
     },
   });
 
   const onSubmit = (data: CreateWarehouseFormData) => {
-    createMutation.mutate({
-      ...data,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
-    });
+    createMutation.mutate(data);
   };
 
   return (
@@ -105,46 +92,19 @@ export function CreateWarehouseDialog({ open, onOpenChange }: CreateWarehouseDia
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="code"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Warehouse Code *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="WH-001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Type *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="MAIN">Main Warehouse</SelectItem>
-                        <SelectItem value="DISTRIBUTION">Distribution Center</SelectItem>
-                        <SelectItem value="RETAIL">Retail Location</SelectItem>
-                        <SelectItem value="COLD_STORAGE">Cold Storage</SelectItem>
-                        <SelectItem value="BONDED">Bonded Warehouse</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Warehouse Code *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="WH-001" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -162,13 +122,13 @@ export function CreateWarehouseDialog({ open, onOpenChange }: CreateWarehouseDia
 
             <FormField
               control={form.control}
-              name="description"
+              name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter warehouse description..."
+                      placeholder="Enter warehouse notes..."
                       {...field}
                     />
                   </FormControl>
@@ -182,12 +142,26 @@ export function CreateWarehouseDialog({ open, onOpenChange }: CreateWarehouseDia
               
               <FormField
                 control={form.control}
-                name="address"
+                name="line1"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Address *</FormLabel>
+                    <FormLabel>Address Line 1 *</FormLabel>
                     <FormControl>
                       <Input placeholder="123 Main Street" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="line2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address Line 2</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Suite 100" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -254,94 +228,16 @@ export function CreateWarehouseDialog({ open, onOpenChange }: CreateWarehouseDia
             </div>
 
             <div className="space-y-4 border-t pt-4">
-              <h4 className="text-sm font-medium">Contact Information</h4>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+1 (555) 123-4567" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="warehouse@example.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
-                name="manager"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Manager</FormLabel>
+                    <FormLabel>Phone</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
+                      <Input placeholder="+1 (555) 123-4567" {...field} />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-4 border-t pt-4">
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Storage Capacity</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min="0"
-                        placeholder="10000"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Maximum storage capacity (leave empty for unlimited)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Active</FormLabel>
-                      <FormDescription>
-                        Warehouse is operational and can receive inventory
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

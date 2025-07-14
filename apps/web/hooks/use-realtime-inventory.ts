@@ -1,22 +1,14 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '../src/lib/supabase/client';
-import { api } from '@/lib/trpc';
+import { trpc } from '@/lib/trpc';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-interface InventoryUpdate {
-  id: string;
-  itemId: string;
-  locationId: string;
-  qtyOnHand: number;
-  qtyReserved: number;
-  updatedAt: string;
-}
 
 export function useRealtimeInventory(locationId?: string) {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   
   // Get initial data via tRPC
-  const { data: inventory, refetch } = api.inventory.list.useQuery(
+  const { data: inventory, refetch } = trpc.inventory.list.useQuery(
     { locationId },
     { enabled: !!locationId }
   );

@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import { Badge } from '@ventry/ui';
+import { Input, Button } from '@ventry/ui';
 import { Plus, Search, ShoppingCart, Package, TrendingUp } from 'lucide-react';
 import { OrderList } from '@/components/orders/order-list';
 import { CreateOrderDialog } from '@/components/orders/create-order-dialog';
