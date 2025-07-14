@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { setCookie, getCookie } from 'cookies-next';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 
 interface Organization {
   id: string;

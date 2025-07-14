@@ -44,8 +44,10 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         });
         
         if (foundUser && foundUser.isActive) {
-          // Get active organization from header or cookie
-          const orgId = req.headers['x-organization-id'] as string || req.cookies?.['active-organization'];
+          // Get active organization from header, cookie, or JWT payload
+          const orgId = req.headers['x-organization-id'] as string || 
+                       req.cookies?.['active-organization'] || 
+                       payload.organizationId;
           
           let organizationId: string | undefined;
           let organizationRole: AuthenticatedUser['organizationRole'] | undefined;

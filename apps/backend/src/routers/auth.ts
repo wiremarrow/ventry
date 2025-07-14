@@ -69,10 +69,18 @@ export const authRouter = createTRPCRouter({
         data: { lastLoginAt: new Date() },
       });
 
+      // Get user's first organization
+      const membership = await ctx.prisma.organizationMember.findFirst({
+        where: { userId: user.id },
+        include: { organization: true },
+        orderBy: { joinedAt: 'asc' },
+      });
+
       const token = signJWT({
         userId: user.id,
         email: user.email,
         role: user.role,
+        organizationId: membership?.organizationId,
       });
 
       // Diagnostic: Check what methods are available on ctx.res
@@ -119,6 +127,8 @@ export const authRouter = createTRPCRouter({
           role: user.role,
           isActive: user.isActive,
           createdAt: user.createdAt.toISOString(),
+          organizationId: membership?.organizationId,
+          organizationRole: membership?.role,
         },
       };
     }),

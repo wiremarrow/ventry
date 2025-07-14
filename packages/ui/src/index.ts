@@ -15,6 +15,7 @@ export * from "./components/ui/skeleton"
 export * from "./components/ui/dropdown-menu"
 export * from "./components/ui/radio-group"
 export * from "./components/ui/tabs"
+export * from "./components/ui/sonner"
 
 // Export utilities
 export * from "./lib/utils"

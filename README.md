@@ -309,10 +309,12 @@ pnpm dev
 # Backend API (tRPC + Fastify): http://localhost:6060
 # tRPC Endpoints: http://localhost:6060/trpc
 
-# Demo Credentials (after running db:seed):
-# Admin: admin@ventry.com / admin123
-# Manager: manager@ventry.com / manager123
-# User: user@ventry.com / user123
+# Demo Credentials (after running db:seed-comprehensive):
+# Admin: admin@ventry.com / password123
+# Manager: manager@ventry.com / password123
+# User: user@ventry.com / password123
+# Warehouse: warehouse@ventry.com / password123
+# Note: All demo accounts use the same password: password123
 ```
 
 ### Supabase Migration Setup (Optional - Phase 2)
@@ -677,6 +679,42 @@ pnpm db:seed       # Seed test data
 pnpm agents:test   # Test AI agent responses
 pnpm agents:logs   # View agent execution logs
 ```
+
+## 🔧 Troubleshooting
+
+### Authentication Issues
+
+#### "Invalid credentials" Error
+If you receive an "Invalid credentials" error when trying to login:
+
+1. **Verify Database Seeding**: Ensure you've run the comprehensive seed script:
+   ```bash
+   pnpm --filter @ventry/database db:seed-comprehensive
+   ```
+
+2. **Check Demo Credentials**: All demo accounts use the password `password123`:
+   - admin@ventry.com / password123
+   - manager@ventry.com / password123
+   - user@ventry.com / password123
+   - warehouse@ventry.com / password123
+
+3. **Clear Browser Cache**: Sometimes old authentication cookies can interfere. Clear your browser's cookies for localhost:6061.
+
+4. **Verify Backend is Running**: Ensure both frontend and backend are running:
+   ```bash
+   pnpm dev  # Should start both services
+   ```
+
+5. **Check Database Connection**: Verify PostgreSQL is running:
+   ```bash
+   ./tools/scripts/switch-db.sh status
+   ```
+
+#### Organization Context Errors
+If you see "No organization selected" errors:
+- This is expected behavior for multi-tenant support
+- The login process automatically assigns your first organization
+- Use the organization switcher in the header to change organizations
 
 ## 📝 Contributing
 

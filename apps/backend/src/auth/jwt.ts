@@ -7,6 +7,7 @@ export interface JWTPayload {
   userId: string;
   email: string;
   role: string;
+  organizationId?: string;
 }
 
 export function signJWT(payload: JWTPayload): string {

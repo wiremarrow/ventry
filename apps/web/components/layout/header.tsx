@@ -5,6 +5,7 @@ import { LogOut, Menu, Package, User } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
 import { trpc } from '@/lib/trpc';
+import OrganizationSwitcher from '@/components/organizations/organization-switcher';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -55,6 +56,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
+          <OrganizationSwitcher />
+          
           <div className="flex items-center space-x-2">
             <User className="h-5 w-5 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">

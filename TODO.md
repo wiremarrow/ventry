@@ -74,7 +74,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - Token persistence in Zustand store and cookies
   - Proper hydration handling for SSR/CSR
   - Enhanced debugging utilities for troubleshooting
-  - **401 "Invalid credentials" error fixed**: Database seeding requirement for demo users (admin@ventry.com/admin123, manager@ventry.com/manager123, user@ventry.com/user123)
+  - **401 "Invalid credentials" error fixed**: Database seeding requirement for demo users (admin@ventry.com/password123, manager@ventry.com/password123, user@ventry.com/password123)
 - **Sentry Integration Complete**:
   - Full error tracking with stack traces
   - User context and breadcrumb trails
@@ -127,6 +127,17 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Turbo.json Pipeline**: Added test:cov and db:migrate:deploy task configurations with proper dependencies
   - **Scalable Pattern**: Enterprise-grade database management suitable for large PostgreSQL setups and startup growth
 ✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
+✅ **Authentication Password Fix Complete (2025-07-14)**:
+  - **Root Cause**: Login page displayed incorrect demo passwords (admin123, manager123, user123) while comprehensive seed script uses "password123" for all accounts
+  - **Solution**: Updated login form to show correct password "password123" for all demo accounts
+  - **Implementation**:
+    - Updated apps/web/components/auth/login-form.tsx demo credentials display
+    - Fixed E2E tests in example.spec.ts, dashboard.spec.ts, navigation.spec.ts to use password123
+    - Updated README.md with correct demo credentials and troubleshooting section
+    - Added comprehensive troubleshooting guide for authentication issues
+  - **Results**: Users can now login successfully with documented credentials
+
+✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
   - **Root Cause**: Cross-origin cookie restrictions between backend (localhost:6060) and frontend (localhost:6061) ports preventing httpOnly cookies from being stored/sent
   - **Browser Behavior**: Modern browsers treat different ports as different origins, blocking cookie sharing even with Domain=localhost
   - **Solution**: Next.js proxy configuration routing `/api/trpc/*` to backend, making all requests appear same-origin
@@ -143,10 +154,21 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
     - Playwright browser contexts automatically clean up cookies when closed
     - Proxy pattern is the proper solution for cookie-based auth in development
 
-🚀 **Phase 2 In Progress**: Supabase Migration & AI Integration Foundation
-All Phase 1 infrastructure is complete and validated. Currently migrating to Supabase for enhanced capabilities:
-- Comprehensive inventory management schema with 40+ tables designed
-- Migration plan documented for gradual Supabase integration
+✅ **Phase 1.1 UI Connection Complete (2025-07-14)**:
+  - **Inventory Page Connected**: Successfully connected inventory page to tRPC router
+  - **Stock Adjustment Dialog**: Implemented functional stock adjustment with real-time updates
+  - **Organization Context**: Added multi-tenant support with organization switcher
+  - **Sonner Toast Integration**: Modern toast notifications for user feedback
+  - **Database Seeding**: Comprehensive seed script creates demo data (50 items, 3 warehouses, organizations)
+  - **Authentication Flow**: Fixed JWT to include organizationId for proper context
+  - **UI State Management**: Integrated Zustand store with tRPC queries
+
+🚀 **Phase 1.2 In Progress**: Complete UI Testing & Remaining Pages
+- [ ] Write comprehensive tests for Inventory page (unit, integration, E2E)
+- [ ] Connect Products/Items page to items router
+- [ ] Implement CRUD operations for items
+- [ ] Connect Warehouses page to warehouses router
+- [ ] Continue with iterative UI development plan (15 phases)
 - Real-time inventory tracking with Supabase subscriptions planned
 - Row Level Security (RLS) policies for enterprise-grade security
 - Robust backend API foundation ready for AI service integration

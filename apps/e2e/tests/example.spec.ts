@@ -14,7 +14,7 @@ test.describe('Ventry Application', () => {
     // First login
     await page.goto('/login');
     await page.fill('input[type="email"]', 'admin@ventry.com');
-    await page.fill('input[type="password"]', 'admin123');
+    await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     
     // Wait for successful login and redirect to dashboard

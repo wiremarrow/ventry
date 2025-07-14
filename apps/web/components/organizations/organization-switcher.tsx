@@ -9,9 +9,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+  Button,
+  Skeleton
+} from '@ventry/ui';
 import { 
   Building2, 
   ChevronDown, 
@@ -21,7 +21,7 @@ import {
   CreditCard,
   Check
 } from 'lucide-react';
-import { trpc } from '@/lib/trpc/client';
+import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
 

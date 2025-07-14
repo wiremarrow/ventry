@@ -143,9 +143,9 @@ export function LoginForm() {
       <CardFooter className="text-center text-sm text-gray-600">
         <div className="w-full">
           <p>Demo accounts:</p>
-          <p>Admin: admin@ventry.com / admin123</p>
-          <p>Manager: manager@ventry.com / manager123</p>
-          <p>User: user@ventry.com / user123</p>
+          <p>Admin: admin@ventry.com / password123</p>
+          <p>Manager: manager@ventry.com / password123</p>
+          <p>User: user@ventry.com / password123</p>
         </div>
       </CardFooter>
     </Card>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/components/providers/auth-provider'
 import { TRPCProvider } from '@/components/providers/trpc-provider'
+import { OrganizationProvider } from '@/hooks/use-organization'
+import { Toaster } from '@ventry/ui'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -18,7 +20,10 @@ export default function RootLayout({
       <body className="antialiased">
         <TRPCProvider>
           <AuthProvider>
-            {children}
+            <OrganizationProvider>
+              {children}
+              <Toaster />
+            </OrganizationProvider>
           </AuthProvider>
         </TRPCProvider>
       </body>

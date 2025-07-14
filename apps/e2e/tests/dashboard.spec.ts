@@ -5,7 +5,7 @@ test.describe('Dashboard', () => {
     // Login as admin user
     await page.goto('/login');
     await page.fill('input[type="email"]', 'admin@ventry.com');
-    await page.fill('input[type="password"]', 'admin123');
+    await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     
     // Wait for redirect to dashboard

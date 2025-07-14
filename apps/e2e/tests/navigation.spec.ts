@@ -5,7 +5,7 @@ test.describe('Navigation', () => {
     // Login as admin user before each test
     await page.goto('/login');
     await page.fill('input[type="email"]', 'admin@ventry.com');
-    await page.fill('input[type="password"]', 'admin123');
+    await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL(/.*dashboard/);
   });
