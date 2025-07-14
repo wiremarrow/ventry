@@ -111,7 +111,7 @@ export const productsRouter = createTRPCRouter({
       if (!product) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Product not found',
+          message: 'Item not found',
         });
       }
 
@@ -177,7 +177,7 @@ export const productsRouter = createTRPCRouter({
       if (!existing) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Product not found',
+          message: 'Item not found',
         });
       }
 

@@ -51,12 +51,14 @@ graph TB
 - **Forms**: React Hook Form + Zod
 
 ### Backend
-- **Framework**: tRPC + Fastify (migrated from NestJS)
-- **Language**: TypeScript
-- **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: JWT with httpOnly cookies
-- **API Layer**: tRPC v11 for end-to-end type safety
-- **Real-time**: WebSocket support via Fastify
+- **Framework**: tRPC + Fastify
+- **Language**: TypeScript (strict mode)
+- **Database**: PostgreSQL 16 with Prisma ORM
+- **Multi-tenant**: Full organizationId scoping across all entities
+- **Authentication**: JWT with httpOnly cookies + organization context
+- **API Layer**: tRPC v11 with factory pattern architecture
+- **Middleware**: Clean separation using factory pattern (no circular deps)
+- **Real-time**: WebSocket support via Fastify (Supabase-ready)
 - **Caching**: Redis (planned)
 - **Queue**: Bull (planned)
 
@@ -153,23 +155,45 @@ app/
 5. Action execution
 6. Result logging and notification
 
+## tRPC Architecture Pattern
+
+### Factory Pattern Implementation
+```
+src/trpc/
+├── builder.ts       # tRPC instance creation (no local imports)
+├── middleware.ts    # Middleware factory functions
+├── procedures.ts    # Base procedures using middleware
+├── trpc.ts         # Main export combining everything
+└── context.ts      # Context creation with auth
+```
+
+### Why Factory Pattern?
+- **No Circular Dependencies**: Each file has clear one-way dependencies
+- **Separation of Concerns**: Single responsibility per file
+- **Testability**: Easy to mock individual components
+- **Type Safety**: Full TypeScript inference preserved
+- **Best Practices**: Follows tRPC and T3 stack patterns
+
 ## Database Schema Design
 
-### Core Entities
-- **User**: System users with roles
-- **Product**: Inventory items
-- **Category**: Product categorization
-- **Location**: Warehouses/stores
-- **StockLevel**: Current stock by location
-- **StockMovement**: Stock change history
-- **Supplier**: Vendor information
-- **PurchaseOrder**: Procurement records
+### Multi-Tenant Architecture
+- **Organization**: Top-level tenant entity
+- **OrganizationMember**: User-organization relationships with roles
+- **All Business Entities**: Include organizationId for data isolation
 
-### AI-Specific Entities
-- **AgentLog**: All AI agent actions
-- **Forecast**: Demand predictions
-- **AnomalyEvent**: Detected anomalies
-- **ChatSession**: Conversation history
+### Core Entities (40+ tables)
+- **Item**: Inventory items (formerly Product)
+- **ItemCategory**: Hierarchical categorization
+- **Warehouse**: Physical locations
+- **Location**: Specific storage spots (aisle/shelf/bin)
+- **Inventory**: Current stock levels by item/location
+- **StockMovement**: Complete movement history
+- **Supplier**: Vendor management
+- **PurchaseOrder**: Procurement workflow
+- **Customer**: Client management
+- **Order**: Sales orders
+- **Shipment**: Delivery tracking
+- **Return**: RMA process
 
 ## Security Architecture
 

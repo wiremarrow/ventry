@@ -31,6 +31,8 @@ const userSchema = z.object({
   role: z.enum(['ADMIN', 'MANAGER', 'USER', 'WAREHOUSE', 'SALES']),
   isActive: z.boolean(),
   createdAt: z.string(), // ISO date string for JSON serialization
+  organizationId: z.string().optional(),
+  organizationRole: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER']).optional(),
 });
 
 const authResponseSchema = z.object({

@@ -1,42 +1,27 @@
-import { initTRPC, TRPCError } from '@trpc/server';
-import superjson from 'superjson';
-import { ZodError } from 'zod';
-import type { Context } from './context.js';
-import { isAuthed, hasOrganization, isOrganizationAdmin, isOrganizationOwner } from './middleware.js';
+import { TRPCError } from '@trpc/server';
+import { createTRPCInstance } from './builder.js';
+import { createMiddleware } from './middleware.js';
+import { createProcedures } from './procedures.js';
 
-const t = initTRPC.context<Context>().create({
-  transformer: superjson,
-  errorFormatter({ shape, error }) {
-    return {
-      ...shape,
-      data: {
-        ...shape.data,
-        zodError:
-          error.cause instanceof ZodError ? error.cause.flatten() : null,
-      },
-    };
-  },
-});
+// Create instances using the factory pattern
+const t = createTRPCInstance();
+const middleware = createMiddleware(t);
+const procedures = createProcedures(t, middleware);
 
-// Base router and procedure helpers
+// Export router creation function
 export const createTRPCRouter = t.router;
-export const publicProcedure = t.procedure;
 
-// Protected procedure that requires authentication
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({ code: 'UNAUTHORIZED' });
-  }
-  
-  return next({
-    ctx: {
-      ...ctx,
-      user: ctx.user, // user is now guaranteed to exist
-    },
-  });
-});
+// Export all procedures
+export const { 
+  publicProcedure,
+  protectedProcedure,
+  organizationProcedure,
+  organizationAdminProcedure,
+  organizationOwnerProcedure
+} = procedures;
 
-// Admin-only procedure
+// Legacy procedures for backward compatibility
+// TODO: Remove these once all routers are updated
 export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'ADMIN') {
     throw new TRPCError({ code: 'FORBIDDEN' });
@@ -45,9 +30,5 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-// Organization-aware procedures
-export const organizationProcedure = t.procedure.use(hasOrganization);
-export const organizationAdminProcedure = t.procedure.use(isOrganizationAdmin);
-export const organizationOwnerProcedure = t.procedure.use(isOrganizationOwner);
-
+// Export t for testing purposes only
 export { t };

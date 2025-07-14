@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createDirectCaller } from '../test-utils/trpc-test-client.js';
-import { mockUser, mockAuthenticatedUser, mockProduct, createMockProduct } from '../test-utils/test-data.js';
+import { mockUser, mockAuthenticatedUser, mockItem, createMockItem } from '../test-utils/test-data.js';
 
 // Mock @ventry/database
 vi.mock('@ventry/database', () => {
   const mockPrisma = {
-    product: {
+    item: {
       findMany: vi.fn(),
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
     },
@@ -18,9 +19,10 @@ vi.mock('@ventry/database', () => {
 
 // Access the mocked prisma for tests
 const mockPrisma = {
-  product: {
+  item: {
     findMany: vi.fn(),
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
   },
@@ -39,22 +41,25 @@ describe('Products Router', () => {
 
   describe('list', () => {
     it('should return products list', async () => {
-      const products = [mockProduct, createMockProduct({ name: 'Product 2' })];
-      mockPrisma.product.findMany.mockResolvedValue(products);
+      const products = [mockItem, createMockItem({ name: 'Product 2' })];
+      mockPrisma.item.findMany.mockResolvedValue(products);
 
       const result = await caller.products.list({});
 
       expect(result.items).toHaveLength(2);
-      expect(result.items[0]).toEqual(mockProduct);
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
-        where: {},
+      expect(result.items[0]).toEqual(mockItem);
+      expect(mockPrisma.item.findMany).toHaveBeenCalledWith({
+        where: { organizationId: mockAuthenticatedUser.organizationId },
         take: 51, // limit + 1 for pagination
         cursor: undefined,
         include: {
           category: true,
-          inventoryItems: {
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          inventory: {
             select: {
-              quantity: true,
+              qtyOnHand: true,
+              qtyReserved: true,
               locationId: true,
             },
           },
@@ -65,12 +70,13 @@ describe('Products Router', () => {
 
     it('should filter products by search term', async () => {
       const searchTerm = 'test';
-      mockPrisma.product.findMany.mockResolvedValue([mockProduct]);
+      mockPrisma.item.findMany.mockResolvedValue([mockItem]);
 
       await caller.products.list({ search: searchTerm });
 
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith({
+      expect(mockPrisma.item.findMany).toHaveBeenCalledWith({
         where: {
+          organizationId: mockAuthenticatedUser.organizationId,
           OR: [
             { name: { contains: searchTerm, mode: 'insensitive' } },
             { sku: { contains: searchTerm, mode: 'insensitive' } },
@@ -80,9 +86,12 @@ describe('Products Router', () => {
         cursor: undefined,
         include: {
           category: true,
-          inventoryItems: {
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          inventory: {
             select: {
-              quantity: true,
+              qtyOnHand: true,
+              qtyReserved: true,
               locationId: true,
             },
           },
@@ -94,46 +103,40 @@ describe('Products Router', () => {
 
   describe('getById', () => {
     it('should return product by id', async () => {
-      mockPrisma.product.findUnique.mockResolvedValue(mockProduct);
+      mockPrisma.item.findFirst.mockResolvedValue(mockItem);
 
-      const result = await caller.products.getById({ id: mockProduct.id });
+      const result = await caller.products.getById({ id: mockItem.id });
 
-      expect(result).toEqual(mockProduct);
-      expect(mockPrisma.product.findUnique).toHaveBeenCalledWith({
-        where: { id: mockProduct.id },
+      expect(result).toEqual(mockItem);
+      expect(mockPrisma.item.findFirst).toHaveBeenCalledWith({
+        where: { 
+          id: mockItem.id,
+          organizationId: mockAuthenticatedUser.organizationId,
+        },
         include: {
           category: true,
-          inventoryItems: {
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          inventory: {
             include: {
               location: true,
             },
           },
-          createdBy: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-          updatedBy: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
+          images: true,
+          priceHistory: {
+            orderBy: { startDate: 'desc' },
+            take: 10,
           },
         },
       });
     });
 
     it('should throw error for non-existent product', async () => {
-      mockPrisma.product.findUnique.mockResolvedValue(null);
+      mockPrisma.item.findFirst.mockResolvedValue(null);
 
       await expect(
         caller.products.getById({ id: 'non-existent-id' })
-      ).rejects.toThrow('Product not found');
+      ).rejects.toThrow('Item not found');
     });
   });
 
@@ -142,104 +145,121 @@ describe('Products Router', () => {
       const newProductData = {
         name: 'New Product',
         sku: 'NEW-001',
-        unitPrice: 29.99,
+        defaultPrice: 29.99,
         categoryId: 'category-id',
+        uomId: 'test-uom-id',
       };
 
-      mockPrisma.product.findUnique.mockResolvedValue(null); // No existing SKU
-      mockPrisma.product.create.mockResolvedValue({
-        ...mockProduct,
+      mockPrisma.item.findFirst.mockResolvedValue(null); // No existing SKU
+      mockPrisma.item.create.mockResolvedValue({
+        ...mockItem,
         ...newProductData,
       });
 
       const result = await caller.products.create(newProductData);
 
       expect(result.name).toBe(newProductData.name);
-      expect(mockPrisma.product.create).toHaveBeenCalledWith({
+      expect(mockPrisma.item.create).toHaveBeenCalledWith({
         data: {
+          organizationId: mockAuthenticatedUser.organizationId,
           name: newProductData.name,
+          description: undefined,
           sku: newProductData.sku,
-          unitPrice: newProductData.unitPrice,
+          defaultPrice: newProductData.defaultPrice,
+          defaultCost: undefined,
           categoryId: newProductData.categoryId,
-          isActive: true, // Default from schema
-          createdById: mockUser.id,
-          updatedById: mockUser.id,
+          uomId: newProductData.uomId,
+          defaultSupplierId: undefined,
+          reorderPoint: 0,
+          reorderQty: 0,
+          isActive: true,
         },
         include: {
           category: true,
+          unitOfMeasure: true,
         },
       });
     });
 
     it('should throw error for duplicate SKU', async () => {
-      const existingProduct = createMockProduct({ sku: 'EXISTING-SKU' });
-      mockPrisma.product.findUnique.mockResolvedValue(existingProduct);
+      const existingProduct = createMockItem({ sku: 'EXISTING-SKU' });
+      mockPrisma.item.findFirst.mockResolvedValue(existingProduct);
 
       await expect(
         caller.products.create({
           name: 'New Product',
           sku: 'EXISTING-SKU',
-          unitPrice: 29.99,
+          defaultPrice: 29.99,
           categoryId: 'category-id',
+          uomId: 'test-uom-id',
         })
-      ).rejects.toThrow('Product with this SKU already exists');
+      ).rejects.toThrow('Item with this SKU already exists');
     });
   });
 
   describe('update', () => {
     it('should update existing product', async () => {
-      const updateData = { name: 'Updated Product', unitPrice: 39.99 };
+      const updateData = { name: 'Updated Product', defaultPrice: 39.99 };
       
-      mockPrisma.product.findUnique.mockResolvedValue(mockProduct);
-      mockPrisma.product.update.mockResolvedValue({
-        ...mockProduct,
+      mockPrisma.item.findFirst.mockResolvedValue(mockItem);
+      mockPrisma.item.update.mockResolvedValue({
+        ...mockItem,
         ...updateData,
       });
 
       const result = await caller.products.update({
-        id: mockProduct.id,
+        id: mockItem.id,
         data: updateData,
       });
 
       expect(result.name).toBe(updateData.name);
-      expect(mockPrisma.product.update).toHaveBeenCalledWith({
-        where: { id: mockProduct.id },
+      expect(mockPrisma.item.update).toHaveBeenCalledWith({
+        where: { id: mockItem.id },
         data: {
-          ...updateData,
-          updatedById: mockUser.id,
+          name: updateData.name,
+          description: undefined,
+          sku: undefined,
+          defaultPrice: updateData.defaultPrice,
+          defaultCost: undefined,
+          categoryId: undefined,
+          uomId: undefined,
+          defaultSupplierId: undefined,
+          reorderPoint: undefined,
+          reorderQty: undefined,
+          isActive: undefined,
         },
         include: {
           category: true,
+          unitOfMeasure: true,
         },
       });
     });
 
     it('should throw error for non-existent product', async () => {
-      mockPrisma.product.findUnique.mockResolvedValue(null);
+      mockPrisma.item.findFirst.mockResolvedValue(null);
 
       await expect(
         caller.products.update({
           id: 'non-existent-id',
           data: { name: 'Updated' },
         })
-      ).rejects.toThrow('Product not found');
+      ).rejects.toThrow('Item not found');
     });
   });
 
   describe('delete', () => {
     it('should soft delete product', async () => {
-      const deletedProduct = { ...mockProduct, isActive: false };
-      mockPrisma.product.update.mockResolvedValue(deletedProduct);
+      const deletedProduct = { ...mockItem, isActive: false };
+      mockPrisma.item.update.mockResolvedValue(deletedProduct);
 
-      const result = await caller.products.delete({ id: mockProduct.id });
+      const result = await caller.products.delete({ id: mockItem.id });
 
       expect(result.success).toBe(true);
-      expect(result.id).toBe(mockProduct.id);
-      expect(mockPrisma.product.update).toHaveBeenCalledWith({
-        where: { id: mockProduct.id },
+      expect(result.id).toBe(mockItem.id);
+      expect(mockPrisma.item.update).toHaveBeenCalledWith({
+        where: { id: mockItem.id },
         data: {
           isActive: false,
-          updatedById: mockUser.id,
         },
       });
     });

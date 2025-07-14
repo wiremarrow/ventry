@@ -33,6 +33,8 @@ export const mockAuthenticatedUser: AuthenticatedUser = {
   role: mockUser.role,
   isActive: mockUser.isActive,
   createdAt: mockUser.createdAt.toISOString(),
+  organizationId: 'test-org-id',
+  organizationRole: 'ADMIN',
 };
 
 export const mockAuthenticatedAdminUser: AuthenticatedUser = {
@@ -44,6 +46,8 @@ export const mockAuthenticatedAdminUser: AuthenticatedUser = {
   role: mockAdminUser.role,
   isActive: mockAdminUser.isActive,
   createdAt: mockAdminUser.createdAt.toISOString(),
+  organizationId: 'test-org-id',
+  organizationRole: 'OWNER',
 };
 
 export const mockCategory: ItemCategory = {
