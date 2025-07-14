@@ -10,14 +10,14 @@ Ventry is an ambitious AI-native inventory management system designed to revolut
 ```
 ventry/
 ├── apps/
-│   ├── backend/          # tRPC + Fastify API server
-│   ├── web/              # Next.js frontend
-│   ├── e2e/              # Playwright E2E tests (dedicated workspace package)
+│   ├── backend/          # tRPC + Fastify API server (@ventry/backend)
+│   ├── web/              # Next.js frontend (@ventry/web)
+│   ├── e2e/              # Playwright E2E tests (@ventry/e2e)
 │   └── docs/             # Documentation site
 ├── packages/
-│   ├── shared/           # Shared types, constants, utils
-│   ├── ui/               # shadcn/ui components
-│   └── database/         # Prisma schema & migrations
+│   ├── shared/           # Shared types, constants, utils (@ventry/shared)
+│   ├── ui/               # shadcn/ui components (@ventry/ui)
+│   └── database/         # Prisma schema & migrations (@ventry/database)
 ├── docker-compose.yml    # Local development stack
 ├── turbo.json           # Turborepo configuration
 └── pnpm-workspace.yaml  # pnpm workspace config
@@ -29,7 +29,7 @@ ventry/
 - **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui for modern UI
 - **API Layer**: **tRPC v11** with full-stack TypeScript type inference and runtime safety
 - **Database**: PostgreSQL with **multi-tenant support** and **Supabase-ready architecture**:
-  - **Current**: PostgreSQL 16 with Prisma ORM for type-safe database access
+  - **Current**: PostgreSQL 16 with Prisma 6.x ORM (ESM support) for type-safe database access
   - **Multi-tenant**: Full organizationId scoping across all 40+ tables
   - **Schema**: Enterprise-grade inventory management (Items, Warehouses, Orders, PurchaseOrders, etc.)
   - **TypeScript Migration**: ✅ **COMPLETE** - All routers migrated with 0 TypeScript errors
@@ -298,8 +298,8 @@ cd ventry
 # - Start Docker services
 # - Prepare the development environment
 
-# Ensure demo users exist for login testing
-pnpm db:seed
+# Seed the database with demo users (REQUIRED for authentication)
+pnpm --filter @ventry/database db:seed
 
 # Start development servers
 pnpm dev
@@ -308,6 +308,11 @@ pnpm dev
 # Frontend (Next.js): http://localhost:6061
 # Backend API (tRPC + Fastify): http://localhost:6060
 # tRPC Endpoints: http://localhost:6060/trpc
+
+# Demo Credentials (after running db:seed):
+# Admin: admin@ventry.com / admin123
+# Manager: manager@ventry.com / manager123
+# User: user@ventry.com / user123
 ```
 
 ### Supabase Migration Setup (Optional - Phase 2)

@@ -31,9 +31,9 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
 
   // Fetch inventory data
   const { data, isLoading, error } = trpc.inventory.list.useQuery({
+    search: searchTerm || undefined,
     warehouseId: warehouseId === 'all' ? undefined : warehouseId,
-    search: searchTerm,
-    lowStockOnly: showLowStock,
+    lowStock: showLowStock,
     page,
     limit,
   });
@@ -67,7 +67,7 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
               <TableHead>Location</TableHead>
               <TableHead className="text-right">On Hand</TableHead>
               <TableHead className="text-right">Available</TableHead>
-              <TableHead className="text-right">Allocated</TableHead>
+              <TableHead className="text-right">Reserved</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -98,7 +98,7 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
             ) : (
               // Inventory rows
               data?.inventory.map((inv) => {
-                const status = getStockStatus(inv.quantityAvailable, inv.item.reorderPoint);
+                const status = getStockStatus(inv.qtyAvailable, inv.item.reorderPoint);
                 return (
                   <TableRow key={inv.id}>
                     <TableCell>
@@ -115,17 +115,17 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
                     <TableCell>
                       <div className="text-sm">
                         <p className="font-medium">{inv.location.warehouse.name}</p>
-                        <p className="text-gray-600">{inv.location.name}</p>
+                        <p className="text-gray-600">{inv.location.code}</p>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {inv.quantityOnHand}
+                      {inv.qtyOnHand}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {inv.quantityAvailable}
+                      {inv.qtyAvailable}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      {inv.quantityAllocated}
+                      {inv.qtyReserved}
                     </TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>

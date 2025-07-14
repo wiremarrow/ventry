@@ -1,5 +1,5 @@
-export * from '@prisma/client';
-export { PrismaClient, Role, MovementType, AuditAction } from '@prisma/client';
+export * from './generated/client/client.js';
+export { PrismaClient, Role, MovementType, AuditAction } from './generated/client/client.js';
 
 // Export the prisma client instance
 export { prisma } from './client.js';
@@ -20,4 +20,4 @@ export type {
   PurchaseOrder,
   Organization,
   OrganizationMember,
-} from '@prisma/client';
+} from './generated/client/client.js';

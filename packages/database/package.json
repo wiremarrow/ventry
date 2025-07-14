@@ -7,24 +7,25 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:seed:comprehensive": "tsx prisma/seed-comprehensive.ts",
-    "db:reset": "prisma migrate reset --force"
+    "db:generate": "dotenv -e ../../.env -- prisma generate",
+    "db:push": "dotenv -e ../../.env -- prisma db push",
+    "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
+    "db:migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "db:studio": "dotenv -e ../../.env -- prisma studio",
+    "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
+    "db:seed:comprehensive": "dotenv -e ../../.env -- tsx prisma/seed-comprehensive.ts",
+    "db:reset": "dotenv -e ../../.env -- prisma migrate reset --force"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0",
+    "@prisma/client": "^6.11.1",
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^24.0.10",
-    "prisma": "^5.20.0",
+    "dotenv-cli": "^8.0.0",
+    "prisma": "^6.11.1",
     "ts-node": "^10.9.1",
     "tsx": "^4.19.1"
   },

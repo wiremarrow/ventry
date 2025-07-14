@@ -34,16 +34,9 @@ import { Package } from 'lucide-react';
 const adjustmentSchema = z.object({
   type: z.enum(['ADD', 'REMOVE', 'SET']),
   quantity: z.number().positive('Quantity must be positive'),
-  reason: z.enum([
-    'DAMAGE',
-    'LOSS',
-    'THEFT',
-    'FOUND',
-    'RETURN',
-    'CORRECTION',
-    'OTHER',
-  ]),
-  notes: z.string().min(1, 'Please provide notes for this adjustment'),
+  adjustmentType: z.enum(['COUNT', 'DAMAGE', 'LOSS', 'FOUND', 'CORRECTION']),
+  reason: z.string().min(1, 'Please provide a reason for this adjustment'),
+  notes: z.string().optional(),
 });
 
 type AdjustmentFormData = z.infer<typeof adjustmentSchema>;
@@ -78,7 +71,8 @@ export function StockAdjustmentDialog({
     defaultValues: {
       type: 'ADD',
       quantity: 0,
-      reason: 'CORRECTION',
+      adjustmentType: 'CORRECTION',
+      reason: '',
       notes: '',
     },
   });
@@ -91,12 +85,13 @@ export function StockAdjustmentDialog({
     if (data.type === 'REMOVE') {
       adjustedQuantity = -data.quantity;
     } else if (data.type === 'SET') {
-      adjustedQuantity = data.quantity - inventory.quantityOnHand;
+      adjustedQuantity = data.quantity - inventory.qtyOnHand;
     }
 
     adjustMutation.mutate({
       inventoryId: inventory.id,
-      quantity: adjustedQuantity,
+      qty: adjustedQuantity,
+      adjustmentType: data.adjustmentType,
       reason: data.reason,
       notes: data.notes,
     });
@@ -124,12 +119,12 @@ export function StockAdjustmentDialog({
                 <span>
                   <span className="text-gray-600">Location:</span>{' '}
                   <span className="font-medium">
-                    {inventory.location.warehouse.name} - {inventory.location.name}
+                    {inventory.location.warehouse.name} - {inventory.location.code}
                   </span>
                 </span>
                 <span>
                   <span className="text-gray-600">Current:</span>{' '}
-                  <span className="font-medium">{inventory.quantityOnHand}</span>
+                  <span className="font-medium">{inventory.qtyOnHand}</span>
                 </span>
               </div>
             </div>
@@ -195,26 +190,41 @@ export function StockAdjustmentDialog({
 
             <FormField
               control={form.control}
+              name="adjustmentType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Adjustment Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select adjustment type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="COUNT">Physical Count</SelectItem>
+                      <SelectItem value="DAMAGE">Damage</SelectItem>
+                      <SelectItem value="LOSS">Loss</SelectItem>
+                      <SelectItem value="FOUND">Found</SelectItem>
+                      <SelectItem value="CORRECTION">Correction</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="reason"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Reason</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a reason" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="DAMAGE">Damage</SelectItem>
-                      <SelectItem value="LOSS">Loss</SelectItem>
-                      <SelectItem value="THEFT">Theft</SelectItem>
-                      <SelectItem value="FOUND">Found</SelectItem>
-                      <SelectItem value="RETURN">Return</SelectItem>
-                      <SelectItem value="CORRECTION">Correction</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input
+                      placeholder="Provide a reason for this adjustment..."
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

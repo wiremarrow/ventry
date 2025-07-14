@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { createTRPCRouter, organizationProcedure } from '../trpc/trpc.js';
-import type { ItemCategory } from '@prisma/client';
+import type { ItemCategory } from '@ventry/database';
 
 // Input validation schemas
 const categoryCreateSchema = z.object({

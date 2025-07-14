@@ -5,6 +5,7 @@ import type { Prisma } from '@ventry/database';
 
 // Input validation schemas
 const inventoryFilterSchema = z.object({
+  search: z.string().optional(),
   warehouseId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
   itemId: z.string().cuid().optional(),
@@ -59,6 +60,7 @@ export const inventoryRouter = createTRPCRouter({
     .input(inventoryFilterSchema)
     .query(async ({ ctx, input }) => {
       const {
+        search,
         warehouseId,
         locationId,
         itemId,
@@ -74,11 +76,19 @@ export const inventoryRouter = createTRPCRouter({
         sortOrder,
       } = input;
 
-      const where: Prisma.InventoryWhereInput = {
-        item: {
-          organizationId: ctx.user.organizationId,
-        },
+      const where: Prisma.InventoryWhereInput = {};
+      const itemWhere: Prisma.ItemWhereInput = {
+        organizationId: ctx.user.organizationId,
       };
+
+      // Search filter
+      if (search) {
+        itemWhere.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+          { upc: { contains: search, mode: 'insensitive' } },
+        ];
+      }
 
       // Location filters
       if (locationId) {
@@ -93,11 +103,11 @@ export const inventoryRouter = createTRPCRouter({
       if (itemId) {
         where.itemId = itemId;
       } else if (categoryId) {
-        where.item = {
-          organizationId: ctx.user.organizationId,
-          categoryId,
-        };
+        itemWhere.categoryId = categoryId;
       }
+
+      // Apply item where conditions
+      where.item = itemWhere;
 
       // Lot filter
       if (lotId) {

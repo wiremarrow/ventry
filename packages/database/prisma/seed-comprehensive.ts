@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../index.js';
 import bcrypt from 'bcryptjs';
 import { faker } from '@faker-js/faker';
-
-const prisma = new PrismaClient();
 
 // Utility function to generate realistic SKUs
 function generateSKU(category: string, index: number): string {

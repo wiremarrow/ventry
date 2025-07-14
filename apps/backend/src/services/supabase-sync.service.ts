@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@ventry/database';
 import { getSupabaseServiceClient, shouldUseSupabase } from '../config/supabase.js';
 
 export class SupabaseSyncService {

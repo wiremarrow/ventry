@@ -11,10 +11,13 @@
   "include": [
     "index.ts",
     "client.ts",
-    "prisma/**/*"
+    "prisma/**/*",
+    "generated/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "prisma/seed.ts",
+    "prisma/seed-comprehensive.ts"
   ]
 }
