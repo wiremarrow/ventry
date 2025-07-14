@@ -5,15 +5,15 @@
   "type": "module",
   "description": "End-to-end testing suite for Ventry",
   "scripts": {
-    "test": "playwright test",
-    "test:e2e": "playwright test",
-    "test:ui": "playwright test --ui",
-    "test:debug": "playwright test --debug",
-    "test:headed": "playwright test --headed",
-    "test:chromium": "playwright test --project=chromium",
-    "test:firefox": "playwright test --project=firefox", 
-    "test:webkit": "playwright test --project=webkit",
-    "test:mobile": "playwright test --project='Mobile Chrome' --project='Mobile Safari'",
+    "test": "dotenv -e .env -- playwright test",
+    "test:e2e": "dotenv -e .env -- playwright test",
+    "test:ui": "dotenv -e .env -- playwright test --ui",
+    "test:debug": "dotenv -e .env -- playwright test --debug",
+    "test:headed": "dotenv -e .env -- playwright test --headed",
+    "test:chromium": "dotenv -e .env -- playwright test --project=chromium",
+    "test:firefox": "dotenv -e .env -- playwright test --project=firefox",
+    "test:webkit": "dotenv -e .env -- playwright test --project=webkit",
+    "test:mobile": "dotenv -e .env -- playwright test --project='Mobile Chrome' --project='Mobile Safari'",
     "install": "playwright install --with-deps",
     "report": "playwright show-report",
     "typecheck": "tsc --noEmit"
@@ -27,6 +27,7 @@
     "@playwright/test": "^1.53.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.10.0",
+    "dotenv-cli": "^8.0.0",
     "typescript": "^5.3.0"
   },
   "engines": {

@@ -23,10 +23,7 @@ export function ProductFilters({
   onStatusChange,
 }: ProductFiltersProps) {
   // Fetch categories
-  const { data: categories } = trpc.categories.list.useQuery({
-    page: 1,
-    limit: 100,
-  });
+  const { data: categories } = trpc.itemCategories.list.useQuery({});
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -49,7 +46,7 @@ export function ProductFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories?.categories.map((category) => (
+            {categories?.map((category) => (
               <SelectItem key={category.id} value={category.id}>
                 {category.name}
               </SelectItem>

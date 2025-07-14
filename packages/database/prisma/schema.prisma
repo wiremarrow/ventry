@@ -1,11 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider      = "prisma-client"
-  output        = "../generated/client"
-  moduleFormat  = "esm"
-  runtime       = "node"
+  provider     = "prisma-client"
+  output       = "../generated/client"
+  moduleFormat = "esm"
+  runtime      = "node"
 }
 
 datasource db {
@@ -13,115 +10,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========================================
-// ORGANIZATIONS & MULTI-TENANCY
-// ========================================
-
 model Organization {
-  id                 String   @id @default(cuid())
+  id                 String               @id @default(cuid())
   name               String
-  slug               String   @unique
-  domain             String?  @unique
+  slug               String               @unique
+  domain             String?              @unique
   logoUrl            String?
-  settings           Json     @default("{}")
-  subscriptionTier   String   @default("free")
-  subscriptionStatus String   @default("active")
+  settings           Json                 @default("{}")
+  subscriptionTier   String               @default("free")
+  subscriptionStatus String               @default("active")
   trialEndsAt        DateTime?
   billingEmail       String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Relationships
-  members            OrganizationMember[]
-  items              Item[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  carriers           Carrier[]
+  customers          Customer[]
+  discounts          Discount[]
   categories         ItemCategory[]
+  items              Item[]
+  orders             Order[]
+  members            OrganizationMember[]
+  paymentMethods     PaymentMethod[]
+  posTransactions    POSTransaction[]
+  purchaseOrders     PurchaseOrder[]
+  returns            Return[]
+  shipments          Shipment[]
+  shippingMethods    ShippingMethod[]
+  suppliers          Supplier[]
   unitsOfMeasure     UnitOfMeasure[]
   warehouses         Warehouse[]
-  suppliers          Supplier[]
-  customers          Customer[]
-  purchaseOrders     PurchaseOrder[]
-  orders             Order[]
-  shipments          Shipment[]
-  returns            Return[]
-  posTransactions    POSTransaction[]
-  discounts          Discount[]
-  carriers           Carrier[]
-  shippingMethods    ShippingMethod[]
-  paymentMethods     PaymentMethod[]
 
   @@map("organizations")
 }
 
 model OrganizationMember {
-  id                    String    @id @default(cuid())
-  organizationId        String
-  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  userId                String
-  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role                  OrganizationRole @default(MEMBER)
-  joinedAt              DateTime @default(now())
-  invitedById           String?
-  invitedBy             User? @relation("InvitedMembers", fields: [invitedById], references: [id])
-  invitationToken       String? @unique
-  invitationAcceptedAt  DateTime?
+  id                   String           @id @default(cuid())
+  organizationId       String
+  userId               String
+  role                 OrganizationRole @default(MEMBER)
+  joinedAt             DateTime         @default(now())
+  invitedById          String?
+  invitationToken      String?          @unique
+  invitationAcceptedAt DateTime?
+  invitedBy            User?            @relation("InvitedMembers", fields: [invitedById], references: [id])
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
   @@map("organization_members")
 }
 
-// ========================================
-// AUTHENTICATION & USERS
-// ========================================
-
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  username    String   @unique
-  firstName   String
-  lastName    String
-  password    String
-  role        Role     @default(USER)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  lastLoginAt DateTime?
-
-  // Relationships
-  organizations       OrganizationMember[]
-  invitedMembers      OrganizationMember[] @relation("InvitedMembers")
-  employee            Employee?
-  userRoles           UserRole[]
-  stockMovements      StockMovement[]
-  stockAdjustments    StockAdjustment[]
-  cycleCounts         CycleCount[]
-  cycleCountReviews   CycleCount[]     @relation("ReviewedCycleCounts")
-  purchaseOrders      PurchaseOrder[]
-  purchaseOrderApprovals PurchaseOrder[] @relation("ApprovedPurchaseOrders")
-  receipts            Receipt[]
-  orders              Order[]           @relation("CreatedOrders")
-  updatedOrders       Order[]           @relation("UpdatedOrders")
-  payments            Payment[]
-  shipments           Shipment[]
-  posTransactions     POSTransaction[]
-  auditLogs           AuditLog[]
-  notifications       Notification[]
+  id                     String               @id @default(cuid())
+  email                  String               @unique
+  username               String               @unique
+  firstName              String
+  lastName               String
+  password               String
+  role                   Role                 @default(USER)
+  isActive               Boolean              @default(true)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  lastLoginAt            DateTime?
+  auditLogs              AuditLog[]
+  cycleCounts            CycleCount[]
+  cycleCountReviews      CycleCount[]         @relation("ReviewedCycleCounts")
+  employee               Employee?
+  notifications          Notification[]
+  orders                 Order[]              @relation("CreatedOrders")
+  updatedOrders          Order[]              @relation("UpdatedOrders")
+  invitedMembers         OrganizationMember[] @relation("InvitedMembers")
+  organizations          OrganizationMember[]
+  payments               Payment[]
+  posTransactions        POSTransaction[]
+  purchaseOrderApprovals PurchaseOrder[]      @relation("ApprovedPurchaseOrders")
+  purchaseOrders         PurchaseOrder[]
+  receipts               Receipt[]
+  shipments              Shipment[]
+  stockAdjustments       StockAdjustment[]
+  stockMovements         StockMovement[]
+  userRoles              UserRole[]
 
   @@map("users")
 }
 
 model Employee {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id])
-  hireDate   DateTime
-  hourlyRate Decimal?
-  salary     Decimal?
-  managerId  String?
-  manager    Employee? @relation("EmployeeManager", fields: [managerId], references: [id])
-  subordinates Employee[] @relation("EmployeeManager")
-  status     EmployeeStatus @default(ACTIVE)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id           String         @id @default(cuid())
+  userId       String         @unique
+  hireDate     DateTime
+  hourlyRate   Decimal?
+  salary       Decimal?
+  managerId    String?
+  status       EmployeeStatus @default(ACTIVE)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  manager      Employee?      @relation("EmployeeManager", fields: [managerId], references: [id])
+  subordinates Employee[]     @relation("EmployeeManager")
+  user         User           @relation(fields: [userId], references: [id])
 
   @@map("employees")
 }
@@ -129,275 +114,245 @@ model Employee {
 model UserRole {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
   roleName    String
   description String?
   assignedAt  DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
 
   @@map("user_roles")
 }
 
-// ========================================
-// INVENTORY CORE
-// ========================================
-
 model Item {
-  id               String   @id @default(cuid())
-  organizationId   String
-  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  sku              String
-  upc              String?
-  name             String
-  description      String?
-  categoryId       String
-  category         ItemCategory @relation(fields: [categoryId], references: [id])
-  uomId            String
-  unitOfMeasure    UnitOfMeasure @relation(fields: [uomId], references: [id])
-  defaultSupplierId String?
-  defaultSupplier  Supplier? @relation(fields: [defaultSupplierId], references: [id])
-  defaultCost      Decimal?
-  defaultPrice     Decimal?
-  weightKg         Decimal?
-  lengthCm         Decimal?
-  widthCm          Decimal?
-  heightCm         Decimal?
-  reorderPoint     Int      @default(0)
-  reorderQty       Int      @default(0)
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                  String               @id @default(cuid())
+  organizationId      String
+  sku                 String
+  upc                 String?
+  name                String
+  description         String?
+  categoryId          String
+  uomId               String
+  defaultSupplierId   String?
+  defaultCost         Decimal?
+  defaultPrice        Decimal?
+  weightKg            Decimal?
+  lengthCm            Decimal?
+  widthCm             Decimal?
+  heightCm            Decimal?
+  reorderPoint        Int                  @default(0)
+  reorderQty          Int                  @default(0)
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  cycleCountItems     CycleCountItem[]
+  inventory           Inventory[]
+  images              ItemImage[]
+  category            ItemCategory         @relation(fields: [categoryId], references: [id])
+  defaultSupplier     Supplier?            @relation(fields: [defaultSupplierId], references: [id])
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  unitOfMeasure       UnitOfMeasure        @relation(fields: [uomId], references: [id])
+  lots                Lot[]
+  orderItems          OrderItem[]
+  posTransactionItems POSTransactionItem[]
+  priceHistory        PriceHistory[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  receiptItems        ReceiptItem[]
+  returnItems         ReturnItem[]
+  serialNumbers       SerialNumber[]
+  shipmentItems       ShipmentItem[]
+  stockAdjustments    StockAdjustment[]
+  stockMovements      StockMovement[]
 
   @@unique([organizationId, sku])
   @@index([organizationId])
-
-  // Relationships
-  images           ItemImage[]
-  lots             Lot[]
-  serialNumbers    SerialNumber[]
-  inventory        Inventory[]
-  stockMovements   StockMovement[]
-  stockAdjustments StockAdjustment[]
-  cycleCountItems  CycleCountItem[]
-  priceHistory     PriceHistory[]
-  purchaseOrderItems PurchaseOrderItem[]
-  receiptItems     ReceiptItem[]
-  orderItems       OrderItem[]
-  shipmentItems    ShipmentItem[]
-  returnItems      ReturnItem[]
-  posTransactionItems POSTransactionItem[]
-
   @@map("items")
 }
 
 model ItemCategory {
-  id          String   @id @default(cuid())
+  id             String         @id @default(cuid())
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  parentId    String?
-  parent      ItemCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children    ItemCategory[] @relation("CategoryHierarchy")
-  name        String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  parentId       String?
+  name           String
+  description    String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         ItemCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       ItemCategory[] @relation("CategoryHierarchy")
+  items          Item[]
 
   @@unique([organizationId, name])
   @@index([organizationId])
-
-  // Relationships
-  items       Item[]
-
   @@map("item_categories")
 }
 
 model UnitOfMeasure {
-  id                    String   @id @default(cuid())
-  organizationId        String
-  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  code                  String
-  description           String
-  isBase                Boolean  @default(false)
-  conversionFactorToBase Decimal @default(1)
+  id                     String       @id @default(cuid())
+  organizationId         String
+  code                   String
+  description            String
+  isBase                 Boolean      @default(false)
+  conversionFactorToBase Decimal      @default(1)
+  items                  Item[]
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, code])
   @@index([organizationId])
-
-  // Relationships
-  items                 Item[]
-
   @@map("units_of_measure")
 }
 
 model ItemImage {
   id         String   @id @default(cuid())
   itemId     String
-  item       Item     @relation(fields: [itemId], references: [id])
   url        String
   altText    String?
   isPrimary  Boolean  @default(false)
   uploadedAt DateTime @default(now())
+  item       Item     @relation(fields: [itemId], references: [id])
 
   @@map("item_images")
 }
 
 model Lot {
-  id               String   @id @default(cuid())
-  itemId           String
-  item             Item     @relation(fields: [itemId], references: [id])
-  lotNumber        String   @unique
-  manufactureDate  DateTime?
-  expirationDate   DateTime?
-  receivedDate     DateTime
-  supplierId       String?
-  supplier         Supplier? @relation(fields: [supplierId], references: [id])
-  unitCost         Decimal
-  qtyInitial       Int
-  qtyOnHand        Int
-  status           LotStatus @default(AVAILABLE)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  // Relationships
-  serialNumbers    SerialNumber[]
-  inventory        Inventory[]
-  stockMovements   StockMovement[]
-  stockAdjustments StockAdjustment[]
-  cycleCountItems  CycleCountItem[]
-  receiptItems     ReceiptItem[]
-  orderItems       OrderItem[]
-  shipmentItems    ShipmentItem[]
-  returnItems      ReturnItem[]
+  id                  String               @id @default(cuid())
+  itemId              String
+  lotNumber           String               @unique
+  manufactureDate     DateTime?
+  expirationDate      DateTime?
+  receivedDate        DateTime
+  supplierId          String?
+  unitCost            Decimal
+  qtyInitial          Int
+  qtyOnHand           Int
+  status              LotStatus            @default(AVAILABLE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  cycleCountItems     CycleCountItem[]
+  inventory           Inventory[]
+  item                Item                 @relation(fields: [itemId], references: [id])
+  supplier            Supplier?            @relation(fields: [supplierId], references: [id])
+  orderItems          OrderItem[]
   posTransactionItems POSTransactionItem[]
+  receiptItems        ReceiptItem[]
+  returnItems         ReturnItem[]
+  serialNumbers       SerialNumber[]
+  shipmentItems       ShipmentItem[]
+  stockAdjustments    StockAdjustment[]
+  stockMovements      StockMovement[]
 
   @@map("lots")
 }
 
 model SerialNumber {
-  id                 String   @id @default(cuid())
-  itemId             String
-  item               Item     @relation(fields: [itemId], references: [id])
-  serialNumber       String   @unique
-  lotId              String?
-  lot                Lot?     @relation(fields: [lotId], references: [id])
-  purchaseDate       DateTime?
-  warrantyExpiration DateTime?
-  status             SerialStatus @default(AVAILABLE)
-  locationId         String?
-  location           Location? @relation(fields: [locationId], references: [id])
-
-  // Relationships
-  inventory          Inventory[]
-  stockMovements     StockMovement[]
-  orderItems         OrderItem[]
-  shipmentItems      ShipmentItem[]
-  returnItems        ReturnItem[]
+  id                  String               @id @default(cuid())
+  itemId              String
+  serialNumber        String               @unique
+  lotId               String?
+  purchaseDate        DateTime?
+  warrantyExpiration  DateTime?
+  status              SerialStatus         @default(AVAILABLE)
+  locationId          String?
+  inventory           Inventory[]
+  orderItems          OrderItem[]
   posTransactionItems POSTransactionItem[]
+  returnItems         ReturnItem[]
+  item                Item                 @relation(fields: [itemId], references: [id])
+  location            Location?            @relation(fields: [locationId], references: [id])
+  lot                 Lot?                 @relation(fields: [lotId], references: [id])
+  shipmentItems       ShipmentItem[]
+  stockMovements      StockMovement[]
 
   @@map("serial_numbers")
 }
 
-// ========================================
-// WAREHOUSE & LOCATIONS
-// ========================================
-
 model Warehouse {
-  id         String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  code       String
-  name       String
-  phone      String?
-  line1      String
-  line2      String?
-  city       String
-  state      String
-  postalCode String
-  country    String
-  notes      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  code           String
+  name           String
+  phone          String?
+  line1          String
+  line2          String?
+  city           String
+  state          String
+  postalCode     String
+  country        String
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  locations      Location[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, code])
   @@index([organizationId])
-
-  // Relationships
-  locations  Location[]
-
   @@map("warehouses")
 }
 
 model Location {
-  id                String   @id @default(cuid())
-  warehouseId       String
-  warehouse         Warehouse @relation(fields: [warehouseId], references: [id])
-  code              String   @unique
-  description       String?
-  zone              String?
-  aisle             String?
-  shelf             String?
-  bin               String?
-  maxCapacity       Int?
-  isTempControlled  Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  // Relationships
-  serialNumbers     SerialNumber[]
-  inventory         Inventory[]
-  fromMovements     StockMovement[] @relation("FromLocation")
-  toMovements       StockMovement[] @relation("ToLocation")
-  stockAdjustments  StockAdjustment[]
-  cycleCounts       CycleCount[]
-  receiptItems      ReceiptItem[]
-  shipments         Shipment[]
+  id               String            @id @default(cuid())
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  aisle            String?
+  bin              String?
+  code             String            @unique
+  isTempControlled Boolean           @default(false)
+  maxCapacity      Int?
+  shelf            String?
+  warehouseId      String
+  zone             String?
+  cycleCounts      CycleCount[]
+  inventory        Inventory[]
+  warehouse        Warehouse         @relation(fields: [warehouseId], references: [id])
+  receiptItems     ReceiptItem[]
+  serialNumbers    SerialNumber[]
+  shipments        Shipment[]
+  stockAdjustments StockAdjustment[]
+  fromMovements    StockMovement[]   @relation("FromLocation")
+  toMovements      StockMovement[]   @relation("ToLocation")
 
   @@map("locations")
 }
 
-// ========================================
-// INVENTORY TRACKING
-// ========================================
-
 model Inventory {
-  id            String   @id @default(cuid())
+  id            String        @id @default(cuid())
   itemId        String
-  item          Item     @relation(fields: [itemId], references: [id])
   lotId         String?
-  lot           Lot?     @relation(fields: [lotId], references: [id])
   serialId      String?
-  serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
   locationId    String
-  location      Location @relation(fields: [locationId], references: [id])
-  qtyOnHand     Int      @default(0)
-  qtyReserved   Int      @default(0)
-  qtyInTransit  Int      @default(0)
+  qtyOnHand     Int           @default(0)
+  qtyReserved   Int           @default(0)
+  qtyInTransit  Int           @default(0)
   lastCountedAt DateTime?
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime      @updatedAt
+  item          Item          @relation(fields: [itemId], references: [id])
+  location      Location      @relation(fields: [locationId], references: [id])
+  lot           Lot?          @relation(fields: [lotId], references: [id])
+  serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
 
   @@unique([itemId, lotId, serialId, locationId])
   @@map("inventory")
 }
 
 model StockMovement {
-  id             String   @id @default(cuid())
+  id             String        @id @default(cuid())
   itemId         String
-  item           Item     @relation(fields: [itemId], references: [id])
   lotId          String?
-  lot            Lot?     @relation(fields: [lotId], references: [id])
   serialId       String?
-  serialNumber   SerialNumber? @relation(fields: [serialId], references: [id])
   fromLocationId String?
-  fromLocation   Location? @relation("FromLocation", fields: [fromLocationId], references: [id])
   toLocationId   String?
-  toLocation     Location? @relation("ToLocation", fields: [toLocationId], references: [id])
   qty            Int
   movementType   MovementType
   refType        String?
   refId          String?
   movedById      String
-  movedBy        User     @relation(fields: [movedById], references: [id])
-  movedAt        DateTime @default(now())
+  movedAt        DateTime      @default(now())
   notes          String?
+  fromLocation   Location?     @relation("FromLocation", fields: [fromLocationId], references: [id])
+  item           Item          @relation(fields: [itemId], references: [id])
+  lot            Lot?          @relation(fields: [lotId], references: [id])
+  movedBy        User          @relation(fields: [movedById], references: [id])
+  serialNumber   SerialNumber? @relation(fields: [serialId], references: [id])
+  toLocation     Location?     @relation("ToLocation", fields: [toLocationId], references: [id])
 
   @@map("stock_movements")
 }
@@ -405,246 +360,223 @@ model StockMovement {
 model StockAdjustment {
   id           String   @id @default(cuid())
   itemId       String
-  item         Item     @relation(fields: [itemId], references: [id])
   lotId        String?
-  lot          Lot?     @relation(fields: [lotId], references: [id])
   locationId   String
-  location     Location @relation(fields: [locationId], references: [id])
   qtyBefore    Int
   qtyAfter     Int
   reason       String
   adjustedById String
-  adjustedBy   User     @relation(fields: [adjustedById], references: [id])
   adjustedAt   DateTime @default(now())
   notes        String?
+  adjustedBy   User     @relation(fields: [adjustedById], references: [id])
+  item         Item     @relation(fields: [itemId], references: [id])
+  location     Location @relation(fields: [locationId], references: [id])
+  lot          Lot?     @relation(fields: [lotId], references: [id])
 
   @@map("stock_adjustments")
 }
 
 model CycleCount {
-  id          String   @id @default(cuid())
-  locationId  String
-  location    Location @relation(fields: [locationId], references: [id])
-  countDate   DateTime
-  countedById String
-  countedBy   User     @relation(fields: [countedById], references: [id])
+  id           String           @id @default(cuid())
+  locationId   String
+  countDate    DateTime
+  countedById  String
   reviewedById String?
-  reviewedBy  User?    @relation("ReviewedCycleCounts", fields: [reviewedById], references: [id])
-  status      CycleCountStatus @default(PENDING)
-  notes       String?
-
-  // Relationships
-  items       CycleCountItem[]
+  status       CycleCountStatus @default(PENDING)
+  notes        String?
+  items        CycleCountItem[]
+  countedBy    User             @relation(fields: [countedById], references: [id])
+  location     Location         @relation(fields: [locationId], references: [id])
+  reviewedBy   User?            @relation("ReviewedCycleCounts", fields: [reviewedById], references: [id])
 
   @@map("cycle_counts")
 }
 
 model CycleCountItem {
-  id         String   @id @default(cuid())
+  id         String     @id @default(cuid())
   countId    String
-  count      CycleCount @relation(fields: [countId], references: [id])
   itemId     String
-  item       Item     @relation(fields: [itemId], references: [id])
   lotId      String?
-  lot        Lot?     @relation(fields: [lotId], references: [id])
   qtyCounted Int
   qtySystem  Int
   variance   Int
+  count      CycleCount @relation(fields: [countId], references: [id])
+  item       Item       @relation(fields: [itemId], references: [id])
+  lot        Lot?       @relation(fields: [lotId], references: [id])
 
   @@map("cycle_count_items")
 }
 
 model PriceHistory {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   itemId     String
-  item       Item     @relation(fields: [itemId], references: [id])
   priceType  PriceType
   price      Decimal
-  currencyId String   @default("USD")
+  currencyId String    @default("USD")
   startDate  DateTime
   endDate    DateTime?
   notes      String?
+  item       Item      @relation(fields: [itemId], references: [id])
 
   @@map("price_history")
 }
 
-// ========================================
-// PROCUREMENT
-// ========================================
-
 model Supplier {
-  id            String   @id @default(cuid())
+  id             String            @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  supplierCode  String
-  name          String
-  phone         String?
-  email         String?
-  website       String?
-  currencyId    String   @default("USD")
-  paymentTerms  String?
-  leadTimeDays  Int      @default(0)
-  line1         String
-  line2         String?
-  city          String
-  state         String
-  postalCode    String
-  country       String
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  supplierCode   String
+  name           String
+  phone          String?
+  email          String?
+  website        String?
+  currencyId     String            @default("USD")
+  paymentTerms   String?
+  leadTimeDays   Int               @default(0)
+  line1          String
+  line2          String?
+  city           String
+  state          String
+  postalCode     String
+  country        String
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  addresses      Address[]
+  items          Item[]
+  lots           Lot[]
+  purchaseOrders PurchaseOrder[]
+  contacts       SupplierContact[]
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, supplierCode])
   @@index([organizationId])
-
-  // Relationships
-  items         Item[]
-  lots          Lot[]
-  contacts      SupplierContact[]
-  purchaseOrders PurchaseOrder[]
-  addresses     Address[]
-
   @@map("suppliers")
 }
 
 model SupplierContact {
   id         String   @id @default(cuid())
   supplierId String
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
   firstName  String
   lastName   String
   email      String?
   phone      String?
   role       String?
   notes      String?
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
 
   @@map("supplier_contacts")
 }
 
 model PurchaseOrder {
-  id           String   @id @default(cuid())
+  id             String              @id @default(cuid())
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  supplierId   String
-  supplier     Supplier @relation(fields: [supplierId], references: [id])
-  poNumber     String
-  status       POStatus @default(DRAFT)
-  orderDate    DateTime @default(now())
-  expectedDate DateTime?
-  currencyId   String   @default("USD")
-  subtotal     Decimal  @default(0)
-  tax          Decimal  @default(0)
-  total        Decimal  @default(0)
-  notes        String?
-  createdById  String
-  createdBy    User     @relation(fields: [createdById], references: [id])
-  approvedById String?
-  approvedBy   User?    @relation("ApprovedPurchaseOrders", fields: [approvedById], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  supplierId     String
+  poNumber       String
+  status         POStatus            @default(DRAFT)
+  orderDate      DateTime            @default(now())
+  expectedDate   DateTime?
+  currencyId     String              @default("USD")
+  subtotal       Decimal             @default(0)
+  tax            Decimal             @default(0)
+  total          Decimal             @default(0)
+  notes          String?
+  createdById    String
+  approvedById   String?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  items          PurchaseOrderItem[]
+  approvedBy     User?               @relation("ApprovedPurchaseOrders", fields: [approvedById], references: [id])
+  createdBy      User                @relation(fields: [createdById], references: [id])
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplier       Supplier            @relation(fields: [supplierId], references: [id])
+  receipts       Receipt[]
 
   @@unique([organizationId, poNumber])
   @@index([organizationId])
-
-  // Relationships
-  items        PurchaseOrderItem[]
-  receipts     Receipt[]
-
   @@map("purchase_orders")
 }
 
 model PurchaseOrderItem {
-  id           String   @id @default(cuid())
-  poId         String
+  id            String        @id @default(cuid())
+  poId          String
+  itemId        String
+  description   String?
+  qtyOrdered    Int
+  qtyReceived   Int           @default(0)
+  unitCost      Decimal
+  taxRate       Decimal       @default(0)
+  totalCost     Decimal
+  item          Item          @relation(fields: [itemId], references: [id])
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
-  itemId       String
-  item         Item     @relation(fields: [itemId], references: [id])
-  description  String?
-  qtyOrdered   Int
-  qtyReceived  Int      @default(0)
-  unitCost     Decimal
-  taxRate      Decimal  @default(0)
-  totalCost    Decimal
 
   @@map("purchase_order_items")
 }
 
 model Receipt {
-  id           String   @id @default(cuid())
-  poId         String?
+  id            String         @id @default(cuid())
+  poId          String?
+  receivedDate  DateTime       @default(now())
+  receivedById  String
+  reference     String?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  items         ReceiptItem[]
   purchaseOrder PurchaseOrder? @relation(fields: [poId], references: [id])
-  receivedDate DateTime @default(now())
-  receivedById String
-  receivedBy   User     @relation(fields: [receivedById], references: [id])
-  reference    String?
-  notes        String?
-  createdAt    DateTime @default(now())
-
-  // Relationships
-  items        ReceiptItem[]
+  receivedBy    User           @relation(fields: [receivedById], references: [id])
 
   @@map("receipts")
 }
 
 model ReceiptItem {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   receiptId      String
-  receipt        Receipt  @relation(fields: [receiptId], references: [id])
   itemId         String
-  item           Item     @relation(fields: [itemId], references: [id])
   lotId          String?
-  lot            Lot?     @relation(fields: [lotId], references: [id])
   serialNumber   String?
   qtyReceived    Int
   unitCost       Decimal
   expirationDate DateTime?
   locationId     String
-  location       Location @relation(fields: [locationId], references: [id])
+  item           Item      @relation(fields: [itemId], references: [id])
+  location       Location  @relation(fields: [locationId], references: [id])
+  lot            Lot?      @relation(fields: [lotId], references: [id])
+  receipt        Receipt   @relation(fields: [receiptId], references: [id])
 
   @@map("receipt_items")
 }
 
-// ========================================
-// SALES & FULFILLMENT
-// ========================================
-
 model Customer {
-  id                   String   @id @default(cuid())
-  organizationId       String
-  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customerCode         String
-  companyName          String?
-  firstName            String?
-  lastName             String?
-  email                String?
-  phone                String?
-  taxId                String?
-  currencyId           String   @default("USD")
-  defaultPaymentTerms  String?
-  defaultShipMethodId  String?
-  defaultShipMethod    ShippingMethod? @relation(fields: [defaultShipMethodId], references: [id])
-  website              String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String           @id @default(cuid())
+  organizationId      String
+  customerCode        String
+  companyName         String?
+  firstName           String?
+  lastName            String?
+  email               String?
+  phone               String?
+  taxId               String?
+  currencyId          String           @default("USD")
+  defaultPaymentTerms String?
+  defaultShipMethodId String?
+  website             String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  addresses           Address[]
+  defaultShipMethod   ShippingMethod?  @relation(fields: [defaultShipMethodId], references: [id])
+  organization        Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orders              Order[]
+  posTransactions     POSTransaction[]
+  returns             Return[]
 
   @@unique([organizationId, customerCode])
   @@index([organizationId])
-
-  // Relationships
-  addresses            Address[]
-  orders               Order[]
-  returns              Return[]
-  posTransactions      POSTransaction[]
-
   @@map("customers")
 }
 
 model Address {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id])
   supplierId  String?
-  supplier    Supplier? @relation(fields: [supplierId], references: [id])
   addressType AddressType
   line1       String
   line2       String?
@@ -654,344 +586,313 @@ model Address {
   country     String
   phone       String?
   attention   String?
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isDefault   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  customer    Customer?   @relation(fields: [customerId], references: [id])
+  supplier    Supplier?   @relation(fields: [supplierId], references: [id])
 
   @@map("addresses")
 }
 
 model Order {
-  id                 String   @id @default(cuid())
-  organizationId     String
-  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  customerId         String
-  customer           Customer @relation(fields: [customerId], references: [id])
-  orderNumber        String
-  status             OrderStatus @default(PENDING)
-  orderDate          DateTime @default(now())
-  requestedShipDate  DateTime?
-  currencyId         String   @default("USD")
-  subtotal           Decimal  @default(0)
-  discountTotal      Decimal  @default(0)
-  taxTotal           Decimal  @default(0)
-  shippingTotal      Decimal  @default(0)
-  grandTotal         Decimal  @default(0)
-  notes              String?
-  createdById        String
-  createdBy          User     @relation("CreatedOrders", fields: [createdById], references: [id])
-  updatedById        String?
-  updatedBy          User?    @relation("UpdatedOrders", fields: [updatedById], references: [id])
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                String       @id @default(cuid())
+  organizationId    String
+  customerId        String
+  orderNumber       String
+  status            OrderStatus  @default(PENDING)
+  orderDate         DateTime     @default(now())
+  requestedShipDate DateTime?
+  currencyId        String       @default("USD")
+  subtotal          Decimal      @default(0)
+  discountTotal     Decimal      @default(0)
+  taxTotal          Decimal      @default(0)
+  shippingTotal     Decimal      @default(0)
+  grandTotal        Decimal      @default(0)
+  notes             String?
+  createdById       String
+  updatedById       String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  items             OrderItem[]
+  createdBy         User         @relation("CreatedOrders", fields: [createdById], references: [id])
+  customer          Customer     @relation(fields: [customerId], references: [id])
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedBy         User?        @relation("UpdatedOrders", fields: [updatedById], references: [id])
+  payments          Payment[]
+  returns           Return[]
+  shipments         Shipment[]
 
   @@unique([organizationId, orderNumber])
   @@index([organizationId])
-
-  // Relationships
-  items              OrderItem[]
-  payments           Payment[]
-  shipments          Shipment[]
-  returns            Return[]
-
   @@map("orders")
 }
 
 model OrderItem {
-  id            String   @id @default(cuid())
+  id            String         @id @default(cuid())
   orderId       String
-  order         Order    @relation(fields: [orderId], references: [id])
   itemId        String
-  item          Item     @relation(fields: [itemId], references: [id])
   description   String?
   qtyOrdered    Int
-  qtyAllocated  Int      @default(0)
-  qtyShipped    Int      @default(0)
+  qtyAllocated  Int            @default(0)
+  qtyShipped    Int            @default(0)
   unitPrice     Decimal
-  discountPct   Decimal  @default(0)
-  taxRate       Decimal  @default(0)
+  discountPct   Decimal        @default(0)
+  taxRate       Decimal        @default(0)
   totalPrice    Decimal
   lotId         String?
-  lot           Lot?     @relation(fields: [lotId], references: [id])
   serialId      String?
-  serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
-
-  // Relationships
-  shipmentItems ShipmentItem[]
+  item          Item           @relation(fields: [itemId], references: [id])
+  lot           Lot?           @relation(fields: [lotId], references: [id])
+  order         Order          @relation(fields: [orderId], references: [id])
+  serialNumber  SerialNumber?  @relation(fields: [serialId], references: [id])
   returnItems   ReturnItem[]
+  shipmentItems ShipmentItem[]
 
   @@map("order_items")
 }
 
 model Payment {
-  id              String   @id @default(cuid())
+  id              String        @id @default(cuid())
   orderId         String
-  order           Order    @relation(fields: [orderId], references: [id])
   paymentMethodId String
-  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   amount          Decimal
-  currencyId      String   @default("USD")
-  paymentDate     DateTime @default(now())
+  currencyId      String        @default("USD")
+  paymentDate     DateTime      @default(now())
   transactionRef  String?
   status          PaymentStatus @default(PENDING)
   processedById   String
-  processedBy     User     @relation(fields: [processedById], references: [id])
   notes           String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime      @default(now())
+  order           Order         @relation(fields: [orderId], references: [id])
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
+  processedBy     User          @relation(fields: [processedById], references: [id])
 
   @@map("payments")
 }
 
 model PaymentMethod {
-  id           String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  methodName   String
-  provider     String?
-  acctLast4    String?
-  detailsJson  Json?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relationships
-  payments     Payment[]
+  methodName     String
+  provider       String?
+  acctLast4      String?
+  detailsJson    Json?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  payments       Payment[]
 
   @@map("payment_methods")
 }
 
 model Shipment {
-  id                    String   @id @default(cuid())
+  id                    String         @id @default(cuid())
   organizationId        String
-  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orderId               String
-  order                 Order    @relation(fields: [orderId], references: [id])
-  shipmentNumber        String   @unique
+  shipmentNumber        String         @unique
   carrierId             String?
-  carrier               Carrier? @relation(fields: [carrierId], references: [id])
   carrierService        String?
   trackingNumber        String?
   shipDate              DateTime?
   expectedDelivery      DateTime?
   shippedFromLocationId String
-  shippedFromLocation   Location @relation(fields: [shippedFromLocationId], references: [id])
   shippedById           String
-  shippedBy             User     @relation(fields: [shippedById], references: [id])
   status                ShipmentStatus @default(PENDING)
   weightKg              Decimal?
   shippingCost          Decimal?
   notes                 String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  // Relationships
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
   items                 ShipmentItem[]
+  carrier               Carrier?       @relation(fields: [carrierId], references: [id])
+  order                 Order          @relation(fields: [orderId], references: [id])
+  organization          Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  shippedBy             User           @relation(fields: [shippedById], references: [id])
+  shippedFromLocation   Location       @relation(fields: [shippedFromLocationId], references: [id])
 
   @@map("shipments")
 }
 
 model ShipmentItem {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   shipmentId   String
-  shipment     Shipment @relation(fields: [shipmentId], references: [id])
   orderItemId  String
-  orderItem    OrderItem @relation(fields: [orderItemId], references: [id])
   itemId       String
-  item         Item     @relation(fields: [itemId], references: [id])
   lotId        String?
-  lot          Lot?     @relation(fields: [lotId], references: [id])
   serialId     String?
-  serialNumber SerialNumber? @relation(fields: [serialId], references: [id])
   qtyShipped   Int
+  item         Item          @relation(fields: [itemId], references: [id])
+  lot          Lot?          @relation(fields: [lotId], references: [id])
+  orderItem    OrderItem     @relation(fields: [orderItemId], references: [id])
+  serialNumber SerialNumber? @relation(fields: [serialId], references: [id])
+  shipment     Shipment      @relation(fields: [shipmentId], references: [id])
 
   @@map("shipment_items")
 }
 
 model Return {
-  id           String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  orderId      String?
-  order        Order?   @relation(fields: [orderId], references: [id])
-  customerId   String
-  customer     Customer @relation(fields: [customerId], references: [id])
-  returnNumber String   @unique
-  status       ReturnStatus @default(PENDING)
-  returnDate   DateTime @default(now())
-  rmaNumber    String?
-  reason       String
-  refundAmount Decimal  @default(0)
-  restockFee   Decimal  @default(0)
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  // Relationships
-  items        ReturnItem[]
+  orderId        String?
+  customerId     String
+  returnNumber   String       @unique
+  status         ReturnStatus @default(PENDING)
+  returnDate     DateTime     @default(now())
+  rmaNumber      String?
+  reason         String
+  refundAmount   Decimal      @default(0)
+  restockFee     Decimal      @default(0)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  items          ReturnItem[]
+  customer       Customer     @relation(fields: [customerId], references: [id])
+  order          Order?       @relation(fields: [orderId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("returns")
 }
 
 model ReturnItem {
-  id           String   @id @default(cuid())
+  id           String          @id @default(cuid())
   returnId     String
-  return       Return   @relation(fields: [returnId], references: [id])
   orderItemId  String?
-  orderItem    OrderItem? @relation(fields: [orderItemId], references: [id])
   itemId       String
-  item         Item     @relation(fields: [itemId], references: [id])
   lotId        String?
-  lot          Lot?     @relation(fields: [lotId], references: [id])
   serialId     String?
-  serialNumber SerialNumber? @relation(fields: [serialId], references: [id])
   qtyReturned  Int
   condition    ReturnCondition
   refundAmount Decimal
+  item         Item            @relation(fields: [itemId], references: [id])
+  lot          Lot?            @relation(fields: [lotId], references: [id])
+  orderItem    OrderItem?      @relation(fields: [orderItemId], references: [id])
+  return       Return          @relation(fields: [returnId], references: [id])
+  serialNumber SerialNumber?   @relation(fields: [serialId], references: [id])
 
   @@map("return_items")
 }
 
-// ========================================
-// POS / RETAIL
-// ========================================
-
 model POSTransaction {
-  id              String   @id @default(cuid())
+  id              String               @id @default(cuid())
   organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  txNumber        String   @unique
+  txNumber        String               @unique
   storeId         String
   registerId      String
   employeeId      String
-  employee        User     @relation(fields: [employeeId], references: [id])
   customerId      String?
-  customer        Customer? @relation(fields: [customerId], references: [id])
-  txDate          DateTime @default(now())
-  status          TransactionStatus @default(COMPLETED)
-  subtotal        Decimal  @default(0)
-  taxTotal        Decimal  @default(0)
-  discountTotal   Decimal  @default(0)
-  grandTotal      Decimal  @default(0)
-  paymentReceived Decimal  @default(0)
-  changeGiven     Decimal  @default(0)
+  txDate          DateTime             @default(now())
+  status          TransactionStatus    @default(COMPLETED)
+  subtotal        Decimal              @default(0)
+  taxTotal        Decimal              @default(0)
+  discountTotal   Decimal              @default(0)
+  grandTotal      Decimal              @default(0)
+  paymentReceived Decimal              @default(0)
+  changeGiven     Decimal              @default(0)
   notes           String?
-
-  // Relationships
   items           POSTransactionItem[]
+  customer        Customer?            @relation(fields: [customerId], references: [id])
+  employee        User                 @relation(fields: [employeeId], references: [id])
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("pos_transactions")
 }
 
 model POSTransactionItem {
-  id            String   @id @default(cuid())
-  posTxId       String
-  transaction   POSTransaction @relation(fields: [posTxId], references: [id])
-  itemId        String
-  item          Item     @relation(fields: [itemId], references: [id])
-  lotId         String?
-  lot           Lot?     @relation(fields: [lotId], references: [id])
-  serialId      String?
-  serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
-  qty           Int
-  unitPrice     Decimal
-  discountPct   Decimal  @default(0)
-  totalPrice    Decimal
+  id           String         @id @default(cuid())
+  posTxId      String
+  itemId       String
+  lotId        String?
+  serialId     String?
+  qty          Int
+  unitPrice    Decimal
+  discountPct  Decimal        @default(0)
+  totalPrice   Decimal
+  item         Item           @relation(fields: [itemId], references: [id])
+  lot          Lot?           @relation(fields: [lotId], references: [id])
+  transaction  POSTransaction @relation(fields: [posTxId], references: [id])
+  serialNumber SerialNumber?  @relation(fields: [serialId], references: [id])
 
   @@map("pos_transaction_items")
 }
 
 model Discount {
-  id            String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  code          String   @unique
-  description   String
-  discountType  DiscountType
-  value         Decimal
-  startDate     DateTime
-  endDate       DateTime?
-  minOrderValue Decimal?
-  maxUses       Int?
-  uses          Int      @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  code           String       @unique
+  description    String
+  discountType   DiscountType
+  value          Decimal
+  startDate      DateTime
+  endDate        DateTime?
+  minOrderValue  Decimal?
+  maxUses        Int?
+  uses           Int          @default(0)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("discounts")
 }
 
-// ========================================
-// SHIPPING & CARRIERS
-// ========================================
-
 model Carrier {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  name            String   @unique
+  name            String           @unique
   phone           String?
   website         String?
   trackingUrlTpl  String?
-
-  // Relationships
-  shippingMethods ShippingMethod[]
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   shipments       Shipment[]
+  shippingMethods ShippingMethod[]
 
   @@map("carriers")
 }
 
 model ShippingMethod {
-  id           String   @id @default(cuid())
+  id             String       @id @default(cuid())
   organizationId String
-  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  carrierId    String
-  carrier      Carrier  @relation(fields: [carrierId], references: [id])
-  serviceName  String
-  transitDays  Int      @default(0)
-  baseCost     Decimal  @default(0)
-
-  // Relationships
-  customers    Customer[]
+  carrierId      String
+  serviceName    String
+  transitDays    Int          @default(0)
+  baseCost       Decimal      @default(0)
+  customers      Customer[]
+  carrier        Carrier      @relation(fields: [carrierId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("shipping_methods")
 }
 
-// ========================================
-// LOGGING & NOTIFICATIONS
-// ========================================
-
 model AuditLog {
-  id         String     @id @default(cuid())
-  tableName  String
-  recordPk   String
-  userId     String
-  user       User       @relation(fields: [userId], references: [id])
+  id         String      @id @default(cuid())
   action     AuditAction
-  beforeData Json?
+  userId     String
   afterData  Json?
-  eventTime  DateTime   @default(now())
+  beforeData Json?
+  eventTime  DateTime    @default(now())
   ipAddress  String?
+  recordPk   String
+  tableName  String
+  user       User        @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
 }
 
 model Notification {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id])
   notifType    String
   message      String
   relatedTable String?
   relatedId    String?
   readAt       DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id])
 
   @@map("notifications")
 }
-
-// ========================================
-// ENUMS
-// ========================================
 
 enum Role {
   ADMIN

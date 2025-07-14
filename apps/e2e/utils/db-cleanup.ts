@@ -21,53 +21,53 @@ export async function cleanupTestUsers() {
   return deletedUsers.count;
 }
 
-export async function cleanupTestProducts() {
-  // First, get all test products (created by test users)
-  const testProducts = await prisma.product.findMany({
+export async function cleanupTestItems() {
+  // Delete test items based on SKU pattern
+  const testItems = await prisma.item.findMany({
     where: {
-      createdBy: {
-        email: {
-          endsWith: '.e2e.test',
-        },
-      },
+      OR: [
+        { sku: { startsWith: 'E2E-' } },
+        { sku: { endsWith: '-E2E' } },
+        { name: { contains: 'E2E Test' } },
+      ],
     },
     select: {
       id: true,
     },
   });
 
-  const productIds = testProducts.map(p => p.id);
+  const itemIds = testItems.map(i => i.id);
 
-  if (productIds.length > 0) {
-    // Delete inventory movements for test products
-    await prisma.inventoryMovement.deleteMany({
+  if (itemIds.length > 0) {
+    // Delete stock movements for test items
+    await prisma.stockMovement.deleteMany({
       where: {
-        productId: {
-          in: productIds,
+        itemId: {
+          in: itemIds,
         },
       },
     });
 
-    // Delete inventory items for test products
-    await prisma.inventoryItem.deleteMany({
+    // Delete inventory entries for test items
+    await prisma.inventory.deleteMany({
       where: {
-        productId: {
-          in: productIds,
+        itemId: {
+          in: itemIds,
         },
       },
     });
 
-    // Delete the products themselves
-    const deletedProducts = await prisma.product.deleteMany({
+    // Delete the items themselves
+    const deletedItems = await prisma.item.deleteMany({
       where: {
         id: {
-          in: productIds,
+          in: itemIds,
         },
       },
     });
 
-    console.log(`Cleaned up ${deletedProducts.count} test products`);
-    return deletedProducts.count;
+    console.log(`Cleaned up ${deletedItems.count} test items`);
+    return deletedItems.count;
   }
 
   return 0;
@@ -75,7 +75,7 @@ export async function cleanupTestProducts() {
 
 export async function cleanupTestCategories() {
   // Only delete the E2E test category
-  const deleted = await prisma.category.deleteMany({
+  const deleted = await prisma.itemCategory.deleteMany({
     where: {
       name: 'E2E Test Category',
     },
@@ -92,7 +92,11 @@ export async function cleanupTestLocations() {
   // Only delete the E2E test location
   const deleted = await prisma.location.deleteMany({
     where: {
-      name: 'E2E Test Location',
+      OR: [
+        { code: 'E2E-LOC' },
+        { code: { startsWith: 'E2E-' } },
+        { description: { contains: 'E2E Test' } },
+      ],
     },
   });
 
@@ -128,7 +132,7 @@ export async function cleanupAllTestData() {
   try {
     // Order matters due to foreign key constraints
     await cleanupAuditLogs();
-    await cleanupTestProducts(); // This also cleans inventory items and movements
+    await cleanupTestItems(); // This also cleans inventory entries and stock movements
     await cleanupTestCategories();
     await cleanupTestLocations();
     await cleanupTestUsers();
@@ -143,41 +147,44 @@ export async function cleanupAllTestData() {
 export async function cleanupTestDataForUser(userId: string) {
   // Clean up all data created by a specific test user
   try {
-    // Delete inventory movements
-    await prisma.inventoryMovement.deleteMany({
-      where: {
-        createdById: userId,
-      },
-    });
-
-    // Get products created by user
-    const products = await prisma.product.findMany({
+    // We can't directly link items to users, so clean up based on test patterns
+    const testItems = await prisma.item.findMany({
       where: {
         OR: [
-          { createdById: userId },
-          { updatedById: userId },
+          { sku: { startsWith: 'E2E-' } },
+          { sku: { endsWith: '-E2E' } },
+          { name: { contains: 'E2E Test' } },
         ],
       },
       select: { id: true },
     });
 
-    const productIds = products.map(p => p.id);
+    const itemIds = testItems.map(i => i.id);
 
-    if (productIds.length > 0) {
-      // Delete inventory items for these products
-      await prisma.inventoryItem.deleteMany({
+    if (itemIds.length > 0) {
+      // Delete stock movements for test items
+      await prisma.stockMovement.deleteMany({
         where: {
-          productId: {
-            in: productIds,
+          itemId: {
+            in: itemIds,
           },
         },
       });
 
-      // Delete the products
-      await prisma.product.deleteMany({
+      // Delete inventory entries for these items
+      await prisma.inventory.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete the items
+      await prisma.item.deleteMany({
         where: {
           id: {
-            in: productIds,
+            in: itemIds,
           },
         },
       });
@@ -230,8 +237,8 @@ export async function getDatabaseStats() {
   const [
     totalUsers,
     testUsers,
-    totalProducts,
-    testProducts,
+    totalItems,
+    testItems,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({
@@ -241,14 +248,14 @@ export async function getDatabaseStats() {
         },
       },
     }),
-    prisma.product.count(),
-    prisma.product.count({
+    prisma.item.count(),
+    prisma.item.count({
       where: {
-        createdBy: {
-          email: {
-            endsWith: '.e2e.test',
-          },
-        },
+        OR: [
+          { sku: { startsWith: 'E2E-' } },
+          { sku: { endsWith: '-E2E' } },
+          { name: { contains: 'E2E Test' } },
+        ],
       },
     }),
   ]);
@@ -256,7 +263,7 @@ export async function getDatabaseStats() {
   return {
     totalUsers,
     testUsers,
-    totalProducts,
-    testProducts,
+    totalItems,
+    testItems,
   };
 }

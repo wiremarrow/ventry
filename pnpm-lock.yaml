@@ -208,6 +208,9 @@ importers:
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.4
+      dotenv-cli:
+        specifier: ^8.0.0
+        version: 8.0.0
       typescript:
         specifier: ^5.3.0
         version: 5.8.3

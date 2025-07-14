@@ -9,7 +9,7 @@ async function main() {
     console.log('🔧 Using idempotent operations for enterprise-grade reliability...');
 
     // Create admin user (idempotent - safe for CI/CD)
-    const adminPassword = await bcrypt.hash('admin123', 10);
+    const adminPassword = await bcrypt.hash('password123', 10);
     const admin = await prisma.user.upsert({
       where: { email: 'admin@ventry.com' },
       update: {}, // Don't modify existing user in CI environments
@@ -24,7 +24,7 @@ async function main() {
     });
 
     // Create manager user (idempotent - safe for CI/CD)
-    const managerPassword = await bcrypt.hash('manager123', 10);
+    const managerPassword = await bcrypt.hash('password123', 10);
     const manager = await prisma.user.upsert({
       where: { email: 'manager@ventry.com' },
       update: {}, // Don't modify existing user in CI environments
@@ -39,7 +39,7 @@ async function main() {
     });
 
     // Create regular user (idempotent - safe for CI/CD)
-    const userPassword = await bcrypt.hash('user123', 10);
+    const userPassword = await bcrypt.hash('password123', 10);
     const user = await prisma.user.upsert({
       where: { email: 'user@ventry.com' },
       update: {}, // Don't modify existing user in CI environments

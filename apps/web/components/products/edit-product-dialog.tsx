@@ -29,24 +29,48 @@ import { Switch } from '@ventry/ui';
 import { trpc } from '@/lib/trpc';
 import { toast } from 'sonner';
 
-const updateProductSchema = z.object({
+const editProductSchema = z.object({
+  sku: z.string().min(1, 'SKU is required').max(50),
   name: z.string().min(1, 'Name is required').max(200),
-  description: z.string().optional(),
-  categoryId: z.string().optional(),
-  unitOfMeasure: z.string().min(1, 'Unit of measure is required'),
-  defaultPrice: z.number().min(0).optional(),
-  barcode: z.string().optional(),
-  minQuantity: z.number().int().min(0).optional(),
-  maxQuantity: z.number().int().min(0).optional(),
-  reorderPoint: z.number().int().min(0).optional(),
-  reorderQuantity: z.number().int().min(0).optional(),
-  isActive: z.boolean().default(true),
+  description: z.string().optional().nullable(),
+  categoryId: z.string().min(1, 'Category is required'),
+  uomId: z.string().min(1, 'Unit of measure is required'),
+  defaultSupplierId: z.string().optional().nullable(),
+  defaultCost: z.number().min(0).optional().nullable(),
+  defaultPrice: z.number().min(0).optional().nullable(),
+  weightKg: z.number().min(0).optional().nullable(),
+  lengthCm: z.number().min(0).optional().nullable(),
+  widthCm: z.number().min(0).optional().nullable(),
+  heightCm: z.number().min(0).optional().nullable(),
+  reorderPoint: z.number().int().min(0),
+  reorderQty: z.number().int().min(1),
+  isActive: z.boolean(),
 });
 
-type UpdateProductFormData = z.infer<typeof updateProductSchema>;
+type EditProductFormData = z.infer<typeof editProductSchema>;
 
 interface EditProductDialogProps {
-  product: any;
+  product: {
+    id: string;
+    sku: string;
+    name: string;
+    description?: string | null;
+    categoryId?: string | null;
+    category?: { id: string; name: string } | null;
+    uomId?: string | null;
+    unitOfMeasure?: { id: string; name: string } | null;
+    defaultSupplierId?: string | null;
+    defaultSupplier?: { id: string; name: string } | null;
+    defaultCost?: number | null;
+    defaultPrice?: number | null;
+    weightKg?: number | null;
+    lengthCm?: number | null;
+    widthCm?: number | null;
+    heightCm?: number | null;
+    reorderPoint?: number | null;
+    reorderQty?: number | null;
+    isActive?: boolean;
+  } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -55,7 +79,13 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
   const utils = trpc.useUtils();
   
   // Fetch categories
-  const { data: categories } = trpc.categories.list.useQuery({
+  const { data: categories } = trpc.itemCategories.list.useQuery({});
+  
+  // Fetch units of measure
+  const { data: uoms } = trpc.unitsOfMeasure.list.useQuery({});
+  
+  // Fetch suppliers
+  const { data: suppliers } = trpc.suppliers.list.useQuery({
     page: 1,
     limit: 100,
   });
@@ -64,6 +94,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
     onSuccess: () => {
       toast.success('Product updated successfully');
       utils.items.list.invalidate();
+      utils.items.get.invalidate({ id: product?.id });
       onOpenChange(false);
     },
     onError: (error) => {
@@ -71,36 +102,56 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
     },
   });
 
-  const form = useForm<UpdateProductFormData>({
-    resolver: zodResolver(updateProductSchema),
+  const form = useForm<EditProductFormData>({
+    resolver: zodResolver(editProductSchema),
+    defaultValues: {
+      sku: '',
+      name: '',
+      description: '',
+      categoryId: '',
+      uomId: '',
+      defaultSupplierId: null,
+      defaultCost: null,
+      defaultPrice: null,
+      weightKg: null,
+      lengthCm: null,
+      widthCm: null,
+      heightCm: null,
+      reorderPoint: 0,
+      reorderQty: 1,
+      isActive: true,
+    },
   });
 
-  // Reset form when product changes
+  // Update form when product changes
   useEffect(() => {
     if (product) {
       form.reset({
+        sku: product.sku,
         name: product.name,
         description: product.description || '',
-        categoryId: product.categoryId,
-        unitOfMeasure: product.unitOfMeasure,
-        defaultPrice: product.defaultPrice || 0,
-        barcode: product.barcode || '',
-        minQuantity: product.minQuantity || 0,
-        maxQuantity: product.maxQuantity || 0,
+        categoryId: product.categoryId || product.category?.id || '',
+        uomId: product.uomId || product.unitOfMeasure?.id || '',
+        defaultSupplierId: product.defaultSupplierId || product.defaultSupplier?.id || null,
+        defaultCost: product.defaultCost,
+        defaultPrice: product.defaultPrice,
+        weightKg: product.weightKg,
+        lengthCm: product.lengthCm,
+        widthCm: product.widthCm,
+        heightCm: product.heightCm,
         reorderPoint: product.reorderPoint || 0,
-        reorderQuantity: product.reorderQuantity || 0,
-        isActive: product.status === 'ACTIVE',
+        reorderQty: product.reorderQty || 1,
+        isActive: product.isActive ?? true,
       });
     }
   }, [product, form]);
 
-  const onSubmit = (data: UpdateProductFormData) => {
-    if (!product) return;
-
+  const onSubmit = (data: EditProductFormData) => {
+    if (!product?.id) return;
+    
     updateMutation.mutate({
       id: product.id,
       ...data,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
     });
   };
 
@@ -108,86 +159,189 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
           <DialogDescription>
-            Update product information and settings
+            Update product information in your inventory catalog
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">SKU</p>
-                <p className="text-sm text-gray-600">{product.sku}</p>
-              </div>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Basic Information</h3>
               
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>SKU *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="PRD-001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter product name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="barcode"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Barcode</FormLabel>
+                    <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Input placeholder="1234567890123" {...field} />
+                      <Textarea 
+                        placeholder="Enter product description"
+                        {...field}
+                        value={field.value || ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="categoryId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categories?.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="uomId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit of Measure *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {uoms?.map((uom) => (
+                            <SelectItem key={uom.id} value={uom.id}>
+                              {uom.name} ({uom.code})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter product name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Pricing & Supplier */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Pricing & Supplier</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="defaultCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Default Cost</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter product description..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="defaultPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Default Price</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-            <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="categoryId"
+                name="defaultSupplierId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <FormLabel>Default Supplier</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(value === 'none' ? null : value)} 
+                      value={field.value || 'none'}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select supplier (optional)" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No category</SelectItem>
-                        {categories?.categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
+                        <SelectItem value="none">No supplier</SelectItem>
+                        {suppliers?.suppliers.map((supplier) => (
+                          <SelectItem key={supplier.id} value={supplier.id}>
+                            {supplier.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -196,113 +350,13 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="unitOfMeasure"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit of Measure *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="EACH">Each</SelectItem>
-                        <SelectItem value="CASE">Case</SelectItem>
-                        <SelectItem value="BOX">Box</SelectItem>
-                        <SelectItem value="PALLET">Pallet</SelectItem>
-                        <SelectItem value="KG">Kilogram</SelectItem>
-                        <SelectItem value="LB">Pound</SelectItem>
-                        <SelectItem value="L">Liter</SelectItem>
-                        <SelectItem value="GAL">Gallon</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
-            <FormField
-              control={form.control}
-              name="defaultPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Default Price</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      {...field}
-                      value={field.value || ''}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Default selling price for this product
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="space-y-4 border-t pt-4">
-              <h4 className="text-sm font-medium">Inventory Settings</h4>
+            {/* Inventory Management */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Inventory Management</h3>
               
               <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="minQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Min Quantity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Minimum stock level
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="maxQuantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Quantity</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
-                          {...field}
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Maximum stock level
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <FormField
                   control={form.control}
                   name="reorderPoint"
@@ -310,17 +364,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Reorder Point</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
+                        <Input 
+                          type="number" 
                           placeholder="0"
                           {...field}
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
                         />
                       </FormControl>
                       <FormDescription>
-                        Stock level to trigger reorder
+                        Minimum quantity before reordering
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -329,22 +381,20 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
 
                 <FormField
                   control={form.control}
-                  name="reorderQuantity"
+                  name="reorderQty"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Reorder Quantity</FormLabel>
                       <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          placeholder="0"
+                        <Input 
+                          type="number" 
+                          placeholder="1"
                           {...field}
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 1)}
                         />
                       </FormControl>
                       <FormDescription>
-                        Default quantity to reorder
+                        Quantity to reorder
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -353,15 +403,106 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
               </div>
             </div>
 
+            {/* Physical Dimensions */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">Physical Dimensions (Optional)</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="weightKg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Weight (kg)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.001"
+                          placeholder="0.000"
+                          {...field}
+                          value={field.value ?? ''}
+                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-3 gap-2">
+                  <FormField
+                    control={form.control}
+                    name="lengthCm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>L (cm)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1"
+                            placeholder="0.0"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="widthCm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>W (cm)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1"
+                            placeholder="0.0"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="heightCm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>H (cm)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.1"
+                            placeholder="0.0"
+                            {...field}
+                            value={field.value ?? ''}
+                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Status */}
             <FormField
               control={form.control}
               name="isActive"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel>Active</FormLabel>
+                    <FormLabel className="text-base">Active</FormLabel>
                     <FormDescription>
-                      Product is available for transactions
+                      Make this product available for orders and inventory
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -379,6 +520,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
+                disabled={updateMutation.isPending}
               >
                 Cancel
               </Button>

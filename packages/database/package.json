@@ -14,6 +14,7 @@
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "db:seed:comprehensive": "dotenv -e ../../.env -- tsx prisma/seed-comprehensive.ts",
+    "db:seed:organization": "dotenv -e ../../.env -- tsx prisma/seed-organization.ts",
     "db:reset": "dotenv -e ../../.env -- prisma migrate reset --force"
   },
   "dependencies": {

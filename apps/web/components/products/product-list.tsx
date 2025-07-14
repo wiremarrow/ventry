@@ -43,7 +43,27 @@ interface ProductListProps {
 
 export function ProductList({ searchTerm, categoryId, status }: ProductListProps) {
   const [page, setPage] = useState(1);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editingProduct, setEditingProduct] = useState<{
+    id: string;
+    sku: string;
+    name: string;
+    description?: string | null;
+    categoryId?: string | null;
+    category?: { id: string; name: string } | null;
+    uomId?: string | null;
+    unitOfMeasure?: { id: string; name: string } | null;
+    defaultSupplierId?: string | null;
+    defaultSupplier?: { id: string; name: string } | null;
+    defaultCost?: number | null;
+    defaultPrice?: number | null;
+    weightKg?: number | null;
+    lengthCm?: number | null;
+    widthCm?: number | null;
+    heightCm?: number | null;
+    reorderPoint?: number | null;
+    reorderQty?: number | null;
+    isActive?: boolean;
+  } | null>(null);
   const limit = 20;
 
   const utils = trpc.useUtils();
@@ -52,7 +72,7 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
   const { data, isLoading, error } = trpc.items.list.useQuery({
     search: searchTerm,
     categoryId,
-    status,
+    isActive: status === undefined ? undefined : status === 'ACTIVE',
     page,
     limit,
   });
@@ -157,7 +177,7 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm">{item.unitOfMeasure}</span>
+                    <span className="text-sm">{item.unitOfMeasure?.name || 'Each'}</span>
                   </TableCell>
                   <TableCell className="text-right">
                     {item.defaultPrice ? formatCurrency(item.defaultPrice) : '-'}
@@ -166,8 +186,8 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                     {item.reorderPoint || '-'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={item.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                      {item.status}
+                    <Badge variant={item.isActive ? 'success' : 'secondary'}>
+                      {item.isActive ? 'ACTIVE' : 'INACTIVE'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -199,7 +219,7 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                         <DropdownMenuItem
                           onClick={() =>
                             archiveMutation.mutate({
-                              id: item.id,
+                              itemIds: [item.id],
                               reason: 'Archived from UI',
                             })
                           }
