@@ -8,9 +8,11 @@ export type AuthenticatedUser = {
   username: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER';
+  role: 'ADMIN' | 'MANAGER' | 'USER' | 'WAREHOUSE' | 'SALES';
   isActive: boolean;
   createdAt: string; // ISO date string for JSON serialization
+  organizationId?: string; // Current active organization
+  organizationRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'; // Role in current organization
 };
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
@@ -42,9 +44,34 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         });
         
         if (foundUser && foundUser.isActive) {
+          // Get active organization from header or cookie
+          const orgId = req.headers['x-organization-id'] as string || req.cookies?.['active-organization'];
+          
+          let organizationId: string | undefined;
+          let organizationRole: AuthenticatedUser['organizationRole'] | undefined;
+          
+          if (orgId) {
+            // Verify user has access to this organization
+            const membership = await prisma.organizationMember.findUnique({
+              where: {
+                organizationId_userId: {
+                  organizationId: orgId,
+                  userId: foundUser.id,
+                },
+              },
+            });
+            
+            if (membership) {
+              organizationId = orgId;
+              organizationRole = membership.role as AuthenticatedUser['organizationRole'];
+            }
+          }
+          
           user = {
             ...foundUser,
             createdAt: foundUser.createdAt.toISOString(),
+            organizationId,
+            organizationRole,
           };
         }
       }

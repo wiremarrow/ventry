@@ -28,7 +28,7 @@ const userSchema = z.object({
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  role: z.enum(['ADMIN', 'MANAGER', 'USER']),
+  role: z.enum(['ADMIN', 'MANAGER', 'USER', 'WAREHOUSE', 'SALES']),
   isActive: z.boolean(),
   createdAt: z.string(), // ISO date string for JSON serialization
 });

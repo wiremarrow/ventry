@@ -11,6 +11,62 @@ datasource db {
 }
 
 // ========================================
+// ORGANIZATIONS & MULTI-TENANCY
+// ========================================
+
+model Organization {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique
+  domain             String?  @unique
+  logoUrl            String?
+  settings           Json     @default("{}")
+  subscriptionTier   String   @default("free")
+  subscriptionStatus String   @default("active")
+  trialEndsAt        DateTime?
+  billingEmail       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Relationships
+  members            OrganizationMember[]
+  items              Item[]
+  categories         ItemCategory[]
+  unitsOfMeasure     UnitOfMeasure[]
+  warehouses         Warehouse[]
+  suppliers          Supplier[]
+  customers          Customer[]
+  purchaseOrders     PurchaseOrder[]
+  orders             Order[]
+  shipments          Shipment[]
+  returns            Return[]
+  posTransactions    POSTransaction[]
+  discounts          Discount[]
+  carriers           Carrier[]
+  shippingMethods    ShippingMethod[]
+  paymentMethods     PaymentMethod[]
+
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id                    String    @id @default(cuid())
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role                  OrganizationRole @default(MEMBER)
+  joinedAt              DateTime @default(now())
+  invitedById           String?
+  invitedBy             User? @relation("InvitedMembers", fields: [invitedById], references: [id])
+  invitationToken       String? @unique
+  invitationAcceptedAt  DateTime?
+
+  @@unique([organizationId, userId])
+  @@map("organization_members")
+}
+
+// ========================================
 // AUTHENTICATION & USERS
 // ========================================
 
@@ -28,6 +84,8 @@ model User {
   lastLoginAt DateTime?
 
   // Relationships
+  organizations       OrganizationMember[]
+  invitedMembers      OrganizationMember[] @relation("InvitedMembers")
   employee            Employee?
   userRoles           UserRole[]
   stockMovements      StockMovement[]
@@ -82,8 +140,10 @@ model UserRole {
 
 model Item {
   id               String   @id @default(cuid())
-  sku              String   @unique
-  upc              String?  @unique
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sku              String
+  upc              String?
   name             String
   description      String?
   categoryId       String
@@ -103,6 +163,9 @@ model Item {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  @@unique([organizationId, sku])
+  @@index([organizationId])
 
   // Relationships
   images           ItemImage[]
@@ -125,13 +188,18 @@ model Item {
 
 model ItemCategory {
   id          String   @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parentId    String?
   parent      ItemCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    ItemCategory[] @relation("CategoryHierarchy")
-  name        String   @unique
+  name        String
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
 
   // Relationships
   items       Item[]
@@ -141,10 +209,15 @@ model ItemCategory {
 
 model UnitOfMeasure {
   id                    String   @id @default(cuid())
-  code                  String   @unique
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code                  String
   description           String
   isBase                Boolean  @default(false)
   conversionFactorToBase Decimal @default(1)
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
 
   // Relationships
   items                 Item[]
@@ -226,7 +299,9 @@ model SerialNumber {
 
 model Warehouse {
   id         String   @id @default(cuid())
-  code       String   @unique
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  code       String
   name       String
   phone      String?
   line1      String
@@ -238,6 +313,9 @@ model Warehouse {
   notes      String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
 
   // Relationships
   locations  Location[]
@@ -393,7 +471,9 @@ model PriceHistory {
 
 model Supplier {
   id            String   @id @default(cuid())
-  supplierCode  String   @unique
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplierCode  String
   name          String
   phone         String?
   email         String?
@@ -410,6 +490,9 @@ model Supplier {
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@unique([organizationId, supplierCode])
+  @@index([organizationId])
 
   // Relationships
   items         Item[]
@@ -437,9 +520,11 @@ model SupplierContact {
 
 model PurchaseOrder {
   id           String   @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   supplierId   String
   supplier     Supplier @relation(fields: [supplierId], references: [id])
-  poNumber     String   @unique
+  poNumber     String
   status       POStatus @default(DRAFT)
   orderDate    DateTime @default(now())
   expectedDate DateTime?
@@ -454,6 +539,9 @@ model PurchaseOrder {
   approvedBy   User?    @relation("ApprovedPurchaseOrders", fields: [approvedById], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@unique([organizationId, poNumber])
+  @@index([organizationId])
 
   // Relationships
   items        PurchaseOrderItem[]
@@ -519,7 +607,9 @@ model ReceiptItem {
 
 model Customer {
   id                   String   @id @default(cuid())
-  customerCode         String   @unique
+  organizationId       String
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customerCode         String
   companyName          String?
   firstName            String?
   lastName             String?
@@ -533,6 +623,9 @@ model Customer {
   website              String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+
+  @@unique([organizationId, customerCode])
+  @@index([organizationId])
 
   // Relationships
   addresses            Address[]
@@ -567,9 +660,11 @@ model Address {
 
 model Order {
   id                 String   @id @default(cuid())
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   customerId         String
   customer           Customer @relation(fields: [customerId], references: [id])
-  orderNumber        String   @unique
+  orderNumber        String
   status             OrderStatus @default(PENDING)
   orderDate          DateTime @default(now())
   requestedShipDate  DateTime?
@@ -586,6 +681,9 @@ model Order {
   updatedBy          User?    @relation("UpdatedOrders", fields: [updatedById], references: [id])
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  @@unique([organizationId, orderNumber])
+  @@index([organizationId])
 
   // Relationships
   items              OrderItem[]
@@ -643,6 +741,8 @@ model Payment {
 
 model PaymentMethod {
   id           String   @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   methodName   String
   provider     String?
   acctLast4    String?
@@ -659,6 +759,8 @@ model PaymentMethod {
 
 model Shipment {
   id                    String   @id @default(cuid())
+  organizationId        String
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orderId               String
   order                 Order    @relation(fields: [orderId], references: [id])
   shipmentNumber        String   @unique
@@ -704,6 +806,8 @@ model ShipmentItem {
 
 model Return {
   id           String   @id @default(cuid())
+  organizationId String
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orderId      String?
   order        Order?   @relation(fields: [orderId], references: [id])
   customerId   String
@@ -750,6 +854,8 @@ model ReturnItem {
 
 model POSTransaction {
   id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   txNumber        String   @unique
   storeId         String
   registerId      String
@@ -793,6 +899,8 @@ model POSTransactionItem {
 
 model Discount {
   id            String   @id @default(cuid())
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   code          String   @unique
   description   String
   discountType  DiscountType
@@ -815,6 +923,8 @@ model Discount {
 
 model Carrier {
   id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   name            String   @unique
   phone           String?
   website         String?
@@ -829,6 +939,8 @@ model Carrier {
 
 model ShippingMethod {
   id           String   @id @default(cuid())
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   carrierId    String
   carrier      Carrier  @relation(fields: [carrierId], references: [id])
   serviceName  String
@@ -884,6 +996,13 @@ enum Role {
   USER
   WAREHOUSE
   SALES
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
 
 enum EmployeeStatus {

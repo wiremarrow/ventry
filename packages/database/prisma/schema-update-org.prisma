@@ -1,0 +1,35 @@
+// This file contains the updates needed for multi-tenancy support
+// Key changes:
+// 1. Add organizationId to all business models
+// 2. Update unique constraints to include organizationId
+// 3. Add proper indexes for performance
+
+// Models that need organizationId:
+// - Item (done)
+// - ItemCategory
+// - UnitOfMeasure
+// - Warehouse
+// - Supplier
+// - Customer
+// - PurchaseOrder
+// - Order
+// - Shipment
+// - Return
+// - POSTransaction
+// - Discount
+// - Carrier
+// - ShippingMethod
+// - PaymentMethod
+
+// Example pattern for each model:
+// 1. Add fields:
+//    organizationId   String
+//    organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+//
+// 2. Update unique constraints:
+//    @@unique([organizationId, existingUniqueField])
+//
+// 3. Add index:
+//    @@index([organizationId])
+//
+// 4. Remove global unique constraints that should be org-scoped

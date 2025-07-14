@@ -61,6 +61,8 @@ async function clearDatabase() {
   await prisma.shippingMethod.deleteMany();
   await prisma.carrier.deleteMany();
   await prisma.paymentMethod.deleteMany();
+  await prisma.organizationMember.deleteMany();
+  await prisma.organization.deleteMany();
   
   console.log('✅ Database cleared');
 }
@@ -129,7 +131,7 @@ async function seedUsers() {
   return createdUsers;
 }
 
-async function seedUnitsOfMeasure() {
+async function seedUnitsOfMeasure(organizationId: string) {
   console.log('📏 Seeding units of measure...');
   
   const units = [
@@ -145,7 +147,7 @@ async function seedUnitsOfMeasure() {
   
   const createdUnits = [];
   for (const unit of units) {
-    const created = await prisma.unitOfMeasure.create({ data: unit });
+    const created = await prisma.unitOfMeasure.create({ data: { ...unit, organizationId } });
     createdUnits.push(created);
   }
   
@@ -153,7 +155,7 @@ async function seedUnitsOfMeasure() {
   return createdUnits;
 }
 
-async function seedCategories() {
+async function seedCategories(organizationId: string) {
   console.log('📁 Seeding categories...');
   
   const categories = [
@@ -169,7 +171,7 @@ async function seedCategories() {
   
   const createdCategories = [];
   for (const category of categories) {
-    const created = await prisma.itemCategory.create({ data: category });
+    const created = await prisma.itemCategory.create({ data: { ...category, organizationId } });
     createdCategories.push(created);
     
     // Create subcategories
@@ -179,7 +181,7 @@ async function seedCategories() {
     ];
     
     for (const sub of subcategories) {
-      await prisma.itemCategory.create({ data: sub });
+      await prisma.itemCategory.create({ data: { ...sub, organizationId } });
     }
   }
   
@@ -187,7 +189,7 @@ async function seedCategories() {
   return createdCategories;
 }
 
-async function seedWarehouses() {
+async function seedWarehouses(organizationId: string) {
   console.log('🏭 Seeding warehouses...');
   
   const warehouses = [
@@ -229,7 +231,7 @@ async function seedWarehouses() {
   
   const createdWarehouses = [];
   for (const warehouse of warehouses) {
-    const created = await prisma.warehouse.create({ data: warehouse });
+    const created = await prisma.warehouse.create({ data: { ...warehouse, organizationId } });
     createdWarehouses.push(created);
     
     // Create locations for each warehouse
@@ -261,13 +263,14 @@ async function seedWarehouses() {
   return createdWarehouses;
 }
 
-async function seedSuppliers() {
+async function seedSuppliers(organizationId: string) {
   console.log('🏢 Seeding suppliers...');
   
   const suppliers = [];
   for (let i = 1; i <= 20; i++) {
     const supplier = await prisma.supplier.create({
       data: {
+        organizationId,
         supplierCode: `SUP-${String(i).padStart(4, '0')}`,
         name: faker.company.name(),
         phone: faker.phone.number(),
@@ -306,7 +309,7 @@ async function seedSuppliers() {
   return suppliers;
 }
 
-async function seedItems(categories: any[], units: any[], suppliers: any[]) {
+async function seedItems(categories: any[], units: any[], suppliers: any[], organizationId: string) {
   console.log('📦 Seeding items...');
   
   const items = [];
@@ -319,6 +322,7 @@ async function seedItems(categories: any[], units: any[], suppliers: any[]) {
     for (let i = 0; i < itemCount; i++) {
       const item = await prisma.item.create({
         data: {
+          organizationId,
           sku: generateSKU(category.name, itemIndex++),
           upc: faker.string.numeric(12),
           name: `${faker.commerce.productName()} - ${category.name}`,
@@ -328,10 +332,10 @@ async function seedItems(categories: any[], units: any[], suppliers: any[]) {
           defaultSupplierId: faker.helpers.arrayElement(suppliers).id,
           defaultCost: parseFloat(faker.commerce.price({ min: 10, max: 500 })),
           defaultPrice: parseFloat(faker.commerce.price({ min: 20, max: 1000 })),
-          weightKg: faker.number.float({ min: 0.1, max: 50, precision: 0.01 }),
-          lengthCm: faker.number.float({ min: 5, max: 100, precision: 0.1 }),
-          widthCm: faker.number.float({ min: 5, max: 100, precision: 0.1 }),
-          heightCm: faker.number.float({ min: 5, max: 100, precision: 0.1 }),
+          weightKg: faker.number.float({ min: 0.1, max: 50, fractionDigits: 2 }),
+          lengthCm: faker.number.float({ min: 5, max: 100, fractionDigits: 1 }),
+          widthCm: faker.number.float({ min: 5, max: 100, fractionDigits: 1 }),
+          heightCm: faker.number.float({ min: 5, max: 100, fractionDigits: 1 }),
           reorderPoint: faker.number.int({ min: 10, max: 100 }),
           reorderQty: faker.number.int({ min: 50, max: 500 }),
           isActive: true,
@@ -369,7 +373,7 @@ async function seedItems(categories: any[], units: any[], suppliers: any[]) {
   return items;
 }
 
-async function seedInventory(items: any[], warehouses: any[], users: any[]) {
+async function seedInventory(items: any[], users: any[]) {
   console.log('📊 Seeding inventory...');
   
   const locations = await prisma.location.findMany();
@@ -458,13 +462,14 @@ async function seedInventory(items: any[], warehouses: any[], users: any[]) {
   console.log(`✅ Created ${inventoryCount} inventory records with movements`);
 }
 
-async function seedCustomers() {
+async function seedCustomers(organizationId: string) {
   console.log('👥 Seeding customers...');
   
   const customers = [];
   for (let i = 1; i <= 50; i++) {
     const customer = await prisma.customer.create({
       data: {
+        organizationId,
         customerCode: `CUST-${String(i).padStart(5, '0')}`,
         companyName: faker.company.name(),
         firstName: faker.person.firstName(),
@@ -503,11 +508,11 @@ async function seedCustomers() {
   return customers;
 }
 
-async function seedOrdersAndShipments(customers: any[], items: any[], users: any[]) {
+async function seedOrdersAndShipments(customers: any[], items: any[], users: any[], organizationId: string) {
   console.log('📋 Seeding orders and shipments...');
   
-  const paymentMethods = await seedPaymentMethods();
-  const carriers = await seedCarriers();
+  const paymentMethods = await seedPaymentMethods(organizationId);
+  const carriers = await seedCarriers(organizationId);
   const locations = await prisma.location.findMany({ take: 10 });
   
   let orderCount = 0;
@@ -519,6 +524,7 @@ async function seedOrdersAndShipments(customers: any[], items: any[], users: any
     for (let i = 0; i < orderNum; i++) {
       const order = await prisma.order.create({
         data: {
+          organizationId,
           customerId: customer.id,
           orderNumber: `ORD-${faker.string.alphanumeric(8).toUpperCase()}`,
           status: faker.helpers.arrayElement(['PENDING', 'CONFIRMED', 'SHIPPED', 'DELIVERED']),
@@ -551,7 +557,7 @@ async function seedOrdersAndShipments(customers: any[], items: any[], users: any
             qtyAllocated: order.status !== 'PENDING' ? qty : 0,
             qtyShipped: ['SHIPPED', 'DELIVERED'].includes(order.status) ? qty : 0,
             unitPrice,
-            discountPct: faker.number.float({ min: 0, max: 15, precision: 0.01 }),
+            discountPct: faker.number.float({ min: 0, max: 15, fractionDigits: 2 }),
             taxRate: 0.08,
             totalPrice,
           },
@@ -591,6 +597,7 @@ async function seedOrdersAndShipments(customers: any[], items: any[], users: any
       if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
         const shipment = await prisma.shipment.create({
           data: {
+            organizationId,
             orderId: order.id,
             shipmentNumber: `SHP-${faker.string.alphanumeric(8).toUpperCase()}`,
             carrierId: faker.helpers.arrayElement(carriers).id,
@@ -601,8 +608,8 @@ async function seedOrdersAndShipments(customers: any[], items: any[], users: any
             shippedFromLocationId: faker.helpers.arrayElement(locations).id,
             shippedById: faker.helpers.arrayElement(users.filter(u => u.role === 'WAREHOUSE')).id,
             status: order.status === 'DELIVERED' ? 'DELIVERED' : 'IN_TRANSIT',
-            weightKg: faker.number.float({ min: 1, max: 50, precision: 0.1 }),
-            shippingCost: faker.number.float({ min: 10, max: 100, precision: 0.01 }),
+            weightKg: faker.number.float({ min: 1, max: 50, fractionDigits: 1 }),
+            shippingCost: faker.number.float({ min: 10, max: 100, fractionDigits: 2 }),
           },
         });
         shipmentCount++;
@@ -613,7 +620,7 @@ async function seedOrdersAndShipments(customers: any[], items: any[], users: any
   console.log(`✅ Created ${orderCount} orders with ${shipmentCount} shipments`);
 }
 
-async function seedPaymentMethods() {
+async function seedPaymentMethods(organizationId: string) {
   console.log('💳 Seeding payment methods...');
   
   const methods = [
@@ -626,14 +633,14 @@ async function seedPaymentMethods() {
   
   const created = [];
   for (const method of methods) {
-    const pm = await prisma.paymentMethod.create({ data: method });
+    const pm = await prisma.paymentMethod.create({ data: { ...method, organizationId } });
     created.push(pm);
   }
   
   return created;
 }
 
-async function seedCarriers() {
+async function seedCarriers(organizationId: string) {
   console.log('🚚 Seeding carriers...');
   
   const carriers = [
@@ -665,7 +672,7 @@ async function seedCarriers() {
   
   const created = [];
   for (const carrier of carriers) {
-    const c = await prisma.carrier.create({ data: carrier });
+    const c = await prisma.carrier.create({ data: { ...carrier, organizationId } });
     created.push(c);
     
     // Create shipping methods
@@ -673,6 +680,7 @@ async function seedCarriers() {
     for (const method of methods) {
       await prisma.shippingMethod.create({
         data: {
+          organizationId,
           carrierId: c.id,
           serviceName: `${carrier.name} ${method}`,
           transitDays: method === 'Ground' ? 5 : method === 'Express' ? 3 : method === '2-Day' ? 2 : 1,
@@ -685,7 +693,7 @@ async function seedCarriers() {
   return created;
 }
 
-async function seedPurchaseOrders(suppliers: any[], items: any[], users: any[]) {
+async function seedPurchaseOrders(suppliers: any[], items: any[], users: any[], organizationId: string) {
   console.log('📄 Seeding purchase orders...');
   
   let poCount = 0;
@@ -696,6 +704,7 @@ async function seedPurchaseOrders(suppliers: any[], items: any[], users: any[]) 
     for (let i = 0; i < poNum; i++) {
       const po = await prisma.purchaseOrder.create({
         data: {
+          organizationId,
           supplierId: supplier.id,
           poNumber: `PO-${faker.string.alphanumeric(8).toUpperCase()}`,
           status: faker.helpers.arrayElement(['DRAFT', 'SUBMITTED', 'APPROVED', 'RECEIVED']),
@@ -753,7 +762,7 @@ async function seedPurchaseOrders(suppliers: any[], items: any[], users: any[]) 
   console.log(`✅ Created ${poCount} purchase orders`);
 }
 
-async function seedDiscounts() {
+async function seedDiscounts(organizationId: string) {
   console.log('🏷️ Seeding discounts...');
   
   const discounts = [
@@ -791,10 +800,32 @@ async function seedDiscounts() {
   ];
   
   for (const discount of discounts) {
-    await prisma.discount.create({ data: discount });
+    await prisma.discount.create({ data: { ...discount, organizationId } });
   }
   
   console.log(`✅ Created ${discounts.length} discount codes`);
+}
+
+async function seedOrganization(users: any[]) {
+  console.log('🏢 Seeding organization...');
+  
+  const organization = await prisma.organization.create({
+    data: {
+      name: 'Ventry Demo Company',
+      slug: 'ventry-demo',
+      subscriptionTier: 'professional',
+      subscriptionStatus: 'active',
+      members: {
+        create: users.map(user => ({
+          userId: user.id,
+          role: user.role === 'ADMIN' ? 'OWNER' : 'MEMBER',
+        })),
+      },
+    },
+  });
+  
+  console.log('✅ Organization created');
+  return organization;
 }
 
 async function main() {
@@ -806,16 +837,17 @@ async function main() {
     
     // Seed in dependency order
     const users = await seedUsers();
-    const units = await seedUnitsOfMeasure();
-    const categories = await seedCategories();
-    const warehouses = await seedWarehouses();
-    const suppliers = await seedSuppliers();
-    const items = await seedItems(categories, units, suppliers);
-    await seedInventory(items, warehouses, users);
-    const customers = await seedCustomers();
-    await seedOrdersAndShipments(customers, items, users);
-    await seedPurchaseOrders(suppliers, items, users);
-    await seedDiscounts();
+    const organization = await seedOrganization(users);
+    const units = await seedUnitsOfMeasure(organization.id);
+    const categories = await seedCategories(organization.id);
+    const warehouses = await seedWarehouses(organization.id);
+    const suppliers = await seedSuppliers(organization.id);
+    const items = await seedItems(categories, units, suppliers, organization.id);
+    await seedInventory(items, users);
+    const customers = await seedCustomers(organization.id);
+    await seedOrdersAndShipments(customers, items, users, organization.id);
+    await seedPurchaseOrders(suppliers, items, users, organization.id);
+    await seedDiscounts(organization.id);
     
     console.log('\n✅ Seeding completed successfully!');
     console.log('📊 Database is now populated with comprehensive test data');

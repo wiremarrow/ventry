@@ -323,6 +323,170 @@ const caller = appRouter.createCaller(ctx);
 - **Integration Tests**: Use real `ventry_integration_test` database for actual data operations
 - **E2E Tests**: Use dedicated E2E database with full application stack
 
+### **Field Naming Convention**
+- **Database Layer**: snake_case (e.g., `qty_ordered`, `created_at`)
+- **Prisma Models**: camelCase with `@@map` directives
+- **Application Code**: camelCase to match Prisma types
+- **Translation**: Prisma handles snake_case ↔ camelCase conversion
+
+---
+
+## 📊 ORIGINAL DATABASE SCHEMA REFERENCE
+
+**CRITICAL**: This is the authoritative source for all database field names and relationships. **ALWAYS** refer to this schema when implementing features or fixing issues.
+
+### Core Inventory Models
+
+**Items**
+- item_id, sku, upc, name, description, category_id, uom_id, default_supplier_id, default_cost, default_price, weight_kg, length_cm, width_cm, height_cm, reorder_point, reorder_qty, is_active, created_at, updated_at
+
+**ItemCategories**
+- category_id, parent_id, name, description, created_at, updated_at
+
+**UnitsOfMeasure**
+- uom_id, code, description, is_base, conversion_factor_to_base
+
+**ItemImages**
+- image_id, item_id, url, alt_text, is_primary, uploaded_at
+
+**Lots**
+- lot_id, item_id, lot_number, manufacture_date, expiration_date, received_date, supplier_id, unit_cost, qty_initial, qty_on_hand, status, created_at, updated_at
+
+**SerialNumbers**
+- serial_id, item_id, serial_number, lot_id, purchase_date, warranty_expiration, status, location_id
+
+**Warehouses**
+- warehouse_id, code, name, phone, line1, line2, city, state, postal_code, country, notes, created_at, updated_at
+
+**Locations**
+- location_id, warehouse_id, code, description, zone, aisle, shelf, bin, max_capacity, is_temp_controlled, created_at, updated_at
+
+**Inventory**
+- inventory_id, item_id, lot_id, serial_id, location_id, qty_on_hand, qty_reserved, qty_in_transit, last_counted_at, updated_at
+
+**StockMovements**
+- movement_id, item_id, lot_id, serial_id, from_location_id, to_location_id, qty, movement_type, ref_type, ref_id, moved_by, moved_at, notes
+
+**StockAdjustments**
+- adjustment_id, item_id, lot_id, location_id, qty_before, qty_after, reason, adjusted_by, adjusted_at, notes
+
+**CycleCounts**
+- count_id, location_id, count_date, counted_by, reviewed_by, status, notes
+
+**CycleCountItems**
+- count_item_id, count_id, item_id, lot_id, qty_counted, qty_system, variance
+
+**PriceHistory**
+- price_id, item_id, price_type, price, currency_id, start_date, end_date, notes
+
+### Procurement
+
+**Suppliers**
+- supplier_id, supplier_code, name, phone, email, website, currency_id, payment_terms, lead_time_days, line1, line2, city, state, postal_code, country, notes, created_at, updated_at
+
+**SupplierContacts**
+- contact_id, supplier_id, first_name, last_name, email, phone, role, notes
+
+**PurchaseOrders**
+- po_id, supplier_id, po_number, status, order_date, expected_date, currency_id, subtotal, tax, total, notes, created_by, approved_by, created_at, updated_at
+
+**PurchaseOrderItems**
+- po_item_id, po_id, item_id, description, qty_ordered, qty_received, unit_cost, tax_rate, total_cost
+
+**Receipts**
+- receipt_id, po_id, received_date, received_by, reference, notes, created_at
+
+**ReceiptItems**
+- receipt_item_id, receipt_id, item_id, lot_id, serial_number, qty_received, unit_cost, expiration_date, location_id
+
+### Sales & Fulfillment
+
+**Customers**
+- customer_id, customer_code, company_name, first_name, last_name, email, phone, tax_id, currency_id, default_payment_terms, default_ship_method_id, website, created_at, updated_at
+
+**Addresses**
+- address_id, customer_id, supplier_id, address_type, line1, line2, city, state, postal_code, country, phone, attention, is_default, created_at, updated_at
+
+**Orders**
+- order_id, customer_id, order_number, status, order_date, requested_ship_date, currency_id, subtotal, discount_total, tax_total, shipping_total, grand_total, notes, created_by, updated_by, created_at, updated_at
+
+**OrderItems**
+- order_item_id, order_id, item_id, description, qty_ordered, qty_allocated, qty_shipped, unit_price, discount_pct, tax_rate, total_price, lot_id, serial_id
+
+**Payments**
+- payment_id, order_id, payment_method_id, amount, currency_id, payment_date, transaction_ref, status, processed_by, notes, created_at
+
+**PaymentMethods**
+- payment_method_id, method_name, provider, acct_last4, details_json, is_active, created_at, updated_at
+
+**Shipments**
+- shipment_id, order_id, shipment_number, carrier_id, carrier_service, tracking_number, ship_date, expected_delivery, shipped_from_location_id, shipped_by, status, weight_kg, shipping_cost, notes, created_at, updated_at
+
+**ShipmentItems**
+- shipment_item_id, shipment_id, order_item_id, item_id, lot_id, serial_id, qty_shipped
+
+**Returns**
+- return_id, order_id, customer_id, return_number, status, return_date, rma_number, reason, refund_amount, restock_fee, notes, created_at, updated_at
+
+**ReturnItems**
+- return_item_id, return_id, order_item_id, item_id, lot_id, serial_id, qty_returned, condition, refund_amount
+
+### POS / Retail
+
+**POS_Transactions**
+- pos_tx_id, tx_number, store_id, register_id, employee_id, customer_id, tx_date, status, subtotal, tax_total, discount_total, grand_total, payment_received, change_given, notes
+
+**POS_TransactionItems**
+- pos_tx_item_id, pos_tx_id, item_id, lot_id, serial_id, qty, unit_price, discount_pct, total_price
+
+**Discounts**
+- discount_id, code, description, discount_type, value, start_date, end_date, min_order_value, max_uses, uses, is_active, created_at, updated_at
+
+### Shipping & Carriers
+
+**Carriers**
+- carrier_id, name, phone, website, tracking_url_tpl
+
+**ShippingMethods**
+- shipping_method_id, carrier_id, service_name, transit_days, base_cost
+
+### Staff & Security
+
+**Employees**
+- employee_id, first_name, last_name, email, phone, hire_date, role_id, status, hourly_rate, salary, manager_id, created_at, updated_at
+
+**Users**
+- user_id, employee_id, username, email, password_hash, password_salt, last_login, is_active, created_at, updated_at
+
+**Roles**
+- role_id, role_name, description, created_at, updated_at
+
+**UserRoles**
+- user_role_id, user_id, role_id, assigned_at
+
+### Logging & Notifications
+
+**AuditLogs**
+- audit_id, table_name, record_pk, user_id, action, before_data, after_data, event_time, ip_address
+
+**Notifications**
+- notification_id, user_id, notif_type, message, related_table, related_id, read_at, created_at
+
+### Financial & Global
+
+**TaxRates**
+- tax_rate_id, name, region, rate_pct, valid_from, valid_to, created_at, updated_at
+
+**Currencies**
+- currency_id, code, name, symbol, ex_rate_to_base, updated_at
+
+### Field Naming Conventions
+- **Quantities**: Use `qty_` prefix (e.g., qty_on_hand, qty_ordered)
+- **Dates**: Use `_at` suffix for timestamps (e.g., created_at, moved_at)
+- **Status**: Use enums with clear values
+- **IDs**: Use `{table}_id` format
+- **Booleans**: Use `is_` prefix (e.g., is_active, is_primary)
+
 ---
 
 **REMEMBER**: This is an enterprise-grade system with rigorous quality standards. **EVERY** check exists for a reason. **FOLLOW** these rules exactly for successful development.

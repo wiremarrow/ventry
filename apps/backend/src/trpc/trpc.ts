@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
 import type { Context } from './context.js';
+import { isAuthed, hasOrganization, isOrganizationAdmin, isOrganizationOwner } from './middleware.js';
 
 const t = initTRPC.context<Context>().create({
   transformer: superjson,
@@ -43,5 +44,10 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   
   return next({ ctx });
 });
+
+// Organization-aware procedures
+export const organizationProcedure = t.procedure.use(hasOrganization);
+export const organizationAdminProcedure = t.procedure.use(isOrganizationAdmin);
+export const organizationOwnerProcedure = t.procedure.use(isOrganizationOwner);
 
 export { t };

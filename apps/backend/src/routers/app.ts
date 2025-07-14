@@ -4,6 +4,20 @@ import { usersRouter } from './users.js';
 import { productsRouter } from './products.js';
 import { categoriesRouter } from './categories.js';
 import { healthRouter } from './health.js';
+import { itemsRouter } from './items.js';
+import { warehousesRouter } from './warehouses.js';
+import { inventoryRouter } from './inventory.js';
+import { stockMovementsRouter } from './stockMovements.js';
+import { suppliersRouter } from './suppliers.js';
+import { customersRouter } from './customers.js';
+import { ordersRouter } from './orders.js';
+import { purchaseOrdersRouter } from './purchaseOrders.js';
+import { receiptsRouter } from './receipts.js';
+import { returnsRouter } from './returns.js';
+import { shipmentsRouter } from './shipments.js';
+import { reportsRouter } from './reports.js';
+import { analyticsRouter } from './analytics.js';
+import { organizationsRouter } from './organizations.js';
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
@@ -11,6 +25,20 @@ export const appRouter = createTRPCRouter({
   products: productsRouter,
   categories: categoriesRouter,
   health: healthRouter,
+  organizations: organizationsRouter,
+  items: itemsRouter,
+  warehouses: warehousesRouter,
+  inventory: inventoryRouter,
+  stockMovements: stockMovementsRouter,
+  suppliers: suppliersRouter,
+  customers: customersRouter,
+  orders: ordersRouter,
+  purchaseOrders: purchaseOrdersRouter,
+  receipts: receiptsRouter,
+  returns: returnsRouter,
+  shipments: shipmentsRouter,
+  reports: reportsRouter,
+  analytics: analyticsRouter,
 });
 
 // Export type definition of API

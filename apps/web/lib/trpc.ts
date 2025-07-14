@@ -11,8 +11,23 @@ export const trpcClient = trpc.createClient({
     httpLink({
       url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',
       transformer: superjson,
-      // Include credentials for httpOnly cookies
-      fetch: (url, options) => fetch(url, { ...options, credentials: 'include' }),
+      // Include credentials for httpOnly cookies and organization header
+      fetch: (url, options) => {
+        const headers = {
+          ...(options?.headers || {}),
+        };
+        
+        // Add organization ID from global if available
+        if (typeof window !== 'undefined' && (window as any).__organizationId) {
+          headers['x-organization-id'] = (window as any).__organizationId;
+        }
+        
+        return fetch(url, { 
+          ...options, 
+          credentials: 'include',
+          headers,
+        });
+      },
     }),
     // httpBatchLink({
     //   url: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',

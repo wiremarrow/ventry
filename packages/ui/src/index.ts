@@ -8,6 +8,13 @@ export * from "./components/ui/badge"
 export * from "./components/ui/dialog"
 export * from "./components/ui/toast"
 export * from "./components/ui/form"
+export * from "./components/ui/select"
+export * from "./components/ui/textarea"
+export * from "./components/ui/switch"
+export * from "./components/ui/skeleton"
+export * from "./components/ui/dropdown-menu"
+export * from "./components/ui/radio-group"
+export * from "./components/ui/tabs"
 
 // Export utilities
 export * from "./lib/utils"

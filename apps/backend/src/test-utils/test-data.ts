@@ -1,4 +1,4 @@
-import type { User, Product, Category } from '@ventry/database';
+import type { User, Item, ItemCategory } from '@ventry/database';
 import { Decimal } from '@prisma/client/runtime/library';
 import type { AuthenticatedUser } from '../trpc/context.js';
 
@@ -46,28 +46,37 @@ export const mockAuthenticatedAdminUser: AuthenticatedUser = {
   createdAt: mockAdminUser.createdAt.toISOString(),
 };
 
-export const mockCategory: Category = {
+export const mockCategory: ItemCategory = {
   id: 'test-category-id',
+  organizationId: 'test-org-id',
   name: 'Test Category',
   description: 'A test category',
-  isActive: true,
+  parentId: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
 };
 
-export const mockProduct: Product = {
-  id: 'test-product-id',
-  name: 'Test Product',
-  description: 'A test product',
+export const mockItem: Item = {
+  id: 'test-item-id',
+  organizationId: 'test-org-id',
   sku: 'TEST-001',
-  unitPrice: new Decimal('19.99'),
-  cost: new Decimal('10.00'),
+  upc: null,
+  name: 'Test Item',
+  description: 'A test item',
   categoryId: mockCategory.id,
+  uomId: 'test-uom-id',
+  defaultSupplierId: null,
+  defaultCost: new Decimal('10.00'),
+  defaultPrice: new Decimal('19.99'),
+  weightKg: new Decimal('1.5'),
+  lengthCm: new Decimal('10'),
+  widthCm: new Decimal('10'),
+  heightCm: new Decimal('10'),
+  reorderPoint: 10,
+  reorderQty: 50,
   isActive: true,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
-  createdById: mockUser.id,
-  updatedById: mockUser.id,
 };
 
 export const createMockUser = (overrides: Partial<User> = {}): Omit<User, 'password'> => ({
@@ -76,8 +85,8 @@ export const createMockUser = (overrides: Partial<User> = {}): Omit<User, 'passw
   id: overrides.id || `user-${Date.now()}-${Math.random()}`,
 });
 
-export const createMockProduct = (overrides: Partial<Product> = {}): Product => ({
-  ...mockProduct,
+export const createMockItem = (overrides: Partial<Item> = {}): Item => ({
+  ...mockItem,
   ...overrides,
   id: overrides.id || `product-${Date.now()}-${Math.random()}`,
   sku: overrides.sku || `SKU-${Date.now()}`,

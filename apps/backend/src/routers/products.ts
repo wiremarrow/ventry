@@ -1,18 +1,25 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { protectedProcedure, createTRPCRouter } from '../trpc/trpc.js';
+import { organizationProcedure, createTRPCRouter } from '../trpc/trpc.js';
+import type { Prisma } from '@ventry/database';
 
 const createProductSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   sku: z.string().min(1).max(50),
-  unitPrice: z.number().positive(),
-  cost: z.number().positive().optional(),
+  defaultPrice: z.number().positive().optional(),
+  defaultCost: z.number().positive().optional(),
   categoryId: z.string(),
+  uomId: z.string(),
+  defaultSupplierId: z.string().optional(),
+  reorderPoint: z.number().int().min(0).default(0),
+  reorderQty: z.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
 });
 
-const updateProductSchema = createProductSchema.partial();
+const updateProductSchema = createProductSchema.partial().extend({
+  uomId: z.string().optional(),
+});
 
 const productQuerySchema = z.object({
   search: z.string().optional(),
@@ -23,10 +30,12 @@ const productQuerySchema = z.object({
 });
 
 export const productsRouter = createTRPCRouter({
-  list: protectedProcedure
+  list: organizationProcedure
     .input(productQuerySchema)
     .query(async ({ ctx, input }) => {
-      const where: import('@prisma/client').Prisma.ProductWhereInput = {};
+      const where: Prisma.ItemWhereInput = {
+        organizationId: ctx.user.organizationId,
+      };
       
       if (input.search) {
         where.OR = [
@@ -43,15 +52,18 @@ export const productsRouter = createTRPCRouter({
         where.isActive = input.isActive;
       }
 
-      const products = await ctx.prisma.product.findMany({
+      const products = await ctx.prisma.item.findMany({
         where,
         take: input.limit + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         include: {
           category: true,
-          inventoryItems: {
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          inventory: {
             select: {
-              quantity: true,
+              qtyOnHand: true,
+              qtyReserved: true,
               locationId: true,
             },
           },
@@ -71,33 +83,27 @@ export const productsRouter = createTRPCRouter({
       };
     }),
 
-  getById: protectedProcedure
+  getById: organizationProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const product = await ctx.prisma.product.findUnique({
-        where: { id: input.id },
+      const product = await ctx.prisma.item.findFirst({
+        where: { 
+          id: input.id,
+          organizationId: ctx.user.organizationId,
+        },
         include: {
           category: true,
-          inventoryItems: {
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          inventory: {
             include: {
               location: true,
             },
           },
-          createdBy: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
-          updatedBy: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
+          images: true,
+          priceHistory: {
+            orderBy: { startDate: 'desc' },
+            take: 10,
           },
         },
       });
@@ -112,50 +118,60 @@ export const productsRouter = createTRPCRouter({
       return product;
     }),
 
-  create: protectedProcedure
+  create: organizationProcedure
     .input(createProductSchema)
     .mutation(async ({ ctx, input }) => {
       // Check for duplicate SKU
-      const existing = await ctx.prisma.product.findUnique({
-        where: { sku: input.sku },
+      const existing = await ctx.prisma.item.findFirst({
+        where: { 
+          sku: input.sku,
+          organizationId: ctx.user.organizationId,
+        },
       });
 
       if (existing) {
         throw new TRPCError({
           code: 'CONFLICT',
-          message: 'Product with this SKU already exists',
+          message: 'Item with this SKU already exists',
         });
       }
 
-      const product = await ctx.prisma.product.create({
+      const product = await ctx.prisma.item.create({
         data: {
+          organizationId: ctx.user.organizationId,
           name: input.name,
           description: input.description,
           sku: input.sku,
-          unitPrice: input.unitPrice,
-          cost: input.cost,
+          defaultPrice: input.defaultPrice,
+          defaultCost: input.defaultCost,
           categoryId: input.categoryId,
+          uomId: input.uomId,
+          defaultSupplierId: input.defaultSupplierId,
+          reorderPoint: input.reorderPoint,
+          reorderQty: input.reorderQty,
           isActive: input.isActive,
-          createdById: ctx.user.id,
-          updatedById: ctx.user.id,
         },
         include: {
           category: true,
+          unitOfMeasure: true,
         },
       });
 
       return product;
     }),
 
-  update: protectedProcedure
+  update: organizationProcedure
     .input(z.object({
       id: z.string(),
       data: updateProductSchema,
     }))
     .mutation(async ({ ctx, input }) => {
       // Check if product exists
-      const existing = await ctx.prisma.product.findUnique({
-        where: { id: input.id },
+      const existing = await ctx.prisma.item.findFirst({
+        where: { 
+          id: input.id,
+          organizationId: ctx.user.organizationId,
+        },
       });
 
       if (!existing) {
@@ -167,47 +183,53 @@ export const productsRouter = createTRPCRouter({
 
       // Check SKU uniqueness if updating
       if (input.data.sku && input.data.sku !== existing.sku) {
-        const duplicate = await ctx.prisma.product.findUnique({
-          where: { sku: input.data.sku },
+        const duplicate = await ctx.prisma.item.findFirst({
+          where: { 
+            sku: input.data.sku,
+            organizationId: ctx.user.organizationId,
+          },
         });
 
         if (duplicate) {
           throw new TRPCError({
             code: 'CONFLICT',
-            message: 'Product with this SKU already exists',
+            message: 'Item with this SKU already exists',
           });
         }
       }
 
-      const product = await ctx.prisma.product.update({
+      const product = await ctx.prisma.item.update({
         where: { id: input.id },
         data: {
           name: input.data.name,
           description: input.data.description,
           sku: input.data.sku,
-          unitPrice: input.data.unitPrice,
-          cost: input.data.cost,
+          defaultPrice: input.data.defaultPrice,
+          defaultCost: input.data.defaultCost,
           categoryId: input.data.categoryId,
+          uomId: input.data.uomId,
+          defaultSupplierId: input.data.defaultSupplierId,
+          reorderPoint: input.data.reorderPoint,
+          reorderQty: input.data.reorderQty,
           isActive: input.data.isActive,
-          updatedById: ctx.user.id,
         },
         include: {
           category: true,
+          unitOfMeasure: true,
         },
       });
 
       return product;
     }),
 
-  delete: protectedProcedure
+  delete: organizationProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       // Soft delete by setting isActive to false
-      const product = await ctx.prisma.product.update({
+      const product = await ctx.prisma.item.update({
         where: { id: input.id },
         data: {
           isActive: false,
-          updatedById: ctx.user.id,
         },
       });
 
