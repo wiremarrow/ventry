@@ -25,8 +25,8 @@ export function InventoryFilters({
 }: InventoryFiltersProps) {
   // Fetch warehouses
   const { data: warehouses } = trpc.warehouses.list.useQuery({
-    page: 1,
-    limit: 100,
+    includeInactive: false,
+    includeStats: false,
   });
 
   return (
@@ -50,7 +50,7 @@ export function InventoryFilters({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Warehouses</SelectItem>
-            {warehouses?.warehouses.map((warehouse) => (
+            {warehouses?.map((warehouse) => (
               <SelectItem key={warehouse.id} value={warehouse.id}>
                 {warehouse.name}
               </SelectItem>
