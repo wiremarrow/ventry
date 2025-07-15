@@ -5,14 +5,14 @@ import type { User } from '@ventry/database';
 
 describe('Warehouses Router Integration', () => {
   let caller: ReturnType<typeof createDirectCaller>;
-  let user: User;
+  let user: User | null;
   let organizationId: string;
 
   beforeEach(async () => {
     const ctx = await createIntegrationContext();
     caller = appRouter.createCaller(ctx);
     user = ctx.user;
-    organizationId = ctx.user.organizationId;
+    organizationId = ctx.user?.organizationId ?? '';
   });
 
   describe('warehouses.list', () => {

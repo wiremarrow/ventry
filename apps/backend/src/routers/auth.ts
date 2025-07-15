@@ -28,7 +28,7 @@ const userSchema = z.object({
   username: z.string(),
   firstName: z.string(),
   lastName: z.string(),
-  role: z.enum(['ADMIN', 'MANAGER', 'USER', 'WAREHOUSE', 'SALES']),
+  role: z.enum(['ADMIN', 'MANAGER', 'USER', 'EMPLOYEE', 'WAREHOUSE', 'SALES']),
   isActive: z.boolean(),
   createdAt: z.string(), // ISO date string for JSON serialization
   organizationId: z.string().optional(),
@@ -76,11 +76,19 @@ export const authRouter = createTRPCRouter({
         orderBy: { joinedAt: 'asc' },
       });
 
+      // Require organization membership for access
+      if (!membership) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Access denied: User is not a member of any organization',
+        });
+      }
+
       const token = signJWT({
         userId: user.id,
         email: user.email,
         role: user.role,
-        organizationId: membership?.organizationId,
+        organizationId: membership.organizationId,
       });
 
       // Diagnostic: Check what methods are available on ctx.res
@@ -127,8 +135,8 @@ export const authRouter = createTRPCRouter({
           role: user.role,
           isActive: user.isActive,
           createdAt: user.createdAt.toISOString(),
-          organizationId: membership?.organizationId,
-          organizationRole: membership?.role,
+          organizationId: membership.organizationId,
+          organizationRole: membership.role,
         },
       };
     }),

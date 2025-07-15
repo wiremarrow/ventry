@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import { canManageUsers, canManageProducts, canViewReports, canManageLocations } from '@ventry/shared';
+import { canManageUsers, canManageProducts, canViewReports, canManageLocations, canViewProducts, canViewInventory, canViewMovements } from '@ventry/shared';
 import { cn } from '@ventry/ui';
 
 interface SidebarProps {
@@ -42,13 +42,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       label: 'Inventory',
       href: '/inventory',
       icon: Box,
-      show: true,
+      show: user ? canViewInventory(user) : false,
     },
     {
       label: 'Products',
       href: '/products',
       icon: Package,
-      show: true,
+      show: user ? canViewProducts(user) : false,
     },
     {
       label: 'Warehouses',
@@ -72,7 +72,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       label: 'Movements',
       href: '/movements',
       icon: ShoppingCart,
-      show: true,
+      show: user ? canViewMovements(user) : false,
     },
     {
       label: 'Reports',

@@ -142,10 +142,13 @@ export function LoginForm() {
       </CardContent>
       <CardFooter className="text-center text-sm text-gray-600">
         <div className="w-full">
-          <p>Demo accounts:</p>
+          <p>Demo accounts with organization access:</p>
           <p>Admin: admin@ventry.com / password123</p>
           <p>Manager: manager@ventry.com / password123</p>
-          <p>User: user@ventry.com / password123</p>
+          <p>Employee: employee@ventry.com / password123</p>
+          <p className="text-xs text-gray-500 mt-2">
+            user@ventry.com has no organization access (multi-tenant demo)
+          </p>
         </div>
       </CardFooter>
     </Card>

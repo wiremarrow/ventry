@@ -898,6 +898,7 @@ enum Role {
   ADMIN
   MANAGER
   USER
+  EMPLOYEE
   WAREHOUSE
   SALES
 }

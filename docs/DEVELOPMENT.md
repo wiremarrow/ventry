@@ -75,7 +75,7 @@ pnpm --filter @ventry/web dev
 |---------|-------------|
 | `pnpm --filter @ventry/database db:push` | Push schema changes to database |
 | `pnpm --filter @ventry/database db:migrate` | Run database migrations |
-| `pnpm --filter @ventry/database db:seed` | Seed database with test data (**Required for first-time setup** - Creates demo users for login) |
+| `pnpm --filter @ventry/database db:seed` | Seed database with test data (**Required for first-time setup** - Creates demo users: admin@ventry.com/password123, manager@ventry.com/password123, user@ventry.com/password123) |
 | `./tools/scripts/reset-db.sh` | Reset database (WARNING: Deletes all data) |
 | `./tools/scripts/backup-db.sh` | Create database backup |
 
