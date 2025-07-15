@@ -4,16 +4,16 @@ export type Database = {
   public: {
     Tables: {
       // This will be populated with your actual database schema
-      [key: string]: any;
+      [key: string]: unknown;
     };
     Views: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
     Functions: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
     Enums: {
-      [key: string]: any;
+      [key: string]: unknown;
     };
   };
 };

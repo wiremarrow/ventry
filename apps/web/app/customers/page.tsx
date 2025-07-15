@@ -14,7 +14,7 @@ export default function CustomersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [editCustomer, setEditCustomer] = useState<any>(null);
+  const [editCustomer, setEditCustomer] = useState<typeof customers?.customers[0] | null>(null);
 
   // Fetch customers with filtering
   const { data: customers, isLoading, refetch } = trpc.customers.list.useQuery({
@@ -77,14 +77,14 @@ export default function CustomersPage() {
           <Card className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Total Customers</p>
-              <p className="text-2xl font-bold">{customers?.length || 0}</p>
+              <p className="text-2xl font-bold">{customers?.customers?.length || 0}</p>
             </div>
           </Card>
           <Card className="p-6">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Active Customers</p>
               <p className="text-2xl font-bold">
-                {customers?.filter(c => c.orders.length > 0).length || 0}
+                {customers?.customers?.filter(c => (c.metrics?.orderCount || 0) > 0).length || 0}
               </p>
             </div>
           </Card>
@@ -93,10 +93,8 @@ export default function CustomersPage() {
               <p className="text-sm text-muted-foreground">Total Revenue</p>
               <p className="text-2xl font-bold">
                 {formatCurrency(
-                  customers?.reduce((sum, c) => 
-                    sum + c.orders.reduce((orderSum, o) => 
-                      orderSum + parseFloat(o.grandTotal.toString()), 0
-                    ), 0
+                  customers?.customers?.reduce((sum, c) => 
+                    sum + (c.metrics?.lifetimeRevenue || 0), 0
                   ) || 0
                 )}
               </p>
@@ -107,12 +105,10 @@ export default function CustomersPage() {
               <p className="text-sm text-muted-foreground">Avg Order Value</p>
               <p className="text-2xl font-bold">
                 {formatCurrency(
-                  (customers?.reduce((sum, c) => 
-                    sum + c.orders.reduce((orderSum, o) => 
-                      orderSum + parseFloat(o.grandTotal.toString()), 0
-                    ), 0
-                  ) || 0) / 
-                  (customers?.reduce((count, c) => count + c.orders.length, 0) || 1)
+                  customers?.customers && customers.customers.length > 0 ?
+                    customers.customers.reduce((sum, c) => 
+                      sum + (typeof c.metrics?.avgOrderValue === 'number' ? c.metrics.avgOrderValue : parseFloat(c.metrics?.avgOrderValue?.toString() || '0')), 0
+                    ) / customers.customers.length : 0
                 )}
               </p>
             </div>
@@ -156,14 +152,14 @@ export default function CustomersPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : customers?.length === 0 ? (
+              ) : customers?.customers?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     <p className="text-muted-foreground">No customers found</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                customers?.map((customer) => (
+                customers?.customers?.map((customer) => (
                   <TableRow key={customer.id}>
                     <TableCell>
                       <div>
@@ -186,26 +182,22 @@ export default function CustomersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {customer.addresses.length > 0 && (
+                      {customer._count?.addresses > 0 && (
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
                           <span className="text-sm">
-                            {customer.addresses[0].city}, {customer.addresses[0].state}
+                            {customer._count.addresses} address{customer._count.addresses > 1 ? 'es' : ''}
                           </span>
                         </div>
                       )}
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary">
-                        {customer.orders.length} orders
+                        {customer.metrics.orderCount} orders
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {formatCurrency(
-                        customer.orders.reduce((sum, order) => 
-                          sum + parseFloat(order.grandTotal.toString()), 0
-                        )
-                      )}
+                      {formatCurrency(customer.metrics.lifetimeRevenue || 0)}
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>

@@ -32,7 +32,7 @@ export default function OrganizationSwitcher() {
 
   const { data: organizations, isLoading } = trpc.organizations.list.useQuery();
 
-  const handleSelectOrganization = async (org: any) => {
+  const handleSelectOrganization = async (org: typeof organizations extends Array<infer T> ? T : never) => {
     try {
       await setOrganization(org.id);
       setIsOpen(false);
@@ -42,7 +42,7 @@ export default function OrganizationSwitcher() {
       });
       // Refresh the page to update all data
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast({
         title: 'Error',
         description: 'Failed to switch organization',

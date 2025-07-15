@@ -20,8 +20,8 @@ export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps = {}) {
 
   // Fetch additional data for locations count with auto-refresh
   const { data: warehouses } = trpc.warehouses.list.useQuery({
-    search: '',
-    limit: 1000, // Get all warehouses to count locations
+    includeInactive: false,
+    includeStats: false,
   }, {
     refetchInterval: refreshInterval,
     refetchIntervalInBackground: true,
@@ -64,8 +64,8 @@ export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps = {}) {
   }
 
   // Calculate total locations across all warehouses
-  const totalLocations = warehouses?.warehouses?.reduce((sum, warehouse) => 
-    sum + (warehouse.locationCount || 0), 0) || 0;
+  const totalLocations = warehouses?.reduce((sum, warehouse) => 
+    sum + (warehouse._count?.locations || 0), 0) || 0;
 
   // Calculate recent movements (last 30 days)
   const recentMovements = (analytics.operations?.receipts || 0) + 

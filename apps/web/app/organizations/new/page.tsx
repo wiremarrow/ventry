@@ -172,7 +172,7 @@ export default function NewOrganizationPage() {
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isLoading}>
+              <Button type="submit" disabled={createMutation.isPending}>
                 <Building2 className="h-4 w-4 mr-2" />
                 Create Organization
               </Button>

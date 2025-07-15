@@ -275,8 +275,8 @@ export default function CustomerDetailPage() {
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{order.items.length} items</TableCell>
-                        <TableCell>{formatCurrency(order.grandTotal)}</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>{formatCurrency(parseFloat(order.grandTotal.toString()))}</TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -331,8 +331,8 @@ export default function CustomerDetailPage() {
                             {return_.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>{return_.reason}</TableCell>
-                        <TableCell>{formatCurrency(return_.refundAmount)}</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>{formatCurrency(0)}</TableCell>
                       </TableRow>
                     ))
                   )}

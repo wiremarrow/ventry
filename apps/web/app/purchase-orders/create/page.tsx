@@ -121,7 +121,7 @@ export default function CreatePurchaseOrderPage() {
   });
 
   const addItem = () => {
-    const item = itemsList?.find(i => i.id === selectedItemId);
+    const item = itemsList?.items?.find(i => i.id === selectedItemId);
     if (!item) return;
 
     const unitCost = parseFloat(item.defaultCost?.toString() || '0');
@@ -142,7 +142,7 @@ export default function CreatePurchaseOrderPage() {
     setSelectedItemId('');
   };
 
-  const updateItem = (index: number, field: keyof OrderItem, value: any) => {
+  const updateItem = (index: number, field: keyof OrderItem, value: string | number) => {
     const updated = [...items];
     updated[index] = { ...updated[index], [field]: value };
 
@@ -179,6 +179,7 @@ export default function CreatePurchaseOrderPage() {
     const totals = calculateTotals();
     const purchaseOrderData = {
       ...data,
+      expectedDate: data.expectedDate ? new Date(data.expectedDate) : undefined,
       items: items.map(item => ({
         itemId: item.itemId,
         description: item.description,
@@ -204,7 +205,7 @@ export default function CreatePurchaseOrderPage() {
   };
 
   const totals = calculateTotals();
-  const isLoading = createMutation.isLoading || submitMutation.isLoading;
+  const isLoading = createMutation.isPending || submitMutation.isPending;
 
   return (
     <ProtectedRoute>
@@ -246,7 +247,7 @@ export default function CreatePurchaseOrderPage() {
                     <SelectValue placeholder="Select a supplier" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers?.map((supplier) => (
+                    {suppliers?.suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name} ({supplier.supplierCode})
                       </SelectItem>
@@ -293,7 +294,7 @@ export default function CreatePurchaseOrderPage() {
                     <SelectValue placeholder="Select an item to add" />
                   </SelectTrigger>
                   <SelectContent>
-                    {itemsList?.map((item) => (
+                    {itemsList?.items?.map((item) => (
                       <SelectItem key={item.id} value={item.id}>
                         {item.sku} - {item.name}
                       </SelectItem>
@@ -336,7 +337,7 @@ export default function CreatePurchaseOrderPage() {
                   items.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        {itemsList?.find(i => i.id === item.itemId)?.sku}
+                        {itemsList?.items?.find(i => i.id === item.itemId)?.sku}
                       </TableCell>
                       <TableCell>
                         <Input

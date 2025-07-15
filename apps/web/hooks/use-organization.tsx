@@ -33,15 +33,27 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       const org = organizations.find(o => o.id === storedOrgId);
       if (org) {
         setCurrentOrganization(org);
+        // Ensure window.__organizationId is set for tRPC client
+        if (typeof window !== 'undefined') {
+          (window as any).__organizationId = org.id;
+        }
       } else if (organizations.length > 0) {
         // If stored org not found, use first available
         setCurrentOrganization(organizations[0]);
         setCookie('active-organization', organizations[0].id);
+        // Ensure window.__organizationId is set for tRPC client
+        if (typeof window !== 'undefined') {
+          (window as any).__organizationId = organizations[0].id;
+        }
       }
     } else if (organizations && organizations.length > 0) {
       // No stored org, use first available
       setCurrentOrganization(organizations[0]);
       setCookie('active-organization', organizations[0].id);
+      // Ensure window.__organizationId is set for tRPC client
+      if (typeof window !== 'undefined') {
+        (window as any).__organizationId = organizations[0].id;
+      }
     }
     setIsLoading(false);
   }, [organizations]);

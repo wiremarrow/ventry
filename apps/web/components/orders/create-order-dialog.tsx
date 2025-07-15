@@ -31,18 +31,17 @@ import { Plus, Trash2 } from 'lucide-react';
 
 const orderItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
-  warehouseId: z.string().min(1, 'Warehouse is required'),
-  quantity: z.number().int().positive(),
-  unitPrice: z.number().positive(),
-  discount: z.number().min(0).max(100).default(0),
+  qtyOrdered: z.number().int().positive(),
+  unitPrice: z.number().min(0),
+  discountPct: z.number().min(0).max(100).default(0),
+  taxRate: z.number().min(0).max(100).default(0),
+  description: z.string().optional(),
 });
 
 const createOrderSchema = z.object({
   customerId: z.string().min(1, 'Customer is required'),
-  orderDate: z.string().default(() => new Date().toISOString().split('T')[0]),
-  status: z.enum(['DRAFT', 'PENDING']).default('PENDING'),
-  shippingAddress: z.string().min(1, 'Shipping address is required'),
-  billingAddress: z.string().optional(),
+  requestedShipDate: z.date().optional(),
+  defaultPaymentTerms: z.string().optional(),
   notes: z.string().optional(),
   items: z.array(orderItemSchema).min(1, 'At least one item is required'),
 });
@@ -56,25 +55,21 @@ interface CreateOrderDialogProps {
 
 export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps) {
   const utils = trpc.useUtils();
-  const [billingSameAsShipping, setBillingSameAsShipping] = useState(true);
 
   // Fetch data for dropdowns
   const { data: customers } = trpc.customers.list.useQuery({
     page: 1,
     limit: 100,
-    status: 'ACTIVE',
   });
 
   const { data: items } = trpc.items.list.useQuery({
     page: 1,
     limit: 100,
-    status: 'ACTIVE',
+    isActive: true,
   });
 
   const { data: warehouses } = trpc.warehouses.list.useQuery({
-    page: 1,
-    limit: 100,
-    status: 'ACTIVE',
+    includeInactive: false,
   });
 
   const createMutation = trpc.orders.create.useMutation({
@@ -93,12 +88,10 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
     resolver: zodResolver(createOrderSchema),
     defaultValues: {
       customerId: '',
-      orderDate: new Date().toISOString().split('T')[0],
-      status: 'PENDING',
-      shippingAddress: '',
-      billingAddress: '',
+      requestedShipDate: undefined,
+      defaultPaymentTerms: '',
       notes: '',
-      items: [{ itemId: '', warehouseId: '', quantity: 1, unitPrice: 0, discount: 0 }],
+      items: [{ itemId: '', qtyOrdered: 1, unitPrice: 0, discountPct: 0, taxRate: 0, description: '' }],
     },
   });
 
@@ -108,25 +101,24 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
   });
 
   const onSubmit = (data: CreateOrderFormData) => {
-    createMutation.mutate({
-      ...data,
-      billingAddress: billingSameAsShipping ? data.shippingAddress : data.billingAddress,
-    });
+    createMutation.mutate(data);
   };
 
   const handleItemChange = (index: number, itemId: string) => {
     const item = items?.items.find(i => i.id === itemId);
     if (item && item.defaultPrice) {
-      form.setValue(`items.${index}.unitPrice`, item.defaultPrice);
+      form.setValue(`items.${index}.unitPrice`, parseFloat(item.defaultPrice.toString()));
     }
   };
 
   const calculateSubtotal = () => {
     const items = form.watch('items');
     return items.reduce((sum, item) => {
-      const lineTotal = item.quantity * item.unitPrice;
-      const discount = lineTotal * (item.discount / 100);
-      return sum + (lineTotal - discount);
+      const lineTotal = item.qtyOrdered * item.unitPrice;
+      const discount = lineTotal * (item.discountPct / 100);
+      const afterDiscount = lineTotal - discount;
+      const tax = afterDiscount * (item.taxRate / 100);
+      return sum + afterDiscount + tax;
     }, 0);
   };
 
@@ -170,69 +162,24 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
 
               <FormField
                 control={form.control}
-                name="orderDate"
+                name="requestedShipDate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Order Date *</FormLabel>
+                    <FormLabel>Requested Ship Date</FormLabel>
                     <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="shippingAddress"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Shipping Address *</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter shipping address..."
-                        {...field}
+                      <Input 
+                        type="date" 
+                        {...field} 
+                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="billingSame"
-                  checked={billingSameAsShipping}
-                  onChange={(e) => setBillingSameAsShipping(e.target.checked)}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="billingSame" className="text-sm">
-                  Billing address same as shipping
-                </label>
-              </div>
-
-              {!billingSameAsShipping && (
-                <FormField
-                  control={form.control}
-                  name="billingAddress"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Billing Address</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter billing address..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
             </div>
+
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -241,7 +188,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ itemId: '', warehouseId: '', quantity: 1, unitPrice: 0, discount: 0 })}
+                  onClick={() => append({ itemId: '', qtyOrdered: 1, unitPrice: 0, discountPct: 0, taxRate: 0, description: '' })}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
@@ -285,23 +232,15 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   <div className="col-span-3">
                     <FormField
                       control={form.control}
-                      name={`items.${index}.warehouseId`}
+                      name={`items.${index}.description`}
                       render={({ field }) => (
                         <FormItem>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Warehouse" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {warehouses?.warehouses.map((warehouse) => (
-                                <SelectItem key={warehouse.id} value={warehouse.id}>
-                                  {warehouse.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <FormControl>
+                            <Input
+                              placeholder="Item description"
+                              {...field}
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -311,7 +250,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   <div className="col-span-1">
                     <FormField
                       control={form.control}
-                      name={`items.${index}.quantity`}
+                      name={`items.${index}.qtyOrdered`}
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -353,7 +292,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   <div className="col-span-1">
                     <FormField
                       control={form.control}
-                      name={`items.${index}.discount`}
+                      name={`items.${index}.discountPct`}
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
@@ -413,30 +352,6 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Initial Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="DRAFT">Draft</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Draft orders can be edited freely, pending orders will be processed
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <DialogFooter>
               <Button

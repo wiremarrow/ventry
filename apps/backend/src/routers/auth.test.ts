@@ -20,9 +20,24 @@ vi.mock('@ventry/database', () => {
       create: vi.fn(),
       update: vi.fn(),
     },
+    organizationMember: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+    },
+    organization: {
+      create: vi.fn(),
+    },
   };
   
-  return { prisma: mockPrisma };
+  return { 
+    prisma: mockPrisma,
+    OrganizationRole: {
+      OWNER: 'OWNER',
+      ADMIN: 'ADMIN',
+      MEMBER: 'MEMBER'
+    }
+  };
 });
 
 // Access the mocked prisma for tests
@@ -32,6 +47,14 @@ const mockPrisma = {
     findFirst: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+  },
+  organizationMember: {
+    findFirst: vi.fn(),
+    findMany: vi.fn(),
+    create: vi.fn(),
+  },
+  organization: {
+    create: vi.fn(),
   },
 };
 
@@ -46,8 +69,18 @@ describe('Auth Router', () => {
   describe('login', () => {
     it('should login user with valid credentials', async () => {
       const userWithPassword = { ...mockUser, password: 'hashedpassword' };
+      const mockOrganization = { id: 'org1', name: 'Test Org' };
+      const mockMembership = {
+        id: 'mem1',
+        userId: mockUser.id,
+        organizationId: mockOrganization.id,
+        role: 'MEMBER',
+        organization: mockOrganization,
+      };
+      
       mockPrisma.user.findUnique.mockResolvedValue(userWithPassword);
       mockPrisma.user.update.mockResolvedValue(userWithPassword);
+      mockPrisma.organizationMember.findFirst.mockResolvedValue(mockMembership);
       vi.mocked(bcrypt.compare).mockResolvedValue(true as never);
 
       const result = await caller.auth.login({

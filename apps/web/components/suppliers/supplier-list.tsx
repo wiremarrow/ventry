@@ -44,7 +44,7 @@ interface SupplierListProps {
 
 export function SupplierList({ searchTerm }: SupplierListProps) {
   const [page, setPage] = useState(1);
-  const [editingSupplier, setEditingSupplier] = useState<any>(null);
+  const [editingSupplier, setEditingSupplier] = useState<typeof data?.suppliers[0] | null>(null);
   const limit = 20;
 
   const utils = trpc.useUtils();

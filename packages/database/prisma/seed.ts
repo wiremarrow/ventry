@@ -301,38 +301,465 @@ async function seedComprehensiveData(organizationId: string) {
 
   console.log('🚀 Creating comprehensive demo data...');
   
-  // This would include all the comprehensive seeding logic from seed-comprehensive.ts
-  // For now, just add some sample products to demonstrate
-  
-  const electronicsCategory = await prisma.itemCategory.findFirst({
-    where: { name: 'Electronics', organizationId }
+  // Get existing basic data
+  const categories = await prisma.itemCategory.findMany({
+    where: { organizationId }
   });
-  
-  const eachUnit = await prisma.unitOfMeasure.findFirst({
-    where: { code: 'EA', organizationId }
+  const units = await prisma.unitOfMeasure.findMany({
+    where: { organizationId }
   });
+  const eachUnit = units.find(u => u.code === 'EA');
+  const caseUnit = units.find(u => u.code === 'CS');
+  const boxUnit = units.find(u => u.code === 'BOX');
 
-  if (electronicsCategory && eachUnit) {
-    await prisma.item.upsert({
+  if (!eachUnit || categories.length === 0) {
+    console.log('⚠️ Missing basic data, skipping comprehensive seed');
+    return;
+  }
+
+  // Create additional warehouses for multi-location scenario
+  console.log('🏭 Creating additional warehouses...');
+  const warehouses = [];
+  
+  const warehouseData = [
+    { code: 'MAIN', name: 'Main Warehouse', city: 'San Francisco', state: 'CA', postalCode: '94105' },
+    { code: 'WEST', name: 'West Coast Distribution', city: 'Los Angeles', state: 'CA', postalCode: '90210' },
+    { code: 'EAST', name: 'East Coast Hub', city: 'New York', state: 'NY', postalCode: '10001' },
+    { code: 'CENT', name: 'Central Distribution', city: 'Chicago', state: 'IL', postalCode: '60601' }
+  ];
+
+  for (const warehouseInfo of warehouseData) {
+    const warehouse = await prisma.warehouse.upsert({
       where: {
-        organizationId_sku: {
+        organizationId_code: {
           organizationId,
-          sku: 'ELE-0001'
+          code: warehouseInfo.code
         }
       },
       update: {},
       create: {
         organizationId,
-        sku: 'ELE-0001',
-        name: 'Wireless Mouse',
-        description: 'Ergonomic wireless mouse with USB receiver',
-        categoryId: electronicsCategory.id,
-        uomId: eachUnit.id,
-        defaultCost: 25.99,
-        defaultPrice: 39.99,
+        code: warehouseInfo.code,
+        name: warehouseInfo.name,
+        line1: `${faker.location.streetAddress()}`,
+        city: warehouseInfo.city,
+        state: warehouseInfo.state,
+        postalCode: warehouseInfo.postalCode,
+        country: 'US'
       }
     });
+    warehouses.push(warehouse);
+
+    // Create 8-12 locations per warehouse
+    const locationCount = faker.number.int({ min: 8, max: 12 });
+    for (let i = 1; i <= locationCount; i++) {
+      const aisle = String.fromCharCode(65 + Math.floor((i - 1) / 4)); // A, B, C...
+      const rack = Math.floor((i - 1) % 4) + 1;
+      const shelf = faker.number.int({ min: 1, max: 5 });
+      
+      await prisma.location.upsert({
+        where: {
+          code: `${warehouseInfo.code}-${aisle}-${rack}-${shelf}`
+        },
+        update: {},
+        create: {
+          warehouseId: warehouse.id,
+          code: `${warehouseInfo.code}-${aisle}-${rack}-${shelf}`,
+          description: `${warehouseInfo.name} - Aisle ${aisle}, Rack ${rack}, Shelf ${shelf}`,
+          zone: aisle,
+          aisle: rack.toString(),
+          shelf: shelf.toString(),
+          isTempControlled: faker.datatype.boolean(0.3) // 30% temp controlled
+        }
+      });
+    }
   }
+
+  // Create suppliers
+  console.log('🏪 Creating suppliers...');
+  const suppliers = [];
+  const supplierCount = 12;
+  
+  for (let i = 1; i <= supplierCount; i++) {
+    const companyName = faker.company.name();
+    const supplier = await prisma.supplier.upsert({
+      where: {
+        organizationId_supplierCode: {
+          organizationId,
+          supplierCode: `SUP-${String(i).padStart(3, '0')}`
+        }
+      },
+      update: {},
+      create: {
+        organizationId,
+        supplierCode: `SUP-${String(i).padStart(3, '0')}`,
+        name: companyName,
+        email: faker.internet.email().toLowerCase(),
+        phone: faker.phone.number(),
+        website: faker.internet.url(),
+        line1: faker.location.streetAddress(),
+        city: faker.location.city(),
+        state: faker.location.state({ abbreviated: true }),
+        postalCode: faker.location.zipCode(),
+        country: 'US',
+        paymentTerms: faker.helpers.arrayElement(['NET30', 'NET15', 'NET60', 'COD']),
+        leadTimeDays: faker.number.int({ min: 3, max: 21 })
+      }
+    });
+    suppliers.push(supplier);
+  }
+
+  // Create diverse product catalog
+  console.log('📦 Creating diverse product catalog...');
+  const productTemplates = [
+    // Electronics
+    { category: 'Electronics', products: [
+      { name: 'Wireless Mouse', desc: 'Ergonomic wireless mouse with USB receiver', cost: 18.99, price: 29.99 },
+      { name: 'Mechanical Keyboard', desc: 'RGB backlit mechanical gaming keyboard', cost: 59.99, price: 89.99 },
+      { name: 'USB-C Hub', desc: '7-in-1 USB-C hub with HDMI and ethernet', cost: 32.00, price: 54.99 },
+      { name: 'Wireless Headphones', desc: 'Noise-cancelling over-ear headphones', cost: 79.99, price: 129.99 },
+      { name: 'Webcam HD', desc: '1080p HD webcam with auto-focus', cost: 24.99, price: 39.99 },
+      { name: 'Portable Monitor', desc: '15.6" portable USB-C monitor', cost: 119.99, price: 179.99 },
+      { name: 'Smartphone Stand', desc: 'Adjustable aluminum phone stand', cost: 12.99, price: 24.99 },
+      { name: 'Bluetooth Speaker', desc: 'Waterproof portable Bluetooth speaker', cost: 29.99, price: 49.99 },
+      { name: 'Power Bank', desc: '20000mAh portable power bank with fast charging', cost: 19.99, price: 34.99 },
+      { name: 'Cable Organizer', desc: 'Desktop cable management system', cost: 5.99, price: 12.99 },
+      { name: 'LED Desk Lamp', desc: 'USB-powered LED desk lamp with touch control', cost: 22.99, price: 39.99 },
+      { name: 'Laptop Cooling Pad', desc: 'Adjustable laptop cooling pad with fans', cost: 17.99, price: 29.99 },
+      { name: 'Document Camera', desc: 'HD document camera for presentations', cost: 59.99, price: 99.99 },
+      { name: 'Wireless Charger', desc: 'Fast wireless charging pad', cost: 12.99, price: 22.99 },
+      { name: 'USB Flash Drive', desc: '64GB USB 3.0 flash drive', cost: 8.99, price: 16.99 },
+    ]},
+    // Office Supplies  
+    { category: 'Office Supplies', products: [
+      { name: 'A4 Copy Paper', desc: 'Premium white copy paper 500 sheets', cost: 8.99, price: 14.99 },
+      { name: 'Ballpoint Pens', desc: 'Pack of 12 blue ballpoint pens', cost: 5.99, price: 9.99 },
+      { name: 'Sticky Notes', desc: 'Assorted color sticky notes pack', cost: 3.99, price: 6.99 },
+      { name: 'Manila Folders', desc: 'Letter size manila file folders box of 100', cost: 24.99, price: 39.99 },
+      { name: 'Binder Clips', desc: 'Assorted size binder clips 40-pack', cost: 7.99, price: 12.99 },
+      { name: 'Stapler', desc: 'Heavy-duty desktop stapler', cost: 15.99, price: 26.99 },
+      { name: 'Hole Punch', desc: '3-hole punch for standard paper', cost: 18.99, price: 31.99 },
+      { name: 'Desk Organizer', desc: 'Bamboo desktop organizer with compartments', cost: 22.99, price: 37.99 },
+      { name: 'Calculator', desc: 'Solar-powered desktop calculator', cost: 12.99, price: 21.99 },
+      { name: 'Whiteboard Markers', desc: 'Dry erase markers assorted colors 8-pack', cost: 8.99, price: 14.99 },
+      { name: 'Correction Tape', desc: 'White correction tape 6mm x 8m', cost: 2.99, price: 4.99 },
+      { name: 'Paper Clips', desc: 'Standard paper clips 500 count', cost: 4.99, price: 7.99 },
+      { name: 'Rubber Bands', desc: 'Assorted rubber bands 1/2 lb bag', cost: 6.99, price: 11.99 },
+      { name: 'Index Cards', desc: '3x5 ruled index cards 100 count', cost: 3.99, price: 6.99 },
+      { name: 'Tape Dispenser', desc: 'Weighted tape dispenser for desktop', cost: 11.99, price: 19.99 },
+    ]},
+    // Furniture
+    { category: 'Furniture', products: [
+      { name: 'Ergonomic Office Chair', desc: 'Adjustable mesh back office chair', cost: 89.99, price: 149.99 },
+      { name: 'Standing Desk', desc: 'Height-adjustable standing desk 48"', cost: 119.99, price: 199.99 },
+      { name: 'Filing Cabinet', desc: '4-drawer locking filing cabinet', cost: 79.99, price: 129.99 },
+      { name: 'Bookshelf', desc: '5-tier wooden bookshelf', cost: 59.99, price: 99.99 },
+      { name: 'Conference Table', desc: '8-person oval conference table', cost: 149.99, price: 249.99 },
+      { name: 'Guest Chair', desc: 'Stackable guest chair with arms', cost: 49.99, price: 79.99 },
+      { name: 'Monitor Stand', desc: 'Adjustable dual monitor stand', cost: 29.99, price: 49.99 },
+      { name: 'Desk Lamp', desc: 'Adjustable LED desk lamp', cost: 19.99, price: 34.99 },
+      { name: 'Storage Cabinet', desc: '2-door storage cabinet with lock', cost: 79.99, price: 129.99 },
+      { name: 'Footrest', desc: 'Adjustable ergonomic footrest', cost: 24.99, price: 39.99 },
+      { name: 'Coat Rack', desc: 'Freestanding wooden coat rack', cost: 34.99, price: 57.99 },
+      { name: 'Waste Basket', desc: 'Round mesh waste basket', cost: 12.99, price: 21.99 },
+      { name: 'Desk Pad', desc: 'Large leather desk pad with side rails', cost: 28.99, price: 47.99 },
+      { name: 'Whiteboard', desc: '48x36 magnetic dry erase whiteboard', cost: 89.99, price: 149.99 },
+      { name: 'Cork Board', desc: '36x24 framed cork bulletin board', cost: 25.99, price: 42.99 },
+    ]}
+  ];
+
+  // Create all products
+  const createdItems = [];
+  let itemIndex = 1;
+
+  for (const categoryGroup of productTemplates) {
+    const category = categories.find(c => c.name === categoryGroup.category);
+    if (!category) continue;
+
+    for (const productTemplate of categoryGroup.products) {
+      const sku = generateSKU(category.name, itemIndex);
+      const supplier = faker.helpers.arrayElement(suppliers);
+      const uom = faker.helpers.arrayElement([eachUnit, caseUnit, boxUnit]);
+      
+      const item = await prisma.item.upsert({
+        where: {
+          organizationId_sku: { organizationId, sku }
+        },
+        update: {},
+        create: {
+          organizationId,
+          sku,
+          name: productTemplate.name,
+          description: productTemplate.desc,
+          categoryId: category.id,
+          uomId: uom.id,
+          defaultSupplierId: supplier.id,
+          defaultCost: productTemplate.cost,
+          defaultPrice: productTemplate.price,
+          reorderPoint: faker.number.int({ min: 3, max: 12 }),
+          reorderQty: faker.number.int({ min: 10, max: 30 }),
+          weightKg: faker.number.float({ min: 0.1, max: 15.0, fractionDigits: 2 }),
+          isActive: true
+        }
+      });
+      
+      createdItems.push(item);
+      itemIndex++;
+    }
+  }
+
+  console.log(`📦 Created ${createdItems.length} products`);
+  console.log(`🏪 Created ${suppliers.length} suppliers`);
+  console.log(`🏭 Created ${warehouses.length} warehouses`);
+
+  return { items: createdItems, suppliers, warehouses };
+}
+
+async function seedInventoryAndOperations(organizationId: string, data: any) {
+  if (!isComprehensive || !data) return;
+
+  console.log('📊 Creating inventory levels and historical operations...');
+  
+  const { items, suppliers, warehouses } = data;
+  
+  // Get all locations across all warehouses
+  const allLocations = await prisma.location.findMany({
+    where: {
+      warehouse: { organizationId }
+    }
+  });
+
+  console.log(`📍 Found ${allLocations.length} locations for inventory distribution`);
+
+  // Create inventory records for each item across multiple locations
+  const inventoryRecords = [];
+  
+  for (const item of items) {
+    // Each item will be stocked in 20-40% of locations for more realistic distribution
+    const stockingPercentage = faker.number.float({ min: 0.2, max: 0.4 });
+    const locationsToStock = faker.helpers.arrayElements(
+      allLocations, 
+      Math.max(1, Math.floor(allLocations.length * stockingPercentage))
+    );
+
+    for (const location of locationsToStock) {
+      // Create realistic stock levels with more conservative quantities
+      const isLowStock = faker.datatype.boolean(0.20); // 20% chance of low stock
+      const isOutOfStock = faker.datatype.boolean(0.15); // 15% chance of zero stock
+      
+      let qtyOnHand = 0;
+      if (!isOutOfStock) {
+        if (isLowStock) {
+          // Low stock: below reorder point
+          qtyOnHand = faker.number.int({ min: 1, max: Math.max(1, item.reorderPoint - 1) });
+        } else {
+          // Normal stock: above reorder point but much more conservative
+          const maxQty = Math.max(item.reorderPoint + 1, Math.floor(item.reorderPoint * 1.5));
+          qtyOnHand = faker.number.int({ min: item.reorderPoint, max: maxQty });
+        }
+      }
+
+      const qtyReserved = qtyOnHand > 0 ? faker.number.int({ min: 0, max: Math.floor(qtyOnHand * 0.2) }) : 0;
+
+      // Create a basic lot for this item if it doesn't exist
+      const lotNumber = `LOT-${item.sku}-${new Date().getFullYear()}01`;
+      const lot = await prisma.lot.upsert({
+        where: { lotNumber },
+        update: {},
+        create: {
+          itemId: item.id,
+          lotNumber,
+          receivedDate: faker.date.recent({ days: 60 }),
+          unitCost: item.defaultCost || 0,
+          qtyInitial: qtyOnHand * 2, // Initial quantity was larger
+          qtyOnHand: qtyOnHand,
+          status: 'AVAILABLE'
+        }
+      });
+
+      // Create inventory record (simple create since we cleared database)
+      const inventory = await prisma.inventory.create({
+        data: {
+          itemId: item.id,
+          lotId: lot.id,
+          locationId: location.id,
+          qtyOnHand,
+          qtyReserved,
+          qtyInTransit: 0,
+          lastCountedAt: faker.date.recent({ days: 30 })
+        }
+      });
+      
+      inventoryRecords.push(inventory);
+    }
+  }
+
+  console.log(`📦 Created ${inventoryRecords.length} inventory records`);
+  
+  // Calculate and log total inventory values for validation
+  const totalUnits = inventoryRecords.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
+  const totalValue = inventoryRecords.reduce((sum, inv) => {
+    const item = items.find(i => i.id === inv.itemId);
+    return sum + (inv.qtyOnHand * (item?.defaultCost || 0));
+  }, 0);
+  
+  console.log(`📊 INVENTORY VALIDATION:`)
+  console.log(`   • Total Units: ${totalUnits.toLocaleString()} items`);
+  console.log(`   • Total Value: $${totalValue.toLocaleString()} (at cost)`);
+  console.log(`   • Average per location: ${Math.round(totalUnits / inventoryRecords.length)} units`);
+  console.log(`   • Items with stock: ${inventoryRecords.filter(inv => inv.qtyOnHand > 0).length}/${inventoryRecords.length}`);
+
+  // Create historical stock movements (last 90 days)
+  console.log('📈 Creating historical stock movements...');
+  
+  const now = new Date();
+  const movements = [];
+  const movementCount = faker.number.int({ min: 200, max: 500 });
+
+  // Get admin user for movements
+  const adminUser = await prisma.user.findFirst({
+    where: { email: 'admin@ventry.com' }
+  });
+
+  if (!adminUser) {
+    console.log('⚠️ Admin user not found, skipping stock movements');
+    return;
+  }
+
+  for (let i = 0; i < movementCount; i++) {
+    const inventory = faker.helpers.arrayElement(inventoryRecords);
+    const item = items.find(item => item.id === inventory.itemId);
+    const location = allLocations.find(loc => loc.id === inventory.locationId);
+    
+    if (!item || !location) continue;
+
+    // Create movement date within last 90 days, weighted toward more recent
+    const daysAgo = Math.floor(Math.pow(faker.number.float({ min: 0, max: 1 }), 2) * 90);
+    const movementDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
+
+    // Movement types with realistic distribution
+    const movementType = faker.helpers.weightedArrayElement([
+      { weight: 40, value: 'INBOUND' },    // Receipts
+      { weight: 35, value: 'OUTBOUND' },   // Shipments
+      { weight: 15, value: 'TRANSFER' },   // Transfers
+      { weight: 10, value: 'ADJUSTMENT' }  // Adjustments
+    ]);
+
+    // Realistic quantities based on movement type
+    let qty;
+    if (movementType === 'INBOUND') {
+      qty = faker.number.int({ min: 10, max: 100 }); // Positive for INBOUND
+    } else {
+      qty = -faker.number.int({ min: 1, max: 50 }); // Negative for OUTBOUND/TRANSFER/ADJUSTMENT
+    }
+
+    // Reference numbers
+    let refType = null;
+    let refId = null;
+    let reason = null;
+
+    switch (movementType) {
+      case 'INBOUND':
+        refType = 'RECEIPT';
+        refId = `REC-${String(faker.number.int({ min: 1000, max: 9999 }))}`;
+        break;
+      case 'OUTBOUND':
+        refType = 'SHIPMENT';
+        refId = `SHIP-${String(faker.number.int({ min: 1000, max: 9999 }))}`;
+        break;
+      case 'TRANSFER':
+        refType = 'TRANSFER';
+        refId = `TXF-${String(faker.number.int({ min: 1000, max: 9999 }))}`;
+        break;
+      case 'ADJUSTMENT':
+        refType = 'ADJUSTMENT';
+        reason = faker.helpers.arrayElement([
+          'Physical count adjustment',
+          'Damaged goods removal',
+          'Expiry removal',
+          'System correction',
+          'Location transfer'
+        ]);
+        break;
+    }
+
+    await prisma.stockMovement.create({
+      data: {
+        itemId: item.id,
+        lotId: inventory.lotId,
+        toLocationId: location.id,
+        qty,
+        movementType,
+        refType,
+        refId,
+        movedById: adminUser.id,
+        movedAt: movementDate,
+        notes: movementType === 'ADJUSTMENT' ? reason : null
+      }
+    });
+
+    movements.push({
+      item: item.name,
+      location: location.code,
+      qty,
+      type: movementType,
+      date: movementDate
+    });
+  }
+
+  console.log(`📈 Created ${movements.length} stock movements`);
+
+  // Create some customers for order history
+  console.log('👥 Creating customers...');
+  const customers = [];
+  const customerCount = faker.number.int({ min: 25, max: 50 });
+
+  for (let i = 1; i <= customerCount; i++) {
+    const firstName = faker.person.firstName();
+    const lastName = faker.person.lastName();
+    const companyName = faker.datatype.boolean(0.7) ? faker.company.name() : null;
+    
+    const customer = await prisma.customer.upsert({
+      where: {
+        organizationId_customerCode: {
+          organizationId,
+          customerCode: `CUST-${String(i).padStart(4, '0')}`
+        }
+      },
+      update: {},
+      create: {
+        organizationId,
+        customerCode: `CUST-${String(i).padStart(4, '0')}`,
+        companyName,
+        firstName,
+        lastName,
+        email: faker.internet.email({ firstName, lastName }).toLowerCase(),
+        phone: faker.phone.number(),
+        taxId: faker.datatype.boolean(0.3) ? faker.string.alphanumeric(10) : null,
+        defaultPaymentTerms: faker.helpers.arrayElement(['NET30', 'NET15', 'COD', 'PREPAID']),
+        website: companyName ? faker.internet.url() : null
+      }
+    });
+    
+    customers.push(customer);
+  }
+
+  console.log(`👥 Created ${customers.length} customers`);
+
+  // Update comprehensive seed summary
+  const totalInventoryValue = inventoryRecords.reduce((sum, inv) => {
+    const item = items.find(i => i.id === inv.itemId);
+    return sum + (inv.qtyOnHand * (item?.defaultCost || 0));
+  }, 0);
+
+  const lowStockItems = inventoryRecords.filter(inv => {
+    const item = items.find(i => i.id === inv.itemId);
+    return item && inv.qtyOnHand < item.reorderPoint;
+  }).length;
+
+  console.log(`💰 Total inventory value: $${totalInventoryValue.toLocaleString()}`);
+  console.log(`⚠️ Low stock items: ${lowStockItems}`);
+  console.log(`📍 Total locations: ${allLocations.length}`);
 }
 
 async function main() {
@@ -361,7 +788,10 @@ async function main() {
       organization = await seedOrganization(admin, manager, employee);
       if (organization) {
         await seedBasicData(organization.id);
-        await seedComprehensiveData(organization.id);
+        const comprehensiveData = await seedComprehensiveData(organization.id);
+        
+        // Create inventory and operations data
+        await seedInventoryAndOperations(organization.id, comprehensiveData);
       }
     }
 
@@ -379,10 +809,17 @@ async function main() {
       console.log('🚫 user@ventry.com intentionally NOT in organization (demonstrates multi-tenant boundary)');
       console.log('📏 Units of Measure: 3 created');
       console.log('📁 Categories: 3 created');
-      console.log('🏭 Warehouse: Main Warehouse with 1 location');
+      console.log('🏭 Warehouses: 4 warehouses with 32-48 locations total');
       
       if (isComprehensive) {
-        console.log('📊 Comprehensive demo data created');
+        console.log('📊 Comprehensive demo data summary:');
+        console.log('  • 45+ diverse products across Electronics, Office Supplies, Furniture');
+        console.log('  • 12 suppliers with realistic contact information');
+        console.log('  • 500-2000+ inventory records across multiple locations');
+        console.log('  • 200-500 historical stock movements (last 90 days)');
+        console.log('  • 25-50 customers with order potential');
+        console.log('  • Realistic analytics data for meaningful dashboard metrics');
+        console.log('  • Low stock scenarios for testing alerts and notifications');
       }
     }
 

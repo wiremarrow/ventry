@@ -124,7 +124,7 @@ export default function ReportsPage() {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const getFrequencyBadge = (frequency: string) => {
+  const getFrequencyBadge = (frequency: string): 'destructive' | 'success' | 'warning' | 'secondary' => {
     if (frequency === 'Real-time') return 'destructive';
     if (frequency === 'Daily') return 'success';
     if (frequency === 'Weekly') return 'warning';
@@ -163,7 +163,7 @@ export default function ReportsPage() {
                 <div className="p-2 bg-gray-100 rounded-lg">
                   <Icon className="h-6 w-6 text-gray-700" />
                 </div>
-                <Badge variant={getFrequencyBadge(report.frequency) as any}>
+                <Badge variant={getFrequencyBadge(report.frequency)}>
                   {report.frequency}
                 </Badge>
               </div>

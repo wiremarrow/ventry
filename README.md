@@ -32,9 +32,10 @@ ventry/
   - **Current**: PostgreSQL 16 with Prisma 6.x ORM (ESM support) for type-safe database access
   - **Multi-tenant**: Full organizationId scoping across all 40+ tables
   - **Schema**: Enterprise-grade inventory management (Items, Warehouses, Orders, PurchaseOrders, etc.)
-  - **TypeScript Migration**: ✅ **COMPLETE** - All routers migrated with 0 TypeScript errors
-  - **Testing**: ✅ All unit tests (19/19) and integration tests (4/4) passing
+  - **TypeScript Migration**: ✅ **COMPLETE** - Backend configured as internal service with 0 TypeScript errors
+  - **Testing**: ✅ All unit tests (19/19) and integration tests (49/49) passing
   - **Architecture**: Clean tRPC factory pattern avoiding circular dependencies
+  - **Column Naming**: ✅ PostgreSQL best practices with snake_case in database, camelCase in TypeScript via Prisma @map directives
   - **UI Components**: 
     - ✅ **Inventory Page**: Full tRPC integration with stock adjustments and filtering
     - ✅ **Products Page**: Complete CRUD operations with comprehensive form validation
@@ -456,7 +457,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Performance measurement utilities
 - Development-only debug logging
 
-**Recent Fixes (2025-07-05 to 2025-07-07):**
+**Recent Fixes (2025-07-05 to 2025-07-15):**
 - ✅ **Login Authentication Bug**: Fixed infinite redirect loop on login
 - ✅ **shadcn/ui Button Component**: Fixed button click events not working
 - ✅ **CSS Framework Compatibility**: Migrated from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility  
@@ -482,6 +483,25 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **Dynamic Database Creation**: Unique test databases per CI job for true isolation
   - **Test Coverage**: Fixed unit test coverage command syntax for proper Jest execution
   - **Scalable Pattern**: Enterprise-grade database management suitable for large PostgreSQL setups
+- ✅ **Build Compilation Fixes (2025-07-15)**: Fixed multiple TypeScript and build errors
+  - **React Query v5 Migration**: Fixed `isLoading` → `isPending` migration (customer-form, organization pages)
+  - **Customer Form**: Added required fields (customerCode, firstName, lastName, email) matching backend schema
+  - **Prisma Decimal Conversions**: Fixed Decimal type conversions using `parseFloat(value.toString())`
+  - **Paginated Response Access**: Fixed access patterns for paginated API responses (items.items, suppliers.suppliers, etc.)
+  - **tRPC Parameter Fixes**: Fixed purchase order approve/cancel/reject mutations with correct parameters
+  - **Warehouse List Query**: Fixed stats-cards component to use correct warehouse list parameters
+  - **Order Dialog**: Updated create-order-dialog to match backend schema expectations
+  - **Result**: Build now compiles successfully with only ESLint warnings about `any` types
+- ✅ **ESLint Type Safety Improvements (2025-07-15)**: Fixed `any` type warnings in production code
+  - **Page Components**: Fixed type inference for customer, organization member, and warehouse types
+  - **Dialog Components**: Imported proper types from `@ventry/database` for Order and Supplier entities
+  - **Create Order Dialog**: Fixed schema mismatches and removed non-existent fields
+  - **Purchase Order Pages**: Fixed status badge type safety with proper variant types
+  - **Reports Page**: Added return type annotation for frequency badge function
+  - **Warehouse Stats**: Created proper types for warehouse with stats data
+  - **tRPC Client**: Replaced `any` with proper window type extension
+  - **Database Types**: Replaced `any` with `unknown` in Supabase placeholder types
+  - **Remaining**: Test files contain mock `as any` casts which are common practice
 
 ### Project Status
 

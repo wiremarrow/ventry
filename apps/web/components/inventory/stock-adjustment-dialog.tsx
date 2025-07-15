@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import type { Inventory, Item, Location, Warehouse, Lot } from '@ventry/database';
 import {
   Dialog,
   DialogContent,
@@ -41,10 +41,21 @@ const adjustmentSchema = z.object({
 
 type AdjustmentFormData = z.infer<typeof adjustmentSchema>;
 
+type InventoryWithRelations = Inventory & {
+  item: Item;
+  location: Location & {
+    warehouse: Warehouse;
+  };
+  lot: Lot | null;
+  qtyAvailable: number;
+  lowStock: boolean;
+  expiring: boolean;
+};
+
 interface StockAdjustmentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  inventory: any;
+  inventory: InventoryWithRelations | null;
   onSuccess: () => void;
 }
 

@@ -15,14 +15,14 @@ model Organization {
   name               String
   slug               String               @unique
   domain             String?              @unique
-  logoUrl            String?
+  logoUrl            String?              @map("logo_url")
   settings           Json                 @default("{}")
-  subscriptionTier   String               @default("free")
-  subscriptionStatus String               @default("active")
-  trialEndsAt        DateTime?
-  billingEmail       String?
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  subscriptionTier   String               @default("free") @map("subscription_tier")
+  subscriptionStatus String               @default("active") @map("subscription_status")
+  trialEndsAt        DateTime?            @map("trial_ends_at")
+  billingEmail       String?              @map("billing_email")
+  createdAt          DateTime             @default(now()) @map("created_at")
+  updatedAt          DateTime             @updatedAt @map("updated_at")
   carriers           Carrier[]
   customers          Customer[]
   discounts          Discount[]
@@ -45,13 +45,13 @@ model Organization {
 
 model OrganizationMember {
   id                   String           @id @default(cuid())
-  organizationId       String
-  userId               String
+  organizationId       String           @map("organization_id")
+  userId               String           @map("user_id")
   role                 OrganizationRole @default(MEMBER)
-  joinedAt             DateTime         @default(now())
-  invitedById          String?
-  invitationToken      String?          @unique
-  invitationAcceptedAt DateTime?
+  joinedAt             DateTime         @default(now()) @map("joined_at")
+  invitedById          String?          @map("invited_by_id")
+  invitationToken      String?          @unique @map("invitation_token")
+  invitationAcceptedAt DateTime?        @map("invitation_accepted_at")
   invitedBy            User?            @relation("InvitedMembers", fields: [invitedById], references: [id])
   organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -64,14 +64,14 @@ model User {
   id                     String               @id @default(cuid())
   email                  String               @unique
   username               String               @unique
-  firstName              String
-  lastName               String
+  firstName              String               @map("first_name")
+  lastName               String               @map("last_name")
   password               String
   role                   Role                 @default(USER)
-  isActive               Boolean              @default(true)
-  createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
-  lastLoginAt            DateTime?
+  isActive               Boolean              @default(true) @map("is_active")
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedAt              DateTime             @updatedAt @map("updated_at")
+  lastLoginAt            DateTime?            @map("last_login_at")
   auditLogs              AuditLog[]
   cycleCounts            CycleCount[]
   cycleCountReviews      CycleCount[]         @relation("ReviewedCycleCounts")
@@ -96,14 +96,14 @@ model User {
 
 model Employee {
   id           String         @id @default(cuid())
-  userId       String         @unique
-  hireDate     DateTime
-  hourlyRate   Decimal?
+  userId       String         @unique @map("user_id")
+  hireDate     DateTime       @map("hire_date")
+  hourlyRate   Decimal?       @map("hourly_rate")
   salary       Decimal?
-  managerId    String?
+  managerId    String?        @map("manager_id")
   status       EmployeeStatus @default(ACTIVE)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
   manager      Employee?      @relation("EmployeeManager", fields: [managerId], references: [id])
   subordinates Employee[]     @relation("EmployeeManager")
   user         User           @relation(fields: [userId], references: [id])
@@ -113,10 +113,10 @@ model Employee {
 
 model UserRole {
   id          String   @id @default(cuid())
-  userId      String
-  roleName    String
+  userId      String   @map("user_id")
+  roleName    String   @map("role_name")
   description String?
-  assignedAt  DateTime @default(now())
+  assignedAt  DateTime @default(now()) @map("assigned_at")
   user        User     @relation(fields: [userId], references: [id])
 
   @@map("user_roles")
@@ -124,25 +124,25 @@ model UserRole {
 
 model Item {
   id                  String               @id @default(cuid())
-  organizationId      String
+  organizationId      String               @map("organization_id")
   sku                 String
   upc                 String?
   name                String
   description         String?
-  categoryId          String
-  uomId               String
-  defaultSupplierId   String?
-  defaultCost         Decimal?
-  defaultPrice        Decimal?
-  weightKg            Decimal?
-  lengthCm            Decimal?
-  widthCm             Decimal?
-  heightCm            Decimal?
-  reorderPoint        Int                  @default(0)
-  reorderQty          Int                  @default(0)
-  isActive            Boolean              @default(true)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  categoryId          String               @map("category_id")
+  uomId               String               @map("uom_id")
+  defaultSupplierId   String?              @map("default_supplier_id")
+  defaultCost         Decimal?             @map("default_cost")
+  defaultPrice        Decimal?             @map("default_price")
+  weightKg            Decimal?             @map("weight_kg")
+  lengthCm            Decimal?             @map("length_cm")
+  widthCm             Decimal?             @map("width_cm")
+  heightCm            Decimal?             @map("height_cm")
+  reorderPoint        Int                  @default(0) @map("reorder_point")
+  reorderQty          Int                  @default(0) @map("reorder_qty")
+  isActive            Boolean              @default(true) @map("is_active")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
   cycleCountItems     CycleCountItem[]
   inventory           Inventory[]
   images              ItemImage[]
@@ -169,12 +169,12 @@ model Item {
 
 model ItemCategory {
   id             String         @id @default(cuid())
-  organizationId String
-  parentId       String?
+  organizationId String         @map("organization_id")
+  parentId       String?        @map("parent_id")
   name           String
   description    String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
   organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   parent         ItemCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children       ItemCategory[] @relation("CategoryHierarchy")
@@ -187,11 +187,11 @@ model ItemCategory {
 
 model UnitOfMeasure {
   id                     String       @id @default(cuid())
-  organizationId         String
+  organizationId         String       @map("organization_id")
   code                   String
   description            String
-  isBase                 Boolean      @default(false)
-  conversionFactorToBase Decimal      @default(1)
+  isBase                 Boolean      @default(false) @map("is_base")
+  conversionFactorToBase Decimal      @default(1) @map("conversion_factor_to_base")
   items                  Item[]
   organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -202,11 +202,11 @@ model UnitOfMeasure {
 
 model ItemImage {
   id         String   @id @default(cuid())
-  itemId     String
+  itemId     String   @map("item_id")
   url        String
-  altText    String?
-  isPrimary  Boolean  @default(false)
-  uploadedAt DateTime @default(now())
+  altText    String?  @map("alt_text")
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
   item       Item     @relation(fields: [itemId], references: [id])
 
   @@map("item_images")
@@ -214,18 +214,18 @@ model ItemImage {
 
 model Lot {
   id                  String               @id @default(cuid())
-  itemId              String
-  lotNumber           String               @unique
-  manufactureDate     DateTime?
-  expirationDate      DateTime?
-  receivedDate        DateTime
-  supplierId          String?
-  unitCost            Decimal
-  qtyInitial          Int
-  qtyOnHand           Int
+  itemId              String               @map("item_id")
+  lotNumber           String               @unique @map("lot_number")
+  manufactureDate     DateTime?            @map("manufacture_date")
+  expirationDate      DateTime?            @map("expiration_date")
+  receivedDate        DateTime             @map("received_date")
+  supplierId          String?              @map("supplier_id")
+  unitCost            Decimal              @map("unit_cost")
+  qtyInitial          Int                  @map("qty_initial")
+  qtyOnHand           Int                  @map("qty_on_hand")
   status              LotStatus            @default(AVAILABLE)
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
   cycleCountItems     CycleCountItem[]
   inventory           Inventory[]
   item                Item                 @relation(fields: [itemId], references: [id])
@@ -244,13 +244,13 @@ model Lot {
 
 model SerialNumber {
   id                  String               @id @default(cuid())
-  itemId              String
-  serialNumber        String               @unique
-  lotId               String?
-  purchaseDate        DateTime?
-  warrantyExpiration  DateTime?
+  itemId              String               @map("item_id")
+  serialNumber        String               @unique @map("serial_number")
+  lotId               String?              @map("lot_id")
+  purchaseDate        DateTime?            @map("purchase_date")
+  warrantyExpiration  DateTime?            @map("warranty_expiration")
   status              SerialStatus         @default(AVAILABLE)
-  locationId          String?
+  locationId          String?              @map("location_id")
   inventory           Inventory[]
   orderItems          OrderItem[]
   posTransactionItems POSTransactionItem[]
@@ -266,7 +266,7 @@ model SerialNumber {
 
 model Warehouse {
   id             String       @id @default(cuid())
-  organizationId String
+  organizationId String       @map("organization_id")
   code           String
   name           String
   phone          String?
@@ -274,11 +274,11 @@ model Warehouse {
   line2          String?
   city           String
   state          String
-  postalCode     String
+  postalCode     String       @map("postal_code")
   country        String
   notes          String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
   locations      Location[]
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
@@ -290,15 +290,15 @@ model Warehouse {
 model Location {
   id               String            @id @default(cuid())
   description      String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
   aisle            String?
   bin              String?
   code             String            @unique
-  isTempControlled Boolean           @default(false)
-  maxCapacity      Int?
+  isTempControlled Boolean           @default(false) @map("is_temp_controlled")
+  maxCapacity      Int?              @map("max_capacity")
   shelf            String?
-  warehouseId      String
+  warehouseId      String            @map("warehouse_id")
   zone             String?
   cycleCounts      CycleCount[]
   inventory        Inventory[]
@@ -315,15 +315,15 @@ model Location {
 
 model Inventory {
   id            String        @id @default(cuid())
-  itemId        String
-  lotId         String?
-  serialId      String?
-  locationId    String
-  qtyOnHand     Int           @default(0)
-  qtyReserved   Int           @default(0)
-  qtyInTransit  Int           @default(0)
-  lastCountedAt DateTime?
-  updatedAt     DateTime      @updatedAt
+  itemId        String        @map("item_id")
+  lotId         String?       @map("lot_id")
+  serialId      String?       @map("serial_id")
+  locationId    String        @map("location_id")
+  qtyOnHand     Int           @default(0) @map("qty_on_hand")
+  qtyReserved   Int           @default(0) @map("qty_reserved")
+  qtyInTransit  Int           @default(0) @map("qty_in_transit")
+  lastCountedAt DateTime?     @map("last_counted_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
   item          Item          @relation(fields: [itemId], references: [id])
   location      Location      @relation(fields: [locationId], references: [id])
   lot           Lot?          @relation(fields: [lotId], references: [id])
@@ -335,17 +335,17 @@ model Inventory {
 
 model StockMovement {
   id             String        @id @default(cuid())
-  itemId         String
-  lotId          String?
-  serialId       String?
-  fromLocationId String?
-  toLocationId   String?
+  itemId         String        @map("item_id")
+  lotId          String?       @map("lot_id")
+  serialId       String?       @map("serial_id")
+  fromLocationId String?       @map("from_location_id")
+  toLocationId   String?       @map("to_location_id")
   qty            Int
-  movementType   MovementType
-  refType        String?
-  refId          String?
-  movedById      String
-  movedAt        DateTime      @default(now())
+  movementType   MovementType  @map("movement_type")
+  refType        String?       @map("ref_type")
+  refId          String?       @map("ref_id")
+  movedById      String        @map("moved_by_id")
+  movedAt        DateTime      @default(now()) @map("moved_at")
   notes          String?
   fromLocation   Location?     @relation("FromLocation", fields: [fromLocationId], references: [id])
   item           Item          @relation(fields: [itemId], references: [id])
@@ -359,14 +359,14 @@ model StockMovement {
 
 model StockAdjustment {
   id           String   @id @default(cuid())
-  itemId       String
-  lotId        String?
-  locationId   String
-  qtyBefore    Int
-  qtyAfter     Int
+  itemId       String   @map("item_id")
+  lotId        String?  @map("lot_id")
+  locationId   String   @map("location_id")
+  qtyBefore    Int      @map("qty_before")
+  qtyAfter     Int      @map("qty_after")
   reason       String
-  adjustedById String
-  adjustedAt   DateTime @default(now())
+  adjustedById String   @map("adjusted_by_id")
+  adjustedAt   DateTime @default(now()) @map("adjusted_at")
   notes        String?
   adjustedBy   User     @relation(fields: [adjustedById], references: [id])
   item         Item     @relation(fields: [itemId], references: [id])
@@ -378,10 +378,10 @@ model StockAdjustment {
 
 model CycleCount {
   id           String           @id @default(cuid())
-  locationId   String
-  countDate    DateTime
-  countedById  String
-  reviewedById String?
+  locationId   String           @map("location_id")
+  countDate    DateTime         @map("count_date")
+  countedById  String           @map("counted_by_id")
+  reviewedById String?          @map("reviewed_by_id")
   status       CycleCountStatus @default(PENDING)
   notes        String?
   items        CycleCountItem[]
@@ -394,11 +394,11 @@ model CycleCount {
 
 model CycleCountItem {
   id         String     @id @default(cuid())
-  countId    String
-  itemId     String
-  lotId      String?
-  qtyCounted Int
-  qtySystem  Int
+  countId    String     @map("count_id")
+  itemId     String     @map("item_id")
+  lotId      String?    @map("lot_id")
+  qtyCounted Int        @map("qty_counted")
+  qtySystem  Int        @map("qty_system")
   variance   Int
   count      CycleCount @relation(fields: [countId], references: [id])
   item       Item       @relation(fields: [itemId], references: [id])
@@ -409,12 +409,12 @@ model CycleCountItem {
 
 model PriceHistory {
   id         String    @id @default(cuid())
-  itemId     String
-  priceType  PriceType
+  itemId     String    @map("item_id")
+  priceType  PriceType @map("price_type")
   price      Decimal
-  currencyId String    @default("USD")
-  startDate  DateTime
-  endDate    DateTime?
+  currencyId String    @default("USD") @map("currency_id")
+  startDate  DateTime  @map("start_date")
+  endDate    DateTime? @map("end_date")
   notes      String?
   item       Item      @relation(fields: [itemId], references: [id])
 
@@ -423,24 +423,24 @@ model PriceHistory {
 
 model Supplier {
   id             String            @id @default(cuid())
-  organizationId String
-  supplierCode   String
+  organizationId String            @map("organization_id")
+  supplierCode   String            @map("supplier_code")
   name           String
   phone          String?
   email          String?
   website        String?
-  currencyId     String            @default("USD")
-  paymentTerms   String?
-  leadTimeDays   Int               @default(0)
+  currencyId     String            @default("USD") @map("currency_id")
+  paymentTerms   String?           @map("payment_terms")
+  leadTimeDays   Int               @default(0) @map("lead_time_days")
   line1          String
   line2          String?
   city           String
   state          String
-  postalCode     String
+  postalCode     String            @map("postal_code")
   country        String
   notes          String?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
   addresses      Address[]
   items          Item[]
   lots           Lot[]
@@ -455,9 +455,9 @@ model Supplier {
 
 model SupplierContact {
   id         String   @id @default(cuid())
-  supplierId String
-  firstName  String
-  lastName   String
+  supplierId String   @map("supplier_id")
+  firstName  String   @map("first_name")
+  lastName   String   @map("last_name")
   email      String?
   phone      String?
   role       String?
@@ -469,21 +469,21 @@ model SupplierContact {
 
 model PurchaseOrder {
   id             String              @id @default(cuid())
-  organizationId String
-  supplierId     String
-  poNumber       String
+  organizationId String              @map("organization_id")
+  supplierId     String              @map("supplier_id")
+  poNumber       String              @map("po_number")
   status         POStatus            @default(DRAFT)
-  orderDate      DateTime            @default(now())
-  expectedDate   DateTime?
-  currencyId     String              @default("USD")
+  orderDate      DateTime            @default(now()) @map("order_date")
+  expectedDate   DateTime?           @map("expected_date")
+  currencyId     String              @default("USD") @map("currency_id")
   subtotal       Decimal             @default(0)
   tax            Decimal             @default(0)
   total          Decimal             @default(0)
   notes          String?
-  createdById    String
-  approvedById   String?
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  createdById    String              @map("created_by_id")
+  approvedById   String?             @map("approved_by_id")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
   items          PurchaseOrderItem[]
   approvedBy     User?               @relation("ApprovedPurchaseOrders", fields: [approvedById], references: [id])
   createdBy      User                @relation(fields: [createdById], references: [id])
@@ -498,14 +498,14 @@ model PurchaseOrder {
 
 model PurchaseOrderItem {
   id            String        @id @default(cuid())
-  poId          String
-  itemId        String
+  poId          String        @map("po_id")
+  itemId        String        @map("item_id")
   description   String?
-  qtyOrdered    Int
-  qtyReceived   Int           @default(0)
-  unitCost      Decimal
-  taxRate       Decimal       @default(0)
-  totalCost     Decimal
+  qtyOrdered    Int           @map("qty_ordered")
+  qtyReceived   Int           @default(0) @map("qty_received")
+  unitCost      Decimal       @map("unit_cost")
+  taxRate       Decimal       @default(0) @map("tax_rate")
+  totalCost     Decimal       @map("total_cost")
   item          Item          @relation(fields: [itemId], references: [id])
   purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
 
@@ -514,12 +514,12 @@ model PurchaseOrderItem {
 
 model Receipt {
   id            String         @id @default(cuid())
-  poId          String?
-  receivedDate  DateTime       @default(now())
-  receivedById  String
+  poId          String?        @map("po_id")
+  receivedDate  DateTime       @default(now()) @map("received_date")
+  receivedById  String         @map("received_by_id")
   reference     String?
   notes         String?
-  createdAt     DateTime       @default(now())
+  createdAt     DateTime       @default(now()) @map("created_at")
   items         ReceiptItem[]
   purchaseOrder PurchaseOrder? @relation(fields: [poId], references: [id])
   receivedBy    User           @relation(fields: [receivedById], references: [id])
@@ -529,14 +529,14 @@ model Receipt {
 
 model ReceiptItem {
   id             String    @id @default(cuid())
-  receiptId      String
-  itemId         String
-  lotId          String?
-  serialNumber   String?
-  qtyReceived    Int
-  unitCost       Decimal
-  expirationDate DateTime?
-  locationId     String
+  receiptId      String    @map("receipt_id")
+  itemId         String    @map("item_id")
+  lotId          String?   @map("lot_id")
+  serialNumber   String?   @map("serial_number")
+  qtyReceived    Int       @map("qty_received")
+  unitCost       Decimal   @map("unit_cost")
+  expirationDate DateTime? @map("expiration_date")
+  locationId     String    @map("location_id")
   item           Item      @relation(fields: [itemId], references: [id])
   location       Location  @relation(fields: [locationId], references: [id])
   lot            Lot?      @relation(fields: [lotId], references: [id])
@@ -547,20 +547,20 @@ model ReceiptItem {
 
 model Customer {
   id                  String           @id @default(cuid())
-  organizationId      String
-  customerCode        String
-  companyName         String?
-  firstName           String?
-  lastName            String?
+  organizationId      String           @map("organization_id")
+  customerCode        String           @map("customer_code")
+  companyName         String?          @map("company_name")
+  firstName           String?          @map("first_name")
+  lastName            String?          @map("last_name")
   email               String?
   phone               String?
-  taxId               String?
-  currencyId          String           @default("USD")
-  defaultPaymentTerms String?
-  defaultShipMethodId String?
+  taxId               String?          @map("tax_id")
+  currencyId          String           @default("USD") @map("currency_id")
+  defaultPaymentTerms String?          @map("default_payment_terms")
+  defaultShipMethodId String?          @map("default_ship_method_id")
   website             String?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
   addresses           Address[]
   defaultShipMethod   ShippingMethod?  @relation(fields: [defaultShipMethodId], references: [id])
   organization        Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -575,20 +575,20 @@ model Customer {
 
 model Address {
   id          String      @id @default(cuid())
-  customerId  String?
-  supplierId  String?
-  addressType AddressType
+  customerId  String?     @map("customer_id")
+  supplierId  String?     @map("supplier_id")
+  addressType AddressType @map("address_type")
   line1       String
   line2       String?
   city        String
   state       String
-  postalCode  String
+  postalCode  String      @map("postal_code")
   country     String
   phone       String?
   attention   String?
-  isDefault   Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  isDefault   Boolean     @default(false) @map("is_default")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
   customer    Customer?   @relation(fields: [customerId], references: [id])
   supplier    Supplier?   @relation(fields: [supplierId], references: [id])
 
@@ -597,23 +597,23 @@ model Address {
 
 model Order {
   id                String       @id @default(cuid())
-  organizationId    String
-  customerId        String
-  orderNumber       String
+  organizationId    String       @map("organization_id")
+  customerId        String       @map("customer_id")
+  orderNumber       String       @map("order_number")
   status            OrderStatus  @default(PENDING)
-  orderDate         DateTime     @default(now())
-  requestedShipDate DateTime?
-  currencyId        String       @default("USD")
+  orderDate         DateTime     @default(now()) @map("order_date")
+  requestedShipDate DateTime?    @map("requested_ship_date")
+  currencyId        String       @default("USD") @map("currency_id")
   subtotal          Decimal      @default(0)
-  discountTotal     Decimal      @default(0)
-  taxTotal          Decimal      @default(0)
-  shippingTotal     Decimal      @default(0)
-  grandTotal        Decimal      @default(0)
+  discountTotal     Decimal      @default(0) @map("discount_total")
+  taxTotal          Decimal      @default(0) @map("tax_total")
+  shippingTotal     Decimal      @default(0) @map("shipping_total")
+  grandTotal        Decimal      @default(0) @map("grand_total")
   notes             String?
-  createdById       String
-  updatedById       String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdById       String       @map("created_by_id")
+  updatedById       String?      @map("updated_by_id")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
   items             OrderItem[]
   createdBy         User         @relation("CreatedOrders", fields: [createdById], references: [id])
   customer          Customer     @relation(fields: [customerId], references: [id])
@@ -630,18 +630,18 @@ model Order {
 
 model OrderItem {
   id            String         @id @default(cuid())
-  orderId       String
-  itemId        String
+  orderId       String         @map("order_id")
+  itemId        String         @map("item_id")
   description   String?
-  qtyOrdered    Int
-  qtyAllocated  Int            @default(0)
-  qtyShipped    Int            @default(0)
-  unitPrice     Decimal
-  discountPct   Decimal        @default(0)
-  taxRate       Decimal        @default(0)
-  totalPrice    Decimal
-  lotId         String?
-  serialId      String?
+  qtyOrdered    Int            @map("qty_ordered")
+  qtyAllocated  Int            @default(0) @map("qty_allocated")
+  qtyShipped    Int            @default(0) @map("qty_shipped")
+  unitPrice     Decimal        @map("unit_price")
+  discountPct   Decimal        @default(0) @map("discount_pct")
+  taxRate       Decimal        @default(0) @map("tax_rate")
+  totalPrice    Decimal        @map("total_price")
+  lotId         String?        @map("lot_id")
+  serialId      String?        @map("serial_id")
   item          Item           @relation(fields: [itemId], references: [id])
   lot           Lot?           @relation(fields: [lotId], references: [id])
   order         Order          @relation(fields: [orderId], references: [id])
@@ -654,16 +654,16 @@ model OrderItem {
 
 model Payment {
   id              String        @id @default(cuid())
-  orderId         String
-  paymentMethodId String
+  orderId         String        @map("order_id")
+  paymentMethodId String        @map("payment_method_id")
   amount          Decimal
-  currencyId      String        @default("USD")
-  paymentDate     DateTime      @default(now())
-  transactionRef  String?
+  currencyId      String        @default("USD") @map("currency_id")
+  paymentDate     DateTime      @default(now()) @map("payment_date")
+  transactionRef  String?       @map("transaction_ref")
   status          PaymentStatus @default(PENDING)
-  processedById   String
+  processedById   String        @map("processed_by_id")
   notes           String?
-  createdAt       DateTime      @default(now())
+  createdAt       DateTime      @default(now()) @map("created_at")
   order           Order         @relation(fields: [orderId], references: [id])
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   processedBy     User          @relation(fields: [processedById], references: [id])
@@ -673,14 +673,14 @@ model Payment {
 
 model PaymentMethod {
   id             String       @id @default(cuid())
-  organizationId String
-  methodName     String
+  organizationId String       @map("organization_id")
+  methodName     String       @map("method_name")
   provider       String?
-  acctLast4      String?
-  detailsJson    Json?
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  acctLast4      String?      @map("acct_last4")
+  detailsJson    Json?        @map("details_json")
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   payments       Payment[]
 
@@ -689,22 +689,22 @@ model PaymentMethod {
 
 model Shipment {
   id                    String         @id @default(cuid())
-  organizationId        String
-  orderId               String
-  shipmentNumber        String         @unique
-  carrierId             String?
-  carrierService        String?
-  trackingNumber        String?
-  shipDate              DateTime?
-  expectedDelivery      DateTime?
-  shippedFromLocationId String
-  shippedById           String
+  organizationId        String         @map("organization_id")
+  orderId               String         @map("order_id")
+  shipmentNumber        String         @unique @map("shipment_number")
+  carrierId             String?        @map("carrier_id")
+  carrierService        String?        @map("carrier_service")
+  trackingNumber        String?        @map("tracking_number")
+  shipDate              DateTime?      @map("ship_date")
+  expectedDelivery      DateTime?      @map("expected_delivery")
+  shippedFromLocationId String         @map("shipped_from_location_id")
+  shippedById           String         @map("shipped_by_id")
   status                ShipmentStatus @default(PENDING)
-  weightKg              Decimal?
-  shippingCost          Decimal?
+  weightKg              Decimal?       @map("weight_kg")
+  shippingCost          Decimal?       @map("shipping_cost")
   notes                 String?
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @updatedAt
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
   items                 ShipmentItem[]
   carrier               Carrier?       @relation(fields: [carrierId], references: [id])
   order                 Order          @relation(fields: [orderId], references: [id])
@@ -717,12 +717,12 @@ model Shipment {
 
 model ShipmentItem {
   id           String        @id @default(cuid())
-  shipmentId   String
-  orderItemId  String
-  itemId       String
-  lotId        String?
-  serialId     String?
-  qtyShipped   Int
+  shipmentId   String        @map("shipment_id")
+  orderItemId  String        @map("order_item_id")
+  itemId       String        @map("item_id")
+  lotId        String?       @map("lot_id")
+  serialId     String?       @map("serial_id")
+  qtyShipped   Int           @map("qty_shipped")
   item         Item          @relation(fields: [itemId], references: [id])
   lot          Lot?          @relation(fields: [lotId], references: [id])
   orderItem    OrderItem     @relation(fields: [orderItemId], references: [id])
@@ -734,19 +734,19 @@ model ShipmentItem {
 
 model Return {
   id             String       @id @default(cuid())
-  organizationId String
-  orderId        String?
-  customerId     String
-  returnNumber   String       @unique
+  organizationId String       @map("organization_id")
+  orderId        String?      @map("order_id")
+  customerId     String       @map("customer_id")
+  returnNumber   String       @unique @map("return_number")
   status         ReturnStatus @default(PENDING)
-  returnDate     DateTime     @default(now())
-  rmaNumber      String?
+  returnDate     DateTime     @default(now()) @map("return_date")
+  rmaNumber      String?      @map("rma_number")
   reason         String
-  refundAmount   Decimal      @default(0)
-  restockFee     Decimal      @default(0)
+  refundAmount   Decimal      @default(0) @map("refund_amount")
+  restockFee     Decimal      @default(0) @map("restock_fee")
   notes          String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
   items          ReturnItem[]
   customer       Customer     @relation(fields: [customerId], references: [id])
   order          Order?       @relation(fields: [orderId], references: [id])
@@ -757,14 +757,14 @@ model Return {
 
 model ReturnItem {
   id           String          @id @default(cuid())
-  returnId     String
-  orderItemId  String?
-  itemId       String
-  lotId        String?
-  serialId     String?
-  qtyReturned  Int
+  returnId     String          @map("return_id")
+  orderItemId  String?         @map("order_item_id")
+  itemId       String          @map("item_id")
+  lotId        String?         @map("lot_id")
+  serialId     String?         @map("serial_id")
+  qtyReturned  Int             @map("qty_returned")
   condition    ReturnCondition
-  refundAmount Decimal
+  refundAmount Decimal         @map("refund_amount")
   item         Item            @relation(fields: [itemId], references: [id])
   lot          Lot?            @relation(fields: [lotId], references: [id])
   orderItem    OrderItem?      @relation(fields: [orderItemId], references: [id])
@@ -776,20 +776,20 @@ model ReturnItem {
 
 model POSTransaction {
   id              String               @id @default(cuid())
-  organizationId  String
-  txNumber        String               @unique
-  storeId         String
-  registerId      String
-  employeeId      String
-  customerId      String?
-  txDate          DateTime             @default(now())
+  organizationId  String               @map("organization_id")
+  txNumber        String               @unique @map("tx_number")
+  storeId         String               @map("store_id")
+  registerId      String               @map("register_id")
+  employeeId      String               @map("employee_id")
+  customerId      String?              @map("customer_id")
+  txDate          DateTime             @default(now()) @map("tx_date")
   status          TransactionStatus    @default(COMPLETED)
   subtotal        Decimal              @default(0)
-  taxTotal        Decimal              @default(0)
-  discountTotal   Decimal              @default(0)
-  grandTotal      Decimal              @default(0)
-  paymentReceived Decimal              @default(0)
-  changeGiven     Decimal              @default(0)
+  taxTotal        Decimal              @default(0) @map("tax_total")
+  discountTotal   Decimal              @default(0) @map("discount_total")
+  grandTotal      Decimal              @default(0) @map("grand_total")
+  paymentReceived Decimal              @default(0) @map("payment_received")
+  changeGiven     Decimal              @default(0) @map("change_given")
   notes           String?
   items           POSTransactionItem[]
   customer        Customer?            @relation(fields: [customerId], references: [id])
@@ -801,14 +801,14 @@ model POSTransaction {
 
 model POSTransactionItem {
   id           String         @id @default(cuid())
-  posTxId      String
-  itemId       String
-  lotId        String?
-  serialId     String?
+  posTxId      String         @map("pos_tx_id")
+  itemId       String         @map("item_id")
+  lotId        String?        @map("lot_id")
+  serialId     String?        @map("serial_id")
   qty          Int
-  unitPrice    Decimal
-  discountPct  Decimal        @default(0)
-  totalPrice   Decimal
+  unitPrice    Decimal        @map("unit_price")
+  discountPct  Decimal        @default(0) @map("discount_pct")
+  totalPrice   Decimal        @map("total_price")
   item         Item           @relation(fields: [itemId], references: [id])
   lot          Lot?           @relation(fields: [lotId], references: [id])
   transaction  POSTransaction @relation(fields: [posTxId], references: [id])
@@ -819,19 +819,19 @@ model POSTransactionItem {
 
 model Discount {
   id             String       @id @default(cuid())
-  organizationId String
+  organizationId String       @map("organization_id")
   code           String       @unique
   description    String
-  discountType   DiscountType
+  discountType   DiscountType @map("discount_type")
   value          Decimal
-  startDate      DateTime
-  endDate        DateTime?
-  minOrderValue  Decimal?
-  maxUses        Int?
+  startDate      DateTime     @map("start_date")
+  endDate        DateTime?    @map("end_date")
+  minOrderValue  Decimal?     @map("min_order_value")
+  maxUses        Int?         @map("max_uses")
   uses           Int          @default(0)
-  isActive       Boolean      @default(true)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  isActive       Boolean      @default(true) @map("is_active")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@map("discounts")
@@ -839,11 +839,11 @@ model Discount {
 
 model Carrier {
   id              String           @id @default(cuid())
-  organizationId  String
+  organizationId  String           @map("organization_id")
   name            String           @unique
   phone           String?
   website         String?
-  trackingUrlTpl  String?
+  trackingUrlTpl  String?          @map("tracking_url_tpl")
   organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   shipments       Shipment[]
   shippingMethods ShippingMethod[]
@@ -853,11 +853,11 @@ model Carrier {
 
 model ShippingMethod {
   id             String       @id @default(cuid())
-  organizationId String
-  carrierId      String
-  serviceName    String
-  transitDays    Int          @default(0)
-  baseCost       Decimal      @default(0)
+  organizationId String       @map("organization_id")
+  carrierId      String       @map("carrier_id")
+  serviceName    String       @map("service_name")
+  transitDays    Int          @default(0) @map("transit_days")
+  baseCost       Decimal      @default(0) @map("base_cost")
   customers      Customer[]
   carrier        Carrier      @relation(fields: [carrierId], references: [id])
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -868,13 +868,13 @@ model ShippingMethod {
 model AuditLog {
   id         String      @id @default(cuid())
   action     AuditAction
-  userId     String
-  afterData  Json?
-  beforeData Json?
-  eventTime  DateTime    @default(now())
-  ipAddress  String?
-  recordPk   String
-  tableName  String
+  userId     String      @map("user_id")
+  afterData  Json?       @map("after_data")
+  beforeData Json?       @map("before_data")
+  eventTime  DateTime    @default(now()) @map("event_time")
+  ipAddress  String?     @map("ip_address")
+  recordPk   String      @map("record_pk")
+  tableName  String      @map("table_name")
   user       User        @relation(fields: [userId], references: [id])
 
   @@map("audit_logs")
@@ -882,13 +882,13 @@ model AuditLog {
 
 model Notification {
   id           String    @id @default(cuid())
-  userId       String
-  notifType    String
+  userId       String    @map("user_id")
+  notifType    String    @map("notif_type")
   message      String
-  relatedTable String?
-  relatedId    String?
-  readAt       DateTime?
-  createdAt    DateTime  @default(now())
+  relatedTable String?   @map("related_table")
+  relatedId    String?   @map("related_id")
+  readAt       DateTime? @map("read_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
   user         User      @relation(fields: [userId], references: [id])
 
   @@map("notifications")

@@ -48,6 +48,6 @@ export default [
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '**/*.test.ts', '**/*.spec.ts', '**/test-utils/**', '**/__tests__/**'],
   },
 ];

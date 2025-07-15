@@ -43,3 +43,6 @@ export const appRouter = createTRPCRouter({
 
 // Export type definition of API
 export type AppRouter = typeof appRouter;
+
+// Re-export for better module resolution
+export default appRouter;

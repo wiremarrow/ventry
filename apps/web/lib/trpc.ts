@@ -18,8 +18,8 @@ export const trpcClient = trpc.createClient({
         };
         
         // Add organization ID from global if available
-        if (typeof window !== 'undefined' && (window as any).__organizationId) {
-          headers['x-organization-id'] = (window as any).__organizationId;
+        if (typeof window !== 'undefined' && (window as Window & { __organizationId?: string }).__organizationId) {
+          headers['x-organization-id'] = (window as Window & { __organizationId?: string }).__organizationId;
         }
         
         return fetch(url, { 

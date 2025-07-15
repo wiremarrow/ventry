@@ -198,7 +198,7 @@ export default function OrganizationSettingsPage() {
 
                 {isOwnerOrAdmin && (
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={updateMutation.isLoading}>
+                    <Button type="submit" disabled={updateMutation.isPending}>
                       <Save className="h-4 w-4 mr-2" />
                       Save Changes
                     </Button>

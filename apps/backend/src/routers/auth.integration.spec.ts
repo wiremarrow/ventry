@@ -6,7 +6,20 @@ import { hash } from 'bcryptjs';
 
 describe('Auth Router Integration', () => {
   beforeEach(async () => {
-    // Clean up test data
+    // Clean up test data - handle foreign key constraints
+    const testUsers = await prisma.user.findMany({
+      where: {
+        email: {
+          contains: 'integration.test'
+        }
+      }
+    });
+    
+    for (const user of testUsers) {
+      await prisma.auditLog.deleteMany({ where: { userId: user.id } });
+      await prisma.organizationMember.deleteMany({ where: { userId: user.id } });
+    }
+    
     await prisma.user.deleteMany({
       where: {
         email: {
@@ -14,14 +27,87 @@ describe('Auth Router Integration', () => {
         }
       }
     });
+    
+    // Clean up test organizations too (in case previous test failed)
+    const testOrgs = await prisma.organization.findMany({
+      where: {
+        slug: {
+          startsWith: 'test-org'
+        }
+      }
+    });
+
+    for (const org of testOrgs) {
+      // Delete all related data first
+      await prisma.inventory.deleteMany({ where: { item: { organizationId: org.id } } });
+      await prisma.priceHistory.deleteMany({ where: { item: { organizationId: org.id } } });
+      await prisma.item.deleteMany({ where: { organizationId: org.id } });
+      await prisma.location.deleteMany({ where: { warehouse: { organizationId: org.id } } });
+      await prisma.warehouse.deleteMany({ where: { organizationId: org.id } });
+      await prisma.itemCategory.deleteMany({ where: { organizationId: org.id } });
+      await prisma.unitOfMeasure.deleteMany({ where: { organizationId: org.id } });
+      await prisma.supplier.deleteMany({ where: { organizationId: org.id } });
+      await prisma.customer.deleteMany({ where: { organizationId: org.id } });
+    }
+    
+    await prisma.organization.deleteMany({
+      where: {
+        slug: {
+          startsWith: 'test-org'
+        }
+      }
+    });
   });
 
   afterEach(async () => {
-    // Clean up test data
+    // Clean up test data - handle foreign key constraints
+    const testUsers = await prisma.user.findMany({
+      where: {
+        email: {
+          contains: 'integration.test'
+        }
+      }
+    });
+    
+    for (const user of testUsers) {
+      await prisma.auditLog.deleteMany({ where: { userId: user.id } });
+      await prisma.organizationMember.deleteMany({ where: { userId: user.id } });
+    }
+    
     await prisma.user.deleteMany({
       where: {
         email: {
           contains: 'integration.test'
+        }
+      }
+    });
+
+    // Clean up test organizations and their dependencies
+    const testOrgs = await prisma.organization.findMany({
+      where: {
+        slug: {
+          startsWith: 'test-org'
+        }
+      }
+    });
+
+    for (const org of testOrgs) {
+      // Delete all related data first
+      await prisma.inventory.deleteMany({ where: { item: { organizationId: org.id } } });
+      await prisma.priceHistory.deleteMany({ where: { item: { organizationId: org.id } } });
+      await prisma.item.deleteMany({ where: { organizationId: org.id } });
+      await prisma.location.deleteMany({ where: { warehouse: { organizationId: org.id } } });
+      await prisma.warehouse.deleteMany({ where: { organizationId: org.id } });
+      await prisma.itemCategory.deleteMany({ where: { organizationId: org.id } });
+      await prisma.unitOfMeasure.deleteMany({ where: { organizationId: org.id } });
+      await prisma.supplier.deleteMany({ where: { organizationId: org.id } });
+      await prisma.customer.deleteMany({ where: { organizationId: org.id } });
+    }
+    
+    await prisma.organization.deleteMany({
+      where: {
+        slug: {
+          startsWith: 'test-org'
         }
       }
     });
@@ -90,14 +176,31 @@ describe('Auth Router Integration', () => {
       const ctx = await createIntegrationContext();
       const caller = appRouter.createCaller(ctx);
 
+      // Create test organization
+      const org = await prisma.organization.create({
+        data: {
+          name: 'Test Organization',
+          slug: `test-org-${Date.now()}`,
+        }
+      });
+
       // Create test user
-      await prisma.user.create({
+      const user = await prisma.user.create({
         data: {
           email: 'login@integration.test',
           username: 'loginuser',
           firstName: 'Login',
           lastName: 'User',
           password: await hash('password123', 10),
+        }
+      });
+
+      // Create organization membership
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: org.id,
+          userId: user.id,
+          role: 'MEMBER',
         }
       });
 
@@ -115,14 +218,31 @@ describe('Auth Router Integration', () => {
       const ctx = await createIntegrationContext();
       const caller = appRouter.createCaller(ctx);
 
+      // Create test organization
+      const org = await prisma.organization.create({
+        data: {
+          name: 'Test Organization 2',
+          slug: `test-org-2-${Date.now()}`,
+        }
+      });
+
       // Create test user
-      await prisma.user.create({
+      const user = await prisma.user.create({
         data: {
           email: 'wrongpass@integration.test',
           username: 'wrongpass',
           firstName: 'Wrong',
           lastName: 'Pass',
           password: await hash('correctpassword', 10),
+        }
+      });
+
+      // Create organization membership
+      await prisma.organizationMember.create({
+        data: {
+          organizationId: org.id,
+          userId: user.id,
+          role: 'MEMBER',
         }
       });
 

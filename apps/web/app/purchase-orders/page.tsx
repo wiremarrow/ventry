@@ -23,7 +23,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | ''>('');
 
   // Fetch purchase orders with filtering
   const { data: orders, isLoading, refetch } = trpc.purchaseOrders.list.useQuery({
@@ -86,15 +86,15 @@ export default function PurchaseOrdersPage() {
 
   // Calculate stats
   const stats = {
-    total: orders?.length || 0,
-    draft: orders?.filter(o => o.status === 'DRAFT').length || 0,
-    pending: orders?.filter(o => o.status === 'SUBMITTED').length || 0,
-    approved: orders?.filter(o => o.status === 'APPROVED').length || 0,
-    totalValue: orders?.reduce((sum, o) => sum + parseFloat(o.total.toString()), 0) || 0,
+    total: orders?.purchaseOrders?.length || 0,
+    draft: orders?.purchaseOrders?.filter(o => o.status === 'DRAFT').length || 0,
+    pending: orders?.purchaseOrders?.filter(o => o.status === 'SUBMITTED').length || 0,
+    approved: orders?.purchaseOrders?.filter(o => o.status === 'APPROVED').length || 0,
+    totalValue: orders?.purchaseOrders?.reduce((sum, o) => sum + parseFloat(o.total.toString()), 0) || 0,
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, { variant: 'outline' | 'secondary' | 'default' | 'destructive'; icon: typeof FileText | null }> = {
       DRAFT: { variant: 'outline' as const, icon: FileText },
       SUBMITTED: { variant: 'secondary' as const, icon: null },
       APPROVED: { variant: 'default' as const, icon: CheckCircle },
@@ -176,7 +176,7 @@ export default function PurchaseOrdersPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | '')}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
@@ -217,14 +217,14 @@ export default function PurchaseOrdersPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : orders?.length === 0 ? (
+              ) : orders?.purchaseOrders?.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     <p className="text-muted-foreground">No purchase orders found</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                orders?.map((order) => (
+                orders?.purchaseOrders?.map((order) => (
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">
                       {order.poNumber}
@@ -274,7 +274,7 @@ export default function PurchaseOrdersPage() {
                           {order.status === 'SUBMITTED' && (
                             <>
                               <DropdownMenuItem
-                                onClick={() => approveMutation.mutate({ id: order.id })}
+                                onClick={() => approveMutation.mutate({ poId: order.id, action: 'APPROVE' })}
                                 className="text-green-600"
                               >
                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -304,7 +304,12 @@ export default function PurchaseOrdersPage() {
                           )}
                           {['DRAFT', 'SUBMITTED', 'APPROVED'].includes(order.status) && (
                             <DropdownMenuItem
-                              onClick={() => cancelMutation.mutate({ id: order.id })}
+                              onClick={() => {
+                                const reason = prompt('Please provide a reason for cancellation:');
+                                if (reason) {
+                                  cancelMutation.mutate({ id: order.id, reason });
+                                }
+                              }}
                               className="text-destructive"
                             >
                               Cancel PO

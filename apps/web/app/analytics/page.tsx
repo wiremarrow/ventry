@@ -81,16 +81,24 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState('30');
 
   // Fetch analytics data
+  const period = dateRange === '1' ? 'today' : 
+                 dateRange === '7' ? 'last7days' : 
+                 dateRange === '30' ? 'last30days' : 
+                 dateRange === '90' ? 'last90days' : 'last30days';
+  
   const { data: dashboardData, isLoading: dashboardLoading } = trpc.analytics.dashboard.useQuery({
-    days: parseInt(dateRange),
+    period,
   });
 
   const { data: trendsData, isLoading: trendsLoading } = trpc.analytics.trends.useQuery({
-    days: parseInt(dateRange),
-    metric: 'sales',
+    period,
+    metric: 'revenue',
+    groupBy: 'day',
   });
 
-  const { data: kpisData, isLoading: kpisLoading } = trpc.analytics.kpis.useQuery();
+  const { data: kpisData, isLoading: kpisLoading } = trpc.analytics.kpis.useQuery({
+    period,
+  });
 
   // Loading state
   if (dashboardLoading || trendsLoading || kpisLoading) {
@@ -110,21 +118,16 @@ export default function AnalyticsPage() {
   }
 
   // Prepare chart data
-  const salesTrendData = trendsData?.daily.map(item => ({
-    date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  const salesTrendData = trendsData?.data.map(item => ({
+    date: new Date(item.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     sales: item.value,
   })) || [];
 
-  const categoryData = dashboardData?.categoryBreakdown.map(cat => ({
-    name: cat.name,
-    value: cat.value,
-  })) || [];
+  // TODO: Add categoryBreakdown to analytics API
+  const categoryData = [] as { name: string; value: number }[];
 
-  const topProductsData = dashboardData?.topProducts.slice(0, 10).map(product => ({
-    name: product.name.length > 20 ? product.name.substring(0, 20) + '...' : product.name,
-    quantity: product.quantity,
-    revenue: product.revenue,
-  })) || [];
+  // TODO: Add topProducts to analytics API
+  const topProductsData = [] as { name: string; quantity: number; revenue: number }[];
 
   return (
     <ProtectedRoute>
@@ -154,29 +157,29 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Revenue"
-            value={formatCurrency(dashboardData?.revenue || 0)}
-            change={dashboardData?.revenueChange || 0}
+            value={formatCurrency(dashboardData?.sales.totalRevenue || 0)}
+            change={dashboardData?.sales.change || 0}
             icon={DollarSign}
             loading={dashboardLoading}
           />
           <MetricCard
             title="Orders"
-            value={dashboardData?.orderCount || 0}
-            change={dashboardData?.orderChange || 0}
+            value={dashboardData?.sales.orderCount || 0}
+            change={dashboardData?.sales.change || 0}
             icon={ShoppingCart}
             loading={dashboardLoading}
           />
           <MetricCard
             title="Active Customers"
-            value={dashboardData?.activeCustomers || 0}
-            change={dashboardData?.customerChange || 0}
+            value={dashboardData?.entities.activeCustomers || 0}
+            change={0}
             icon={Users}
             loading={dashboardLoading}
           />
           <MetricCard
             title="Inventory Value"
-            value={formatCurrency(dashboardData?.inventoryValue || 0)}
-            change={dashboardData?.inventoryChange || 0}
+            value={formatCurrency(dashboardData?.inventory.totalValue || 0)}
+            change={0}
             icon={Package}
             loading={dashboardLoading}
           />
@@ -190,10 +193,10 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Inventory Turnover</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-xl font-semibold">{kpisData.inventoryTurnover.toFixed(2)}x</p>
-                  {kpisData.inventoryTurnover > 4 ? (
+                  <p className="text-xl font-semibold">{(kpisData.kpis.inventoryTurnover?.value || 0).toFixed(2)}x</p>
+                  {(kpisData.kpis.inventoryTurnover?.value || 0) > 4 ? (
                     <Badge variant="default" className="text-xs">Good</Badge>
-                  ) : kpisData.inventoryTurnover > 2 ? (
+                  ) : (kpisData.kpis.inventoryTurnover?.value || 0) > 2 ? (
                     <Badge variant="secondary" className="text-xs">Average</Badge>
                   ) : (
                     <Badge variant="destructive" className="text-xs">Low</Badge>
@@ -203,16 +206,16 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Avg Order Value</p>
                 <p className="text-xl font-semibold mt-1">
-                  {formatCurrency(kpisData.averageOrderValue)}
+                  {formatCurrency(kpisData.kpis.averageOrderValue?.value || 0)}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Fulfillment Rate</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-xl font-semibold">{kpisData.fulfillmentRate.toFixed(1)}%</p>
-                  {kpisData.fulfillmentRate > 95 ? (
+                  <p className="text-xl font-semibold">{(kpisData.kpis.orderFulfillmentRate?.value || 0).toFixed(1)}%</p>
+                  {(kpisData.kpis.orderFulfillmentRate?.value || 0) > 95 ? (
                     <Badge variant="default" className="text-xs">Excellent</Badge>
-                  ) : kpisData.fulfillmentRate > 90 ? (
+                  ) : (kpisData.kpis.orderFulfillmentRate?.value || 0) > 90 ? (
                     <Badge variant="secondary" className="text-xs">Good</Badge>
                   ) : (
                     <Badge variant="destructive" className="text-xs">Needs Improvement</Badge>
@@ -257,7 +260,7 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -293,49 +296,49 @@ export default function AnalyticsPage() {
           <Card className="p-6">
             <h3 className="font-semibold mb-4">Alerts & Insights</h3>
             <div className="space-y-4">
-              {dashboardData?.lowStockItems && dashboardData.lowStockItems > 0 && (
+              {dashboardData?.inventory.lowStockItems && dashboardData.inventory.lowStockItems > 0 && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
                   <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm">Low Stock Alert</p>
                     <p className="text-sm text-muted-foreground">
-                      {dashboardData.lowStockItems} items are below reorder point
+                      {dashboardData.inventory.lowStockItems} items are below reorder point
                     </p>
                   </div>
                 </div>
               )}
               
-              {dashboardData?.expiringItems && dashboardData.expiringItems > 0 && (
+              {dashboardData?.inventory.expiringItems && dashboardData.inventory.expiringItems > 0 && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20">
                   <Activity className="h-5 w-5 text-orange-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm">Expiring Items</p>
                     <p className="text-sm text-muted-foreground">
-                      {dashboardData.expiringItems} items expiring within 30 days
+                      {dashboardData.inventory.expiringItems} items expiring within 30 days
                     </p>
                   </div>
                 </div>
               )}
 
-              {trendsData?.trend === 'up' && (
+              {trendsData?.summary?.trend && trendsData.summary.trend > 0 && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
                   <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm">Positive Trend</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales are up {trendsData.percentageChange.toFixed(1)}% compared to previous period
+                      Sales are up {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared to previous period
                     </p>
                   </div>
                 </div>
               )}
 
-              {trendsData?.trend === 'down' && (
+              {trendsData?.summary?.trend && trendsData.summary.trend < 0 && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
                   <TrendingDown className="h-5 w-5 text-red-600 mt-0.5" />
                   <div>
                     <p className="font-medium text-sm">Declining Trend</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales are down {Math.abs(trendsData.percentageChange).toFixed(1)}% compared to previous period
+                      Sales are down {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared to previous period
                     </p>
                   </div>
                 </div>
@@ -344,34 +347,34 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Warehouse Performance */}
-        {dashboardData?.warehousePerformance && (
+        {/* Warehouse Performance - TODO: Add topWarehouses to analytics API */}
+        {/* {dashboardData?.entities.topWarehouses && Array.isArray(dashboardData.entities.topWarehouses) && dashboardData.entities.topWarehouses.length > 0 && (
           <Card className="p-6">
             <h3 className="font-semibold mb-4">Warehouse Performance</h3>
             <div className="space-y-4">
-              {dashboardData.warehousePerformance.map((warehouse) => (
+              {dashboardData.entities.topWarehouses.map((warehouse) => (
                 <div key={warehouse.id} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="font-medium">{warehouse.name}</span>
                     <span className="text-sm text-muted-foreground">
-                      {warehouse.utilizationPercentage.toFixed(0)}% utilized
+                      {((warehouse.qtyOnHand / warehouse.locationCount) * 10).toFixed(0)}% utilized
                     </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
                     <div 
                       className="bg-primary h-2 rounded-full transition-all"
-                      style={{ width: `${warehouse.utilizationPercentage}%` }}
+                      style={{ width: `${(warehouse.qtyOnHand / warehouse.locationCount) * 10}%` }}
                     />
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>{warehouse.itemCount} items</span>
-                    <span>{warehouse.movementCount} movements today</span>
+                    <span>{warehouse.qtyOnHand} items</span>
+                    <span>{warehouse.locationCount} locations</span>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
-        )}
+        )} */}
       </div>
     </ProtectedRoute>
   );

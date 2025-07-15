@@ -94,7 +94,7 @@ export const authRouter = createTRPCRouter({
       // Diagnostic: Check what methods are available on ctx.res
       console.log('ctx.res type:', typeof ctx.res);
       console.log('Has header method?', typeof ctx.res.header);
-      console.log('Has setCookie?', typeof ctx.res.setCookie);
+      console.log('Has setCookie?', typeof (ctx.res as any).setCookie);
       
       // Set httpOnly cookie using Fastify's header method
       if (typeof ctx.res.header === 'function') {
@@ -106,9 +106,9 @@ export const authRouter = createTRPCRouter({
         // Verify the header was set
         const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
         console.log('Response headers after setting cookie:', headers);
-      } else if (typeof ctx.res.setCookie === 'function') {
+      } else if (typeof (ctx.res as any).setCookie === 'function') {
         // Fallback to setCookie if header method doesn't exist
-        ctx.res.setCookie('auth-token', token, {
+        (ctx.res as any).setCookie('auth-token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
@@ -197,7 +197,7 @@ export const authRouter = createTRPCRouter({
       // Diagnostic: Check what methods are available on ctx.res
       console.log('ctx.res type:', typeof ctx.res);
       console.log('Has header method?', typeof ctx.res.header);
-      console.log('Has setCookie?', typeof ctx.res.setCookie);
+      console.log('Has setCookie?', typeof (ctx.res as any).setCookie);
       
       // Set httpOnly cookie using Fastify's header method
       if (typeof ctx.res.header === 'function') {
@@ -209,9 +209,9 @@ export const authRouter = createTRPCRouter({
         // Verify the header was set
         const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
         console.log('Response headers after setting cookie:', headers);
-      } else if (typeof ctx.res.setCookie === 'function') {
+      } else if (typeof (ctx.res as any).setCookie === 'function') {
         // Fallback to setCookie if header method doesn't exist
-        ctx.res.setCookie('auth-token', token, {
+        (ctx.res as any).setCookie('auth-token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',

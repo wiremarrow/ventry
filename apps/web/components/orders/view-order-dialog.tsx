@@ -1,5 +1,6 @@
 'use client';
 
+import type { Order, OrderItem } from '@ventry/database';
 import {
   Dialog,
   DialogContent,
@@ -14,13 +15,12 @@ import {
   User,
   MapPin,
   CreditCard,
-  Calendar,
   FileText,
   Truck,
 } from 'lucide-react';
 
 interface ViewOrderDialogProps {
-  order: any;
+  order: Order | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -61,13 +61,13 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
   };
 
   const calculateSubtotal = () => {
-    return order.items?.reduce((sum: number, item: any) => {
+    return order.items?.reduce((sum: number, item: OrderItem) => {
       return sum + (item.quantity * item.unitPrice);
     }, 0) || 0;
   };
 
   const calculateDiscount = () => {
-    return order.items?.reduce((sum: number, item: any) => {
+    return order.items?.reduce((sum: number, item: OrderItem) => {
       const lineTotal = item.quantity * item.unitPrice;
       return sum + (lineTotal * (item.discountPercentage / 100));
     }, 0) || 0;
@@ -88,7 +88,7 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Status</p>
-              <Badge variant={getStatusColor(order.status) as any} className="mt-1">
+              <Badge variant={getStatusColor(order.status) as 'default' | 'secondary' | 'destructive' | 'warning'} className="mt-1">
                 {order.status}
               </Badge>
             </div>
@@ -149,7 +149,7 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
               Order Items
             </h3>
             <div className="space-y-2">
-              {order.items?.map((item: any) => (
+              {order.items?.map((item: OrderItem) => (
                 <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium">{item.item?.name}</p>

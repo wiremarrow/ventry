@@ -10,6 +10,23 @@ import { Input } from '@ventry/ui';
 import { Plus, Download, Upload, Search, Warehouse, MapPin, Building2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
+// Type for warehouse with stats
+type WarehouseWithStats = {
+  id: string;
+  code: string;
+  name: string;
+  _count?: { locations: number };
+  stats?: {
+    locationCount: number;
+    totalCapacity: number;
+    occupiedLocations: number;
+    inventoryCount: number;
+    totalStock: number;
+    reservedStock: number;
+    utilizationRate: number;
+  };
+};
+
 export default function WarehousesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -21,7 +38,7 @@ export default function WarehousesPage() {
 
   const totalWarehouses = warehousesData?.length || 0;
   const totalLocations = warehousesData?.reduce((sum, warehouse) => sum + (warehouse._count?.locations || 0), 0) || 0;
-  const totalCapacity = warehousesData?.reduce((sum, warehouse) => sum + (warehouse.stats?.totalCapacity || 0), 0) || 0;
+  const totalCapacity = warehousesData?.reduce((sum, warehouse: WarehouseWithStats) => sum + (warehouse.stats?.totalCapacity || 0), 0) || 0;
 
   return (
     <ProtectedRoute>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import type { Order } from '@ventry/database';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -21,7 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@ventry/ui';
-import { Input } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Textarea } from '@ventry/ui';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
@@ -40,7 +40,7 @@ const updateOrderSchema = z.object({
 type UpdateOrderFormData = z.infer<typeof updateOrderSchema>;
 
 interface EditOrderDialogProps {
-  order: any;
+  order: Order | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

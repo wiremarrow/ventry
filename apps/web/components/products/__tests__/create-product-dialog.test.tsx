@@ -326,8 +326,8 @@ describe('CreateProductDialog', () => {
       },
     } as any);
 
-    let onSuccess: any;
-    vi.mocked(trpc.items.create.useMutation).mockImplementation((options: any) => {
+    let onSuccess: (() => void) | undefined;
+    vi.mocked(trpc.items.create.useMutation).mockImplementation((options) => {
       onSuccess = options.onSuccess;
       return {
         mutate: vi.fn(() => {
@@ -362,8 +362,8 @@ describe('CreateProductDialog', () => {
   });
 
   it('handles mutation error', async () => {
-    let onError: any;
-    vi.mocked(trpc.items.create.useMutation).mockImplementation((options: any) => {
+    let onError: ((error: Error) => void) | undefined;
+    vi.mocked(trpc.items.create.useMutation).mockImplementation((options) => {
       onError = options.onError;
       return {
         mutate: vi.fn(() => {

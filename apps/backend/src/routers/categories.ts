@@ -26,7 +26,7 @@ const categoryFilterSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export const categoriesRouter = createTRPCRouter({
+export const categoriesRouter: ReturnType<typeof createTRPCRouter> = createTRPCRouter({
   // List categories with filtering and pagination
   list: organizationProcedure
     .input(categoryFilterSchema)

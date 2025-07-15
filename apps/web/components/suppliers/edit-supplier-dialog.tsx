@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import type { Supplier } from '@ventry/database';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -55,7 +56,7 @@ const updateSupplierSchema = z.object({
 type UpdateSupplierFormData = z.infer<typeof updateSupplierSchema>;
 
 interface EditSupplierDialogProps {
-  supplier: any;
+  supplier: Supplier | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }

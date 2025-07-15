@@ -15,7 +15,6 @@ import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
 import { ChevronLeft, ChevronRight, Package, AlertTriangle } from 'lucide-react';
 import { StockAdjustmentDialog } from './stock-adjustment-dialog';
-import { cn } from '@ventry/ui';
 
 interface InventoryListProps {
   warehouseId: string;
@@ -25,7 +24,7 @@ interface InventoryListProps {
 
 export function InventoryList({ warehouseId, searchTerm, showLowStock }: InventoryListProps) {
   const [page, setPage] = useState(1);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [selectedItem, setSelectedItem] = useState<typeof data?.inventory[0] | null>(null);
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const limit = 20;
 

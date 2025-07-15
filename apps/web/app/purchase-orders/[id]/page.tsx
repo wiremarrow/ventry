@@ -113,7 +113,7 @@ export default function PurchaseOrderDetailPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, { variant: 'outline' | 'secondary' | 'default' | 'destructive'; icon: typeof FileText | null }> = {
       DRAFT: { variant: 'outline' as const, icon: FileText },
       SUBMITTED: { variant: 'secondary' as const, icon: null },
       APPROVED: { variant: 'default' as const, icon: CheckCircle },
@@ -137,6 +137,13 @@ export default function PurchaseOrderDetailPage() {
     const reason = prompt('Please provide a reason for rejection:');
     if (reason) {
       rejectMutation.mutate({ id: order.id, reason });
+    }
+  };
+
+  const handleCancel = () => {
+    const reason = prompt('Please provide a reason for cancellation:');
+    if (reason) {
+      cancelMutation.mutate({ id: order.id, reason });
     }
   };
 
@@ -191,7 +198,7 @@ export default function PurchaseOrderDetailPage() {
             {order.status === 'SUBMITTED' && (
               <>
                 <Button 
-                  onClick={() => approveMutation.mutate({ id: order.id })}
+                  onClick={() => approveMutation.mutate({ poId: order.id, action: 'APPROVE' })}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
@@ -217,7 +224,7 @@ export default function PurchaseOrderDetailPage() {
             {['DRAFT', 'SUBMITTED', 'APPROVED'].includes(order.status) && (
               <Button 
                 variant="outline"
-                onClick={() => cancelMutation.mutate({ id: order.id })}
+                onClick={handleCancel}
               >
                 Cancel PO
               </Button>
@@ -287,15 +294,15 @@ export default function PurchaseOrderDetailPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Subtotal</span>
-                  <span className="font-medium">{formatCurrency(order.subtotal)}</span>
+                  <span className="font-medium">{formatCurrency(parseFloat(order.subtotal.toString()))}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Tax</span>
-                  <span className="font-medium">{formatCurrency(order.tax)}</span>
+                  <span className="font-medium">{formatCurrency(parseFloat(order.tax.toString()))}</span>
                 </div>
                 <div className="flex justify-between text-lg">
                   <span className="font-semibold">Total</span>
-                  <span className="font-bold">{formatCurrency(order.total)}</span>
+                  <span className="font-bold">{formatCurrency(parseFloat(order.total.toString()))}</span>
                 </div>
               </div>
             </div>
@@ -366,9 +373,9 @@ export default function PurchaseOrderDetailPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{formatCurrency(item.unitCost)}</TableCell>
-                  <TableCell>{item.taxRate}%</TableCell>
-                  <TableCell>{formatCurrency(item.totalCost)}</TableCell>
+                  <TableCell>{formatCurrency(parseFloat(item.unitCost.toString()))}</TableCell>
+                  <TableCell>{parseFloat(item.taxRate.toString())}%</TableCell>
+                  <TableCell>{formatCurrency(parseFloat(item.totalCost.toString()))}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -406,7 +413,7 @@ export default function PurchaseOrderDetailPage() {
                   <TableRow key={receipt.id}>
                     <TableCell>{formatDateTime(receipt.receivedDate)}</TableCell>
                     <TableCell>
-                      {receipt.receivedBy.firstName} {receipt.receivedBy.lastName}
+                      -
                     </TableCell>
                     <TableCell>{receipt.reference || '-'}</TableCell>
                     <TableCell>{receipt.items.length} items</TableCell>

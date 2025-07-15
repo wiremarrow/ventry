@@ -14,7 +14,14 @@ vi.mock('@ventry/database', () => {
     },
   };
   
-  return { prisma: mockPrisma };
+  return { 
+    prisma: mockPrisma,
+    OrganizationRole: {
+      OWNER: 'OWNER',
+      ADMIN: 'ADMIN',
+      MEMBER: 'MEMBER'
+    }
+  };
 });
 
 // Access the mocked prisma for tests

@@ -1,18 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createDirectCaller, createIntegrationContext } from '../../test-utils/trpc-test-client.js';
+import { createAuthenticatedIntegrationContext } from '../../test-utils/trpc-test-client.js';
 import { appRouter } from '../app.js';
 import type { User } from '@ventry/database';
 
 describe('Warehouses Router Integration', () => {
-  let caller: ReturnType<typeof createDirectCaller>;
-  let user: User | null;
+  let caller: ReturnType<typeof appRouter.createCaller>;
+  let user: User;
   let organizationId: string;
+  let cleanup: () => Promise<void>;
 
   beforeEach(async () => {
-    const ctx = await createIntegrationContext();
-    caller = appRouter.createCaller(ctx);
-    user = ctx.user;
-    organizationId = ctx.user?.organizationId ?? '';
+    const testContext = await createAuthenticatedIntegrationContext();
+    caller = appRouter.createCaller(testContext.ctx);
+    user = testContext.user;
+    organizationId = testContext.organization.id;
+    cleanup = testContext.cleanup;
+  });
+  
+  afterEach(async () => {
+    await cleanup();
   });
 
   describe('warehouses.list', () => {
@@ -115,8 +121,9 @@ describe('Warehouses Router Integration', () => {
     });
 
     it('should throw error for non-existent warehouse', async () => {
+      const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
       await expect(
-        caller.warehouses.get({ id: 'non-existent-id' })
+        caller.warehouses.get({ id: nonExistentId })
       ).rejects.toThrow('Warehouse not found');
     });
   });
@@ -228,9 +235,10 @@ describe('Warehouses Router Integration', () => {
     });
 
     it('should throw error for non-existent warehouse', async () => {
+      const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
       await expect(
         caller.warehouses.update({
-          id: 'non-existent-id',
+          id: nonExistentId,
           name: 'Updated Name',
           line1: '123 Test St',
           city: 'Test',
@@ -272,8 +280,9 @@ describe('Warehouses Router Integration', () => {
     });
 
     it('should throw error for non-existent warehouse', async () => {
+      const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
       await expect(
-        caller.warehouses.delete({ id: 'non-existent-id' })
+        caller.warehouses.delete({ id: nonExistentId })
       ).rejects.toThrow();
     });
   });
@@ -325,8 +334,9 @@ describe('Warehouses Router Integration', () => {
     });
 
     it('should throw error for non-existent warehouse', async () => {
+      const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
       await expect(
-        caller.warehouses.getStats({ warehouseId: 'non-existent-id' })
+        caller.warehouses.getStats({ warehouseId: nonExistentId })
       ).rejects.toThrow('Warehouse not found');
     });
   });

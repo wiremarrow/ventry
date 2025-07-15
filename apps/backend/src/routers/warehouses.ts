@@ -82,21 +82,55 @@ export const warehousesRouter = createTRPCRouter({
           },
         });
 
-        // Map stats to warehouses
-        const warehousesWithStats = warehouses.map(warehouse => {
+        // Get additional stats for each warehouse
+        const warehousesWithStats = await Promise.all(warehouses.map(async (warehouse) => {
           const stat = stats.find(s => s.warehouseId === warehouse.id);
-          const locationIds = warehouses.find(w => w.id === warehouse.id)?._count.locations || 0;
+          
+          // Get locations with inventory count
+          const locations = await ctx.prisma.location.findMany({
+            where: { warehouseId: warehouse.id },
+            include: {
+              _count: {
+                select: {
+                  inventory: true,
+                },
+              },
+            },
+          });
+          
+          const occupiedLocations = locations.filter(l => l._count.inventory > 0).length;
+          
+          // Get inventory totals
+          const inventoryTotals = await ctx.prisma.inventory.aggregate({
+            where: {
+              location: {
+                warehouseId: warehouse.id,
+              },
+            },
+            _sum: {
+              qtyOnHand: true,
+              qtyReserved: true,
+            },
+            _count: {
+              itemId: true,
+            },
+          });
           
           return {
             ...warehouse,
             stats: {
               locationCount: stat?._count || 0,
               totalCapacity: stat?._sum.maxCapacity || 0,
-              totalItems: 0, // Calculate from inventory stats
-              utilization: 0, // Calculate percentage
+              occupiedLocations,
+              inventoryCount: inventoryTotals._count.itemId || 0,
+              totalStock: inventoryTotals._sum.qtyOnHand || 0,
+              reservedStock: inventoryTotals._sum.qtyReserved || 0,
+              utilizationRate: locations.length > 0 
+                ? Math.round((occupiedLocations / locations.length) * 100)
+                : 0,
             },
           };
-        });
+        }));
 
         return warehousesWithStats;
       }
@@ -577,12 +611,12 @@ export const warehousesRouter = createTRPCRouter({
 
       // Get value statistics
       const inventoryValue = await ctx.prisma.$queryRaw<Array<{ totalValue: number }>>`
-        SELECT SUM(i.qty_on_hand * item.default_cost) as "totalValue"
+        SELECT SUM(i."qty_on_hand" * item."default_cost") as "totalValue"
         FROM inventory i
-        JOIN items item ON i.item_id = item.id
-        JOIN locations l ON i.location_id = l.id
-        WHERE l.warehouse_id = ${input.warehouseId}
-          AND item.default_cost IS NOT NULL
+        JOIN items item ON i."item_id" = item.id
+        JOIN locations l ON i."location_id" = l.id
+        WHERE l."warehouse_id" = ${input.warehouseId}
+          AND item."default_cost" IS NOT NULL
       `;
 
       // Get movement statistics for the last 30 days

@@ -8,6 +8,7 @@ import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger,
 import { Plus, Trash } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
+import type { Customer, Address } from '@ventry/database';
 
 const addressSchema = z.object({
   addressType: z.enum(['BILLING', 'SHIPPING', 'BOTH']),
@@ -23,10 +24,11 @@ const addressSchema = z.object({
 });
 
 const customerSchema = z.object({
+  customerCode: z.string().min(1, 'Customer code is required'),
   companyName: z.string().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().email().optional(),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Valid email is required'),
   phone: z.string().optional(),
   taxId: z.string().optional(),
   currencyId: z.string().default('USD'),
@@ -37,13 +39,29 @@ const customerSchema = z.object({
 
 type CustomerFormData = z.infer<typeof customerSchema>;
 
+// Type for address form data (similar to Address but with required fields for form)
+type AddressFormData = z.infer<typeof addressSchema>;
+
 interface CustomerFormProps {
-  customer?: any;
+  customer?: Customer & { addresses?: Address[] };
   onSuccess: () => void;
 }
 
 export default function CustomerForm({ customer, onSuccess }: CustomerFormProps) {
-  const [addresses, setAddresses] = useState<any[]>(customer?.addresses || []);
+  const [addresses, setAddresses] = useState<AddressFormData[]>(
+    customer?.addresses?.map(addr => ({
+      addressType: addr.addressType,
+      line1: addr.line1,
+      line2: addr.line2 || undefined,
+      city: addr.city,
+      state: addr.state,
+      postalCode: addr.postalCode,
+      country: addr.country,
+      phone: addr.phone || undefined,
+      attention: addr.attention || undefined,
+      isDefault: addr.isDefault,
+    })) || []
+  );
   
   const {
     register,
@@ -54,6 +72,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
+      customerCode: customer?.customerCode || '',
       companyName: customer?.companyName || '',
       firstName: customer?.firstName || '',
       lastName: customer?.lastName || '',
@@ -102,38 +121,40 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
   });
 
   const onSubmit = (data: CustomerFormData) => {
-    const formData = {
-      ...data,
-      addresses,
-    };
+    // Remove addresses from data as they're handled separately
+    const { addresses: _, ...customerData } = data;
 
     if (customer) {
       updateMutation.mutate({
         id: customer.id,
-        ...formData,
+        ...customerData,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(customerData);
     }
   };
 
   const addAddress = () => {
-    const newAddress = {
+    const newAddress: AddressFormData = {
       addressType: 'BOTH',
       line1: '',
-      line2: '',
+      line2: undefined,
       city: '',
       state: '',
       postalCode: '',
       country: 'United States',
-      phone: '',
-      attention: '',
+      phone: undefined,
+      attention: undefined,
       isDefault: addresses.length === 0,
     };
     setAddresses([...addresses, newAddress]);
   };
 
-  const updateAddress = (index: number, field: string, value: any) => {
+  const updateAddress = <K extends keyof AddressFormData>(
+    index: number, 
+    field: K, 
+    value: AddressFormData[K]
+  ) => {
     const updated = [...addresses];
     updated[index] = { ...updated[index], [field]: value };
     setAddresses(updated);
@@ -143,7 +164,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
     setAddresses(addresses.filter((_, i) => i !== index));
   };
 
-  const isLoading = createMutation.isLoading || updateMutation.isLoading;
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -155,7 +176,19 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
 
         <TabsContent value="general" className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
+            <div>
+              <Label htmlFor="customerCode">Customer Code *</Label>
+              <Input
+                id="customerCode"
+                {...register('customerCode')}
+                placeholder="CUST001"
+              />
+              {errors.customerCode && (
+                <p className="text-sm text-destructive mt-1">{errors.customerCode.message}</p>
+              )}
+            </div>
+
+            <div>
               <Label htmlFor="companyName">Company Name</Label>
               <Input
                 id="companyName"
@@ -165,25 +198,31 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
             </div>
 
             <div>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">First Name *</Label>
               <Input
                 id="firstName"
                 {...register('firstName')}
                 placeholder="John"
               />
+              {errors.firstName && (
+                <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">Last Name *</Label>
               <Input
                 id="lastName"
                 {...register('lastName')}
                 placeholder="Doe"
               />
+              {errors.lastName && (
+                <p className="text-sm text-destructive mt-1">{errors.lastName.message}</p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"

@@ -33,7 +33,7 @@ export default function OrganizationMembersPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [selectedMember, setSelectedMember] = useState<typeof members extends Array<infer T> ? T : never | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editRole, setEditRole] = useState<'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
 
@@ -67,7 +67,7 @@ export default function OrganizationMembersPage() {
     },
   });
 
-  const updateRoleMutation = trpc.organizations.updateUserRole.useMutation({
+  const updateRoleMutation = trpc.organizations.updateMemberRole.useMutation({
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -85,7 +85,7 @@ export default function OrganizationMembersPage() {
     },
   });
 
-  const removeMemberMutation = trpc.organizations.removeUser.useMutation({
+  const removeMemberMutation = trpc.organizations.removeMember.useMutation({
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -122,10 +122,10 @@ export default function OrganizationMembersPage() {
     });
   };
 
-  const handleRemoveMember = (member: any) => {
+  const handleRemoveMember = (member: NonNullable<typeof members>[number]) => {
     if (!currentOrganization?.id) return;
 
-    if (confirm(`Are you sure you want to remove ${member.user.name || member.user.email} from the organization?`)) {
+    if (confirm(`Are you sure you want to remove ${`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email} from the organization?`)) {
       removeMemberMutation.mutate({
         organizationId: currentOrganization.id,
         userId: member.userId,
@@ -195,7 +195,7 @@ export default function OrganizationMembersPage() {
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select value={inviteRole} onValueChange={(value: any) => setInviteRole(value)}>
+                    <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')}>
                       <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
@@ -216,7 +216,7 @@ export default function OrganizationMembersPage() {
                   </Button>
                   <Button 
                     onClick={handleInvite} 
-                    disabled={!inviteEmail || inviteMutation.isLoading}
+                    disabled={!inviteEmail || inviteMutation.isPending}
                   >
                     Send Invitation
                   </Button>
@@ -246,19 +246,19 @@ export default function OrganizationMembersPage() {
                         <Users className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{member.user.name || member.user.email}</p>
+                        <p className="font-medium">{`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email}</p>
                         <p className="text-sm text-muted-foreground">{member.user.email}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={roleLabels[member.role].color as any}>
+                    <Badge variant={roleLabels[member.role].color as 'destructive' | 'default' | 'secondary' | 'outline'}>
                       <Shield className="h-3 w-3 mr-1" />
                       {roleLabels[member.role].label}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {member.inviteToken ? (
+                    {member.invitationToken ? (
                       <div className="flex items-center gap-2">
                         <Badge variant="outline">
                           <Mail className="h-3 w-3 mr-1" />
@@ -267,7 +267,7 @@ export default function OrganizationMembersPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => copyInviteLink(member.inviteToken!)}
+                          onClick={() => copyInviteLink(member.invitationToken!)}
                         >
                           <Copy className="h-3 w-3" />
                         </Button>
@@ -280,7 +280,7 @@ export default function OrganizationMembersPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {new Date(member.createdAt).toLocaleDateString()}
+                    {new Date(member.joinedAt).toLocaleDateString()}
                   </TableCell>
                   {isOwnerOrAdmin && (
                     <TableCell>
@@ -296,7 +296,7 @@ export default function OrganizationMembersPage() {
                               <DropdownMenuItem
                                 onClick={() => {
                                   setSelectedMember(member);
-                                  setEditRole(member.role as any);
+                                  setEditRole(member.role as 'ADMIN' | 'MEMBER' | 'VIEWER');
                                   setIsEditDialogOpen(true);
                                 }}
                               >
@@ -329,13 +329,13 @@ export default function OrganizationMembersPage() {
             <DialogHeader>
               <DialogTitle>Change Member Role</DialogTitle>
               <DialogDescription>
-                Update the role for {selectedMember?.user.name || selectedMember?.user.email}
+                Update the role for {selectedMember ? `${selectedMember.user.firstName} ${selectedMember.user.lastName}`.trim() || selectedMember.user.email : ''}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="edit-role">New Role</Label>
-                <Select value={editRole} onValueChange={(value: any) => setEditRole(value)}>
+                <Select value={editRole} onValueChange={(value) => setEditRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -353,7 +353,7 @@ export default function OrganizationMembersPage() {
               </Button>
               <Button 
                 onClick={handleUpdateRole} 
-                disabled={updateRoleMutation.isLoading}
+                disabled={updateRoleMutation.isPending}
               >
                 Update Role
               </Button>

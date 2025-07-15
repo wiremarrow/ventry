@@ -1,4 +1,5 @@
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '@ventry/database';
 import { verifyJWT } from '../auth/jwt.js';
 
@@ -15,10 +16,18 @@ export type AuthenticatedUser = {
   organizationRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'; // Role in current organization
 };
 
+// Type for Fastify request with cookies plugin
+interface FastifyRequestWithCookies extends FastifyRequest {
+  cookies: { [cookieName: string]: string | undefined };
+}
+
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
+  // The cookies plugin adds the cookies property to the request
+  const request = req as FastifyRequestWithCookies;
+  
   // Get token from httpOnly cookie (primary) or Authorization header (fallback)
-  const cookieToken = req.cookies?.['auth-token'];
-  const authorization = req.headers.authorization;
+  const cookieToken = request.cookies['auth-token'];
+  const authorization = request.headers.authorization;
   const headerToken = authorization?.replace('Bearer ', '');
   
   // Prefer cookie token for security, fallback to header for API clients
@@ -45,8 +54,8 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         
         if (foundUser && foundUser.isActive) {
           // Get active organization from header, cookie, or JWT payload
-          const orgId = req.headers['x-organization-id'] as string || 
-                       req.cookies?.['active-organization'] || 
+          const orgId = request.headers['x-organization-id'] as string || 
+                       request.cookies['active-organization'] || 
                        payload.organizationId;
           
           let organizationId: string | undefined;

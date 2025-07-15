@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { protectedProcedure, createTRPCRouter } from '../trpc/trpc.js';
+import { organizationProcedure, createTRPCRouter } from '../trpc/trpc.js';
 import type { Prisma } from '@ventry/database';
 
 // Input validation schemas
@@ -20,7 +20,7 @@ const metricsFilterSchema = z.object({
 
 export const analyticsRouter = createTRPCRouter({
   // Main Dashboard Analytics
-  dashboard: protectedProcedure
+  dashboard: organizationProcedure
     .input(z.object({
       ...timeRangeSchema.shape,
       ...metricsFilterSchema.shape,
@@ -287,7 +287,7 @@ export const analyticsRouter = createTRPCRouter({
     }),
 
   // Sales Trends Analysis
-  trends: protectedProcedure
+  trends: organizationProcedure
     .input(z.object({
       ...timeRangeSchema.shape,
       groupBy: z.enum(['day', 'week', 'month']).default('day'),
@@ -443,7 +443,7 @@ export const analyticsRouter = createTRPCRouter({
     }),
 
   // Key Performance Indicators
-  kpis: protectedProcedure
+  kpis: organizationProcedure
     .input(z.object({
       ...timeRangeSchema.shape,
       kpiTypes: z.array(z.enum([
@@ -707,7 +707,7 @@ export const analyticsRouter = createTRPCRouter({
     }),
 
   // Predictive Analytics
-  predictions: protectedProcedure
+  predictions: organizationProcedure
     .input(z.object({
       predictionType: z.enum(['demand', 'stockout', 'reorder', 'seasonal']),
       horizonDays: z.number().int().min(1).max(365).default(30),
@@ -742,15 +742,15 @@ export const analyticsRouter = createTRPCRouter({
           // Get historical sales with raw query
           const historicalSales = await ctx.prisma.$queryRaw<any[]>`
             SELECT 
-              DATE(o."orderDate") as orderDate,
-              SUM(oi."qtyOrdered") as _sum
-            FROM "OrderItem" oi
-            JOIN "Order" o ON oi."orderId" = o.id
-            WHERE oi."itemId" = ${item.id}
-              AND o."orderDate" >= ${ninetyDaysAgo}
+              DATE(o."order_date") as orderDate,
+              SUM(oi."qty_ordered") as _sum
+            FROM "order_items" oi
+            JOIN "orders" o ON oi."order_id" = o.id
+            WHERE oi."item_id" = ${item.id}
+              AND o."order_date" >= ${ninetyDaysAgo}
               AND o.status IN ('CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED')
-            GROUP BY DATE(o."orderDate")
-            ORDER BY DATE(o."orderDate")
+            GROUP BY DATE(o."order_date")
+            ORDER BY DATE(o."order_date")
           `;
 
           // Simple linear regression for demand prediction
@@ -946,14 +946,14 @@ export const analyticsRouter = createTRPCRouter({
 
           const monthlySales = await ctx.prisma.$queryRaw<any[]>`
             SELECT 
-              EXTRACT(MONTH FROM o."orderDate") as month,
-              SUM(oi."qtyOrdered") as quantity
-            FROM "OrderItem" oi
-            JOIN "Order" o ON oi."orderId" = o.id
-            WHERE oi."itemId" = ${item.id}
-              AND o."orderDate" >= ${oneYearAgo}
+              EXTRACT(MONTH FROM o."order_date") as month,
+              SUM(oi."qty_ordered") as quantity
+            FROM "order_items" oi
+            JOIN "orders" o ON oi."order_id" = o.id
+            WHERE oi."item_id" = ${item.id}
+              AND o."order_date" >= ${oneYearAgo}
               AND o.status IN ('CONFIRMED', 'PICKING', 'SHIPPED', 'DELIVERED')
-            GROUP BY EXTRACT(MONTH FROM o."orderDate")
+            GROUP BY EXTRACT(MONTH FROM o."order_date")
             ORDER BY month
           `;
 
@@ -1027,7 +1027,7 @@ export const analyticsRouter = createTRPCRouter({
     }),
 
   // Anomaly Detection
-  anomalies: protectedProcedure
+  anomalies: organizationProcedure
     .input(z.object({
       anomalyType: z.enum(['price', 'quantity', 'movement', 'pattern']),
       sensitivity: z.enum(['low', 'medium', 'high']).default('medium'),
@@ -1173,14 +1173,14 @@ export const analyticsRouter = createTRPCRouter({
         // Detect unusual movement patterns
         const dailyMovements = await ctx.prisma.$queryRaw<any[]>`
           SELECT 
-            DATE("movedAt") as date,
-            "itemId",
-            "movementType",
+            DATE("moved_at") as date,
+            "item_id",
+            "movement_type",
             COUNT(*) as count,
             SUM(qty) as total_quantity
-          FROM "StockMovement"
-          WHERE "movedAt" >= ${startDate}
-          GROUP BY DATE("movedAt"), "itemId", "movementType"
+          FROM "stock_movements"
+          WHERE "moved_at" >= ${startDate}
+          GROUP BY DATE("moved_at"), "item_id", "movement_type"
         `;
 
         // Analyze patterns
@@ -1382,7 +1382,7 @@ export const analyticsRouter = createTRPCRouter({
   */
 
   // Warehouse Performance Analytics
-  warehouseAnalytics: protectedProcedure
+  warehouseAnalytics: organizationProcedure
     .input(z.object({
       warehouseId: z.string().cuid(),
       ...timeRangeSchema.shape,
@@ -1471,12 +1471,12 @@ export const analyticsRouter = createTRPCRouter({
           i.name,
           COUNT(sm.id) as movement_count,
           SUM(sm.qty) as total_quantity
-        FROM "StockMovement" sm
-        JOIN "Item" i ON sm."itemId" = i.id
-        JOIN "Location" l ON (sm."fromLocationId" = l.id OR sm."toLocationId" = l.id)
-        WHERE l."warehouseId" = ${warehouseId}
-          AND sm."movedAt" >= ${dateFrom}
-          AND sm."movedAt" <= ${dateTo}
+        FROM "stock_movements" sm
+        JOIN "items" i ON sm."item_id" = i.id
+        JOIN "locations" l ON (sm."from_location_id" = l.id OR sm."to_location_id" = l.id)
+        WHERE l."warehouse_id" = ${warehouseId}
+          AND sm."moved_at" >= ${dateFrom}
+          AND sm."moved_at" <= ${dateTo}
         GROUP BY i.id, i.sku, i.name
         ORDER BY movement_count DESC
         LIMIT 10
