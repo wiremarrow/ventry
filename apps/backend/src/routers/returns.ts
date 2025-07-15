@@ -1,7 +1,9 @@
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { organizationProcedure, createTRPCRouter } from '../trpc/trpc.js';
-import { Prisma } from '@ventry/database';
+import { z } from 'zod';
+
+import { createTRPCRouter, organizationProcedure } from '../trpc/trpc.js';
+
+import type { Prisma } from '@ventry/database';
 
 // Input validation schemas
 const returnCreateSchema = z.object({

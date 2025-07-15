@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+
+import { RefreshCw, Settings } from 'lucide-react';
+
+import { Button } from '@ventry/ui';
+
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
-import { ProtectedRoute } from '@/components/auth/protected-route';
-import { Button } from '@ventry/ui';
-import { RefreshCw, Settings } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 export default function DashboardPage() {

@@ -271,6 +271,28 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - [x] Replaced `any` with `unknown` in Supabase placeholder types
 - [x] Test files retain `as any` casts for mocks (standard practice)
 
+✅ **Code Style Standardization Complete (2025-07-15)**:
+- [x] **Import Ordering**: Implemented ESLint-enforced import ordering across entire codebase
+  - React/Next.js → External packages → Workspace → Absolute → Relative → Type imports
+  - Updated ~50 files to follow consistent import patterns
+  - Configured ESLint import/order rule with pathGroups
+- [x] **CLAUDE.md Style Guide**: Added comprehensive CODE STYLE GUIDE section
+  - Import ordering rules with examples
+  - File naming conventions (components, routers, tests)
+  - TypeScript patterns (interfaces for props, type imports)
+  - Component structure patterns
+  - tRPC router patterns
+  - Error handling conventions
+  - Testing patterns
+- [x] **File Standardization**: 
+  - Renamed test files from `.spec.ts` to `.test.ts`
+  - Removed explicit type annotations from tRPC routers
+  - Fixed type-only imports across codebase
+- [x] **Quality Improvements**:
+  - Zero import ordering violations
+  - Consistent code organization
+  - Enhanced readability and maintainability
+
 🚀 **Phase 1.5 Ready**: Next Implementation Phase
 - [ ] Complete remaining UI pages (Orders, Suppliers, Customers)
 - [ ] Implement advanced analytics dashboards with additional charts

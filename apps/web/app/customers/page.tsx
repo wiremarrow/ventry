@@ -1,14 +1,39 @@
 'use client';
 
 import { useState } from 'react';
+
 import { useRouter } from 'next/navigation';
-import { Card, Input, Button, Skeleton, Badge, Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Plus, Search, MoreHorizontal, Pencil, Eye, MapPin } from 'lucide-react';
-import { trpc } from '@/lib/trpc';
-import { toast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils';
-import CustomerForm from '@/components/customers/customer-form';
+
+import { Eye, MapPin, MoreHorizontal, Pencil, Plus, Search } from 'lucide-react';
+
+import {
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Input,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ventry/ui';
+
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import CustomerForm from '@/components/customers/customer-form';
+import { toast } from '@/hooks/use-toast';
+import { trpc } from '@/lib/trpc';
+import { formatCurrency } from '@/lib/utils';
 
 export default function CustomersPage() {
   const router = useRouter();

@@ -1,29 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+
 import { useRouter } from 'next/navigation';
+
+import { Building2, Check, ChevronDown, CreditCard, Plus, Settings, Users } from 'lucide-react';
+
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Button,
   Skeleton
 } from '@ventry/ui';
-import { 
-  Building2, 
-  ChevronDown, 
-  Plus, 
-  Settings,
-  Users,
-  CreditCard,
-  Check
-} from 'lucide-react';
-import { trpc } from '@/lib/trpc';
-import { toast } from '@/hooks/use-toast';
+
 import { useOrganization } from '@/hooks/use-organization';
+import { toast } from '@/hooks/use-toast';
+import { trpc } from '@/lib/trpc';
 
 export default function OrganizationSwitcher() {
   const router = useRouter();

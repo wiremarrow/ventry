@@ -385,6 +385,19 @@ pnpm build
 
 This pattern follows **12-Factor App principles** and ensures seamless operation across development, CI, and production environments.
 
+## 📚 Code Style Guide
+
+### Overview
+Ventry follows strict code style conventions documented in `CLAUDE.md`. All code must adhere to these patterns for consistency and maintainability.
+
+### Key Conventions
+- **Import Ordering**: Enforced by ESLint with specific group ordering
+- **File Naming**: Components use kebab-case, routers use camelCase
+- **TypeScript**: Interfaces for props, proper type imports, no explicit router types
+- **Testing**: Unit tests use `.test.ts`, integration tests use `.integration.test.ts`
+
+For complete style guide, see the "CODE STYLE GUIDE - MANDATORY CONVENTIONS" section in `CLAUDE.md`.
+
 ## 🔧 Technical Configuration
 
 ### Frontend Styling (Tailwind CSS v3.4.0)
@@ -458,6 +471,14 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Development-only debug logging
 
 **Recent Fixes (2025-07-05 to 2025-07-15):**
+- ✅ **Code Style Standardization (2025-07-15)**: Comprehensive codebase standardization
+  - **Import Ordering**: Implemented mandatory import ordering across ~50 files with ESLint enforcement
+  - **Style Guide**: Added comprehensive CODE STYLE GUIDE section to CLAUDE.md
+  - **File Naming**: Standardized test files from `.spec.ts` to `.test.ts`
+  - **Type Safety**: Removed unnecessary type annotations from tRPC routers
+  - **ESLint Rules**: Updated import/order rule with proper pathGroups configuration
+  - **Component Patterns**: Documented component structure, form handling, and error patterns
+  - **Testing Patterns**: Established consistent patterns for unit, integration, and E2E tests
 - ✅ **Login Authentication Bug**: Fixed infinite redirect loop on login
 - ✅ **shadcn/ui Button Component**: Fixed button click events not working
 - ✅ **CSS Framework Compatibility**: Migrated from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility  

@@ -1,7 +1,8 @@
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
-import { protectedProcedure, adminProcedure, createTRPCRouter } from '../trpc/trpc.js';
+import { z } from 'zod';
+
+import { adminProcedure, createTRPCRouter, protectedProcedure } from '../trpc/trpc.js';
 
 const userUpdateSchema = z.object({
   firstName: z.string().optional(),

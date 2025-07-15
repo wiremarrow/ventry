@@ -1,33 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useFieldArray, useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { z } from 'zod';
+
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from '@ventry/ui';
-import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
 } from '@ventry/ui';
-import { Input } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import { Textarea } from '@ventry/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
+
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
-import { Plus, Trash2 } from 'lucide-react';
 
 const orderItemSchema = z.object({
   itemId: z.string().min(1, 'Item is required'),
@@ -68,9 +71,6 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
     isActive: true,
   });
 
-  const { data: warehouses } = trpc.warehouses.list.useQuery({
-    includeInactive: false,
-  });
 
   const createMutation = trpc.orders.create.useMutation({
     onSuccess: () => {

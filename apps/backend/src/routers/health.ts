@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { publicProcedure, createTRPCRouter } from '../trpc/trpc.js';
+
+import { createTRPCRouter, publicProcedure } from '../trpc/trpc.js';
 
 const healthResponseSchema = z.object({
   status: z.string(),

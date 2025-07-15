@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Card, Tabs, TabsContent, TabsList, TabsTrigger } from '@ventry/ui';
 import { Plus, Trash } from 'lucide-react';
-import { trpc } from '@/lib/trpc';
+import { z } from 'zod';
+
+import { Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from '@ventry/ui';
+
 import { toast } from '@/hooks/use-toast';
-import type { Customer, Address } from '@ventry/database';
+import { trpc } from '@/lib/trpc';
+
+import type { Address, Customer } from '@ventry/database';
 
 const addressSchema = z.object({
   addressType: z.enum(['BILLING', 'SHIPPING', 'BOTH']),

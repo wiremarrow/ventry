@@ -1,8 +1,9 @@
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
-import { publicProcedure, createTRPCRouter, protectedProcedure } from '../trpc/trpc.js';
+import { z } from 'zod';
+
 import { signJWT } from '../auth/jwt.js';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc/trpc.js';
 
 const loginSchema = z.object({
   email: z.string().email(),

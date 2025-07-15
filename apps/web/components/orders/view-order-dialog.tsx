@@ -1,23 +1,18 @@
 'use client';
 
-import type { Order, OrderItem } from '@ventry/database';
+import { CreditCard, FileText, MapPin, Package, Truck, User } from 'lucide-react';
+
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@ventry/ui';
-import { Badge } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import {
-  Package,
-  User,
-  MapPin,
-  CreditCard,
-  FileText,
-  Truck,
-} from 'lucide-react';
+
+import type { Order, OrderItem } from '@ventry/database';
 
 interface ViewOrderDialogProps {
   order: Order | null;

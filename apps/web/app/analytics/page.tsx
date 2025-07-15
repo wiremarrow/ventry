@@ -1,37 +1,40 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton, Badge } from '@ventry/ui';
+
 import {
-  LineChart,
-  Line,
-  BarChart,
+  Activity,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  DollarSign,
+  Package,
+  ShoppingCart,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+import {
   Bar,
-  PieChart,
-  Pie,
+  BarChart,
+  CartesianGrid,
   Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
 } from 'recharts';
-import {
-  TrendingUp,
-  TrendingDown,
-  Package,
-  DollarSign,
-  ShoppingCart,
-  Users,
-  AlertTriangle,
-  Activity,
-  ArrowUp,
-  ArrowDown,
-} from 'lucide-react';
+
+import { Badge, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@ventry/ui';
+
+import { ProtectedRoute } from '@/components/auth/protected-route';
 import { trpc } from '@/lib/trpc';
 import { formatCurrency } from '@/lib/utils';
-import { ProtectedRoute } from '@/components/auth/protected-route';
 
 // Chart colors
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];

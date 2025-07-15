@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+
+import { AlertTriangle, ChevronLeft, ChevronRight, Package } from 'lucide-react';
+
+import { Badge, Button, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
+
 import { trpc } from '@/lib/trpc';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@ventry/ui';
-import { Badge } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import { Skeleton } from '@ventry/ui';
-import { ChevronLeft, ChevronRight, Package, AlertTriangle } from 'lucide-react';
+
 import { StockAdjustmentDialog } from './stock-adjustment-dialog';
 
 interface InventoryListProps {
@@ -24,7 +18,7 @@ interface InventoryListProps {
 
 export function InventoryList({ warehouseId, searchTerm, showLowStock }: InventoryListProps) {
   const [page, setPage] = useState(1);
-  const [selectedItem, setSelectedItem] = useState<typeof data?.inventory[0] | null>(null);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const limit = 20;
 

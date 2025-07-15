@@ -1,6 +1,8 @@
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
 import { createTRPCRouter, organizationProcedure } from '../trpc/trpc.js';
+
 import type { ItemCategory } from '@ventry/database';
 
 // Input validation schemas
@@ -26,7 +28,7 @@ const categoryFilterSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
-export const categoriesRouter: ReturnType<typeof createTRPCRouter> = createTRPCRouter({
+export const categoriesRouter = createTRPCRouter({
   // List categories with filtering and pagination
   list: organizationProcedure
     .input(categoryFilterSchema)

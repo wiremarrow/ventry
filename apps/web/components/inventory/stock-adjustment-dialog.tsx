@@ -1,18 +1,19 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
+
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { z } from 'zod';
-import type { Inventory, Item, Location, Warehouse, Lot } from '@ventry/database';
+
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from '@ventry/ui';
-import {
   Form,
   FormControl,
   FormDescription,
@@ -20,16 +21,21 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  Input,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
 } from '@ventry/ui';
-import { Input } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import { Textarea } from '@ventry/ui';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
-import { RadioGroup, RadioGroupItem } from '@ventry/ui';
-import { Label } from '@ventry/ui';
+
 import { trpc } from '@/lib/trpc';
-import { toast } from 'sonner';
-import { Package } from 'lucide-react';
+
+import type { Inventory, Item, Location, Lot, Warehouse } from '@ventry/database';
 
 const adjustmentSchema = z.object({
   type: z.enum(['ADD', 'REMOVE', 'SET']),
