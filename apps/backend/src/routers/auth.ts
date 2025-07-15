@@ -4,6 +4,10 @@ import { z } from 'zod';
 
 import { signJWT } from '../auth/jwt.js';
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc/trpc.js';
+import { createLogger } from '../lib/logger.js';
+import { setCookie, clearCookie, COOKIE_NAMES } from '../lib/cookies.js';
+
+const logger = createLogger('auth');
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -92,38 +96,11 @@ export const authRouter = createTRPCRouter({
         organizationId: membership.organizationId,
       });
 
-      // Diagnostic: Check what methods are available on ctx.res
-      console.log('ctx.res type:', typeof ctx.res);
-      console.log('Has header method?', typeof ctx.res.header);
-      console.log('Has setCookie?', typeof (ctx.res as any).setCookie);
+      // Set authentication cookie
+      setCookie(ctx.res, COOKIE_NAMES.AUTH_TOKEN, token);
       
-      // Set httpOnly cookie using Fastify's header method
-      if (typeof ctx.res.header === 'function') {
-        // Use Fastify's header method to set cookie - no Domain needed for proxy setup
-        const cookieValue = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
-        ctx.res.header('Set-Cookie', cookieValue);
-        console.log('Set cookie using header method (proxied setup)');
-        
-        // Verify the header was set
-        const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
-        console.log('Response headers after setting cookie:', headers);
-      } else if (typeof (ctx.res as any).setCookie === 'function') {
-        // Fallback to setCookie if header method doesn't exist
-        (ctx.res as any).setCookie('auth-token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-          path: '/',
-        });
-        console.log('Set cookie using setCookie method (proxied setup)');
-      } else {
-        console.error('No method available to set cookies on ctx.res!');
-        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(ctx.res)));
-      }
-      
-      // Add logging to verify cookie is being set
-      console.log('Setting auth cookie for user:', user.email);
+      // Log successful authentication
+      logger.info({ userId: user.id, email: user.email }, 'User authenticated successfully');
 
       return {
         success: true,
@@ -195,38 +172,11 @@ export const authRouter = createTRPCRouter({
         role: user.role,
       });
 
-      // Diagnostic: Check what methods are available on ctx.res
-      console.log('ctx.res type:', typeof ctx.res);
-      console.log('Has header method?', typeof ctx.res.header);
-      console.log('Has setCookie?', typeof (ctx.res as any).setCookie);
+      // Set authentication cookie
+      setCookie(ctx.res, COOKIE_NAMES.AUTH_TOKEN, token);
       
-      // Set httpOnly cookie using Fastify's header method
-      if (typeof ctx.res.header === 'function') {
-        // Use Fastify's header method to set cookie - no Domain needed for proxy setup
-        const cookieValue = `auth-token=${token}; HttpOnly; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
-        ctx.res.header('Set-Cookie', cookieValue);
-        console.log('Set cookie using header method (proxied setup)');
-        
-        // Verify the header was set
-        const headers = ctx.res.getHeaders ? ctx.res.getHeaders() : 'No getHeaders method';
-        console.log('Response headers after setting cookie:', headers);
-      } else if (typeof (ctx.res as any).setCookie === 'function') {
-        // Fallback to setCookie if header method doesn't exist
-        (ctx.res as any).setCookie('auth-token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-          path: '/',
-        });
-        console.log('Set cookie using setCookie method (proxied setup)');
-      } else {
-        console.error('No method available to set cookies on ctx.res!');
-        console.log('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(ctx.res)));
-      }
-      
-      // Add logging to verify cookie is being set
-      console.log('Setting auth cookie for user:', user.email);
+      // Log successful authentication
+      logger.info({ userId: user.id, email: user.email }, 'User authenticated successfully');
 
       return {
         success: true,
@@ -251,7 +201,12 @@ export const authRouter = createTRPCRouter({
 
   logout: publicProcedure
     .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ ctx: _ctx }) => {
+    .mutation(async ({ ctx }) => {
+      // Clear authentication cookie
+      clearCookie(ctx.res, COOKIE_NAMES.AUTH_TOKEN);
+      
+      logger.info({ userId: ctx.user?.id }, 'User logged out');
+      
       return { 
         success: true
       };

@@ -1,7 +1,11 @@
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '@ventry/database';
+import { prisma as basePrisma } from '@ventry/database';
 import { verifyJWT } from '../auth/jwt.js';
+import { createRLSProxy, type RLSContext } from '../lib/rls-middleware.js';
+import { createLogger } from '../lib/logger.js';
+
+const logger = createLogger('trpc-context');
 
 export type AuthenticatedUser = {
   id: string;
@@ -34,11 +38,14 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
   const token = cookieToken || headerToken;
   
   let user: AuthenticatedUser | null = null;
+  let rlsContext: RLSContext = { bypassRLS: true }; // Default to bypass for non-authenticated requests
+  
   if (token) {
     try {
       const payload = verifyJWT(token);
       if (payload && payload.userId) {
-        const foundUser = await prisma.user.findUnique({
+        // Use base prisma for auth queries (bypass RLS)
+        const foundUser = await basePrisma.user.findUnique({
           where: { id: payload.userId },
           select: {
             id: true,
@@ -62,8 +69,8 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
           let organizationRole: AuthenticatedUser['organizationRole'] | undefined;
           
           if (orgId) {
-            // Verify user has access to this organization
-            const membership = await prisma.organizationMember.findUnique({
+            // Verify user has access to this organization (bypass RLS for this check)
+            const membership = await basePrisma.organizationMember.findUnique({
               where: {
                 organizationId_userId: {
                   organizationId: orgId,
@@ -75,6 +82,19 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
             if (membership) {
               organizationId = orgId;
               organizationRole = membership.role as AuthenticatedUser['organizationRole'];
+              
+              // Set RLS context
+              rlsContext = {
+                userId: foundUser.id,
+                organizationId: orgId,
+                bypassRLS: false,
+              };
+              
+              logger.debug({
+                userId: foundUser.id,
+                organizationId: orgId,
+                organizationRole: membership.role,
+              }, 'RLS context configured for authenticated user');
             }
           }
           
@@ -88,14 +108,19 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
       }
     } catch (error) {
       // Token invalid, user remains null
+      logger.warn({ error }, 'Invalid token in request');
     }
   }
+
+  // Create RLS-enabled Prisma client
+  const prisma = createRLSProxy(basePrisma, () => rlsContext);
 
   return {
     req,
     res,
     user,
     prisma,
+    organizationId: user?.organizationId, // Convenience property for routers
   };
 }
 

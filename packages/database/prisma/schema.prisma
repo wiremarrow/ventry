@@ -57,6 +57,8 @@ model OrganizationMember {
   user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([organizationId, userId])
+  @@index([userId])
+  @@index([organizationId, userId])
   @@map("organization_members")
 }
 
@@ -330,6 +332,8 @@ model Inventory {
   serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
 
   @@unique([itemId, lotId, serialId, locationId])
+  @@index([itemId])
+  @@index([locationId])
   @@map("inventory")
 }
 

@@ -9,12 +9,16 @@ import cookie from '@fastify/cookie';
 import { fastifyTRPCPlugin, FastifyTRPCPluginOptions } from '@trpc/server/adapters/fastify';
 import { createContext } from './trpc/context.js';
 import { appRouter, type AppRouter } from './routers/app.js';
+import { env, isProduction } from './config/env.js';
+import { createLogger } from './lib/logger.js';
+
+const logger = createLogger('server');
 
 // Create Fastify instance
 const server = Fastify({
   logger: {
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-    transport: process.env.NODE_ENV === 'development' 
+    level: env.LOG_LEVEL,
+    transport: !isProduction 
       ? {
           target: 'pino-pretty',
           options: {
@@ -29,7 +33,7 @@ const server = Fastify({
 
 // Register plugins
 await server.register(cors, {
-  origin: process.env.FRONTEND_URL || 'http://localhost:6061',
+  origin: env.FRONTEND_URL,
   credentials: true,
 });
 
@@ -49,7 +53,7 @@ await server.register(websocket);
 
 // Register cookie plugin for authentication
 await server.register(cookie, {
-  secret: process.env.COOKIE_SECRET || 'ventry-cookie-secret', // Change in production
+  secret: env.COOKIE_SECRET,
   parseOptions: {},
 });
 
@@ -60,17 +64,14 @@ await server.register(fastifyTRPCPlugin, {
     router: appRouter,
     createContext,
     onError({ path, error }) {
-      // Log all tRPC errors for debugging (not just production)
-      console.error(`❌ tRPC Error on path '${path}':`, {
-        message: error.message,
+      // Log tRPC errors with structured logging
+      logger.error({
+        path,
         code: error.code,
+        message: error.message,
         cause: error.cause,
-        stack: error.stack,
-      });
-      
-      // Log the full error details
-      console.error('Full error object:', error);
-      console.error('Error stack:', error.stack);
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      }, `tRPC Error on path '${path}'`);
     },
   } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });
@@ -97,18 +98,18 @@ server.get('/', async (_request, _reply) => {
 // Start server
 const start = async () => {
   try {
-    const port = parseInt(process.env.PORT || '6060', 10);
+    const port = parseInt(env.PORT, 10);
     const host = process.env.HOST || '0.0.0.0';
     
     await server.listen({ port, host });
     
-    console.log(`
-🚀 Ventry tRPC Server running on Fastify
-📍 URL: http://localhost:${port}
-🔌 tRPC: http://localhost:${port}/trpc
-🏥 Health: http://localhost:${port}/health
-🌍 Environment: ${process.env.NODE_ENV || 'development'}
-    `);
+    logger.info({
+      port,
+      host,
+      trpcEndpoint: `http://localhost:${port}/trpc`,
+      healthEndpoint: `http://localhost:${port}/health`,
+      environment: env.NODE_ENV,
+    }, `Ventry tRPC Server started successfully`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);
@@ -119,7 +120,7 @@ const start = async () => {
 const signals = ['SIGINT', 'SIGTERM'];
 signals.forEach((signal) => {
   process.on(signal, async () => {
-    console.log(`\n${signal} received, shutting down gracefully...`);
+    logger.info({ signal }, 'Shutdown signal received, closing server gracefully');
     await server.close();
     process.exit(0);
   });

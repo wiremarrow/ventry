@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+const JWT_SECRET = env.JWT_SECRET;
+const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
 
 export interface JWTPayload {
   userId: string;

@@ -4,6 +4,24 @@
 
 Ventry is an ambitious AI-native inventory management system designed to revolutionize how businesses handle stock management through autonomous agents, real-time analytics, and conversational interfaces. The system prioritizes intelligent automation over manual data entry, featuring rich autonomous agents that proactively manage inventory decisions.
 
+## 🔒 Production Readiness Status
+
+**Current Status**: 🟡 In Development - Enterprise RLS Implementation Complete  
+**Production Readiness**: 7/10  
+**Full Audit Report**: [Production Readiness Audit](./docs/PRODUCTION_READINESS_AUDIT.md)
+
+Recent security improvements include enterprise-grade Row-Level Security (RLS) implementation with PostgreSQL SECURITY DEFINER functions, preventing SQL injection at the database level. The lean implementation follows enterprise best practices while maintaining simplicity.
+
+**✅ Enterprise RLS Features**:
+- SECURITY DEFINER functions validate inputs at database level
+- Transaction-scoped session variables (connection pool safe)
+- One canonical pattern: `withRLS()` wrapper
+- RLS policies on all 26 tenant-scoped tables
+- pgTAP test ensures no table ships without RLS
+- [RLS Guide](./docs/RLS_GUIDE.md) | [Implementation Summary](./docs/RLS_IMPLEMENTATION_SUMMARY.md)
+
+**⚠️ CRITICAL**: Test coverage for business logic remains at 10%. See the comprehensive audit for remaining tasks before production deployment.
+
 ## 🏗️ Architecture Overview
 
 ### Monorepo Structure
