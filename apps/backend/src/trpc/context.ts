@@ -8,7 +8,7 @@ export type AuthenticatedUser = {
   username: string;
   firstName: string;
   lastName: string;
-  role: 'ADMIN' | 'MANAGER' | 'USER' | 'WAREHOUSE' | 'SALES';
+  role: 'ADMIN' | 'MANAGER' | 'USER' | 'EMPLOYEE' | 'WAREHOUSE' | 'SALES';
   isActive: boolean;
   createdAt: string; // ISO date string for JSON serialization
   organizationId?: string; // Current active organization
