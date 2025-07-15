@@ -39,8 +39,8 @@ ventry/
     - ✅ **Inventory Page**: Full tRPC integration with stock adjustments and filtering
     - ✅ **Products Page**: Complete CRUD operations with comprehensive form validation
     - ✅ **Warehouses Page**: Complete location hierarchy and warehouse management UI
+    - ✅ **Analytics Dashboard**: **Live data integration with auto-refresh** - Real-time metrics and charts connected to tRPC analytics endpoints
     - **Orders, Suppliers, Customers, Purchase Orders**: Planned for Phase 2-3
-    - **Analytics Dashboard**: Real-time metrics and charts
   - **Shared UI**: Enhanced with Select, Textarea, Switch, Skeleton, DropdownMenu, RadioGroup, Tabs components and Recharts integration
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: **Vitest** with component testing for all UI components
@@ -134,10 +134,13 @@ export const agentsRouter = createTRPCRouter({
 - **Suppliers**: Contact management, lead times, pricing
 
 ### 2. Real-time Stock Dashboard
-- **Current Levels**: Live stock quantities across all locations
-- **Low Stock Alerts**: Configurable thresholds with urgency levels
-- **Movement Tracking**: Recent transactions, trend analysis
-- **Performance Metrics**: Turnover rates, stock accuracy, fill rates
+- **Live Analytics Integration**: Real-time data from tRPC analytics endpoints with auto-refresh
+- **Current Levels**: Live stock quantities across all locations with 30-second updates
+- **Low Stock Alerts**: Configurable thresholds with urgency levels and real-time monitoring
+- **Movement Tracking**: Recent transactions, trend analysis with live data feeds
+- **Performance Metrics**: Turnover rates, stock accuracy, fill rates with automatic updates
+- **System Health Monitoring**: Real-time API and database status with connection monitoring
+- **User Controls**: Manual refresh and auto-refresh toggle for customized experience
 
 ### 3. AI-Powered Insights
 - **Predictive Analytics**: Demand forecasting, seasonal adjustments
@@ -256,6 +259,7 @@ app/
 - **Comprehensive testing** with 253 unit tests, 20 integration tests, and 135 E2E tests
 - **Production-ready authentication** with JWT and role-based access control
 - **Scalable database design** supporting multi-warehouse inventory management
+- **Live Dashboard Integration** with real-time analytics, auto-refresh, and system monitoring
 - **Real-time ready** with planned Supabase integration
 
 ## 🏗️ tRPC Architecture Details
@@ -321,9 +325,10 @@ pnpm dev
 # Demo Credentials (after running db:seed-comprehensive):
 # Admin: admin@ventry.com / password123
 # Manager: manager@ventry.com / password123
-# User: user@ventry.com / password123
-# Warehouse: warehouse@ventry.com / password123
+# Employee: employee@ventry.com / password123 (limited dashboard + products access)
+# User: user@ventry.com / password123 (no organization access - demonstrates multi-tenant boundary)
 # Note: All demo accounts use the same password: password123
+# Note: Dashboard displays live analytics data with 30-second auto-refresh
 ```
 
 ### Supabase Migration Setup (Optional - Phase 2)

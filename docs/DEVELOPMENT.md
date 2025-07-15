@@ -75,7 +75,8 @@ pnpm --filter @ventry/web dev
 |---------|-------------|
 | `pnpm --filter @ventry/database db:push` | Push schema changes to database |
 | `pnpm --filter @ventry/database db:migrate` | Run database migrations |
-| `pnpm --filter @ventry/database db:seed` | Seed database with test data (**Required for first-time setup** - Creates demo users: admin@ventry.com/password123, manager@ventry.com/password123, user@ventry.com/password123) |
+| `pnpm --filter @ventry/database db:seed` | Seed database with test data (**Required for first-time setup** - Creates demo users: admin@ventry.com/password123, manager@ventry.com/password123, employee@ventry.com/password123, user@ventry.com/password123) |
+| `pnpm --filter @ventry/database db:seed:comprehensive` | Comprehensive seeding with full demo data including analytics for dashboard testing |
 | `./tools/scripts/reset-db.sh` | Reset database (WARNING: Deletes all data) |
 | `./tools/scripts/backup-db.sh` | Create database backup |
 
@@ -240,6 +241,76 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
 Access pgAdmin at http://localhost:5050:
 - Email: `admin@ventry.local`
 - Password: `pgadmin_dev_password`
+
+## Dashboard Development
+
+### Live Data Integration
+
+The dashboard is connected to live backend analytics data with auto-refresh functionality. Here's how to work with it:
+
+#### Testing Dashboard Features
+
+```bash
+# Ensure comprehensive data is seeded for meaningful dashboard display
+pnpm --filter @ventry/database db:seed:comprehensive
+
+# Start development servers
+pnpm dev
+
+# Login with demo credentials to test dashboard:
+# - admin@ventry.com/password123 (full access)
+# - manager@ventry.com/password123 (full access)  
+# - employee@ventry.com/password123 (dashboard + products only)
+# - user@ventry.com/password123 (no organization access - shows multi-tenant boundary)
+```
+
+#### Dashboard Analytics Endpoints
+
+The dashboard uses these tRPC endpoints for live data:
+
+- **`trpc.analytics.dashboard.useQuery()`** - Main analytics data (inventory metrics, operations)
+- **`trpc.warehouses.list.useQuery()`** - Warehouse and location counts
+- **`trpc.health.check.useQuery()`** - System health and API status
+
+#### Auto-Refresh Implementation
+
+```typescript
+// StatsCards component with auto-refresh
+const { data: analytics, isLoading, error } = trpc.analytics.dashboard.useQuery({
+  period: 'last30days',
+  includeAllWarehouses: true,
+}, {
+  refetchInterval: refreshInterval, // 30 seconds by default
+  refetchIntervalInBackground: true,
+});
+```
+
+#### Development Tips
+
+1. **Mock vs Live Data**: Dashboard now uses live data - ensure database is seeded
+2. **Auto-refresh Testing**: Use browser dev tools Network tab to verify 30-second refresh cycles
+3. **Performance**: Monitor query performance with large datasets
+4. **Error States**: Test with backend stopped to verify error handling
+5. **Loading States**: Test with slow network to verify loading indicators
+
+#### Dashboard Component Structure
+
+```
+apps/web/
+├── app/dashboard/page.tsx           # Main dashboard page with auto-refresh controls
+├── components/dashboard/
+│   ├── stats-cards.tsx             # Live analytics cards with auto-refresh
+│   └── [future dashboard components]
+```
+
+#### Extending Dashboard
+
+To add new dashboard features:
+
+1. **New Analytics Endpoints**: Add to `apps/backend/src/routers/analytics.ts`
+2. **New Dashboard Cards**: Follow `StatsCards` pattern with auto-refresh
+3. **Real-time Data**: Use `refetchInterval` for live updates
+4. **Error Handling**: Always include loading states and error boundaries
 
 ## Known Issues & Technical Decisions
 

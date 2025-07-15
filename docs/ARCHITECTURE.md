@@ -17,6 +17,8 @@ graph TB
         AUTH[Auth Router]
         USERS[Users Router]
         PRODUCTS[Products Router]
+        ANALYTICS[Analytics Router<br/>Live Dashboard Data]
+        HEALTH[Health Router<br/>System Monitoring]
         AGENTS[AI Agents<br/>(Future)]
     end
     
@@ -94,6 +96,141 @@ graph TB
 - Role-based access control (RBAC)
 - API rate limiting
 - Audit logging for all operations
+
+## Dashboard Data Flow Architecture
+
+The dashboard implements a real-time data architecture using tRPC with auto-refresh functionality for live inventory insights.
+
+### Data Flow Diagram
+
+```mermaid
+graph TD
+    subgraph "Frontend Dashboard"
+        DC[Dashboard Page]
+        SC[StatsCards Component]
+        AC[Auto-refresh Controls]
+    end
+    
+    subgraph "tRPC Client Layer"
+        AQ[analytics.dashboard.useQuery]
+        WQ[warehouses.list.useQuery]
+        HQ[health.check.useQuery]
+        RQ[React Query Cache]
+    end
+    
+    subgraph "Backend tRPC Routers"
+        AR[Analytics Router]
+        WR[Warehouses Router]
+        HR[Health Router]
+    end
+    
+    subgraph "Data Sources"
+        DB[(PostgreSQL)]
+        SYS[System Health]
+    end
+    
+    DC --> AC
+    DC --> SC
+    SC --> AQ
+    SC --> WQ
+    DC --> HQ
+    
+    AQ --> RQ
+    WQ --> RQ
+    HQ --> RQ
+    
+    RQ --> AR
+    RQ --> WR
+    RQ --> HR
+    
+    AR --> DB
+    WR --> DB
+    HR --> SYS
+    HR --> DB
+    
+    classDef frontend fill:#e1f5fe
+    classDef trpc fill:#f3e5f5
+    classDef backend fill:#e8f5e8
+    classDef data fill:#fff3e0
+    
+    class DC,SC,AC frontend
+    class AQ,WQ,HQ,RQ trpc
+    class AR,WR,HR backend
+    class DB,SYS data
+```
+
+### Auto-Refresh Implementation
+
+#### Component Level Auto-Refresh
+
+```typescript
+// StatsCards Component Pattern
+export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps) {
+  const { data: analytics, isLoading, error } = trpc.analytics.dashboard.useQuery({
+    period: 'last30days',
+    includeAllWarehouses: true,
+  }, {
+    refetchInterval: refreshInterval,        // 30-second intervals
+    refetchIntervalInBackground: true,       // Continue when tab inactive
+  });
+}
+```
+
+#### Page Level Controls
+
+```typescript
+// Dashboard Page Auto-Refresh Controls
+export default function DashboardPage() {
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const refreshInterval = 30000;
+  
+  // Health monitoring with auto-refresh
+  const { data: health, refetch: refetchHealth } = trpc.health.check.useQuery(undefined, {
+    refetchInterval: autoRefresh ? refreshInterval : false,
+    refetchIntervalInBackground: true,
+  });
+}
+```
+
+### Data Sources and Endpoints
+
+#### Analytics Router Endpoints
+- **`analytics.dashboard`**: Main inventory metrics, operations data
+- **Input**: `{ period, includeAllWarehouses, warehouseIds?, categoryIds? }`
+- **Output**: Inventory totals, operations counts, low stock alerts
+
+#### Warehouses Router Endpoints  
+- **`warehouses.list`**: Warehouse and location counts
+- **Input**: `{ search, limit, includeLocationCount }`
+- **Output**: Warehouse data with location counts for dashboard cards
+
+#### Health Router Endpoints
+- **`health.check`**: System status monitoring
+- **Input**: None
+- **Output**: API status, database connection, environment info, timestamps
+
+### Performance Considerations
+
+#### Query Optimization
+- **Parallel Queries**: Multiple tRPC queries execute concurrently
+- **Background Refresh**: Queries continue when browser tab inactive
+- **Caching**: React Query provides automatic caching and deduplication
+- **Selective Updates**: Only changed data triggers re-renders
+
+#### User Experience
+- **Manual Override**: Users can manually trigger refresh
+- **Toggle Controls**: Auto-refresh can be disabled per user preference
+- **Loading States**: Skeleton loaders during initial load
+- **Error Boundaries**: Graceful degradation when endpoints fail
+
+### Extending Dashboard
+
+To add new real-time dashboard features:
+
+1. **Backend**: Add new analytics procedures to `analytics.ts` router
+2. **Frontend**: Create components following `StatsCards` auto-refresh pattern
+3. **Data Flow**: Use `refetchInterval` for live updates
+4. **Performance**: Consider query performance impact with large datasets
 
 ## Module Architecture
 
