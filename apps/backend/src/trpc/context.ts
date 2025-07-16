@@ -1,9 +1,12 @@
 import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma as basePrisma } from '@ventry/database';
-import { verifyJWT } from '../auth/jwt.js';
+import { verifyJwt } from '../auth/jwt.js';
 import { createRLSProxy, type RLSContext } from '../lib/rls-middleware.js';
 import { createLogger } from '../lib/logger.js';
+import { getRawToken } from '../lib/auth/token-extractor.js';
+import { RLS_BYPASS_REASONS } from '../lib/auth/constants.js';
+import { AuthError } from '../lib/auth/auth-error.js';
 
 const logger = createLogger('trpc-context');
 
@@ -23,33 +26,47 @@ export type AuthenticatedUser = {
 // Type for Fastify request with cookies plugin
 interface FastifyRequestWithCookies extends FastifyRequest {
   cookies: { [cookieName: string]: string | undefined };
+  unsignCookie: (value: string) => { valid: boolean; value: string | null };
+}
+
+/**
+ * Safely extract organization ID from signed cookie
+ */
+function getOrganizationFromCookie(request: FastifyRequestWithCookies): string | undefined {
+  try {
+    const orgCookie = request.cookies['active-organization'];
+    if (!orgCookie) return undefined;
+    
+    const unsigned = request.unsignCookie(orgCookie);
+    return unsigned.valid ? unsigned.value || undefined : undefined;
+  } catch (error) {
+    logger.warn({ error }, 'Failed to unsign organization cookie');
+    return undefined;
+  }
 }
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {
   // The cookies plugin adds the cookies property to the request
   const request = req as FastifyRequestWithCookies;
   
-  // Get token from httpOnly cookie (primary) or Authorization header (fallback)
-  const cookieToken = request.cookies['auth-token'];
-  const authorization = request.headers.authorization;
-  const headerToken = authorization?.replace('Bearer ', '');
-  
-  // Prefer cookie token for security, fallback to header for API clients
-  const token = cookieToken || headerToken;
+  // Use the new token extractor to safely get the token
+  const token = getRawToken(request);
   
   let user: AuthenticatedUser | null = null;
   let rlsContext: RLSContext = { 
     bypassRLS: true,
-    bypassReason: 'No authentication token - public endpoint'
+    bypassReason: RLS_BYPASS_REASONS.PUBLIC_ENDPOINT
   }; // Default to bypass for non-authenticated requests
   
   if (token) {
     try {
-      const payload = verifyJWT(token);
-      if (payload && payload.userId) {
+      // Use the new verifyJwt function that throws specific errors
+      const jwtResult = verifyJwt(token);
+      
+      if (jwtResult && jwtResult.userId) {
         // Use base prisma for auth queries (bypass RLS)
         const foundUser = await basePrisma.user.findUnique({
-          where: { id: payload.userId },
+          where: { id: jwtResult.userId },
           select: {
             id: true,
             email: true,
@@ -63,13 +80,29 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         });
         
         if (foundUser && foundUser.isActive) {
+          // Set RLS context in database - SET LOCAL app.current_user_id
+          try {
+            await basePrisma.$executeRawUnsafe(
+              'SET LOCAL app.current_user_id = $1',
+              foundUser.id
+            );
+          } catch (error) {
+            logger.error({ error, userId: foundUser.id }, 'Failed to set RLS context in database');
+          }
+          
           // Get active organization from header, cookie, or JWT payload
           const orgId = request.headers['x-organization-id'] as string || 
-                       request.cookies['active-organization'] || 
-                       payload.organizationId;
+                       getOrganizationFromCookie(request) || 
+                       jwtResult.organizationId;
           
           let organizationId: string | undefined;
           let organizationRole: AuthenticatedUser['organizationRole'] | undefined;
+          
+          // Set basic RLS context for authenticated user
+          rlsContext = {
+            userId: foundUser.id,
+            bypassRLS: false,
+          };
           
           if (orgId) {
             // Verify user has access to this organization (bypass RLS for this check)
@@ -86,7 +119,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
               organizationId = orgId;
               organizationRole = membership.role as AuthenticatedUser['organizationRole'];
               
-              // Set RLS context
+              // Update RLS context with organization
               rlsContext = {
                 userId: foundUser.id,
                 organizationId: orgId,
@@ -97,7 +130,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
                 userId: foundUser.id,
                 organizationId: orgId,
                 organizationRole: membership.role,
-              }, 'RLS context configured for authenticated user');
+              }, 'RLS context configured for authenticated user with organization');
             }
           }
           
@@ -110,6 +143,14 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         }
       }
     } catch (error) {
+      // Handle specific auth errors
+      if (error instanceof AuthError) {
+        if (error.message === 'EXPIRED') {
+          // Set response header to indicate token expiration
+          res.header('X-Auth-Error', 'TOKEN_EXPIRED');
+        }
+      }
+      
       // Token invalid, user remains null
       logger.warn({ error }, 'Invalid token in request');
     }

@@ -222,8 +222,11 @@ app/
 ## 🔐 Security & Permissions
 
 ### Authentication & Authorization
-- **Role-Based Access Control**: Granular permissions
-- **API Security**: JWT tokens, rate limiting
+- **Signed Cookie Authentication**: Secure httpOnly cookies with signatures
+- **JWT Tokens**: Stateless authentication with organization context
+- **Role-Based Access Control**: Granular permissions (USER, ADMIN, MANAGER, etc.)
+- **Multi-Tenant Security**: Organization-level isolation with RLS
+- **API Security**: Rate limiting, CORS protection
 - **Data Validation**: Input sanitization, type checking
 - **Audit Logging**: Comprehensive action tracking
 
@@ -232,6 +235,27 @@ app/
 - **Output Validation**: Response verification
 - **Rate Limiting**: LLM API usage controls
 - **Audit Trail**: All AI decisions logged
+
+### Authentication Flow
+The system uses secure signed cookies for authentication:
+
+1. **Login Process**:
+   - User provides credentials → Server validates against database
+   - JWT token generated with user info and default organization
+   - Token stored in signed httpOnly cookie (`auth-token`)
+   - Cookie signature prevents tampering and XSS attacks
+
+2. **Request Authentication**:
+   - Server reads and verifies signed cookie using `request.unsignCookie()`
+   - JWT token extracted and validated
+   - User context established for the request
+   - Organization context loaded from header, cookie, or JWT
+
+3. **Cookie Security**:
+   - httpOnly: Prevents JavaScript access (XSS protection)
+   - Signed: Cryptographic signature prevents tampering
+   - SameSite=Lax: CSRF protection
+   - Secure flag in production: HTTPS-only transmission
 
 ## 📊 Project Status
 
@@ -754,6 +778,8 @@ pnpm agents:logs   # View agent execution logs
 ```
 
 ## 🔧 Troubleshooting
+
+For comprehensive troubleshooting, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ### Authentication Issues
 

@@ -763,4 +763,39 @@ setCookie(ctx.res, COOKIE_NAMES.AUTH_TOKEN, token);
 
 ---
 
+## 🍪 AUTHENTICATION & COOKIE HANDLING - CRITICAL
+
+### **Signed Cookie Implementation**
+The system uses **signed cookies** for authentication security. **NEVER** read cookies directly.
+
+#### **Correct Cookie Handling**
+```typescript
+// ✅ CORRECT - Always unsign cookies before use
+const authCookie = request.cookies['auth-token'];
+const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
+
+// ❌ WRONG - Never read signed cookies directly
+const token = request.cookies['auth-token']; // This will include signature!
+```
+
+#### **Common Authentication Errors**
+1. **"Signed cookie string must be provided"** - Cookie doesn't exist, handle null case
+2. **"UNAUTHORIZED"** - Usually means cookie reading failed, not actual auth failure
+3. **JWT verification errors** - Often caused by reading signed cookie directly
+
+#### **Cookie Security Settings**
+- **httpOnly**: true (prevents XSS)
+- **signed**: true (prevents tampering)
+- **sameSite**: 'lax' (CSRF protection)
+- **secure**: true in production (HTTPS only)
+- **maxAge**: 7 days
+
+#### **Debugging Authentication**
+1. Check if cookie exists: `request.cookies['auth-token']`
+2. Verify it's being unsigned: `request.unsignCookie()`
+3. Check JWT payload after unsigning
+4. Verify organization context is set
+
+---
+
 **REMEMBER**: This is an enterprise-grade system with rigorous quality standards. **EVERY** check exists for a reason. **FOLLOW** these rules exactly for successful development.
