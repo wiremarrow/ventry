@@ -38,7 +38,10 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
   const token = cookieToken || headerToken;
   
   let user: AuthenticatedUser | null = null;
-  let rlsContext: RLSContext = { bypassRLS: true }; // Default to bypass for non-authenticated requests
+  let rlsContext: RLSContext = { 
+    bypassRLS: true,
+    bypassReason: 'No authentication token - public endpoint'
+  }; // Default to bypass for non-authenticated requests
   
   if (token) {
     try {
