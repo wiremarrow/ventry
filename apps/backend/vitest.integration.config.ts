@@ -16,7 +16,8 @@ export default defineConfig({
     },
     env: {
       // Fallback database URL for integration tests (overridden by setup file)
-      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test',
+      // Use non-superuser role for proper RLS testing
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_integration_test',
     }
   }
 });

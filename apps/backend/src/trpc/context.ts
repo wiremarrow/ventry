@@ -80,15 +80,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
         });
         
         if (foundUser && foundUser.isActive) {
-          // Set RLS context in database - SET LOCAL app.current_user_id
-          try {
-            await basePrisma.$executeRawUnsafe(
-              'SET LOCAL app.current_user_id = $1',
-              foundUser.id
-            );
-          } catch (error) {
-            logger.error({ error, userId: foundUser.id }, 'Failed to set RLS context in database');
-          }
+          // RLS context is set by the RLS proxy per-transaction, no need to set it here
           
           // Get active organization from header, cookie, or JWT payload
           const orgId = request.headers['x-organization-id'] as string || 
@@ -125,6 +117,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
                 organizationId: orgId,
                 bypassRLS: false,
               };
+              
               
               logger.debug({
                 userId: foundUser.id,

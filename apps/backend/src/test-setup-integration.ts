@@ -3,8 +3,9 @@ import 'reflect-metadata';
 
 // Environment variables for integration tests
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-jwt-secret-integration';
+process.env.JWT_SECRET = 'test-jwt-secret-for-integration-testing-only';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.COOKIE_SECRET = 'test-cookie-secret-for-integration-testing';
 
 // Worker-specific database configuration for true test isolation
 function setupWorkerDatabase() {
@@ -25,9 +26,9 @@ function setupWorkerDatabase() {
     // Single database provided (environment override)
     console.log('🚀 Integration Tests: Using environment-provided database:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@'));
   } else {
-    // Local development fallback
-    process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test';
-    console.log('🔧 Integration Tests: Using local development database fallback');
+    // Local development fallback - use non-superuser role for proper RLS testing
+    process.env.DATABASE_URL = 'postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_integration_test';
+    console.log('🔧 Integration Tests: Using local development database fallback with app role');
   }
 }
 
