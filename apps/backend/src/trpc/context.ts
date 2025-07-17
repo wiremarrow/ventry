@@ -145,7 +145,7 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
       }
       
       // Token invalid, user remains null
-      logger.warn({ error }, 'Invalid token in request');
+      logger.warn({ error, token: token?.substring(0, 20) + '...' }, 'Invalid token in request');
     }
   }
 

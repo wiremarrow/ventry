@@ -160,6 +160,14 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Documentation**: [RLS Guide](./docs/RLS_GUIDE.md) for developers
   - **Results**: Enterprise-grade multi-tenant isolation with zero application code
 
+✅ **RLS Test Migration & Cleanup Complete (2025-07-17)**:
+  - **Test Migration**: All RLS integration tests updated to use dual-connection pattern
+  - **Production Module**: Migrated to canonical RLS implementation in `/lib/rls/`
+  - **Cleanup**: Removed deprecated `rls-middleware-v2.ts` and `rls-v2.integration.spec.ts`
+  - **ID Format**: Enforcing CUID format (25 lowercase alphanumeric) at database level
+  - **Test Status**: All RLS tests passing with proper tenant isolation
+  - **Documentation**: Updated [RLS Implementation Guide](./RLS_IMPLEMENTATION_GUIDE.md)
+
 ✅ **Frontend Import Path Fix Complete (2025-07-14)**:
   - **Root Cause**: Systematic import path inconsistencies preventing build compilation across 23 frontend files
   - **Analysis**: 4 major root causes identified through comprehensive codebase review

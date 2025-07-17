@@ -9,9 +9,10 @@ const JWT_EXPIRES_IN = env.JWT_EXPIRES_IN;
 
 export interface JWTPayload {
   userId: string;
-  email: string;
-  role: string;
   organizationId?: string;
+  // Optional advisory claims - not used for authorization
+  email?: string;
+  role?: string;
 }
 
 export interface JWTVerifyResult {

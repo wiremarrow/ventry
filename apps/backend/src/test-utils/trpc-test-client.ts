@@ -48,9 +48,14 @@ export async function createAuthenticatedContext(user: { id: string; email: stri
 export async function createIntegrationContext(authToken?: string) {
   const mockReq = {
     headers: authToken ? { authorization: `Bearer ${authToken}` } : {},
-    cookies: {}
+    cookies: {},
+    // Mock unsignCookie for cookie handling
+    unsignCookie: (value: string) => ({ valid: true, value })
   };
-  const mockRes = {};
+  const mockRes = {
+    // Mock header method for response
+    header: () => {}
+  };
   
   return await createContext({ 
     req: mockReq as any, 
@@ -99,10 +104,12 @@ export async function createAuthenticatedIntegrationContext() {
     }
   });
   
-  // Create JWT token
+  // Create JWT token with minimal required fields
   const token = signJWT({ 
     userId: user.id, 
-    organizationId: org.id 
+    organizationId: org.id,
+    email: user.email,  // Optional but included for test coverage
+    role: user.role     // Optional but included for test coverage
   });
   
   // Create context with auth token

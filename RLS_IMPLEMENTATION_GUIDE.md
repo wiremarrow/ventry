@@ -17,18 +17,27 @@ This document contains everything you need to know about the RLS implementation 
 
 ## Current State Overview
 
+### ✅ Implementation Status (As of 2025-07-17)
+- **Production RLS Module**: Fully implemented in `/apps/backend/src/lib/rls/`
+- **Middleware Migration**: Complete - all code using canonical RLS implementation
+- **Test Migration**: All RLS tests updated to use dual-connection pattern
+- **Database Policies**: Basic organization isolation policies in place
+- **ID Format**: Enforces CUID format (25 lowercase alphanumeric) at database level
+
 ### What We've Implemented
 - **Row-Level Security (RLS)** at the PostgreSQL database level
 - **Dual-role architecture**: `ventry` (superuser) and `ventry_app` (application role)
 - **Text-based RLS functions** (NOT UUID - we use CUID format)
 - **Minimal organization policies** for secure multi-tenancy
 - **Dual connection testing pattern** for proper RLS validation
+- **Production-ready RLS service** with audit logging and metrics hooks
 
 ### Key Architecture Decisions
 1. **Database-level RLS** (not just application level) for true security
 2. **FORCE ROW LEVEL SECURITY** on all protected tables
 3. **No test backdoors** in production schema
 4. **Minimal policies** - start secure, expand carefully
+5. **Strict CUID validation** at database level via `set_rls_context()` function
 
 ---
 
@@ -265,11 +274,13 @@ CREATE POLICY test_bypass USING (current_user_id() IS NULL); // SECURITY HOLE!
 
 ✅ **Working**:
 - `rls-e2e.integration.spec.ts` - Uses dual connections correctly
+- `rls-simple.integration.spec.ts` - Updated to use dual connections and DB-generated IDs (passing)
+- `rls.integration.spec.ts` - Updated to use dual connections and DB-generated IDs (passing)
 
-❌ **Need Updates**:
-- `rls-simple.integration.spec.ts` - Still uses single connection
-- `rls.integration.spec.ts` - Still uses single connection
-- `rls-v2.integration.spec.ts` - Still uses single connection
+✅ **Cleanup Complete**:
+- Removed `rls-v2.integration.spec.ts` - Was using deprecated middleware
+- Removed `rls-middleware-v2.ts` - Deprecated in favor of production RLS module
+- Removed `rls-test-helpers.ts` - Unused test utilities
 
 ---
 
@@ -299,17 +310,23 @@ CREATE POLICY test_bypass USING (current_user_id() IS NULL); // SECURITY HOLE!
 
 ## Next Steps
 
-### Immediate Tasks
-1. **Update remaining tests** to use dual connection pattern
-2. **Document RLS in main README.md** and TODO.md (CI requirement)
-3. **Add INSERT policies** carefully when needed for specific tables
-4. **Test with actual multi-tenant data** to verify isolation
+### ✅ Completed Tasks
+1. **Update remaining tests** to use dual connection pattern ✓
+2. **Migrate to production RLS module** ✓
+3. **Remove deprecated middleware** ✓
+4. **Enforce CUID format validation** ✓
+
+### 📋 Remaining Tasks
+1. **Document RLS in main README.md** and TODO.md (CI requirement)
+2. **Add INSERT policies** carefully when needed for specific tables
+3. **Test with actual multi-tenant data** to verify isolation
 
 ### Future Enhancements
 1. **Organization member viewing** - Add policy to see other members (avoiding recursion)
 2. **Audit log policies** - Ensure proper isolation with org context  
 3. **Performance optimization** - Add indexes for RLS policy conditions
 4. **Monitoring** - Add RLS bypass detection and logging
+5. **Consider ID format flexibility** - Evaluate supporting both CUID and UUID formats
 
 ### Security Checklist
 - [ ] NO policies with `current_user_id() IS NULL` conditions

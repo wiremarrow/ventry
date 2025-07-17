@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import { signJWT } from '../../auth/jwt.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { createTestConnections } from '../../test-utils/dual-connection.js';
+import { createIntegrationContext } from '../../test-utils/trpc-test-client.js';
 
 describe('End-to-End RLS Integration', () => {
   let adminPrisma: PrismaClient;
@@ -25,6 +26,7 @@ describe('End-to-End RLS Integration', () => {
 
     // Clean up test data using admin connection (bypasses RLS)
     await adminPrisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug LIKE 'rls-e2e-%')`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
 
@@ -58,7 +60,12 @@ describe('End-to-End RLS Integration', () => {
       },
     });
     user1Id = user1.id;
-    user1Token = signJWT({ userId: user1Id, organizationId: org1Id });
+    user1Token = signJWT({ 
+      userId: user1Id, 
+      email: user1.email,
+      role: user1.role,
+      organizationId: org1Id 
+    });
 
     const user2 = await adminPrisma.user.create({
       data: {
@@ -70,7 +77,12 @@ describe('End-to-End RLS Integration', () => {
       },
     });
     user2Id = user2.id;
-    user2Token = signJWT({ userId: user2Id, organizationId: org2Id });
+    user2Token = signJWT({ 
+      userId: user2Id, 
+      email: user2.email,
+      role: user2.role,
+      organizationId: org2Id 
+    });
 
     // Add users to their organizations
     await adminPrisma.organizationMember.create({
@@ -146,6 +158,16 @@ describe('End-to-End RLS Integration', () => {
         reorderQty: 50,
       },
     });
+
+    // Disconnect admin connection to ensure data is committed
+    await adminPrisma.$disconnect();
+    
+    // Reconnect for afterEach cleanup
+    adminPrisma = new PrismaClient({
+      datasources: {
+        db: { url: process.env.DATABASE_ADMIN_URL || 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test' }
+      }
+    });
   });
 
   afterEach(async () => {
@@ -162,21 +184,33 @@ describe('End-to-End RLS Integration', () => {
   });
 
   it('should filter items based on user organization via tRPC', async () => {
-    // Create mock request and response
-    const mockReq = {
-      headers: {
-        authorization: `Bearer ${user1Token}`,
-        'x-organization-id': org1Id,
-      },
-      cookies: {},
-    } as unknown as FastifyRequest;
+    // Import basePrisma to check what context sees
+    const { prisma: basePrisma } = await import('@ventry/database');
     
-    const mockRes = {
-      header: () => {},
-    } as unknown as FastifyReply;
-
-    // Create context for user1
-    const ctx = await createContext({ req: mockReq, res: mockRes });
+    // Verify the user exists in DB first
+    const userCheck = await adminPrisma.user.findUnique({
+      where: { id: user1Id }
+    });
+    console.log('User exists in adminPrisma:', !!userCheck, userCheck?.email);
+    
+    // Check if basePrisma sees the user
+    const userCheckBase = await basePrisma.user.findUnique({
+      where: { id: user1Id }
+    });
+    console.log('User exists in basePrisma:', !!userCheckBase, userCheckBase?.email);
+    console.log('User1 token:', user1Token);
+    
+    // Create context using the standard helper
+    const ctx = await createIntegrationContext(user1Token);
+    
+    console.log('Context after creation:', {
+      user: ctx.user,
+      organizationId: ctx.organizationId,
+      hasUser: !!ctx.user
+    });
+    
+    // Override organizationId in context since it comes from header in real requests
+    ctx.organizationId = org1Id;
 
     const caller = appRouter.createCaller(ctx);
 
@@ -191,21 +225,11 @@ describe('End-to-End RLS Integration', () => {
   });
 
   it('should prevent cross-organization access via tRPC', async () => {
-    // Create mock request and response
-    const mockReq = {
-      headers: {
-        authorization: `Bearer ${user2Token}`,
-        'x-organization-id': org2Id,
-      },
-      cookies: {},
-    } as unknown as FastifyRequest;
+    // Create context using the standard helper
+    const ctx = await createIntegrationContext(user2Token);
     
-    const mockRes = {
-      header: () => {},
-    } as unknown as FastifyReply;
-
-    // Create context for user2
-    const ctx = await createContext({ req: mockReq, res: mockRes });
+    // Override organizationId in context
+    ctx.organizationId = org2Id;
 
     const caller = appRouter.createCaller(ctx);
 
@@ -218,21 +242,11 @@ describe('End-to-End RLS Integration', () => {
   });
 
   it('should verify RLS works at application level', async () => {
-    // Create mock request and response
-    const mockReq = {
-      headers: {
-        authorization: `Bearer ${user1Token}`,
-        'x-organization-id': org1Id,
-      },
-      cookies: {},
-    } as unknown as FastifyRequest;
+    // Create context using the standard helper
+    const ctx = await createIntegrationContext(user1Token);
     
-    const mockRes = {
-      header: () => {},
-    } as unknown as FastifyReply;
-
-    // Create context for user1
-    const ctx = await createContext({ req: mockReq, res: mockRes });
+    // Override organizationId in context
+    ctx.organizationId = org1Id;
 
     // Explicit DB-level RLS: prove the policy works
     await ctx.prisma.$transaction(async (tx) => {
