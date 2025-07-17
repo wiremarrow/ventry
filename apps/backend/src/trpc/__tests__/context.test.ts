@@ -38,14 +38,14 @@ vi.mock('@ventry/database', () => ({
   },
 }));
 
-vi.mock('../../lib/rls-middleware.js', () => ({
+vi.mock('../../lib/rls/index.js', () => ({
   createRLSProxy: vi.fn((prisma) => prisma),
 }));
 
 // Import after mocking
 import { getRawToken } from '../../lib/auth/token-extractor.js';
 import { verifyJwt } from '../../auth/jwt.js';
-import { createRLSProxy } from '../../lib/rls-middleware.js';
+import { createRLSProxy } from '../../lib/rls/index.js';
 
 describe('createContext', () => {
   let mockRequest: any;

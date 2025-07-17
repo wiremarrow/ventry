@@ -2,7 +2,7 @@ import { CreateFastifyContextOptions } from '@trpc/server/adapters/fastify';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { prisma as basePrisma } from '@ventry/database';
 import { verifyJwt } from '../auth/jwt.js';
-import { createRLSProxy, type RLSContext } from '../lib/rls-middleware.js';
+import { createRLSProxy, type RLSContext } from '../lib/rls/index.js';
 import { createLogger } from '../lib/logger.js';
 import { getRawToken } from '../lib/auth/token-extractor.js';
 import { RLS_BYPASS_REASONS } from '../lib/auth/constants.js';

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { createRLSProxy, withRLS, type RLSContext } from '../rls-middleware.js';
+import { createRLSProxy, withRLS, type RLSContext } from '../rls/index.js';
 import { verifyRLSEnabled } from '../../test-utils/rls-test-helpers-minimal.js';
 import { createTestConnections } from '../../test-utils/dual-connection.js';
 import type { PrismaClient } from '@ventry/database';
