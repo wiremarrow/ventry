@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { prisma as basePrisma } from '@ventry/database';
 import { withRLS, type RLSContext } from '../rls-middleware-v2.js';
-import { setupRLSFunctions, enableRLSForTable } from '../../test-utils/rls-test-helpers.js';
+import { verifyRLSEnabled } from '../../test-utils/rls-test-helpers-minimal.js';
 
 describe('Simple RLS Test', () => {
   const org1Id = '11111111-1111-1111-1111-111111111111';
@@ -14,9 +14,11 @@ describe('Simple RLS Test', () => {
     await basePrisma.unitOfMeasure.deleteMany({});
     await basePrisma.organization.deleteMany({});
     
-    // Set up RLS
-    await setupRLSFunctions(basePrisma);
-    await enableRLSForTable(basePrisma, 'items');
+    // Verify RLS is enabled (should be enabled by migrations)
+    const rlsEnabled = await verifyRLSEnabled(basePrisma, 'items');
+    if (!rlsEnabled) {
+      console.warn('RLS is not enabled on items table. Tests may not work correctly.');
+    }
     
     // Create test organizations
     await basePrisma.organization.createMany({

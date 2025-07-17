@@ -5,9 +5,11 @@ import { PrismaClient } from '@ventry/database';
 import * as bcrypt from 'bcryptjs';
 import { signJWT } from '../../auth/jwt.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { createTestConnections } from '../../test-utils/dual-connection.js';
 
 describe('End-to-End RLS Integration', () => {
-  let prisma: PrismaClient;
+  let adminPrisma: PrismaClient;
+  let appPrisma: PrismaClient;
   let org1Id: string;
   let org2Id: string;
   let user1Id: string;
@@ -16,15 +18,18 @@ describe('End-to-End RLS Integration', () => {
   let user2Token: string;
 
   beforeEach(async () => {
-    prisma = new PrismaClient();
+    // Create dual connections
+    const connections = createTestConnections();
+    adminPrisma = connections.adminPrisma;
+    appPrisma = connections.appPrisma;
 
-    // Clean up test data
-    await prisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
+    // Clean up test data using admin connection (bypasses RLS)
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
 
-    // Create test organizations
-    const org1 = await prisma.organization.create({
+    // Create test organizations using admin connection
+    const org1 = await adminPrisma.organization.create({
       data: {
         name: 'RLS E2E Org 1',
         slug: 'rls-e2e-org-1',
@@ -32,7 +37,7 @@ describe('End-to-End RLS Integration', () => {
     });
     org1Id = org1.id;
 
-    const org2 = await prisma.organization.create({
+    const org2 = await adminPrisma.organization.create({
       data: {
         name: 'RLS E2E Org 2',
         slug: 'rls-e2e-org-2',
@@ -43,7 +48,7 @@ describe('End-to-End RLS Integration', () => {
     // Create test users
     const hashedPassword = await bcrypt.hash('testpass123', 10);
     
-    const user1 = await prisma.user.create({
+    const user1 = await adminPrisma.user.create({
       data: {
         email: 'rls-e2e-user1@example.com',
         username: 'rlse2euser1',
@@ -55,7 +60,7 @@ describe('End-to-End RLS Integration', () => {
     user1Id = user1.id;
     user1Token = signJWT({ userId: user1Id, organizationId: org1Id });
 
-    const user2 = await prisma.user.create({
+    const user2 = await adminPrisma.user.create({
       data: {
         email: 'rls-e2e-user2@example.com',
         username: 'rlse2euser2',
@@ -68,7 +73,7 @@ describe('End-to-End RLS Integration', () => {
     user2Token = signJWT({ userId: user2Id, organizationId: org2Id });
 
     // Add users to their organizations
-    await prisma.organizationMember.create({
+    await adminPrisma.organizationMember.create({
       data: {
         organizationId: org1Id,
         userId: user1Id,
@@ -76,7 +81,7 @@ describe('End-to-End RLS Integration', () => {
       },
     });
 
-    await prisma.organizationMember.create({
+    await adminPrisma.organizationMember.create({
       data: {
         organizationId: org2Id,
         userId: user2Id,
@@ -85,21 +90,21 @@ describe('End-to-End RLS Integration', () => {
     });
 
     // Create test data
-    const category1 = await prisma.itemCategory.create({
+    const category1 = await adminPrisma.itemCategory.create({
       data: {
         organizationId: org1Id,
         name: 'RLS E2E Category 1',
       },
     });
 
-    const category2 = await prisma.itemCategory.create({
+    const category2 = await adminPrisma.itemCategory.create({
       data: {
         organizationId: org2Id,
         name: 'RLS E2E Category 2',
       },
     });
 
-    const uom1 = await prisma.unitOfMeasure.create({
+    const uom1 = await adminPrisma.unitOfMeasure.create({
       data: {
         organizationId: org1Id,
         code: 'RLS-E2E-EA1',
@@ -108,7 +113,7 @@ describe('End-to-End RLS Integration', () => {
       },
     });
 
-    const uom2 = await prisma.unitOfMeasure.create({
+    const uom2 = await adminPrisma.unitOfMeasure.create({
       data: {
         organizationId: org2Id,
         code: 'RLS-E2E-EA2',
@@ -118,7 +123,7 @@ describe('End-to-End RLS Integration', () => {
     });
 
     // Create items for each org
-    await prisma.item.create({
+    await adminPrisma.item.create({
       data: {
         organizationId: org1Id,
         sku: 'RLS-E2E-ITEM-1',
@@ -130,7 +135,7 @@ describe('End-to-End RLS Integration', () => {
       },
     });
 
-    await prisma.item.create({
+    await adminPrisma.item.create({
       data: {
         organizationId: org2Id,
         sku: 'RLS-E2E-ITEM-2',
@@ -144,13 +149,16 @@ describe('End-to-End RLS Integration', () => {
   });
 
   afterEach(async () => {
-    await prisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM item_categories WHERE name LIKE 'RLS E2E%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM units_of_measure WHERE code LIKE 'RLS-E2E-%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM organization_members WHERE organization_id IN ($1, $2)`, org1Id, org2Id);
-    await prisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
-    await prisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
-    await prisma.$disconnect();
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM item_categories WHERE name LIKE 'RLS E2E%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM units_of_measure WHERE code LIKE 'RLS-E2E-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM organization_members WHERE organization_id IN ($1, $2)`, org1Id, org2Id);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
+    await adminPrisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
+    
+    // Disconnect both connections
+    await adminPrisma.$disconnect();
+    await appPrisma.$disconnect();
   });
 
   it('should filter items based on user organization via tRPC', async () => {

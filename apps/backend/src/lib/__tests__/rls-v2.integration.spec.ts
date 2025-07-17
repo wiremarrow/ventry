@@ -3,11 +3,9 @@ import { prisma as basePrisma } from '@ventry/database';
 import { createRLSProxy, withRLS, type RLSContext, RLSError } from '../rls-middleware-v2.js';
 import { 
   RLSTestContext, 
-  RLSAssertions, 
-  setupRLSFunctions, 
-  enableRLSForTable,
-  disableRLSForTable
+  RLSAssertions
 } from '../../test-utils/rls-test-helpers.js';
+import { verifyRLSEnabled } from '../../test-utils/rls-test-helpers-minimal.js';
 
 describe('Row-Level Security (RLS) v2 Integration Tests', () => {
   let testContext: RLSTestContext;
@@ -19,11 +17,11 @@ describe('Row-Level Security (RLS) v2 Integration Tests', () => {
   let org2Items: any[];
 
   beforeAll(async () => {
-    // Set up RLS functions
-    await setupRLSFunctions(basePrisma);
-    
-    // Enable RLS on items table
-    await enableRLSForTable(basePrisma, 'items');
+    // Verify RLS is enabled (should be enabled by migrations)
+    const rlsEnabled = await verifyRLSEnabled(basePrisma, 'items');
+    if (!rlsEnabled) {
+      console.warn('RLS is not enabled on items table. Tests may not work correctly.');
+    }
     
     // Create test context
     testContext = new RLSTestContext(basePrisma);
@@ -52,15 +50,10 @@ describe('Row-Level Security (RLS) v2 Integration Tests', () => {
   afterAll(async () => {
     // Clean up test data
     await testContext.cleanup();
-    
-    // Disable RLS
-    await disableRLSForTable(basePrisma, 'items');
   });
 
   beforeEach(async () => {
-    // Reset any session variables
-    await basePrisma.$executeRaw`RESET app.current_organization_id`;
-    await basePrisma.$executeRaw`RESET app.current_user_id`;
+    // Session variables are reset per transaction automatically
   });
 
   describe('Context Validation', () => {

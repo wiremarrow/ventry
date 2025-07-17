@@ -7,6 +7,10 @@ process.env.JWT_SECRET = 'test-jwt-secret-for-integration-testing-only';
 process.env.JWT_EXPIRES_IN = '1h';
 process.env.COOKIE_SECRET = 'test-cookie-secret-for-integration-testing';
 
+// Set up admin database URL for test setup (superuser connection)
+process.env.DATABASE_ADMIN_URL = process.env.DATABASE_ADMIN_URL || 
+  'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test';
+
 // Worker-specific database configuration for true test isolation
 function setupWorkerDatabase() {
   // Get worker ID (Vitest uses VITEST_WORKER_ID, Jest uses JEST_WORKER_ID)

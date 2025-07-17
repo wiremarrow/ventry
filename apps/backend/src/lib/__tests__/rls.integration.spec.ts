@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { prisma as basePrisma } from '@ventry/database';
 import { createRLSProxy, withRLS, type RLSContext } from '../rls-middleware.js';
 import { randomUUID } from 'crypto';
+import { verifyRLSEnabled } from '../../test-utils/rls-test-helpers-minimal.js';
 
 // Test data
 const org1Id = randomUUID();
@@ -13,11 +14,60 @@ const uomId = randomUUID();
 
 describe('Row-Level Security (RLS) Integration Tests', () => {
   beforeAll(async () => {
-    // First, apply RLS setup to the test database
-    await setupRLS();
+    // Verify RLS is enabled (should be enabled by migrations)
+    const rlsEnabled = await verifyRLSEnabled(basePrisma, 'items');
+    if (!rlsEnabled) {
+      console.warn('RLS is not enabled on items table. Tests may not work correctly.');
+    }
     
     // Clean up any existing test data
-    await cleanupTestData();
+    await basePrisma.item.deleteMany({
+      where: {
+        sku: {
+          in: ['ORG1-ITEM1', 'ORG1-ITEM2', 'ORG2-ITEM1', 'ORG1-ITEM3'],
+        },
+      },
+    });
+    
+    await basePrisma.itemCategory.deleteMany({
+      where: {
+        name: {
+          in: ['Test Category', 'Test Category 2'],
+        },
+      },
+    });
+    
+    await basePrisma.unitOfMeasure.deleteMany({
+      where: {
+        organizationId: {
+          in: [org1Id, org2Id],
+        },
+      },
+    });
+    
+    await basePrisma.organizationMember.deleteMany({
+      where: {
+        organizationId: {
+          in: [org1Id, org2Id],
+        },
+      },
+    });
+    
+    await basePrisma.user.deleteMany({
+      where: {
+        id: {
+          in: [user1Id, user2Id],
+        },
+      },
+    });
+    
+    await basePrisma.organization.deleteMany({
+      where: {
+        id: {
+          in: [org1Id, org2Id],
+        },
+      },
+    });
     
     // Create test organizations
     await basePrisma.organization.createMany({
@@ -142,22 +192,58 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       },
     });
 
-    // RLS is already enabled by setupRLS()
+    // RLS should already be enabled by migrations
   });
 
   afterAll(async () => {
-    // Disable RLS for cleanup
-    await basePrisma.$executeRaw`ALTER TABLE items DISABLE ROW LEVEL SECURITY`;
-    await basePrisma.$executeRaw`DROP POLICY IF EXISTS "tenant_isolation_policy" ON items`;
-    
     // Clean up test data
-    await cleanupTestData();
+    await basePrisma.item.deleteMany({
+      where: {
+        sku: {
+          in: ['ORG1-ITEM1', 'ORG1-ITEM2', 'ORG2-ITEM1', 'ORG1-ITEM3'],
+        },
+      },
+    });
+    
+    await basePrisma.itemCategory.deleteMany({
+      where: {
+        id: categoryId,
+      },
+    });
+    
+    await basePrisma.unitOfMeasure.deleteMany({
+      where: {
+        id: uomId,
+      },
+    });
+    
+    await basePrisma.organizationMember.deleteMany({
+      where: {
+        organizationId: {
+          in: [org1Id, org2Id],
+        },
+      },
+    });
+    
+    await basePrisma.user.deleteMany({
+      where: {
+        id: {
+          in: [user1Id, user2Id],
+        },
+      },
+    });
+    
+    await basePrisma.organization.deleteMany({
+      where: {
+        id: {
+          in: [org1Id, org2Id],
+        },
+      },
+    });
   });
 
   beforeEach(async () => {
-    // Reset any session variables
-    await basePrisma.$executeRaw`RESET app.current_organization_id`;
-    await basePrisma.$executeRaw`RESET app.current_user_id`;
+    // Session variables are reset per transaction automatically
   });
 
   describe('Direct RLS queries', () => {
@@ -336,105 +422,3 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
     });
   });
 });
-
-async function setupRLS() {
-  try {
-    // Create RLS helper functions
-    await basePrisma.$executeRaw`
-      CREATE OR REPLACE FUNCTION current_organization_id() RETURNS text AS $$
-      BEGIN
-        RETURN current_setting('app.current_organization_id', true);
-      EXCEPTION
-        WHEN OTHERS THEN
-          RETURN NULL;
-      END;
-      $$ LANGUAGE plpgsql STABLE;
-    `;
-
-    await basePrisma.$executeRaw`
-      CREATE OR REPLACE FUNCTION current_user_id() RETURNS text AS $$
-      BEGIN
-        RETURN current_setting('app.current_user_id', true);
-      EXCEPTION
-        WHEN OTHERS THEN
-          RETURN NULL;
-      END;
-      $$ LANGUAGE plpgsql STABLE;
-    `;
-
-    // For this test, we'll just set up RLS on the items table
-    // First drop any existing policies
-    await basePrisma.$executeRaw`DROP POLICY IF EXISTS "tenant_isolation_policy" ON items`;
-    
-    // Enable RLS
-    await basePrisma.$executeRaw`ALTER TABLE items ENABLE ROW LEVEL SECURITY`;
-    
-    // Create the tenant isolation policy
-    await basePrisma.$executeRaw`
-      CREATE POLICY "tenant_isolation_policy" ON items
-      FOR ALL
-      USING (organization_id = current_organization_id())
-    `;
-    
-    console.log('RLS setup completed successfully');
-  } catch (error) {
-    console.error('Error setting up RLS:', error);
-    // Continue with tests even if RLS setup fails
-  }
-}
-
-async function cleanupTestData() {
-  // Disable RLS temporarily for cleanup
-  await basePrisma.$executeRaw`ALTER TABLE items DISABLE ROW LEVEL SECURITY`;
-  await basePrisma.$executeRaw`ALTER TABLE item_categories DISABLE ROW LEVEL SECURITY`;
-  await basePrisma.$executeRaw`ALTER TABLE units_of_measure DISABLE ROW LEVEL SECURITY`;
-  
-  // Delete test data
-  await basePrisma.item.deleteMany({
-    where: {
-      sku: {
-        in: ['ORG1-ITEM1', 'ORG1-ITEM2', 'ORG2-ITEM1', 'ORG1-ITEM3'],
-      },
-    },
-  });
-  
-  await basePrisma.itemCategory.deleteMany({
-    where: {
-      name: {
-        in: ['Test Category', 'Test Category 2'],
-      },
-    },
-  });
-  
-  await basePrisma.unitOfMeasure.deleteMany({
-    where: {
-      organizationId: {
-        in: [org1Id, org2Id],
-      },
-    },
-  });
-  
-  await basePrisma.organizationMember.deleteMany({
-    where: {
-      organizationId: {
-        in: [org1Id, org2Id],
-      },
-    },
-  });
-  
-  await basePrisma.user.deleteMany({
-    where: {
-      id: {
-        in: [user1Id, user2Id],
-      },
-    },
-  });
-  
-  await basePrisma.organization.deleteMany({
-    where: {
-      id: {
-        in: [org1Id, org2Id],
-      },
-    },
-  });
-}

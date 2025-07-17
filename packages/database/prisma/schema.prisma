@@ -870,16 +870,19 @@ model ShippingMethod {
 }
 
 model AuditLog {
-  id         String      @id @default(cuid())
-  action     AuditAction
-  userId     String      @map("user_id")
-  afterData  Json?       @map("after_data")
-  beforeData Json?       @map("before_data")
-  eventTime  DateTime    @default(now()) @map("event_time")
-  ipAddress  String?     @map("ip_address")
-  recordPk   String      @map("record_pk")
-  tableName  String      @map("table_name")
-  user       User        @relation(fields: [userId], references: [id])
+  id             String      @id @default(cuid())
+  action         AuditAction
+  userId         String      @map("user_id")
+  organizationId String?     @map("organization_id") // added, nullable until data cleaned
+  afterData      Json?       @map("after_data")
+  beforeData     Json?       @map("before_data")
+  eventTime      DateTime    @default(now()) @map("event_time")
+  ipAddress      String?     @map("ip_address")
+  recordPk       String      @map("record_pk")
+  tableName      String      @map("table_name")
+
+  user User @relation(fields: [userId], references: [id])
+  // TODO: add organization relation after verifying FK + non-null data
 
   @@map("audit_logs")
 }
