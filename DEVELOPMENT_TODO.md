@@ -1,18 +1,252 @@
 # Ventry Development TODO List
 
-## Guiding Principles & Meta-Goals
+## Primary Goal
+Get **authentication + RLS working end-to-end** from user login to viewing data in the UI with proper multi-tenant isolation.
 
-### Primary Objective
-Build an **elegant, secure MVP** that **STRONGLY adheres** to our technology stack's current recommended standards and best practices.
+## Current State (2025-01-17)
 
-### Core Values
-1. **Maintainability First** - Code should be easy to understand, modify, and extend
-2. **Minimize Complexity** - Choose simple solutions over clever ones
-3. **Standardization** - One consistent pattern for each concern across the codebase
-4. **Security by Design** - Database-level RLS, signed cookies, proper authentication
-5. **Type Safety** - Leverage TypeScript and Zod for compile-time and runtime safety
+### ✅ What's Working
+- Frontend authentication (login form, auth store, middleware)
+- Backend JWT generation and signed cookie handling
+- Database-level RLS policies are in place
+- Production RLS module (`/lib/rls/`) is ready
+- tRPC context creation with organization resolution
 
-### Technical Standards We Follow
+### ❌ Critical Blockers
+1. **RLS tests failing** - Using wrong connection patterns (mixing singleton with dual-connection)
+2. **Cookie handling inconsistencies** - Multiple implementations causing auth failures
+3. **Deprecated code confusion** - Old RLS middleware files still present
+4. **Organization context issues** - `window.__organizationId` anti-pattern exists
+
+## Status Legend
+- 🚧 In Progress
+- ⏳ Pending
+- ✅ Completed
+- ❌ Blocked
+
+## The Focused Fix Plan (3-4 days total)
+
+### Phase 0: Fix RLS Foundation (Day 1) 🚧
+**Goal: Get RLS tests passing to ensure database isolation works**
+
+#### 0.1 Fix RLS E2E Test (2 hours) 🚧
+- [ ] Open `/apps/backend/src/trpc/__tests__/rls-e2e.integration.spec.ts`
+- [ ] Delete lines 162-170 (the disconnect/reconnect block)
+- [ ] Remove all usage of `createIntegrationContext`
+- [ ] Rewrite test to follow `rls-simple.integration.spec.ts` pattern:
+  - Use dual connections: `adminPrisma` for setup, `appPrisma` for RLS testing
+  - Use `withRLS(appPrisma, context, operation)` for all assertions
+  - No tRPC context needed - test RLS directly
+- [ ] Run: `pnpm --filter @ventry/backend test:integration rls-e2e`
+- [ ] Expected: All 3 tests pass
+
+#### 0.2 Clean Up Deprecated Code (1 hour) ⏳
+- [ ] Delete `/apps/backend/src/lib/rls-middleware.ts`
+- [ ] Delete `/apps/backend/src/lib/rls-middleware-v2.ts`
+- [ ] Delete `createAuthenticatedIntegrationContext` from `trpc-test-client.ts`
+- [ ] Update all imports to use `/lib/rls/index.js`
+- [ ] Verify no broken imports: `pnpm --filter @ventry/backend typecheck`
+
+#### 0.3 Create Test Helpers (1 hour) ⏳
+- [ ] Create `/apps/backend/src/test-utils/test-data.ts`:
+  ```typescript
+  export async function createTestOrg(adminPrisma: PrismaClient, name?: string)
+  export async function createTestUser(adminPrisma: PrismaClient, data?: Partial<User>)
+  export async function linkUserToOrg(adminPrisma: PrismaClient, userId: string, orgId: string, role?: OrgRole)
+  ```
+- [ ] Document the dual-connection pattern in the file
+
+### Phase 1: Standardize Auth Flow (Day 2) ⏳
+**Goal: One consistent way to handle auth across the system**
+
+#### 1.1 Create Unified AuthService (3 hours) ⏳
+- [ ] Create `/apps/backend/src/services/auth-service.ts`:
+  ```typescript
+  export class AuthService {
+    private readonly logger = createLogger('auth-service');
+    
+    // Core auth operations
+    async login(credentials: LoginInput): Promise<AuthResult>
+    async logout(userId: string, res: FastifyReply): Promise<void>
+    async verifyToken(token: string): Promise<JWTPayload>
+    
+    // Cookie management
+    setAuthCookie(res: FastifyReply, token: string): void
+    clearAuthCookie(res: FastifyReply): void
+    getAuthToken(req: FastifyRequest): string | undefined
+  }
+  ```
+- [ ] Move auth logic from router to service
+- [ ] Replace all direct JWT operations with service methods
+- [ ] Test: `pnpm --filter @ventry/backend test auth-service`
+
+#### 1.2 Fix Cookie Handling (2 hours) ⏳
+- [ ] Create `/apps/backend/src/services/cookie-service.ts`:
+  ```typescript
+  export class CookieService {
+    static readonly COOKIE_NAMES = {
+      AUTH_TOKEN: 'auth-token',
+      ACTIVE_ORGANIZATION: 'active-organization',
+    };
+    
+    static setSignedCookie(res: FastifyReply, name: string, value: string): void
+    static getSignedCookie(req: FastifyRequest, name: string): string | undefined
+    static clearCookie(res: FastifyReply, name: string): void
+  }
+  ```
+- [ ] Replace all direct cookie operations
+- [ ] Ensure consistent error handling for missing/invalid cookies
+- [ ] Fix the common "signed cookie string must be provided" error
+
+#### 1.3 Fix Organization Context (2 hours) ⏳
+- [ ] Search for `window.__organizationId` usage: `grep -r "__organizationId" apps/web`
+- [ ] Create `/apps/web/src/stores/organization-store.ts` using Zustand
+- [ ] Update tRPC client to include organization header:
+  ```typescript
+  headers: () => ({
+    'x-organization-id': organizationStore.getState().activeOrganizationId,
+  })
+  ```
+- [ ] Test organization switching in UI
+
+### Phase 2: Verify End-to-End Flow (Day 3) ⏳
+**Goal: Ensure complete flow works from UI to database**
+
+#### 2.1 Test Login → Dashboard Flow (2 hours) ⏳
+- [ ] Start the app: `pnpm dev`
+- [ ] Login with test account: `admin@ventry.com` / `password123`
+- [ ] Open browser DevTools Network tab
+- [ ] Verify:
+  - [ ] `auth-token` cookie is set (signed, httpOnly)
+  - [ ] `/api/trpc/auth.me` returns user data
+  - [ ] Dashboard loads without auth errors
+  - [ ] Organization context is resolved correctly
+- [ ] Document any issues found
+
+#### 2.2 Verify RLS in UI (2 hours) ⏳
+- [ ] Create test data for multiple organizations using admin scripts
+- [ ] Login as `admin@ventry.com` (has access to Demo Company)
+- [ ] Navigate to inventory page
+- [ ] Verify only Demo Company items are visible
+- [ ] Login as `user@ventry.com` (no organization)
+- [ ] Verify appropriate "no access" message
+- [ ] Test with different users/orgs
+
+#### 2.3 Add E2E Tests (3 hours) ⏳
+- [ ] Create `/apps/e2e/tests/auth-flow.spec.ts`:
+  - Test successful login
+  - Test failed login
+  - Test logout
+  - Test session persistence
+- [ ] Create `/apps/e2e/tests/rls-isolation.spec.ts`:
+  - Test data isolation between orgs
+  - Test unauthorized access attempts
+- [ ] Run: `pnpm test:e2e`
+
+### Phase 3: Production Hardening (Day 4) ⏳
+**Goal: Make the system production-ready**
+
+#### 3.1 Add Missing Pieces (3 hours) ⏳
+- [ ] Implement refresh token in auth router:
+  ```typescript
+  refresh: publicProcedure
+    .input(z.object({ refreshToken: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify refresh token
+      // Generate new JWT
+      // Rotate refresh token
+      // Set new cookies
+    })
+  ```
+- [ ] Add proper logout that clears all cookies
+- [ ] Fix register to create default organization:
+  ```typescript
+  // After user creation
+  const org = await ctx.prisma.organization.create({
+    data: { name: `${user.firstName}'s Organization`, slug: generateSlug() }
+  });
+  await ctx.prisma.organizationMember.create({
+    data: { userId: user.id, organizationId: org.id, role: 'OWNER' }
+  });
+  ```
+
+#### 3.2 Security Enhancements (2 hours) ⏳
+- [ ] Add rate limiting on `/api/trpc/auth.*` endpoints
+- [ ] Implement CSRF protection for mutations
+- [ ] Add security headers (HSTS, CSP, etc.)
+- [ ] Enable request ID tracking for debugging
+
+#### 3.3 Documentation (2 hours) ⏳
+- [ ] Update README with auth setup instructions
+- [ ] Document required environment variables
+- [ ] Create troubleshooting guide for common auth issues
+- [ ] Add architecture diagram of auth flow
+
+## Critical Success Path
+
+To achieve working auth + RLS, these are the MINIMUM required fixes:
+
+1. **Fix RLS Test Pattern** → Ensures RLS actually works at database level
+2. **Standardize Cookie Handling** → Prevents "signed cookie string must be provided" errors
+3. **Fix Organization Context** → Ensures correct data isolation in UI
+4. **Test End-to-End** → Verifies everything works together
+
+## Key Patterns to Follow
+
+### RLS Testing Pattern
+```typescript
+// ALWAYS use dual connections in tests
+const { adminPrisma, appPrisma } = createTestConnections();
+
+// ALWAYS use withRLS for RLS testing
+const result = await withRLS(appPrisma, {
+  userId: user.id,
+  organizationId: org.id,
+  bypassRLS: false
+}, async (tx) => {
+  return await tx.item.findMany();
+});
+
+// ALWAYS assert on result.data
+expect(result.data).toHaveLength(expected);
+```
+
+### Cookie Handling Pattern
+```typescript
+// ALWAYS unsign cookies before use
+const authCookie = request.cookies['auth-token'];
+const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
+
+// NEVER read signed cookies directly
+const token = request.cookies['auth-token']; // WRONG - includes signature!
+```
+
+### Organization Context Pattern
+```typescript
+// Priority order for organization resolution:
+// 1. x-organization-id header (explicit selection)
+// 2. active-organization cookie (persistent selection)
+// 3. JWT organizationId (default from login)
+```
+
+
+## First Immediate Actions
+
+1. **Fix the failing RLS E2E test** by switching to dual-connection pattern
+2. **Delete deprecated RLS middleware files** to eliminate confusion
+3. **Create unified AuthService** to centralize auth logic
+4. **Test login → view data flow** manually to verify it works
+
+## Expected Outcome
+
+After implementing this plan:
+- ✅ Users can log in and auth persists across requests
+- ✅ Organization context is properly maintained
+- ✅ Database RLS filters data correctly
+- ✅ UI shows only the user's organization data
+- ✅ Tests prove the isolation works
+
+## Technical Standards We Follow
 - **tRPC + Fastify** for type-safe APIs (NOT REST)
 - **Database-level RLS** for multi-tenancy (NOT application-level filtering)
 - **Signed httpOnly cookies** for auth tokens (NOT localStorage)
@@ -20,643 +254,29 @@ Build an **elegant, secure MVP** that **STRONGLY adheres** to our technology sta
 - **Zod validation** on all inputs (NOT manual validation)
 - **Structured logging with Pino** (NOT console.log)
 
-## Overview
-This document provides an exhaustive and comprehensive guide for implementing Ventry's core infrastructure with a focus on authentication, tRPC, RLS, middleware, and database patterns. Features come AFTER infrastructure is solid.
-
-## Status Legend
-- 🚧 In Progress
-- ⏳ Pending
-- ✅ Completed
-- ❌ Blocked
-- 🔍 Needs Investigation
-
-## Phase 0: Core Infrastructure Foundation (CRITICAL) - 2-3 days
-
-### 0.1 RLS Implementation Standardization 🚧
-
-#### Current State Analysis
-- **Canonical Implementation**: `/apps/backend/src/lib/rls/` (USE THIS)
-- **Deprecated**: `rls-middleware-v2.ts`, `rls-middleware.ts` (REMOVE)
-- **Working Test Pattern**: `rls-simple.integration.spec.ts` (FOLLOW THIS)
-- **Failing Test Pattern**: `rls-e2e.integration.spec.ts` (FIX THIS)
-
-#### Specific Tasks
-- [ ] Fix `rls-e2e.integration.spec.ts` database connection isolation
-  ```typescript
-  // WRONG - Current pattern causing issues
-  await adminPrisma.$disconnect(); // This breaks visibility
-  adminPrisma = new PrismaClient({...}); // Creates new connection
-  
-  // CORRECT - Pattern from rls-simple.integration.spec.ts
-  const { adminPrisma, appPrisma } = createTestConnections();
-  // Use adminPrisma for setup WITHOUT disconnecting
-  // Use appPrisma with withRLS for assertions
-  ```
-- [ ] Remove all disconnect/reconnect patterns in tests
-- [ ] Update all tests to use dual-connection pattern consistently
-- [ ] Ensure all RLS tests use `withRLS` wrapper for context setting
-- [ ] Verify `basePrisma` from `@ventry/database` sees committed test data
-
-#### RLS Context Management Pattern
-```typescript
-// CORRECT - Use withRLS for explicit transactions
-const result = await withRLS(appPrisma, {
-  userId: 'cuid...',
-  organizationId: 'cuid...',
-  bypassRLS: false
-}, async (tx) => {
-  return await tx.item.findMany();
-});
-
-// CORRECT - Use RLS proxy in tRPC context
-const prisma = createRLSProxy(basePrisma, () => rlsContext);
-```
-
-### 0.2 Authentication & JWT Standardization ⏳
-
-#### Current Issues
-1. **Cookie Handling**: Multiple implementations with inconsistent error handling
-2. **JWT Payload**: Optional fields causing confusion
-3. **Organization Context**: Using `window.__organizationId` (anti-pattern)
-4. **Race Conditions**: Auth provider timing issues
-
-#### Canonical Patterns to Implement
-- [ ] JWT Payload Structure (from `/apps/backend/src/auth/jwt.ts`):
-  ```typescript
-  interface JWTPayload {
-    userId: string;              // REQUIRED - CUID format
-    organizationId?: string;     // OPTIONAL - can change
-    email?: string;              // OPTIONAL - advisory only
-    role?: string;               // OPTIONAL - advisory only
-  }
-  ```
-- [ ] Token Extraction Priority (from `/apps/backend/src/lib/auth/token-extractor.ts`):
-  1. Signed httpOnly cookie (`auth-token`)
-  2. Authorization header (`Bearer <token>`)
-- [ ] Organization Context Resolution Order:
-  1. `x-organization-id` header
-  2. `active-organization` signed cookie  
-  3. JWT payload `organizationId`
-
-#### Specific Implementation Tasks
-- [ ] Create unified `AuthService` class in `/apps/backend/src/services/auth-service.ts`:
-  ```typescript
-  export class AuthService {
-    // Core methods
-    async login(credentials: LoginInput): Promise<AuthResult>
-    async logout(userId: string): Promise<void>
-    async refreshToken(refreshToken: string): Promise<AuthResult>
-    async verifyToken(token: string): Promise<JWTPayload>
-    
-    // Cookie management
-    setAuthCookie(res: FastifyReply, token: string): void
-    clearAuthCookie(res: FastifyReply): void
-    getAuthToken(req: FastifyRequest): string | undefined
-    
-    // Organization context
-    setOrganizationContext(res: FastifyReply, orgId: string): void
-    getOrganizationContext(req: FastifyRequest): string | undefined
-  }
-  ```
-- [ ] Replace all direct cookie operations with AuthService methods
-- [ ] Implement proper error handling for cookie failures
-- [ ] Add retry logic with exponential backoff for auth operations
-
-### 0.3 tRPC Context & Middleware Patterns ⏳
-
-#### Current Architecture
-- **Context Creation**: `/apps/backend/src/trpc/context.ts`
-- **Middleware**: `/apps/backend/src/trpc/middleware.ts`
-- **Procedures**: `/apps/backend/src/trpc/procedures.ts`
-
-#### Canonical Procedure Hierarchy
-```typescript
-publicProcedure         // No auth required
-    ↓
-protectedProcedure      // Requires valid JWT
-    ↓
-organizationProcedure   // Requires organization context
-    ↓
-organizationAdminProcedure  // Requires ADMIN or OWNER role
-    ↓
-organizationOwnerProcedure  // Requires OWNER role only
-```
-
-#### Specific Tasks
-- [ ] Ensure all routers use appropriate base procedures
-- [ ] Standardize error codes across all procedures:
-  ```typescript
-  - UNAUTHORIZED: No valid auth
-  - FORBIDDEN: No permission
-  - NOT_FOUND: Resource missing
-  - BAD_REQUEST: Invalid input
-  - CONFLICT: Duplicate/conflict
-  - PRECONDITION_FAILED: Business rule violation
-  ```
-- [ ] Add consistent audit logging for mutations
-- [ ] Implement transaction patterns for complex operations
-
-### 0.4 Database Connection & Testing Patterns ⏳
-
-#### Dual-Role Architecture
-1. **Admin Role** (`ventry`): Superuser for migrations and test setup
-2. **App Role** (`ventry_app`): Limited privileges with RLS enforcement
-
-#### Connection Patterns
-```typescript
-// CORRECT - Integration test setup
-export function createTestConnections() {
-  const adminPrisma = new PrismaClient({
-    datasources: { db: { url: DATABASE_ADMIN_URL } }
-  });
-  
-  const appPrisma = new PrismaClient({
-    datasources: { db: { url: DATABASE_URL } }
-  });
-  
-  return { adminPrisma, appPrisma };
-}
-
-// CORRECT - Test pattern
-beforeEach(async () => {
-  const { adminPrisma, appPrisma } = createTestConnections();
-  // Setup with adminPrisma
-  await adminPrisma.organization.create({...});
-  // DO NOT DISCONNECT HERE
-});
-
-it('enforces RLS', async () => {
-  // Test with appPrisma
-  const result = await withRLS(appPrisma, context, async (tx) => {
-    return await tx.item.findMany();
-  });
-});
-```
-
-#### Specific Tasks
-- [ ] Document connection URL requirements in `.env.example`
-- [ ] Update all integration tests to use dual connections
-- [ ] Remove any `prisma.$disconnect()` calls in beforeEach/afterEach
-- [ ] Ensure proper cleanup in afterEach without breaking connections
-- [ ] Add connection pooling configuration for production
-
-## Phase 1: Fix Current Breakages (High Priority) - 1-2 days
-
-### 1.1 Immediate Code Fixes 🚧
-
-#### Remove Console Logs from Production
-- [ ] Remove temporary debug logging from `/apps/backend/src/trpc/context.ts`
-- [ ] Add ESLint rule to prevent console.log in production code
-- [ ] Replace with Pino logger where needed
-
-#### Fix Failing RLS E2E Test
-- [ ] Update `rls-e2e.integration.spec.ts` to match working pattern:
-  ```typescript
-  // REMOVE this pattern:
-  await adminPrisma.$disconnect();
-  adminPrisma = new PrismaClient({...});
-  
-  // REPLACE with persistent connections:
-  let adminPrisma: PrismaClient;
-  let appPrisma: PrismaClient;
-  
-  beforeAll(() => {
-    const connections = createTestConnections();
-    adminPrisma = connections.adminPrisma;
-    appPrisma = connections.appPrisma;
-  });
-  
-  afterAll(async () => {
-    await adminPrisma.$disconnect();
-    await appPrisma.$disconnect();
-  });
-  ```
-
-### 1.2 Remove All Deprecated Code ⏳
-- [ ] Delete `/apps/backend/src/lib/rls-middleware-v2.ts`
-- [ ] Delete `/apps/backend/src/lib/rls-middleware.ts` (keep only `/lib/rls/`)
-- [ ] Remove all imports of deprecated middleware
-- [ ] Update any remaining references to use `/lib/rls/index.js`
-- [ ] Delete unused test utilities that don't follow dual-connection pattern
-
-### 1.3 Fix Auth Provider Race Conditions ⏳
-- [ ] In `/apps/web/src/providers/auth-provider.tsx`:
-  ```typescript
-  // Add proper state synchronization
-  const login = useCallback(async (credentials) => {
-    const result = await loginMutation.mutateAsync(credentials);
-    // Add delay before refetch to ensure cookies are set
-    await new Promise(resolve => setTimeout(resolve, 100));
-    await authQuery.refetch();
-    return result;
-  }, []);
-  ```
-- [ ] Replace `window.__organizationId` with Zustand store
-- [ ] Add proper error boundaries around auth operations
-
-## Phase 2: Standardize Core Patterns (High Priority) - 2-3 days
-
-### 2.1 tRPC Router Standardization ⏳
-
-#### Canonical Router Pattern
-All routers MUST follow this structure (from working routers like `items.ts`):
-
-```typescript
-// 1. Imports (specific order)
-import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
-import { createTRPCRouter, organizationProcedure } from '../trpc/trpc.js';
-
-// 2. Input schemas (create, update, filter)
-const itemCreateSchema = z.object({
-  sku: z.string().min(1).max(50),
-  name: z.string().min(1).max(200),
-  // ...
-});
-
-// 3. Router export (no type annotation)
-export const itemsRouter = createTRPCRouter({
-  // List with filters
-  list: organizationProcedure
-    .input(filterSchema)
-    .query(async ({ ctx, input }) => {
-      // Always include pagination metadata
-      return {
-        items: result,
-        pagination: {
-          page, limit, total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
-    
-  // Standard CRUD operations...
-});
-```
-
-#### Specific Tasks
-- [ ] Audit all routers for consistency
-- [ ] Ensure all use `organizationProcedure` (not `protectedProcedure`) for business operations
-- [ ] Add pagination to all list operations
-- [ ] Standardize error messages across routers
-- [ ] Add audit logging to all mutations
-
-### 2.2 Unified Cookie & Token Management ⏳
-
-#### Create Centralized Services
-- [ ] Create `/apps/backend/src/services/cookie-service.ts`:
-  ```typescript
-  export class CookieService {
-    static readonly COOKIE_NAMES = {
-      AUTH_TOKEN: 'auth-token',
-      ACTIVE_ORGANIZATION: 'active-organization',
-      REFRESH_TOKEN: 'refresh-token',
-    } as const;
-    
-    static setSignedCookie(res: FastifyReply, name: string, value: string, options?: CookieOptions): void
-    static getSignedCookie(req: FastifyRequest, name: string): string | undefined
-    static clearCookie(res: FastifyReply, name: string): void
-  }
-  ```
-
-- [ ] Update all cookie operations to use CookieService
-- [ ] Remove duplicate cookie handling code
-- [ ] Add proper TypeScript types for all cookie operations
-
-### 2.3 RLS Testing Pattern Enforcement ⏳
-
-#### Standardize All RLS Tests
-- [ ] Create test template in `/apps/backend/src/test-utils/rls-test-template.ts`
-- [ ] Update all RLS tests to follow the template:
-  ```typescript
-  describe('Entity RLS', () => {
-    let adminPrisma: PrismaClient;
-    let appPrisma: PrismaClient;
-    let testContext: RLSContext;
-    
-    beforeAll(() => {
-      const connections = createTestConnections();
-      adminPrisma = connections.adminPrisma;
-      appPrisma = connections.appPrisma;
-    });
-    
-    beforeEach(async () => {
-      // Setup test data with adminPrisma
-      const org = await adminPrisma.organization.create({...});
-      testContext = { userId: user.id, organizationId: org.id, bypassRLS: false };
-    });
-    
-    afterEach(async () => {
-      // Cleanup with adminPrisma
-      await adminPrisma.$executeRawUnsafe('DELETE FROM ...');
-    });
-    
-    afterAll(async () => {
-      await adminPrisma.$disconnect();
-      await appPrisma.$disconnect();
-    });
-    
-    it('enforces organization isolation', async () => {
-      const result = await withRLS(appPrisma, testContext, async (tx) => {
-        return await tx.entity.findMany();
-      });
-      expect(result.data).toHaveLength(1);
-    });
-  });
-  ```
-
-### 2.4 Frontend Auth State Management ⏳
-
-#### Replace Global State Anti-patterns
-- [ ] Create `/apps/web/src/stores/organization-store.ts`:
-  ```typescript
-  interface OrganizationStore {
-    activeOrganizationId: string | null;
-    setActiveOrganization: (id: string) => void;
-    clearActiveOrganization: () => void;
-  }
-  ```
-- [ ] Remove ALL `window.__organizationId` usage
-- [ ] Update tRPC client to include organization header:
-  ```typescript
-  headers: () => ({
-    'x-organization-id': organizationStore.getState().activeOrganizationId,
-  })
-  ```
-
-## Phase 3: Security & Performance Foundation - 2-3 days
-
-### 3.1 Implement Proper Authentication Flow ⏳
-
-#### Auth Service Implementation
-- [ ] Create `/apps/backend/src/services/auth-service.ts` with:
-  ```typescript
-  export class AuthService {
-    private readonly cookieService = new CookieService();
-    private readonly logger = createLogger('auth-service');
-    
-    async login(credentials: LoginInput): Promise<AuthResult> {
-      // 1. Validate credentials
-      // 2. Generate JWT with minimal payload
-      // 3. Set signed httpOnly cookie
-      // 4. Create audit log entry
-      // 5. Return user data (no sensitive info)
-    }
-    
-    async refreshToken(token: string): Promise<AuthResult> {
-      // Currently throws NOT_IMPLEMENTED - implement this
-    }
-    
-    async logout(userId: string, res: FastifyReply): Promise<void> {
-      // 1. Clear auth cookie
-      // 2. Clear organization cookie
-      // 3. Invalidate any sessions
-      // 4. Audit log
-    }
-  }
-  ```
-
-#### Refresh Token Implementation
-- [ ] Add refresh token table to Prisma schema:
-  ```prisma
-  model RefreshToken {
-    id        String   @id @default(cuid())
-    token     String   @unique @db.VarChar(500)
-    userId    String   @map("user_id")
-    user      User     @relation(fields: [userId], references: [id])
-    expiresAt DateTime @map("expires_at")
-    createdAt DateTime @default(now()) @map("created_at")
-    
-    @@map("refresh_tokens")
-  }
-  ```
-- [ ] Implement secure refresh token generation
-- [ ] Add token rotation on each refresh
-- [ ] Set 30-day expiration with sliding window
-
-### 3.2 Database Performance & Connection Management ⏳
-
-#### Connection Pooling Configuration
-- [ ] Update `/packages/database/client.ts`:
-  ```typescript
-  export const prisma = new PrismaClient({
-    datasources: {
-      db: {
-        url: process.env.DATABASE_URL,
-      },
-    },
-    // Production pooling settings
-    ...(process.env.NODE_ENV === 'production' && {
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-          connectionLimit: parseInt(process.env.DB_POOL_SIZE || '20'),
-          connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '10'),
-        },
-      },
-    }),
-  });
-  ```
-
-#### Add Missing Indexes for RLS Performance
-- [ ] Create migration for RLS policy optimization:
-  ```sql
-  -- Indexes for RLS policy evaluation
-  CREATE INDEX CONCURRENTLY idx_organization_members_user_org 
-    ON organization_members(user_id, organization_id);
-  
-  CREATE INDEX CONCURRENTLY idx_items_org_sku 
-    ON items(organization_id, sku);
-  
-  CREATE INDEX CONCURRENTLY idx_inventory_org_location 
-    ON inventory(organization_id, location_id);
-  ```
-
-### 3.3 Security Hardening ⏳
-
-#### Rate Limiting Implementation
-- [ ] Add rate limiting middleware using `@fastify/rate-limit`:
-  ```typescript
-  // Auth endpoints - strict limits
-  app.register(rateLimit, {
-    max: 5,
-    timeWindow: '1 minute',
-    skipSuccessfulRequests: false,
-  });
-  
-  // API endpoints - reasonable limits  
-  app.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-    keyGenerator: (req) => req.user?.id || req.ip,
-  });
-  ```
-
-#### Security Headers & CSRF Protection
-- [ ] Configure security headers in Fastify
-- [ ] Implement CSRF token for state-changing operations
-- [ ] Add Content Security Policy
-- [ ] Enable HSTS for production
-
-### 3.4 Monitoring & Observability ⏳
-
-#### Structured Logging Enhancement
-- [ ] Add request ID to all log entries
-- [ ] Include organization context in logs
-- [ ] Add performance metrics to critical operations:
-  ```typescript
-  const startTime = Date.now();
-  const result = await operation();
-  logger.info({
-    operation: 'items.list',
-    duration: Date.now() - startTime,
-    organizationId: ctx.organizationId,
-    resultCount: result.length,
-  }, 'Operation completed');
-  ```
-
-#### Health Checks
-- [ ] Create `/health` endpoint with:
-  - Database connectivity check
-  - Redis connectivity check (when added)
-  - Disk space check
-  - Memory usage
-
-## Phase 4: MVP Features (After Infrastructure) - 3-5 days
-
-### 4.1 Core Inventory Features ⏳
-Focus on the essentials only:
-- [ ] Items CRUD with proper RLS
-- [ ] Inventory levels and adjustments
-- [ ] Basic stock movement tracking
-- [ ] Low stock alerts
-- [ ] Simple reporting dashboard
-
-### 4.2 Organization Management ⏳
-- [ ] Organization switching UI
-- [ ] Basic member management
-- [ ] Role-based permissions (using existing roles)
-
-### 4.3 Testing & Documentation ⏳
-- [ ] Integration tests for all critical paths
-- [ ] E2E tests for auth flow
-- [ ] API documentation generation
-- [ ] Update README.md and TODO.md
-
-## Critical Patterns Reference
-
-### RLS Pattern Summary
-```typescript
-// ALWAYS use this pattern for RLS operations
-import { withRLS } from '@/lib/rls/index.js';
-
-// In tests: dual connections
-const { adminPrisma, appPrisma } = createTestConnections();
-
-// In production: RLS proxy
-const prisma = createRLSProxy(basePrisma, () => rlsContext);
-```
-
-### Authentication Pattern Summary
-```typescript
-// JWT minimal payload
-{ userId: string, organizationId?: string }
-
-// Cookie priority
-1. Signed httpOnly cookie
-2. Authorization header
-
-// Organization context priority
-1. x-organization-id header
-2. active-organization cookie
-3. JWT organizationId
-```
-
-### tRPC Pattern Summary
-```typescript
-// Procedure hierarchy
-publicProcedure → protectedProcedure → organizationProcedure → adminProcedure → ownerProcedure
-
-// Always return pagination
-return { items, pagination: { page, limit, total, totalPages } }
-
-// Consistent errors
-throw new TRPCError({ code: 'FORBIDDEN', message: 'Clear user message' })
-```
-
-## Current Blockers & Immediate Actions
-
-### Critical Issues Blocking Development
-1. **RLS E2E Test Failure** ❌
-   - **Issue**: Database connection isolation in `rls-e2e.integration.spec.ts`
-   - **Root Cause**: `adminPrisma.$disconnect()` breaks transaction visibility
-   - **Fix**: Remove disconnect/reconnect pattern, use persistent connections
-   
-2. **Auth Provider Race Condition** ❌
-   - **Issue**: Login → immediate auth check fails intermittently
-   - **Root Cause**: Cookies not fully set before refetch
-   - **Fix**: Add 100ms delay after login before auth query refetch
-
-3. **Global State Anti-pattern** ❌
-   - **Issue**: `window.__organizationId` breaks in SSR and is fragile
-   - **Root Cause**: Quick hack that became technical debt
-   - **Fix**: Replace with Zustand store + tRPC header
-
-## Success Criteria for MVP
-
-### Infrastructure (Must Have)
-- ✅ Database-level RLS working correctly
-- ✅ Dual-role database architecture
-- ✅ Signed httpOnly cookies for auth
-- ✅ Type-safe tRPC procedures
-- ❌ All tests passing (currently blocked)
-- ❌ Consistent patterns across codebase
-- ❌ No console.log in production
-- ❌ Proper error handling everywhere
-
-### Features (Nice to Have)
-- ⏳ Basic inventory CRUD
-- ⏳ Organization switching
-- ⏳ Simple reporting
-- ⏳ Member management
-
-### Documentation
-- ❌ Updated README.md
-- ❌ Updated TODO.md
-- ❌ Environment variables documented
-- ❌ Deployment guide
-
-## Development Philosophy
-
-1. **Fix infrastructure before features** - A broken foundation means fragile features
-2. **One pattern per concern** - Not three ways to handle cookies
-3. **Test the hard stuff** - RLS and multi-tenancy are critical
-4. **Security is not optional** - Database-level enforcement only
-5. **Type safety everywhere** - If it compiles, it should work
-
 ## Notes for Developers
 
 ### When Working on RLS
 - ALWAYS use dual connections in tests
-- NEVER disconnect in beforeEach
-- ALWAYS clean up with admin connection
-- NEVER create backdoor policies
+- NEVER disconnect/reconnect in tests
+- ALWAYS use `withRLS()` for RLS operations
+- NEVER use singleton `prisma` from `@ventry/database` in tests
 
 ### When Working on Auth
-- ALWAYS use signed cookies
-- NEVER store tokens in localStorage  
-- ALWAYS include minimal JWT payload
-- NEVER trust client-side org context
+- ALWAYS unsign cookies before reading JWT
+- NEVER read signed cookies directly
+- ALWAYS verify organization membership
+- NEVER trust client-side org context alone
 
 ### When Working on tRPC
-- ALWAYS use appropriate procedure type
-- NEVER use protectedProcedure for org data
-- ALWAYS include pagination metadata
-- NEVER throw generic errors
+- ALWAYS use `organizationProcedure` for business data
+- NEVER use `protectedProcedure` for org-scoped operations
+- ALWAYS verify user belongs to the organization
+- NEVER bypass RLS checks in application code
 
 ---
 
 Last Updated: 2025-01-17
-Next Review: After Phase 1 completion
+Next Review: After Phase 0 completion
 
-**Remember**: An elegant MVP is better than a complex mess. Keep it simple, secure, and standardized.
+**Remember**: The goal is working auth + RLS from login to UI. Everything else can wait.
