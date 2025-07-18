@@ -150,7 +150,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                       <SelectContent>
                         {customers?.customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.email})
+                            {customer.companyName || `${customer.firstName} ${customer.lastName}`} ({customer.email})
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -35,12 +35,8 @@ import { trpc } from '@/lib/trpc';
 import type { Order } from '@ventry/database';
 
 const updateOrderSchema = z.object({
-  status: z.enum(['DRAFT', 'PENDING', 'CONFIRMED', 'PROCESSING', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED']),
-  shippingAddress: z.string().min(1, 'Shipping address is required'),
-  billingAddress: z.string().min(1, 'Billing address is required'),
+  status: z.enum(['PENDING', 'CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
   notes: z.string().optional(),
-  paymentStatus: z.enum(['PENDING', 'PAID', 'PARTIAL', 'REFUNDED']),
-  paymentMethod: z.string().optional(),
 });
 
 type UpdateOrderFormData = z.infer<typeof updateOrderSchema>;
@@ -74,11 +70,7 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
     if (order) {
       form.reset({
         status: order.status,
-        shippingAddress: order.shippingAddress,
-        billingAddress: order.billingAddress,
         notes: order.notes || '',
-        paymentStatus: order.paymentStatus,
-        paymentMethod: order.paymentMethod || '',
       });
     }
   }, [order, form]);
@@ -94,7 +86,7 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
 
   if (!order) return null;
 
-  const canEditStatus = ['DRAFT', 'PENDING', 'CONFIRMED'].includes(order.status);
+  const canEditStatus = ['PENDING', 'CONFIRMED'].includes(order.status);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,20 +118,18 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="DRAFT">Draft</SelectItem>
                         <SelectItem value="PENDING">Pending</SelectItem>
                         <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                        <SelectItem value="PROCESSING">Processing</SelectItem>
+                        <SelectItem value="PICKING">Picking</SelectItem>
                         <SelectItem value="PACKED">Packed</SelectItem>
                         <SelectItem value="SHIPPED">Shipped</SelectItem>
                         <SelectItem value="DELIVERED">Delivered</SelectItem>
                         <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                        <SelectItem value="REFUNDED">Refunded</SelectItem>
                       </SelectContent>
                     </Select>
                     {!canEditStatus && (
                       <FormDescription>
-                        Status can only be changed for Draft, Pending, or Confirmed orders
+                        Status can only be changed for Pending or Confirmed orders
                       </FormDescription>
                     )}
                     <FormMessage />
@@ -147,92 +137,7 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="paymentStatus"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Payment Status</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select payment status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="PENDING">Pending</SelectItem>
-                        <SelectItem value="PAID">Paid</SelectItem>
-                        <SelectItem value="PARTIAL">Partial</SelectItem>
-                        <SelectItem value="REFUNDED">Refunded</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
-
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payment Method</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">Not specified</SelectItem>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
-                      <SelectItem value="DEBIT_CARD">Debit Card</SelectItem>
-                      <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                      <SelectItem value="CHECK">Check</SelectItem>
-                      <SelectItem value="PAYPAL">PayPal</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="shippingAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Shipping Address *</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter shipping address..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="billingAddress"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Billing Address *</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter billing address..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             <FormField
               control={form.control}

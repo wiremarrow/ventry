@@ -157,6 +157,7 @@ export const ordersRouter = createTRPCRouter({
                 companyName: true,
                 firstName: true,
                 lastName: true,
+                email: true,
               },
             },
             _count: {

@@ -247,6 +247,9 @@ importers:
       '@ventry/backend':
         specifier: workspace:*
         version: link:../backend
+      '@ventry/database':
+        specifier: workspace:^
+        version: link:../../packages/database
       '@ventry/shared':
         specifier: workspace:*
         version: link:../../packages/shared

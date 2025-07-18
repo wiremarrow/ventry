@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@ventry/ui';
 
-import type { Order, OrderItem } from '@ventry/database';
+import type { Order } from '@ventry/database';
 
 interface ViewOrderDialogProps {
   order: Order | null;
@@ -55,19 +55,6 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
     return colors[status] || 'secondary';
   };
 
-  const calculateSubtotal = () => {
-    return order.items?.reduce((sum: number, item: OrderItem) => {
-      return sum + (item.quantity * item.unitPrice);
-    }, 0) || 0;
-  };
-
-  const calculateDiscount = () => {
-    return order.items?.reduce((sum: number, item: OrderItem) => {
-      const lineTotal = item.quantity * item.unitPrice;
-      return sum + (lineTotal * (item.discountPercentage / 100));
-    }, 0) || 0;
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -93,150 +80,42 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
             </div>
           </div>
 
-          {/* Customer Information */}
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Customer Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Name</p>
-                <p className="font-medium">{order.customer?.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-medium">{order.customer?.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Phone</p>
-                <p className="font-medium">{order.customer?.phone || '-'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Customer Type</p>
-                <p className="font-medium capitalize">{order.customer?.type.toLowerCase()}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Addresses */}
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Addresses
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Shipping Address</p>
-                <p className="text-sm whitespace-pre-line">{order.shippingAddress}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Billing Address</p>
-                <p className="text-sm whitespace-pre-line">{order.billingAddress}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Items */}
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Order Items
-            </h3>
-            <div className="space-y-2">
-              {order.items?.map((item: OrderItem) => (
-                <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <p className="font-medium">{item.item?.name}</p>
-                    <p className="text-sm text-gray-600">
-                      SKU: {item.item?.sku} • From: {item.warehouse?.name}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">
-                      {item.quantity} × {formatCurrency(item.unitPrice)}
-                    </p>
-                    {item.discountPercentage > 0 && (
-                      <p className="text-sm text-gray-600">-{item.discountPercentage}% discount</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Order Summary */}
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Order Summary
-            </h3>
-            <div className="space-y-2">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-medium mb-2">Order Summary</h4>
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal</span>
-                <span>{formatCurrency(calculateSubtotal())}</span>
+                <span>Subtotal</span>
+                <span>{formatCurrency(order.subtotal ? Number(order.subtotal) : 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Discount</span>
-                <span className="text-red-600">-{formatCurrency(calculateDiscount())}</span>
+                <span>Discount</span>
+                <span>-{formatCurrency(order.discountTotal ? Number(order.discountTotal) : 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
-                <span>{formatCurrency(order.taxAmount || 0)}</span>
+                <span>Tax</span>
+                <span>{formatCurrency(order.taxTotal ? Number(order.taxTotal) : 0)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Shipping</span>
-                <span>{formatCurrency(order.shippingAmount || 0)}</span>
+                <span>Shipping</span>
+                <span>{formatCurrency(order.shippingTotal ? Number(order.shippingTotal) : 0)}</span>
               </div>
-              <div className="flex justify-between font-medium text-lg border-t pt-2">
-                <span>Total</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Information */}
-          <div className="border-t pt-4">
-            <h3 className="font-medium mb-3 flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Payment Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Payment Status</p>
-                <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'secondary'}>
-                  {order.paymentStatus}
-                </Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Payment Method</p>
-                <p className="font-medium">{order.paymentMethod || '-'}</p>
+              <div className="border-t pt-2 font-medium">
+                <div className="flex justify-between">
+                  <span>Total</span>
+                  <span>{formatCurrency(order.grandTotal ? Number(order.grandTotal) : 0)}</span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Notes */}
           {order.notes && (
-            <div className="border-t pt-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Notes
-              </h3>
-              <p className="text-sm text-gray-600 whitespace-pre-line">{order.notes}</p>
+            <div>
+              <h4 className="font-medium mb-2">Notes</h4>
+              <p className="text-sm text-gray-600">{order.notes}</p>
             </div>
           )}
-
-          {/* Actions */}
-          <div className="border-t pt-4 flex gap-2">
-            <Button variant="outline" className="flex-1">
-              <FileText className="h-4 w-4 mr-2" />
-              Generate Invoice
-            </Button>
-            <Button variant="outline" className="flex-1">
-              <Truck className="h-4 w-4 mr-2" />
-              Create Shipment
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>

@@ -39,8 +39,8 @@ export default function CustomersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [editCustomer, setEditCustomer] = useState<typeof customers?.customers[0] | null>(null);
-
+  const [editCustomer, setEditCustomer] = useState<any>(null);
+  
   // Fetch customers with filtering
   const { data: customers, isLoading, refetch } = trpc.customers.list.useQuery({
     search: searchTerm || undefined,

@@ -9,7 +9,7 @@ import { CreateOrderDialog } from '@/components/orders/create-order-dialog';
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<'PENDING' | 'CONFIRMED' | 'PICKING' | 'PACKED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | ''>('');
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -98,11 +98,11 @@ export default function OrdersPage() {
             Confirmed
           </Button>
           <Button
-            variant={statusFilter === 'PROCESSING' ? 'default' : 'outline'}
+            variant={statusFilter === 'PICKING' ? 'default' : 'outline'}
             size="sm"
-            onClick={() => setStatusFilter('PROCESSING')}
+            onClick={() => setStatusFilter('PICKING')}
           >
-            Processing
+            Picking
           </Button>
           <Button
             variant={statusFilter === 'SHIPPED' ? 'default' : 'outline'}
@@ -120,7 +120,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Order List */}
-      <OrderList searchTerm={searchTerm} status={statusFilter} />
+      <OrderList searchTerm={searchTerm} status={statusFilter || undefined} />
 
       {/* Create Order Dialog */}
       <CreateOrderDialog open={createOpen} onOpenChange={setCreateOpen} />

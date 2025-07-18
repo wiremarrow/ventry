@@ -41,7 +41,7 @@ import { toast } from 'sonner';
 
 interface OrderListProps {
   searchTerm: string;
-  status?: string;
+  status?: 'PENDING' | 'CONFIRMED' | 'PICKING' | 'PACKED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 }
 
 export function OrderList({ searchTerm, status }: OrderListProps) {
@@ -71,9 +71,9 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
     },
   });
 
-  const confirmMutation = trpc.orders.confirm.useMutation({
+  const updateStatusMutation = trpc.orders.updateStatus.useMutation({
     onSuccess: () => {
-      toast.success('Order confirmed successfully');
+      toast.success('Order status updated successfully');
       utils.orders.list.invalidate();
     },
     onError: (error) => {
@@ -154,7 +154,6 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
               <TableHead>Date</TableHead>
               <TableHead className="text-right">Items</TableHead>
               <TableHead className="text-right">Total</TableHead>
-              <TableHead>Payment</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
@@ -192,7 +191,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{order.customer.name}</p>
+                      <p className="font-medium">{order.customer.companyName || `${order.customer.firstName} ${order.customer.lastName}`}</p>
                       <p className="text-sm text-gray-600">{order.customer.email}</p>
                     </div>
                   </TableCell>
@@ -203,12 +202,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                     {order._count.items}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(order.totalAmount)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'secondary'}>
-                      {order.paymentStatus}
-                    </Badge>
+                    {formatCurrency(order.total)}
                   </TableCell>
                   <TableCell>
                     <Badge variant={getStatusColor(order.status) as any}>
@@ -239,7 +233,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                         <DropdownMenuSeparator />
                         {order.status === 'PENDING' && (
                           <DropdownMenuItem
-                            onClick={() => confirmMutation.mutate({ id: order.id })}
+                            onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'CONFIRMED' })}
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Confirm Order

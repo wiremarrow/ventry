@@ -23,6 +23,7 @@
     "@trpc/react-query": "^11.4.3",
     "@trpc/server": "11.4.3",
     "@ventry/backend": "workspace:*",
+    "@ventry/database": "workspace:^",
     "@ventry/shared": "workspace:*",
     "@ventry/ui": "workspace:*",
     "axios": "^1.6.2",

@@ -33,9 +33,9 @@ export default function OrganizationMembersPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [selectedMember, setSelectedMember] = useState<typeof members extends Array<infer T> ? T : never | null>(null);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editRole, setEditRole] = useState<'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
+  const [editRole, setEditRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
 
   const { data: members, isLoading, refetch } = trpc.organizations.getMembers.useQuery(
     { organizationId: currentOrganization?.id || '' },

@@ -56,13 +56,13 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
     customer?.addresses?.map(addr => ({
       addressType: addr.addressType,
       line1: addr.line1,
-      line2: addr.line2 || undefined,
+      line2: addr.line2 || '',
       city: addr.city,
       state: addr.state,
       postalCode: addr.postalCode,
       country: addr.country,
-      phone: addr.phone || undefined,
-      attention: addr.attention || undefined,
+      phone: addr.phone || '',
+      attention: addr.attention || '',
       isDefault: addr.isDefault,
     })) || []
   );
@@ -86,7 +86,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
       currencyId: customer?.currencyId || 'USD',
       defaultPaymentTerms: customer?.defaultPaymentTerms || '',
       website: customer?.website || '',
-      addresses: customer?.addresses || [],
+      addresses: [],
     },
   });
 
@@ -142,13 +142,13 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
     const newAddress: AddressFormData = {
       addressType: 'BOTH',
       line1: '',
-      line2: undefined,
+      line2: '',
       city: '',
       state: '',
       postalCode: '',
       country: 'United States',
-      phone: undefined,
-      attention: undefined,
+      phone: '',
+      attention: '',
       isDefault: addresses.length === 0,
     };
     setAddresses([...addresses, newAddress]);
@@ -315,7 +315,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
                       <Label>Address Type</Label>
                       <Select
                         value={address.addressType}
-                        onValueChange={(value) => updateAddress(index, 'addressType', value)}
+                        onValueChange={(value) => updateAddress(index, 'addressType', value as 'BILLING' | 'SHIPPING' | 'BOTH')}
                       >
                         <SelectTrigger>
                           <SelectValue />
