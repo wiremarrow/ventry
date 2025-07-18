@@ -74,8 +74,9 @@ ventry/
 - **Authentication**: Centralized auth system with secure signed cookies
   - **AuthService**: Unified authentication service handling login/logout/register
   - **CookieService**: Consistent cookie management with proper error handling
-  - **Organization Context**: Zustand-based state management (no window globals)
+  - **Organization Context**: Zustand-based state management with automatic cookie persistence
   - **httpOnly Cookies**: JWT tokens stored in signed cookies for XSS protection
+  - **Dual Cookie System**: Both auth-token and active-organization cookies for seamless context switching
 - **API Proxy**: Next.js rewrites ensure same-origin requests for cookie authentication (avoids cross-port CORS issues)
 - **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights
@@ -248,6 +249,7 @@ The system uses a centralized authentication architecture with secure signed coo
    - User provides credentials → AuthService validates against database
    - JWT token generated with user info and organization context
    - Token stored via CookieService in signed httpOnly cookie (`auth-token`)
+   - Active organization cookie (`active-organization`) set automatically on login
    - Default organization created for new users during registration
 
 2. **Request Authentication**:

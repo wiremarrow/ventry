@@ -47,9 +47,11 @@ export interface AuthServiceOptions {
 export class AuthService {
   private readonly logger = createLogger('auth-service');
   private readonly prisma: PrismaClient;
+  private readonly cookieService: CookieService;
 
   constructor(options: AuthServiceOptions) {
     this.prisma = options.prisma;
+    this.cookieService = new CookieService();
   }
 
   /**
@@ -122,6 +124,9 @@ export class AuthService {
 
     // Set authentication cookie
     this.setAuthCookie(res, token);
+
+    // Set active organization cookie
+    this.cookieService.setActiveOrganizationCookie(res, membership.organizationId);
 
     // Log successful authentication
     this.logger.info({ userId: user.id, email: user.email }, 'User authenticated successfully');

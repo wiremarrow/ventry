@@ -24,6 +24,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const setActiveOrganization = useSetActiveOrganization();
   const { setOrganizations, clearActiveOrganization, setLoading } = useOrganizationStore();
   const isLoading = useOrganizationStore((state) => state.isLoading);
+  const utils = trpc.useUtils();
 
   const { data: organizations, isLoading: isLoadingOrgs } = trpc.organizations.list.useQuery();
 
@@ -55,7 +56,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const switchOrgMutation = trpc.organizations.switchOrganization.useMutation({
     onSuccess: () => {
       // Invalidate relevant queries after switching
-      trpc.useUtils().invalidate();
+      utils.invalidate();
     },
     onError: (error) => {
       console.error('Failed to switch organization:', error);
