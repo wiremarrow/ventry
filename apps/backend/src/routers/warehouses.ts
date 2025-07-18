@@ -271,6 +271,7 @@ export const warehousesRouter = createTRPCRouter({
             recordPk: newWarehouse.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newWarehouse,
           },
         });
@@ -341,6 +342,7 @@ export const warehousesRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentWarehouse,
             afterData: updated,
           },
@@ -389,6 +391,7 @@ export const warehousesRouter = createTRPCRouter({
             recordPk: input.id,
             action: 'DELETE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: warehouse,
           },
         });
@@ -811,6 +814,7 @@ export const warehousesRouter = createTRPCRouter({
               recordPk: newLocation.id,
               action: 'CREATE',
               userId: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               afterData: newLocation,
             },
           });
@@ -875,6 +879,7 @@ export const warehousesRouter = createTRPCRouter({
               recordPk: id,
               action: 'UPDATE',
               userId: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               beforeData: currentLocation,
               afterData: updated,
             },
@@ -926,6 +931,7 @@ export const warehousesRouter = createTRPCRouter({
               recordPk: input.id,
               action: 'DELETE',
               userId: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               beforeData: location,
             },
           });

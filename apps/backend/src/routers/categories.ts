@@ -202,6 +202,7 @@ export const categoriesRouter = createTRPCRouter({
           recordPk: category.id,
           action: 'CREATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: category,
         },
       });
@@ -295,6 +296,7 @@ export const categoriesRouter = createTRPCRouter({
           recordPk: input.id,
           action: 'UPDATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           beforeData: existing,
           afterData: category,
         },
@@ -365,6 +367,7 @@ export const categoriesRouter = createTRPCRouter({
           recordPk: input.id,
           action: 'DELETE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           beforeData: category,
         },
       });

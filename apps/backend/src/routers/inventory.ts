@@ -636,6 +636,7 @@ export const inventoryRouter = createTRPCRouter({
             recordPk: input.inventoryId,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { qtyOnHand: oldQty },
             afterData: { 
               qtyOnHand: newQty,
@@ -702,6 +703,7 @@ export const inventoryRouter = createTRPCRouter({
             recordPk: input.inventoryId,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { qtyReserved: inventory.qtyReserved },
             afterData: { 
               qtyReserved: updated.qtyReserved,
@@ -766,6 +768,7 @@ export const inventoryRouter = createTRPCRouter({
             recordPk: input.inventoryId,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { qtyReserved: inventory.qtyReserved },
             afterData: { 
               qtyReserved: updated.qtyReserved,
@@ -932,6 +935,7 @@ export const inventoryRouter = createTRPCRouter({
             recordPk: movement.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: {
               type: 'TRANSFER',
               itemId: input.itemId,
@@ -1051,6 +1055,7 @@ export const inventoryRouter = createTRPCRouter({
             recordPk: count.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: {
               warehouseId: input.warehouseId,
               itemCount: inventoryToCount.length,

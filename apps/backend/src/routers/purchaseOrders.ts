@@ -374,6 +374,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: newPO.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newPO,
           },
         });
@@ -440,6 +441,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentPO,
             afterData: updated,
           },
@@ -509,6 +511,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: 'DRAFT' },
             afterData: { status: 'SUBMITTED' },
           },
@@ -578,6 +581,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: poId,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: 'SUBMITTED' },
             afterData: { status: newStatus },
           },
@@ -633,6 +637,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: 'SUBMITTED' },
             afterData: { status: 'REJECTED', reason },
           },
@@ -705,6 +710,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: purchaseOrder.status },
             afterData: { status: 'CANCELLED' },
           },
@@ -1034,6 +1040,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             recordPk: newPO.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: { duplicatedFrom: sourcePO.poNumber },
           },
         });
@@ -1506,6 +1513,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
           recordPk: 'EXPORT',
           action: 'UPDATE', // Using UPDATE as closest match for export action
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             format: input.format,
             recordCount: purchaseOrders.length,

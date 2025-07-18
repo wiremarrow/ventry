@@ -424,6 +424,7 @@ export const stockMovementsRouter = createTRPCRouter({
             recordPk: newMovement.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newMovement,
           },
         });
@@ -584,6 +585,7 @@ export const stockMovementsRouter = createTRPCRouter({
             recordPk: created[0]?.refId || referenceId,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: {
               type: 'BATCH_MOVEMENT',
               count: created.length,
@@ -1011,6 +1013,7 @@ export const stockMovementsRouter = createTRPCRouter({
           recordPk: 'EXPORT',
           action: 'CREATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             format: input.format,
             recordCount: exportData.length,
@@ -1165,6 +1168,7 @@ export const stockMovementsRouter = createTRPCRouter({
               recordPk: originalMovement.id,
               action: 'UPDATE',
               userId: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               beforeData: { reversed: false },
               afterData: { reversed: true, reversalId: newMovement.id },
             },
@@ -1173,6 +1177,7 @@ export const stockMovementsRouter = createTRPCRouter({
               recordPk: newMovement.id,
               action: 'CREATE',
               userId: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               afterData: {
                 type: 'REVERSAL',
                 originalMovementId: originalMovement.id,

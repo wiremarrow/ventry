@@ -553,6 +553,7 @@ export const receiptsRouter = createTRPCRouter({
             recordPk: newReceipt.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newReceipt,
           },
         });
@@ -979,6 +980,7 @@ export const receiptsRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: 'PENDING' },
             afterData: { status: 'COMPLETED' },
           },
@@ -1234,6 +1236,7 @@ export const receiptsRouter = createTRPCRouter({
           recordPk: 'EXPORT',
           action: 'CREATE', // Use CREATE since EXPORT is not in AuditAction enum
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             format: input.format,
             recordCount: receipts.length,

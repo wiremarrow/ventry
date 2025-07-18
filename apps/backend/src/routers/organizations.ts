@@ -176,6 +176,7 @@ export const organizationsRouter = createTRPCRouter({
           recordPk: organization.id,
           action: 'CREATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: organization,
         },
       });
@@ -217,6 +218,7 @@ export const organizationsRouter = createTRPCRouter({
           recordPk: id,
           action: 'UPDATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           beforeData: before,
           afterData: organization,
         },

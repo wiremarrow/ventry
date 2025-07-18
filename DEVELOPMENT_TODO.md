@@ -12,15 +12,23 @@ Get **authentication + RLS working end-to-end** from user login to viewing data 
 - Production RLS module (`/lib/rls/`) is ready
 - tRPC context creation with organization resolution
 - RLS E2E tests now passing with dual-connection pattern
+- All TypeScript errors in backend resolved
+- Audit log organizationId migration completed
 
-### ✅ Recently Completed
+### ✅ Recently Completed (Phase 0: 1-8 of 9)
 1. **Fixed RLS E2E test** - Now uses dual-connection pattern correctly
 2. **Cleaned up deprecated code** - Removed old `rls-middleware.ts`, updated all imports to use `/lib/rls/`
+3. **Created test helpers** - `createTestOrg`, `createTestUser`, `linkUserToOrg` in `test-db-helpers.ts`
+4. **Fixed items integration test** - Updated to use dual-connection pattern
+5. **Fixed missing RLS policies** - Added policies for warehouses, locations, inventory, audit_logs, users
+6. **Fixed build pipeline** - Regenerated Prisma client and rebuilt packages
+7. **Fixed TypeScript errors** - Resolved all type issues in auth, RLS, and transaction modules
+8. **Created audit log migration** - Made organizationId non-nullable with proper FK and index
 
 ### ❌ Remaining Issues
-1. **Cookie handling inconsistencies** - Multiple implementations causing auth failures
-2. **Organization context issues** - `window.__organizationId` anti-pattern exists
-3. **Test helpers using singleton** - `createAuthenticatedIntegrationContext` needs removal
+1. **Audit logs missing organizationId** - Need to update all routers (Phase 0.9)
+2. **Cookie handling inconsistencies** - Multiple implementations causing auth failures
+3. **Organization context issues** - `window.__organizationId` anti-pattern exists
 
 ## Status Legend
 - 🚧 In Progress
@@ -55,14 +63,46 @@ Get **authentication + RLS working end-to-end** from user login to viewing data 
 - [x] All RLS tests still passing
 - [ ] Still need to remove `createAuthenticatedIntegrationContext`
 
-#### 0.3 Create Test Helpers (1 hour) ⏳
-- [ ] Create `/apps/backend/src/test-utils/test-data.ts`:
-  ```typescript
-  export async function createTestOrg(adminPrisma: PrismaClient, name?: string)
-  export async function createTestUser(adminPrisma: PrismaClient, data?: Partial<User>)
-  export async function linkUserToOrg(adminPrisma: PrismaClient, userId: string, orgId: string, role?: OrgRole)
-  ```
-- [ ] Document the dual-connection pattern in the file
+#### 0.3 Create Test Helpers (1 hour) ✅
+- [x] Created `/apps/backend/src/test-utils/test-db-helpers.ts`:
+  - `createTestOrg()` - Creates test organizations
+  - `createTestUser()` - Creates test users with proper defaults
+  - `linkUserToOrg()` - Links users to organizations
+  - `createTestSetup()` - All-in-one helper for common test setup
+- [x] Documented the dual-connection pattern in the file
+
+#### 0.4 Fix Items Integration Test (2 hours) ✅
+- [x] Updated to use dual-connection pattern
+- [x] Fixed role permissions (default to ADMIN for tests)
+- [x] Converted User to AuthenticatedUser type
+- [x] All 26 tests passing
+
+#### 0.5 Fix Missing RLS Policies (1 hour) ✅
+- [x] Created migration `20250117_fix_missing_rls_policies`
+- [x] Added policies for: warehouses, locations, inventory, audit_logs, users
+- [x] Applied to both dev and integration test databases
+
+#### 0.6 Fix Build Pipeline (30 min) ✅
+- [x] Regenerated Prisma client to include organizationId on AuditLog
+- [x] Rebuilt database package
+
+#### 0.7 Fix TypeScript Errors (2 hours) ✅
+- [x] Fixed FastifyRequestWithCookies interface issues
+- [x] Fixed RLS proxy type predicate with symbol handling
+- [x] Fixed transaction manager types (custom RLSTransactionOptions)
+- [x] Backend now passes all type checks
+
+#### 0.8 Create Audit Log Migration (1 hour) ✅
+- [x] Created migration `20250117_audit_log_organization_id`
+- [x] Made organizationId non-nullable
+- [x] Added foreign key to organizations table
+- [x] Added index for performance
+- [x] Applied to both databases
+
+#### 0.9 Update Routers for Audit Logs (2 hours) ⏳
+- [ ] Find all routers creating audit logs without organizationId
+- [ ] Update each to include `organizationId: ctx.organizationId`
+- [ ] Test all affected routers
 
 ### Phase 1: Standardize Auth Flow (Day 2) ⏳
 **Goal: One consistent way to handle auth across the system**

@@ -1813,6 +1813,7 @@ export const reportsRouter = createTRPCRouter({
           recordPk: reportType,
           action: 'CREATE' as const, // Using CREATE as there's no EXPORT action
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             reportType,
             format,

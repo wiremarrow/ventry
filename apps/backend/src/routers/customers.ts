@@ -412,6 +412,7 @@ export const customersRouter = createTRPCRouter({
             recordPk: newCustomer.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newCustomer,
           },
         });
@@ -502,6 +503,7 @@ export const customersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentCustomer,
             afterData: updated,
           },
@@ -571,6 +573,7 @@ export const customersRouter = createTRPCRouter({
             recordPk: input.id,
             action: 'DELETE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentCustomer,
             afterData: undefined,
           },
@@ -1142,6 +1145,7 @@ export const customersRouter = createTRPCRouter({
             recordPk: input.primaryId,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: primary,
             afterData: {
               ...updatedPrimary,
@@ -1230,6 +1234,7 @@ export const customersRouter = createTRPCRouter({
           recordPk: 'EXPORT',
           action: 'CREATE',
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             format: input.format,
             recordCount: exportData.length,

@@ -324,6 +324,7 @@ export const suppliersRouter = createTRPCRouter({
             recordPk: newSupplier.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newSupplier,
           },
         });
@@ -394,6 +395,7 @@ export const suppliersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentSupplier,
             afterData: updated,
           },
@@ -459,6 +461,7 @@ export const suppliersRouter = createTRPCRouter({
             recordPk: input.id,
             action: 'DELETE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: deleted,
             afterData: undefined,
           },
@@ -1106,6 +1109,7 @@ export const suppliersRouter = createTRPCRouter({
             recordPk: 'BULK_IMPORT',
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: { count: created.length },
           },
         });

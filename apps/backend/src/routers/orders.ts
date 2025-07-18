@@ -397,6 +397,7 @@ export const ordersRouter = createTRPCRouter({
             recordPk: newOrder.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             afterData: newOrder,
           },
         });
@@ -453,6 +454,7 @@ export const ordersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: currentOrder,
             afterData: updated,
           },
@@ -544,6 +546,7 @@ export const ordersRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
             beforeData: { status: currentOrder.status },
             afterData: { status },
           },
@@ -1247,6 +1250,7 @@ export const ordersRouter = createTRPCRouter({
           recordPk: 'EXPORT',
           action: 'UPDATE', // Using UPDATE as EXPORT is not a valid AuditAction
           userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
           afterData: {
             format: input.format,
             recordCount: orders.length,
