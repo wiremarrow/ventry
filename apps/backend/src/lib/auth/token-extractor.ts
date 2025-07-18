@@ -6,6 +6,7 @@
 import type { FastifyRequest } from 'fastify';
 import { COOKIE_NAMES } from './constants.js';
 import { createLogger } from '../logger.js';
+import { CookieService } from '../../services/cookie-service.js';
 
 const logger = createLogger('token-extractor');
 
@@ -85,19 +86,10 @@ function safeUnsignCookie(
 export function getRawToken(
   request: FastifyRequest | FastifyRequestWithCookies
 ): string | undefined {
-  // Type guard to check if cookies plugin is available
-  const hasCookies = 'cookies' in request && 'unsignCookie' in request;
-  
   // Try to extract from cookie first (most secure)
-  if (hasCookies) {
-    const cookieToken = safeUnsignCookie(
-      request as FastifyRequestWithCookies,
-      COOKIE_NAMES.AUTH_TOKEN
-    );
-    
-    if (cookieToken) {
-      return cookieToken;
-    }
+  const cookieToken = CookieService.getAuthToken(request as FastifyRequest);
+  if (cookieToken) {
+    return cookieToken;
   }
   
   // Fallback to Authorization header for API clients

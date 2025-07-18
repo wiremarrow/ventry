@@ -495,4 +495,41 @@ export const organizationsRouter = createTRPCRouter({
         },
       };
     }),
+
+  // Switch active organization
+  switchOrganization: protectedProcedure
+    .input(z.object({
+      organizationId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Verify user has access to this organization
+      const membership = await ctx.prisma.organizationMember.findUnique({
+        where: {
+          organizationId_userId: {
+            organizationId: input.organizationId,
+            userId: ctx.user.id,
+          },
+        },
+        include: {
+          organization: true,
+        },
+      });
+
+      if (!membership) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this organization',
+        });
+      }
+
+      // Set the active organization cookie
+      const { CookieService } = await import('../services/cookie-service.js');
+      CookieService.setActiveOrganization(ctx.res, input.organizationId);
+
+      return {
+        success: true,
+        organization: membership.organization,
+        role: membership.role,
+      };
+    }),
 });

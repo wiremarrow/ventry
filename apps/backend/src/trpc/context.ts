@@ -7,6 +7,7 @@ import { createLogger } from '../lib/logger.js';
 import { getRawToken } from '../lib/auth/token-extractor.js';
 import { RLS_BYPASS_REASONS } from '../lib/auth/constants.js';
 import { AuthError } from '../lib/auth/auth-error.js';
+import { CookieService } from '../services/cookie-service.js';
 
 const logger = createLogger('trpc-context');
 
@@ -41,16 +42,7 @@ interface FastifyRequestWithCookies extends FastifyRequest {
  * Safely extract organization ID from signed cookie
  */
 function getOrganizationFromCookie(request: FastifyRequestWithCookies): string | undefined {
-  try {
-    const orgCookie = request.cookies['active-organization'];
-    if (!orgCookie) return undefined;
-    
-    const unsigned = request.unsignCookie(orgCookie);
-    return unsigned.valid ? unsigned.value || undefined : undefined;
-  } catch (error) {
-    logger.warn({ error }, 'Failed to unsign organization cookie');
-    return undefined;
-  }
+  return CookieService.getActiveOrganization(request as FastifyRequest);
 }
 
 export async function createContext({ req, res }: CreateFastifyContextOptions) {

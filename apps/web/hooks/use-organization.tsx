@@ -1,18 +1,17 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { setCookie, getCookie } from 'cookies-next';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { trpc } from '@/lib/trpc';
-
-interface Organization {
-  id: string;
-  name: string;
-  slug: string;
-  role: string;
-}
+import { 
+  useOrganizationStore,
+  useActiveOrganizationId,
+  useActiveOrganization,
+  useSetActiveOrganization,
+  type OrganizationMembership
+} from '@/src/stores/organization-store';
 
 interface OrganizationContextType {
-  currentOrganization: Organization | null;
+  currentOrganization: OrganizationMembership | undefined;
   setOrganization: (orgId: string) => Promise<void>;
   clearOrganization: () => void;
   isLoading: boolean;
@@ -21,68 +20,69 @@ interface OrganizationContextType {
 const OrganizationContext = createContext<OrganizationContextType | undefined>(undefined);
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const activeOrganization = useActiveOrganization();
+  const setActiveOrganization = useSetActiveOrganization();
+  const { setOrganizations, clearActiveOrganization, setLoading } = useOrganizationStore();
+  const isLoading = useOrganizationStore((state) => state.isLoading);
 
-  const { data: organizations } = trpc.organizations.list.useQuery();
+  const { data: organizations, isLoading: isLoadingOrgs } = trpc.organizations.list.useQuery();
 
   useEffect(() => {
-    // Load organization from cookie on mount
-    const storedOrgId = getCookie('active-organization');
-    if (storedOrgId && organizations) {
-      const org = organizations.find(o => o.id === storedOrgId);
-      if (org) {
-        setCurrentOrganization(org);
-        // Ensure window.__organizationId is set for tRPC client
-        if (typeof window !== 'undefined') {
-          (window as any).__organizationId = org.id;
+    setLoading(isLoadingOrgs);
+  }, [isLoadingOrgs, setLoading]);
+
+  useEffect(() => {
+    if (organizations) {
+      // Transform the data to match our store format
+      const orgMemberships: OrganizationMembership[] = organizations.map(org => ({
+        organizationId: org.id,
+        userId: '', // Will be filled by the actual user data
+        role: org.role as 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER',
+        joinedAt: new Date().toISOString(), // Placeholder
+        organization: {
+          id: org.id,
+          name: org.name,
+          slug: org.slug,
+          createdAt: new Date().toISOString(), // Placeholder
+          updatedAt: new Date().toISOString(), // Placeholder
         }
-      } else if (organizations.length > 0) {
-        // If stored org not found, use first available
-        setCurrentOrganization(organizations[0]);
-        setCookie('active-organization', organizations[0].id);
-        // Ensure window.__organizationId is set for tRPC client
-        if (typeof window !== 'undefined') {
-          (window as any).__organizationId = organizations[0].id;
-        }
-      }
-    } else if (organizations && organizations.length > 0) {
-      // No stored org, use first available
-      setCurrentOrganization(organizations[0]);
-      setCookie('active-organization', organizations[0].id);
-      // Ensure window.__organizationId is set for tRPC client
-      if (typeof window !== 'undefined') {
-        (window as any).__organizationId = organizations[0].id;
-      }
+      }));
+      
+      setOrganizations(orgMemberships);
     }
-    setIsLoading(false);
-  }, [organizations]);
+  }, [organizations, setOrganizations]);
+
+  const switchOrgMutation = trpc.organizations.switchOrganization.useMutation({
+    onSuccess: () => {
+      // Invalidate relevant queries after switching
+      trpc.useUtils().invalidate();
+    },
+    onError: (error) => {
+      console.error('Failed to switch organization:', error);
+      // Revert the local change if server update failed
+      const prevOrg = activeOrganization?.organizationId;
+      if (prevOrg) {
+        setActiveOrganization(prevOrg);
+      }
+    },
+  });
 
   const setOrganization = async (orgId: string) => {
-    const org = organizations?.find(o => o.id === orgId);
-    if (org) {
-      setCurrentOrganization(org);
-      setCookie('active-organization', orgId);
-      
-      // Also set header for API calls
-      if (typeof window !== 'undefined') {
-        (window as any).__organizationId = orgId;
-      }
-    }
+    // Update local state immediately for responsiveness
+    setActiveOrganization(orgId);
+    
+    // Send organization change to server
+    await switchOrgMutation.mutateAsync({ organizationId: orgId });
   };
 
   const clearOrganization = () => {
-    setCurrentOrganization(null);
-    setCookie('active-organization', '', { maxAge: 0 });
-    if (typeof window !== 'undefined') {
-      delete (window as any).__organizationId;
-    }
+    clearActiveOrganization();
   };
 
   return (
     <OrganizationContext.Provider
       value={{
-        currentOrganization,
+        currentOrganization: activeOrganization,
         setOrganization,
         clearOrganization,
         isLoading,

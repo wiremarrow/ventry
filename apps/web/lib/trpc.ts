@@ -2,6 +2,7 @@ import { createTRPCReact } from '@trpc/react-query';
 import { httpLink } from '@trpc/client';
 import superjson from 'superjson';
 import type { AppRouter } from '@ventry/backend';
+import { useOrganizationStore } from '@/src/stores/organization-store';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -17,9 +18,12 @@ export const trpcClient = trpc.createClient({
           ...(options?.headers || {}),
         };
         
-        // Add organization ID from global if available
-        if (typeof window !== 'undefined' && (window as Window & { __organizationId?: string }).__organizationId) {
-          headers['x-organization-id'] = (window as Window & { __organizationId?: string }).__organizationId;
+        // Add organization ID from store if available
+        if (typeof window !== 'undefined') {
+          const organizationId = useOrganizationStore.getState().activeOrganizationId;
+          if (organizationId) {
+            headers['x-organization-id'] = organizationId;
+          }
         }
         
         return fetch(url, { 

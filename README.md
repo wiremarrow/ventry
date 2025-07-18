@@ -71,7 +71,11 @@ ventry/
     - ✅ Products/Items components and router (100% coverage)
     - ✅ Auth flow and organization context
   - **E2E Architecture**: Enterprise-grade test isolation with dotenv-cli for environment management
-- **Authentication**: httpOnly cookie-based JWT with Next.js proxy for same-origin requests
+- **Authentication**: Centralized auth system with secure signed cookies
+  - **AuthService**: Unified authentication service handling login/logout/register
+  - **CookieService**: Consistent cookie management with proper error handling
+  - **Organization Context**: Zustand-based state management (no window globals)
+  - **httpOnly Cookies**: JWT tokens stored in signed cookies for XSS protection
 - **API Proxy**: Next.js rewrites ensure same-origin requests for cookie authentication (avoids cross-port CORS issues)
 - **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights
@@ -238,21 +242,27 @@ app/
 - **Audit Trail**: All AI decisions logged
 
 ### Authentication Flow
-The system uses secure signed cookies for authentication:
+The system uses a centralized authentication architecture with secure signed cookies:
 
 1. **Login Process**:
-   - User provides credentials → Server validates against database
-   - JWT token generated with user info and default organization
-   - Token stored in signed httpOnly cookie (`auth-token`)
-   - Cookie signature prevents tampering and XSS attacks
+   - User provides credentials → AuthService validates against database
+   - JWT token generated with user info and organization context
+   - Token stored via CookieService in signed httpOnly cookie (`auth-token`)
+   - Default organization created for new users during registration
 
 2. **Request Authentication**:
-   - Server reads and verifies signed cookie using `request.unsignCookie()`
-   - JWT token extracted and validated
-   - User context established for the request
-   - Organization context loaded from header, cookie, or JWT
+   - CookieService safely extracts and verifies signed cookies
+   - JWT payload validated through AuthService
+   - User and organization context established for the request
+   - Organization priority: header > cookie > JWT payload
 
-3. **Cookie Security**:
+3. **Organization Management**:
+   - Zustand store manages active organization state (no window globals)
+   - tRPC client automatically includes organization header
+   - Organization switching via `organizations.switchOrganization` mutation
+   - Persistent organization selection across sessions
+
+4. **Cookie Security**:
    - httpOnly: Prevents JavaScript access (XSS protection)
    - Signed: Cryptographic signature prevents tampering
    - SameSite=Lax: CSRF protection
