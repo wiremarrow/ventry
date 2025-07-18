@@ -29,7 +29,7 @@ const logger = createLogger('rls-service');
  * Uses a SECURITY DEFINER function to prevent SQL injection
  */
 export async function setRLSContext(
-  tx: Prisma.TransactionClient,
+  tx: Pick<PrismaClient, '$executeRaw'>,
   context: ValidatedRLSContext
 ): Promise<void> {
   const startTime = Date.now();
@@ -81,7 +81,7 @@ export async function setRLSContext(
  * Clears RLS context (for cleanup)
  */
 export async function clearRLSContext(
-  tx: Prisma.TransactionClient
+  tx: Pick<PrismaClient, '$executeRaw'>
 ): Promise<void> {
   try {
     // Use the secure database function to clear context
@@ -100,7 +100,7 @@ export async function clearRLSContext(
 export async function withRLS<T>(
   prisma: PrismaClient,
   context: RLSContext,
-  operation: (tx: Prisma.TransactionClient) => Promise<T>
+  operation: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>
 ): Promise<RLSOperationResult<T>> {
   const startTime = Date.now();
   const timings = {
@@ -118,7 +118,7 @@ export async function withRLS<T>(
       await auditRLSBypass(validatedContext);
       
       const queryStart = Date.now();
-      const data = await prisma.$transaction(operation);
+      const data = await prisma.$transaction(async (tx) => await operation(tx));
       timings.queryMs = Date.now() - queryStart;
       timings.totalMs = Date.now() - startTime;
 

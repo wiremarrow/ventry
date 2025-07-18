@@ -247,6 +247,7 @@ export const itemsRouter = createTRPCRouter({
             recordPk: newItem.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.organizationId,
             afterData: newItem,
           },
         });
@@ -333,6 +334,7 @@ export const itemsRouter = createTRPCRouter({
             recordPk: id,
             action: 'UPDATE',
             userId: ctx.user.id,
+            organizationId: ctx.organizationId,
             beforeData: currentItem,
             afterData: updated,
           },
@@ -413,6 +415,7 @@ export const itemsRouter = createTRPCRouter({
             recordPk: input.id,
             action: 'DELETE',
             userId: ctx.user.id,
+            organizationId: ctx.organizationId,
             beforeData: { isActive: true },
             afterData: { isActive: false, reason: input.reason },
           },
@@ -546,6 +549,7 @@ export const itemsRouter = createTRPCRouter({
             recordPk: 'BULK_IMPORT',
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.organizationId,
             afterData: { count: created.length },
           },
         });
@@ -751,6 +755,7 @@ export const itemsRouter = createTRPCRouter({
             recordPk: newItem.id,
             action: 'CREATE',
             userId: ctx.user.id,
+            organizationId: ctx.organizationId,
             afterData: {
               ...newItem,
               duplicatedFrom: input.itemId,
@@ -825,6 +830,7 @@ export const itemsRouter = createTRPCRouter({
               recordPk: itemId,
               action: 'UPDATE',
               userId: ctx.user.id,
+              organizationId: ctx.organizationId,
               beforeData: { isActive: true },
               afterData: { isActive: false, reason: input.reason },
             },

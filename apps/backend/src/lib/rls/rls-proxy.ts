@@ -212,7 +212,7 @@ function createTransactionProxy(
       const options = args[1];
 
       // Wrap the callback to set RLS context
-      const wrappedCallback = async (tx: Prisma.TransactionClient) => {
+      const wrappedCallback = async (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => {
         try {
           const validatedContext = validateRLSContext(context);
 
@@ -265,8 +265,11 @@ function isNonProxiedMethod(prop: string): prop is NonProxiedMethods {
  */
 function isModelDelegate(
   prisma: PrismaClient,
-  prop: string
+  prop: string | symbol
 ): prop is keyof Omit<PrismaClient, NonProxiedMethods> {
+  if (typeof prop !== 'string') {
+    return false;
+  }
   const value = (prisma as any)[prop];
   return (
     value &&

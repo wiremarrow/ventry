@@ -1,36 +1,77 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import type { PrismaClient } from '@ventry/database';
-import { createAuthenticatedIntegrationContext } from '../../test-utils/trpc-test-client.js';
+import { PrismaClient } from '@ventry/database';
+import { createTestConnections } from '../../test-utils/dual-connection.js';
+import { createTestSetup } from '../../test-utils/test-db-helpers.js';
 import { itemsRouter } from '../items.js';
 import { appRouter } from '../app.js';
 import { createId } from '@paralleldrive/cuid2';
+import { createRLSProxy } from '../../lib/rls/index.js';
 
 describe('Items Router Integration Tests', () => {
-  let prisma: PrismaClient;
+  let adminPrisma: PrismaClient;
+  let appPrisma: PrismaClient;
   let caller: ReturnType<typeof appRouter.createCaller>;
   let organizationId: string;
+  let userId: string;
   let categoryId: string;
   let uomId: string;
   let supplierId: string;
   let locationId: string;
-  let cleanup: () => Promise<void>;
 
   beforeAll(async () => {
-    const testContext = await createAuthenticatedIntegrationContext();
-    prisma = testContext.ctx.prisma;
-    caller = appRouter.createCaller(testContext.ctx);
-    organizationId = testContext.organization.id;
-    cleanup = testContext.cleanup;
+    // Set up dual connections
+    const connections = createTestConnections();
+    adminPrisma = connections.adminPrisma;
+    appPrisma = connections.appPrisma;
 
-    // Create test data
+    // Create test organization and user with ADMIN role
+    const setup = await createTestSetup(adminPrisma, {
+      orgName: 'Items Test Org',
+      memberRole: 'ADMIN'
+    });
+    organizationId = setup.org.id;
+    userId = setup.user.id;
+
+    // Create tRPC context with RLS
+    const rlsContext = {
+      userId,
+      organizationId,
+      bypassRLS: false
+    };
+    
+    // Convert database user to AuthenticatedUser type
+    const authenticatedUser = {
+      id: setup.user.id,
+      email: setup.user.email,
+      username: setup.user.username,
+      firstName: setup.user.firstName,
+      lastName: setup.user.lastName,
+      role: setup.user.role,
+      isActive: setup.user.isActive,
+      createdAt: setup.user.createdAt.toISOString(),
+      organizationId,
+      organizationRole: setup.membership.role,
+    };
+    
+    const ctx = {
+      user: authenticatedUser,
+      organizationId,
+      prisma: createRLSProxy(appPrisma, () => rlsContext),
+      req: {} as any,
+      res: {} as any,
+    };
+    
+    caller = appRouter.createCaller(ctx);
+
+    // Create test data using admin connection
     const [category, uom, supplier, warehouse] = await Promise.all([
-      prisma.itemCategory.create({
+      adminPrisma.itemCategory.create({
         data: {
           name: 'Test Category',
           organizationId,
         },
       }),
-      prisma.unitOfMeasure.create({
+      adminPrisma.unitOfMeasure.create({
         data: {
           code: 'EA',
           description: 'Each unit',
@@ -39,7 +80,7 @@ describe('Items Router Integration Tests', () => {
           organizationId,
         },
       }),
-      prisma.supplier.create({
+      adminPrisma.supplier.create({
         data: {
           supplierCode: 'SUP001',
           name: 'Test Supplier',
@@ -51,7 +92,7 @@ describe('Items Router Integration Tests', () => {
           organizationId,
         },
       }),
-      prisma.warehouse.create({
+      adminPrisma.warehouse.create({
         data: {
           code: `WH-ITEMS-${Date.now()}`,
           name: 'Test Warehouse',
@@ -70,7 +111,7 @@ describe('Items Router Integration Tests', () => {
     supplierId = supplier.id;
 
     // Create a location for inventory tests
-    const location = await prisma.location.create({
+    const location = await adminPrisma.location.create({
       data: {
         code: `ITEMS-TEST-${Date.now()}`,
         description: 'Test Location',
@@ -82,24 +123,33 @@ describe('Items Router Integration Tests', () => {
 
   afterAll(async () => {
     // Clean up test data (order matters for foreign keys)
-    await prisma.inventory.deleteMany({ where: { item: { organizationId } } });
-    await prisma.priceHistory.deleteMany({ where: { item: { organizationId } } });
-    await prisma.item.deleteMany({ where: { organizationId } });
-    await prisma.location.deleteMany({ where: { warehouse: { organizationId } } });
-    await prisma.warehouse.deleteMany({ where: { organizationId } });
-    await prisma.itemCategory.deleteMany({ where: { organizationId } });
-    await prisma.unitOfMeasure.deleteMany({ where: { organizationId } });
-    await prisma.supplier.deleteMany({ where: { organizationId } });
+    await adminPrisma.inventory.deleteMany({ where: { item: { organizationId } } });
+    await adminPrisma.priceHistory.deleteMany({ where: { item: { organizationId } } });
+    await adminPrisma.item.deleteMany({ where: { organizationId } });
+    await adminPrisma.location.deleteMany({ where: { warehouse: { organizationId } } });
+    await adminPrisma.warehouse.deleteMany({ where: { organizationId } });
+    await adminPrisma.itemCategory.deleteMany({ where: { organizationId } });
+    await adminPrisma.unitOfMeasure.deleteMany({ where: { organizationId } });
+    await adminPrisma.supplier.deleteMany({ where: { organizationId } });
     
-    // Clean up user and organization
-    await cleanup();
+    // Clean up audit logs before deleting user
+    await adminPrisma.auditLog.deleteMany({ where: { userId } });
+    
+    // Clean up user and organization using test helper
+    await adminPrisma.organizationMember.deleteMany({ where: { organizationId } });
+    await adminPrisma.user.delete({ where: { id: userId } });
+    await adminPrisma.organization.delete({ where: { id: organizationId } });
+    
+    // Disconnect both connections
+    await adminPrisma.$disconnect();
+    await appPrisma.$disconnect();
   });
 
   beforeEach(async () => {
     // Clean up items between tests
-    await prisma.inventory.deleteMany({ where: { item: { organizationId } } });
-    await prisma.priceHistory.deleteMany({ where: { item: { organizationId } } });
-    await prisma.item.deleteMany({ where: { organizationId } });
+    await adminPrisma.inventory.deleteMany({ where: { item: { organizationId } } });
+    await adminPrisma.priceHistory.deleteMany({ where: { item: { organizationId } } });
+    await adminPrisma.item.deleteMany({ where: { organizationId } });
   });
 
   describe('create', () => {
@@ -133,8 +183,8 @@ describe('Items Router Integration Tests', () => {
         organizationId,
       });
 
-      // Verify in database
-      const dbItem = await prisma.item.findUnique({
+      // Verify in database using admin connection
+      const dbItem = await adminPrisma.item.findUnique({
         where: { id: result.id },
       });
       expect(dbItem).toBeTruthy();
@@ -153,7 +203,7 @@ describe('Items Router Integration Tests', () => {
       const result = await caller.items.create(input);
 
       // Check price history
-      const priceHistory = await prisma.priceHistory.findFirst({
+      const priceHistory = await adminPrisma.priceHistory.findFirst({
         where: { itemId: result.id },
       });
 
@@ -190,7 +240,7 @@ describe('Items Router Integration Tests', () => {
         uomId,
       });
 
-      const auditLog = await prisma.auditLog.findFirst({
+      const auditLog = await adminPrisma.auditLog.findFirst({
         where: {
           tableName: 'items',
           recordPk: result.id,
@@ -372,7 +422,7 @@ describe('Items Router Integration Tests', () => {
         defaultPrice: 200,
       });
 
-      const priceHistory = await prisma.priceHistory.findMany({
+      const priceHistory = await adminPrisma.priceHistory.findMany({
         where: { itemId: created.id },
         orderBy: { startDate: 'desc' },
       });
@@ -397,7 +447,7 @@ describe('Items Router Integration Tests', () => {
         name: 'Updated',
       });
 
-      const auditLog = await prisma.auditLog.findFirst({
+      const auditLog = await adminPrisma.auditLog.findFirst({
         where: {
           tableName: 'items',
           recordPk: created.id,
@@ -452,7 +502,7 @@ describe('Items Router Integration Tests', () => {
       expect(result.isActive).toBe(false);
 
       // Verify in database
-      const dbItem = await prisma.item.findUnique({
+      const dbItem = await adminPrisma.item.findUnique({
         where: { id: created.id },
       });
       expect(dbItem?.isActive).toBe(false);
@@ -467,7 +517,7 @@ describe('Items Router Integration Tests', () => {
       });
 
       // Create inventory
-      await prisma.inventory.create({
+      await adminPrisma.inventory.create({
         data: {
           itemId: created.id,
           locationId,
@@ -527,7 +577,7 @@ describe('Items Router Integration Tests', () => {
         newName: 'Duplicated with Price',
       });
 
-      const priceHistory = await prisma.priceHistory.findFirst({
+      const priceHistory = await adminPrisma.priceHistory.findFirst({
         where: { itemId: duplicated.id },
       });
 
@@ -564,7 +614,7 @@ describe('Items Router Integration Tests', () => {
       expect(result.archived).toBe(2);
 
       // Verify in database
-      const dbItems = await prisma.item.findMany({
+      const dbItems = await adminPrisma.item.findMany({
         where: { id: { in: itemIds } },
       });
 
@@ -580,7 +630,7 @@ describe('Items Router Integration Tests', () => {
       });
 
       // Create inventory
-      await prisma.inventory.create({
+      await adminPrisma.inventory.create({
         data: {
           itemId: item.id,
           locationId,
@@ -626,7 +676,7 @@ describe('Items Router Integration Tests', () => {
       expect(result.errors).toHaveLength(0);
 
       // Verify items were not created
-      const dbItems = await prisma.item.findMany({
+      const dbItems = await adminPrisma.item.findMany({
         where: { sku: { in: ['BULK-001', 'BULK-002'] } },
       });
       expect(dbItems).toHaveLength(0);
@@ -660,7 +710,7 @@ describe('Items Router Integration Tests', () => {
       expect(result.items).toHaveLength(2);
 
       // Verify items were created
-      const dbItems = await prisma.item.findMany({
+      const dbItems = await adminPrisma.item.findMany({
         where: { sku: { in: ['IMPORT-001', 'IMPORT-002'] } },
       });
       expect(dbItems).toHaveLength(2);

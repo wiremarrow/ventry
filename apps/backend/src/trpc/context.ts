@@ -26,7 +26,15 @@ export type AuthenticatedUser = {
 // Type for Fastify request with cookies plugin
 interface FastifyRequestWithCookies extends FastifyRequest {
   cookies: { [cookieName: string]: string | undefined };
-  unsignCookie: (value: string) => { valid: boolean; value: string | null };
+  unsignCookie: (value: string) => {
+    valid: true;
+    renew: boolean;
+    value: string;
+  } | {
+    valid: false;
+    renew: false;
+    value: null;
+  };
 }
 
 /**

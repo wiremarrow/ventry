@@ -23,7 +23,13 @@ const logger = createLogger('rls-transaction-manager');
 /**
  * Transaction options with RLS support
  */
-export interface RLSTransactionOptions extends Prisma.TransactionOptions {
+export interface RLSTransactionOptions {
+  /** Max wait time for transaction */
+  maxWait?: number;
+  /** Timeout for transaction */
+  timeout?: number;
+  /** Isolation level for transaction */
+  isolationLevel?: Prisma.TransactionIsolationLevel;
   /** Whether to clear RLS context after transaction */
   clearContextAfter?: boolean;
   /** Whether to validate RLS policies during transaction */
@@ -38,7 +44,7 @@ export interface RLSTransactionOptions extends Prisma.TransactionOptions {
 export async function executeRLSTransaction<T>(
   prisma: PrismaClient,
   context: RLSContext,
-  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
   options?: RLSTransactionOptions
 ): Promise<RLSOperationResult<T>> {
   const startTime = Date.now();
@@ -120,7 +126,11 @@ export async function executeRLSTransaction<T>(
         organizationId: isValidatedContext(validatedContext)
           ? validatedContext.organizationId
           : undefined,
-        userId: validatedContext.userId,
+        userId: isValidatedContext(validatedContext)
+          ? validatedContext.userId
+          : isBypassContext(validatedContext)
+          ? (validatedContext as any).auditUserId
+          : undefined,
         bypassed: isBypassContext(validatedContext),
       },
     };
@@ -253,14 +263,14 @@ export function createPoolAwareTransactionExecutor(
   }
 ): <T>(
   context: RLSContext,
-  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
   options?: RLSTransactionOptions
 ) => Promise<RLSOperationResult<T>> {
   let activeConnections = 0;
 
   return async function execute<T>(
     context: RLSContext,
-    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+    fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
     options?: RLSTransactionOptions
   ): Promise<RLSOperationResult<T>> {
     // Check if pool is exhausted
