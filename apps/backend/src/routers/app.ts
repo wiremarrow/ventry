@@ -5,6 +5,7 @@ import { categoriesRouter } from './categories.js';
 import { customersRouter } from './customers.js';
 import { healthRouter } from './health.js';
 import { inventoryRouter } from './inventory.js';
+import { itemCategoriesRouter } from './itemCategories.js';
 import { itemsRouter } from './items.js';
 import { ordersRouter } from './orders.js';
 import { organizationsRouter } from './organizations.js';
@@ -16,6 +17,7 @@ import { returnsRouter } from './returns.js';
 import { shipmentsRouter } from './shipments.js';
 import { stockMovementsRouter } from './stockMovements.js';
 import { suppliersRouter } from './suppliers.js';
+import { unitsOfMeasureRouter } from './unitsOfMeasure.js';
 import { usersRouter } from './users.js';
 import { warehousesRouter } from './warehouses.js';
 
@@ -27,6 +29,8 @@ export const appRouter = createTRPCRouter({
   health: healthRouter,
   organizations: organizationsRouter,
   items: itemsRouter,
+  itemCategories: itemCategoriesRouter,
+  unitsOfMeasure: unitsOfMeasureRouter,
   warehouses: warehousesRouter,
   inventory: inventoryRouter,
   stockMovements: stockMovementsRouter,

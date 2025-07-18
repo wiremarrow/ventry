@@ -57,8 +57,8 @@ ventry/
   - **Column Naming**: ✅ PostgreSQL best practices with snake_case in database, camelCase in TypeScript via Prisma @map directives
   - **UI Components**: 
     - ✅ **Inventory Page**: Full tRPC integration with stock adjustments and filtering
-    - ✅ **Products Page**: Complete CRUD operations with comprehensive form validation
-    - ✅ **Warehouses Page**: Complete location hierarchy and warehouse management UI
+    - ✅ **Products Page**: Complete CRUD operations with categories and units of measure
+    - ✅ **Warehouses Page**: Complete location hierarchy, analytics, and warehouse management
     - ✅ **Analytics Dashboard**: **Live data integration with auto-refresh** - Real-time metrics and charts connected to tRPC analytics endpoints
     - **Orders, Suppliers, Customers, Purchase Orders**: Planned for Phase 2-3
   - **Shared UI**: Enhanced with Select, Textarea, Switch, Skeleton, DropdownMenu, RadioGroup, Tabs components and Recharts integration

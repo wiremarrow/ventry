@@ -615,8 +615,8 @@ export const warehousesRouter = createTRPCRouter({
       });
 
       // Get value statistics
-      const inventoryValue = await ctx.prisma.$queryRaw<Array<{ totalValue: number }>>`
-        SELECT SUM(i."qty_on_hand" * item."default_cost") as "totalValue"
+      const inventoryValue = await ctx.prisma.$queryRaw<Array<{ totalValue: any }>>`
+        SELECT COALESCE(SUM(i."qty_on_hand" * item."default_cost"), 0)::text as "totalValue"
         FROM inventory i
         JOIN items item ON i."item_id" = item.id
         JOIN locations l ON i."location_id" = l.id
@@ -667,7 +667,7 @@ export const warehousesRouter = createTRPCRouter({
           reservedQuantity: inventory._sum.qtyReserved || 0,
           inTransitQuantity: inventory._sum.qtyInTransit || 0,
           availableQuantity: (inventory._sum.qtyOnHand || 0) - (inventory._sum.qtyReserved || 0),
-          totalValue: inventoryValue[0]?.totalValue || 0,
+          totalValue: parseFloat(inventoryValue[0]?.totalValue || '0'),
         },
         movements: {
           last30Days: movements.map(m => ({
