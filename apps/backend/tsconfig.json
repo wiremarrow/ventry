@@ -4,9 +4,10 @@
     "moduleResolution": "Node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "declaration": false,
+    "declaration": true,
     "composite": false,
-    "noEmit": true,
+    "noEmit": false,
+    "outDir": "./dist",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -29,6 +30,7 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "**/test-utils/**",
-    "**/__tests__/**"
+    "**/__tests__/**",
+    "dist/**"
   ]
 }
