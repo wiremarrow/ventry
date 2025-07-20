@@ -30,6 +30,7 @@ import {
 } from '@ventry/ui';
 
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import CustomerForm from '@/components/customers/customer-form';
 import { toast } from '@/hooks/use-toast';
 import { trpc } from '@/lib/trpc';
@@ -83,7 +84,8 @@ export default function CustomersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col gap-6">
+      <DashboardLayout>
+        <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Customers</h1>
@@ -289,6 +291,7 @@ export default function CustomersPage() {
           </DialogContent>
         </Dialog>
       </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
