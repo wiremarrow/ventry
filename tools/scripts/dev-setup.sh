@@ -60,9 +60,16 @@ until docker-compose exec -T postgres pg_isready -U ventry -d ventry_dev &> /dev
 done
 echo " Ready!"
 
+# Create application user for RLS
+echo "🔐 Creating application database user for RLS..."
+./tools/scripts/setup-app-user.sh
+if [ $? -ne 0 ]; then
+    echo "⚠️  Failed to create application user, but continuing setup..."
+fi
+
 # Initialize database
 echo "🗄️ Initializing database..."
-pnpm db:push
+pnpm --filter @ventry/database db:push
 
 echo "✨ Development environment setup complete!"
 echo ""

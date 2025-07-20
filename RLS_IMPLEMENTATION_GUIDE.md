@@ -190,14 +190,21 @@ const prisma = createRLSProxy(basePrisma, () => ({
 
 ### Applying Migrations
 
-**DO NOT USE `prisma db push`** - It tries to sync schema and can drop columns!
+**Schema Operations with Admin User**
+
+All Prisma schema operations now automatically use the admin connection through the `migrate-with-admin.sh` script:
 
 ```bash
-# Apply migrations manually (recommended for RLS)
-psql $DATABASE_URL -f /path/to/migration.sql
+# These commands use DATABASE_ADMIN_URL automatically
+pnpm db:push         # Safe to use - uses admin connection
+pnpm db:migrate      # Create and apply migrations
+pnpm db:reset        # Reset database
 
-# Or use Prisma migrate
-pnpm --filter @ventry/database db:migrate:deploy
+# The commands above internally use:
+# /packages/database/scripts/migrate-with-admin.sh
+
+# For manual SQL migrations (if needed)
+psql $DATABASE_ADMIN_URL -f /path/to/migration.sql
 ```
 
 ### Current Schema State

@@ -24,6 +24,7 @@ Required:
    ./tools/scripts/dev-setup.sh
    ```
    - Sets up PostgreSQL and Redis with Docker
+   - Creates the `ventry_app` database user for Row-Level Security (RLS)
    - Installs all dependencies
    - Initializes database schema
    - Creates environment configuration
@@ -96,6 +97,45 @@ Manage PostgreSQL database:
 
 # Stop PostgreSQL
 ./tools/scripts/switch-db.sh stop
+```
+
+### Database Users (RLS Security)
+
+Ventry uses a dual-user pattern for Row-Level Security:
+
+1. **`ventry` user** (Admin):
+   - Created automatically by PostgreSQL Docker container
+   - Used for migrations, schema changes, and seeding
+   - Has SUPERUSER and BYPASSRLS privileges
+   - Connection: `DATABASE_ADMIN_URL`
+
+2. **`ventry_app` user** (Application):
+   - Created by `dev-setup.sh` or manually with `./tools/scripts/setup-app-user.sh`
+   - Used for ALL runtime queries from the application
+   - Has limited privileges, NO BYPASSRLS (enforces RLS)
+   - Connection: `DATABASE_URL`
+
+If you need to manually create the app user:
+```bash
+./tools/scripts/setup-app-user.sh
+```
+
+### Schema Operations
+
+All Prisma schema operations (`db:push`, `db:migrate`, `db:reset`) automatically use the admin connection through the `migrate-with-admin.sh` script. This ensures:
+- Schema changes have the necessary privileges
+- Application runtime still uses the restricted user
+- Security boundaries are maintained
+
+The npm scripts handle this automatically:
+```bash
+# These commands automatically use DATABASE_ADMIN_URL
+pnpm db:push       # Push schema changes
+pnpm db:migrate    # Run migrations
+pnpm db:reset      # Reset database
+
+# These commands use DATABASE_URL (app user)
+pnpm dev           # Runtime application
 ```
 
 ### Docker Services (Optional)

@@ -180,6 +180,18 @@ DATABASE_ADMIN_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventr
 DATABASE_URL="postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_dev"
 ```
 
+**Automatic Admin Connection for Schema Operations**:
+All Prisma schema commands automatically use DATABASE_ADMIN_URL through the `migrate-with-admin.sh` script:
+```bash
+# These commands automatically use admin privileges:
+pnpm db:push       # Push schema changes
+pnpm db:migrate    # Create/apply migrations  
+pnpm db:reset      # Reset database
+
+# Script location: packages/database/scripts/migrate-with-admin.sh
+# Error handling: Clear message if DATABASE_ADMIN_URL is missing
+```
+
 **CRITICAL**: If you see cross-organization data leakage:
 1. Check DATABASE_URL uses `ventry_app`, not `ventry`
 2. Restart dev servers after env changes

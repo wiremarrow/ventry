@@ -8,15 +8,15 @@
   "scripts": {
     "build": "tsc",
     "db:generate": "dotenv -e ../../.env -- prisma generate",
-    "db:push": "dotenv -e ../../.env -- prisma db push --accept-data-loss",
-    "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
-    "db:migrate:deploy": "dotenv -e ../../.env -- prisma migrate deploy",
+    "db:push": "./scripts/migrate-with-admin.sh db push --accept-data-loss",
+    "db:migrate": "./scripts/migrate-with-admin.sh migrate dev",
+    "db:migrate:deploy": "./scripts/migrate-with-admin.sh migrate deploy",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "db:seed:basic": "dotenv -e ../../.env -- tsx prisma/seed.ts --basic",
     "db:seed:comprehensive": "dotenv -e ../../.env -- tsx prisma/seed.ts --comprehensive",
     "db:seed:multi-org": "dotenv -e ../../.env -- tsx prisma/seed-multi-org.ts",
-    "db:reset": "dotenv -e ../../.env -- prisma migrate reset --force"
+    "db:reset": "./scripts/migrate-with-admin.sh migrate reset --force"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
