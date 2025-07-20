@@ -222,6 +222,38 @@ model AuditLog {
 
 ## Testing Infrastructure
 
+### Multi-Organization Test Seed
+
+**Purpose**: Test Row-Level Security (RLS) and multi-tenant isolation
+
+```bash
+# Create multi-org test data
+pnpm --filter @ventry/database db:seed:multi-org
+```
+
+**Creates**:
+- Multiple organizations (TechStart Inc, GlobalRetail Co)
+- Users in different organizations
+- Isolated inventory data per organization
+
+**Test Accounts**:
+```
+# TechStart Inc
+- alice@techstart.com / password123 (Admin)
+- bob@techstart.com / password123 (Manager)
+
+# GlobalRetail Co
+- charlie@globalretail.com / password123 (Admin)
+- david@globalretail.com / password123 (Manager)
+```
+
+**Testing RLS Isolation**:
+1. Login as alice@techstart.com
+2. Should only see TechStart data
+3. Login as charlie@globalretail.com
+4. Should only see GlobalRetail data
+5. Data should be completely isolated between orgs
+
 ### Dual Connection Pattern
 
 **CRITICAL**: Tests must use two connections:

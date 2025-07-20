@@ -394,8 +394,18 @@ cd ventry
 # - Start Docker services
 # - Prepare the development environment
 
-# Seed the database with demo users (REQUIRED for authentication)
+# Seed the database (choose one based on your needs):
+# Option 1: Default seed - Users + organization with basic data (RECOMMENDED)
 pnpm --filter @ventry/database db:seed
+
+# Option 2: Comprehensive seed - Full demo data for testing/demos
+pnpm --filter @ventry/database db:seed:comprehensive
+
+# Option 3: Basic seed - Only creates users (minimal)
+pnpm --filter @ventry/database db:seed:basic
+
+# Option 4: Multi-org seed - For testing RLS/multi-tenancy
+pnpm --filter @ventry/database db:seed:multi-org
 
 # Start development servers
 pnpm dev
@@ -405,11 +415,16 @@ pnpm dev
 # Backend API (tRPC + Fastify): http://localhost:6060
 # tRPC Endpoints: http://localhost:6060/trpc
 
-# Demo Credentials (after running db:seed-comprehensive):
-# Admin: admin@ventry.com / password123
-# Manager: manager@ventry.com / password123
-# Employee: employee@ventry.com / password123 (limited dashboard + products access)
-# User: user@ventry.com / password123 (no organization access - demonstrates multi-tenant boundary)
+# Demo Credentials (default/comprehensive seeds):
+# Admin: admin@ventry.com / password123 (full access)
+# Manager: manager@ventry.com / password123 (full access)
+# Employee: employee@ventry.com / password123 (limited access)
+# User: user@ventry.com / password123 (no org access - tests boundaries)
+
+# Multi-org seed credentials:
+# TechStart: alice@techstart.com / password123, bob@techstart.com / password123
+# GlobalRetail: charlie@globalretail.com / password123, david@globalretail.com / password123
+
 # Note: All demo accounts use the same password: password123
 # Note: Dashboard displays live analytics data with 30-second auto-refresh
 ```

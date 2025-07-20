@@ -76,10 +76,63 @@ pnpm --filter @ventry/web dev
 |---------|-------------|
 | `pnpm --filter @ventry/database db:push` | Push schema changes to database |
 | `pnpm --filter @ventry/database db:migrate` | Run database migrations |
-| `pnpm --filter @ventry/database db:seed` | Seed database with test data (**Required for first-time setup** - Creates demo users: admin@ventry.com/password123, manager@ventry.com/password123, employee@ventry.com/password123, user@ventry.com/password123) |
-| `pnpm --filter @ventry/database db:seed:comprehensive` | Comprehensive seeding with full demo data including analytics for dashboard testing |
+| `pnpm --filter @ventry/database db:seed` | Default seed - Creates users + organization with basic data |
+| `pnpm --filter @ventry/database db:seed:basic` | Basic seed - Creates only 4 demo users |
+| `pnpm --filter @ventry/database db:seed:comprehensive` | Comprehensive seed - Full demo data for testing |
+| `pnpm --filter @ventry/database db:seed:multi-org` | Multi-org seed - For RLS/multi-tenant testing |
 | `./tools/scripts/reset-db.sh` | Reset database (WARNING: Deletes all data) |
 | `./tools/scripts/backup-db.sh` | Create database backup |
+
+### Database Seeding Options
+
+#### 1. **Basic Seed** (`db:seed:basic`)
+- **Purpose**: Minimal setup with only user accounts
+- **Creates**:
+  - 4 demo users (admin, manager, employee, user)
+  - All passwords: `password123`
+- **Use case**: Quick authentication testing
+
+#### 2. **Default Seed** (`db:seed`) - **Recommended for development**
+- **Purpose**: Standard development setup
+- **Creates**:
+  - 4 demo users with roles
+  - Ventry Corporation organization
+  - Organization memberships (excludes user@ventry.com for multi-tenant testing)
+  - Basic units of measure (EA, CTN, PLT)
+  - Product categories (Electronics, Office, Furniture)
+  - 1 warehouse with 8 locations
+  - Sample inventory items
+- **Demo accounts**:
+  - admin@ventry.com / password123 (ADMIN - full access)
+  - manager@ventry.com / password123 (MANAGER - full access)
+  - employee@ventry.com / password123 (EMPLOYEE - limited access)
+  - user@ventry.com / password123 (USER - no org access, tests boundaries)
+
+#### 3. **Comprehensive Seed** (`db:seed:comprehensive`)
+- **Purpose**: Full application testing with realistic data
+- **Creates**: Everything from default seed PLUS:
+  - 4 warehouses with 32-48 locations total
+  - 12 suppliers with contact information
+  - 45+ products across categories
+  - 500-2000+ inventory records
+  - 200-500 historical stock movements (90 days)
+  - Multiple customers
+  - Purchase orders, receipts, adjustments
+  - Analytics data for dashboard
+- **Use case**: Demos, full testing, dashboard development
+
+#### 4. **Multi-Organization Seed** (`db:seed:multi-org`)
+- **Purpose**: Test Row-Level Security (RLS) and multi-tenancy
+- **Creates**:
+  - Multiple organizations (TechStart Inc, GlobalRetail Co)
+  - Separate users per organization
+  - Isolated inventory data per org
+- **Test accounts**:
+  - alice@techstart.com / password123 (TechStart admin)
+  - bob@techstart.com / password123 (TechStart user)
+  - charlie@globalretail.com / password123 (GlobalRetail admin)
+  - david@globalretail.com / password123 (GlobalRetail user)
+- **Use case**: RLS testing, organization switching, data isolation verification
 
 ### Database Management
 

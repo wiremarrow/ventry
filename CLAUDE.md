@@ -98,6 +98,31 @@ pnpm test:e2e:debug         # Playwright debug mode
 - **ALWAYS** test migrations with `pnpm db:push`
 - **ALWAYS** use PostgreSQL for all environments (dev, test, prod)
 
+### **Database Seeding Options**
+```bash
+# Basic seed - Only creates 4 demo users (minimal)
+pnpm --filter @ventry/database db:seed:basic
+
+# Default seed - Users + organization with basic data (RECOMMENDED)
+pnpm --filter @ventry/database db:seed
+
+# Comprehensive seed - Full demo data for testing/demos
+pnpm --filter @ventry/database db:seed:comprehensive
+
+# Multi-org seed - For testing RLS/multi-tenancy
+pnpm --filter @ventry/database db:seed:multi-org
+```
+
+**Demo Accounts (default/comprehensive seeds)**:
+- admin@ventry.com / password123 (ADMIN role)
+- manager@ventry.com / password123 (MANAGER role)
+- employee@ventry.com / password123 (EMPLOYEE role)
+- user@ventry.com / password123 (USER role - no org access)
+
+**Multi-org Test Accounts**:
+- alice@techstart.com / password123 (TechStart admin)
+- charlie@globalretail.com / password123 (GlobalRetail admin)
+
 ### **Integration Test Database Setup**
 ```bash
 # Create integration test database schema (one-time setup)
