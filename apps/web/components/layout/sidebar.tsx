@@ -7,13 +7,16 @@ import {
   BarChart3, 
   Box, 
   Building, 
+  Building2,
   ChevronLeft, 
   ChevronRight, 
   Home, 
   Package, 
   ShoppingCart, 
   Tags, 
+  TruckIcon,
   Users,
+  UserCheck,
   Warehouse 
 } from 'lucide-react';
 import { Button } from '@ventry/ui';
@@ -55,6 +58,30 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       href: '/warehouses',
       icon: Warehouse,
       show: user ? canManageLocations(user) : false,
+    },
+    {
+      label: 'Suppliers',
+      href: '/suppliers',
+      icon: Building2,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Customers',
+      href: '/customers',
+      icon: UserCheck,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Orders',
+      href: '/orders',
+      icon: ShoppingCart,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Purchase Orders',
+      href: '/purchase-orders',
+      icon: TruckIcon,
+      show: true, // TODO: Add proper permission check
     },
     {
       label: 'Categories',

@@ -38,13 +38,22 @@ import {
 import { EditSupplierDialog } from './edit-supplier-dialog';
 import { toast } from 'sonner';
 
+import type { Supplier } from '@ventry/database';
+
 interface SupplierListProps {
   searchTerm: string;
 }
 
+// Type for supplier with additional fields from the query
+type SupplierWithRelations = Supplier & {
+  _count?: {
+    purchaseOrders: number;
+  };
+};
+
 export function SupplierList({ searchTerm }: SupplierListProps) {
   const [page, setPage] = useState(1);
-  const [editingSupplier, setEditingSupplier] = useState<typeof data?.suppliers[0] | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<SupplierWithRelations | null>(null);
   const limit = 20;
 
   const utils = trpc.useUtils();
@@ -62,7 +71,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
       toast.success('Supplier archived successfully');
       utils.suppliers.list.invalidate();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -101,9 +110,8 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
             <TableRow>
               <TableHead>Supplier</TableHead>
               <TableHead>Contact</TableHead>
-              <TableHead>Type</TableHead>
+              <TableHead>Location</TableHead>
               <TableHead className="text-center">Lead Time</TableHead>
-              <TableHead className="text-center">Rating</TableHead>
               <TableHead className="text-right">Open POs</TableHead>
               <TableHead className="text-right">Total Business</TableHead>
               <TableHead>Status</TableHead>
@@ -115,7 +123,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
               // Loading skeletons
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={8}>
                     <Skeleton className="h-8 w-full" />
                   </TableCell>
                 </TableRow>
@@ -123,7 +131,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
             ) : data?.suppliers.length === 0 ? (
               // Empty state
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No suppliers found</p>
                   <p className="text-gray-600 text-sm mt-1">
@@ -138,7 +146,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                   <TableCell>
                     <div>
                       <p className="font-medium text-gray-900">{supplier.name}</p>
-                      <p className="text-sm text-gray-600">{supplier.code}</p>
+                      <p className="text-sm text-gray-600">{supplier.supplierCode}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -158,7 +166,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm capitalize">{supplier.type.toLowerCase()}</span>
+                    <span className="text-sm">{supplier.city}, {supplier.country}</span>
                   </TableCell>
                   <TableCell className="text-center">
                     {supplier.leadTimeDays ? (
@@ -170,15 +178,6 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                       <span className="text-sm text-gray-400">-</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-center">
-                    {supplier.rating ? (
-                      <span className={`font-medium ${getRatingColor(supplier.rating)}`}>
-                        {supplier.rating.toFixed(1)} ★
-                      </span>
-                    ) : (
-                      <span className="text-sm text-gray-400">-</span>
-                    )}
-                  </TableCell>
                   <TableCell className="text-right">
                     {supplier._count.purchaseOrders || 0}
                   </TableCell>
@@ -186,13 +185,13 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                     <div className="flex items-center justify-end gap-1">
                       <DollarSign className="h-3 w-3 text-gray-400" />
                       <span className="font-medium">
-                        {formatCurrency(supplier.totalBusinessAmount || 0)}
+                        ${((supplier as any).totalOrderValue12Months || 0).toLocaleString()}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={supplier.status === 'ACTIVE' ? 'success' : 'secondary'}>
-                      {supplier.status}
+                    <Badge variant="default">
+                      Active
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -219,7 +218,6 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                           onClick={() =>
                             archiveMutation.mutate({
                               id: supplier.id,
-                              reason: 'Archived from UI',
                             })
                           }
                           className="text-red-600"

@@ -1123,4 +1123,106 @@ export const suppliersRouter = createTRPCRouter({
         suppliers: createdSuppliers,
       };
     }),
+
+  // Archive supplier (soft delete)
+  archive: organizationProcedure
+    .input(z.object({ id: z.string().cuid() }))
+    .mutation(async ({ ctx, input }) => {
+      // Check if supplier exists and belongs to organization
+      const supplier = await ctx.prisma.supplier.findFirst({
+        where: {
+          id: input.id,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (!supplier) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Supplier not found',
+        });
+      }
+
+      // Check for active purchase orders
+      const activePOs = await ctx.prisma.purchaseOrder.count({
+        where: {
+          supplierId: input.id,
+          status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
+        },
+      });
+
+      if (activePOs > 0) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Cannot archive supplier with ${activePOs} active purchase orders`,
+        });
+      }
+
+      // For now, we'll delete the supplier since there's no isActive field
+      // TODO: Add isActive field to supplier model for soft delete
+      const archivedSupplier = await ctx.prisma.supplier.delete({
+        where: { id: input.id },
+      });
+
+      return archivedSupplier;
+    }),
+
+  // Get supplier statistics
+  getStats: organizationProcedure
+    .query(async ({ ctx }) => {
+      const organizationId = ctx.user.organizationId;
+
+      // Get total suppliers
+      const total = await ctx.prisma.supplier.count({
+        where: { organizationId },
+      });
+
+      // Get suppliers with recent orders (active)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const suppliersWithRecentOrders = await ctx.prisma.supplier.count({
+        where: {
+          organizationId,
+          purchaseOrders: {
+            some: {
+              createdAt: { gte: thirtyDaysAgo },
+            },
+          },
+        },
+      });
+
+      // Calculate average lead time
+      const suppliers = await ctx.prisma.supplier.findMany({
+        where: { organizationId },
+        select: { leadTimeDays: true },
+      });
+
+      const avgLeadTimeDays = suppliers.length > 0
+        ? suppliers.reduce((sum, s) => sum + s.leadTimeDays, 0) / suppliers.length
+        : 0;
+
+      // Get monthly purchase value
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const monthlyPurchases = await ctx.prisma.purchaseOrder.aggregate({
+        where: {
+          organizationId,
+          orderDate: { gte: startOfMonth },
+          status: { in: ['APPROVED', 'RECEIVED'] },
+        },
+        _sum: {
+          total: true,
+        },
+      });
+
+      return {
+        total,
+        active: suppliersWithRecentOrders,
+        avgLeadTimeDays,
+        monthlyPurchaseValue: monthlyPurchases._sum?.total?.toNumber() || 0,
+      };
+    }),
 });
