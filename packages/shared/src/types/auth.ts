@@ -41,6 +41,8 @@ export interface UserProfile {
   isActive: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  organizationId?: string;
+  organizationRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
 }
 
 export interface RefreshTokenRequest {

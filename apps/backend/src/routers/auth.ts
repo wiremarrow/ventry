@@ -1,7 +1,7 @@
-import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc/trpc.js';
+import { authProcedure } from '../trpc/auth-procedures.js';
 import { createAuthService } from '../services/auth-service.js';
 
 const loginSchema = z.object({
@@ -41,7 +41,7 @@ const authResponseSchema = z.object({
 });
 
 export const authRouter = createTRPCRouter({
-  login: publicProcedure
+  login: authProcedure
     .input(loginSchema)
     .output(authResponseSchema)
     .mutation(async ({ ctx, input }) => {
@@ -49,11 +49,11 @@ export const authRouter = createTRPCRouter({
       const result = await authService.login(input, ctx.res);
       
       // Remove the token from the response (it's only for testing)
-      const { token, ...authResult } = result;
+      const { token: _token, ...authResult } = result;
       return authResult;
     }),
 
-  register: publicProcedure
+  register: authProcedure
     .input(registerSchema)
     .output(authResponseSchema)
     .mutation(async ({ ctx, input }) => {
@@ -61,7 +61,7 @@ export const authRouter = createTRPCRouter({
       const result = await authService.register(input, ctx.res);
       
       // Remove the token from the response (it's only for testing)
-      const { token, ...authResult } = result;
+      const { token: _token, ...authResult } = result;
       return authResult;
     }),
 
@@ -89,7 +89,7 @@ export const authRouter = createTRPCRouter({
       const result = await authService.refreshToken(input.refreshToken, ctx.res);
       
       // Remove the token from the response (it's only for testing)
-      const { token, ...authResult } = result;
+      const { token: _token, ...authResult } = result;
       return authResult;
     }),
 });

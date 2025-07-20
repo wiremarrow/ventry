@@ -16,9 +16,10 @@ Recent security improvements include enterprise-grade Row-Level Security (RLS) i
 - SECURITY DEFINER functions validate inputs at database level (CUID format enforced)
 - Transaction-scoped session variables (connection pool safe)
 - One canonical pattern: `withRLS()` wrapper with full TypeScript type safety
-- RLS policies on all 26 tenant-scoped tables
+- RLS policies on all 31 business tables (with organization_id denormalization)
 - Dual-role architecture: `ventry` (superuser) and `ventry_app` (application role)
 - All RLS integration tests passing with dual-connection pattern
+- **CRITICAL**: Application uses `ventry_app` user to enforce RLS (no bypass)
 - [RLS Implementation Guide](./RLS_IMPLEMENTATION_GUIDE.md) | [RLS Guide](./docs/RLS_GUIDE.md) | [Implementation Summary](./docs/RLS_IMPLEMENTATION_SUMMARY.md)
 
 **⚠️ CRITICAL**: Test coverage for business logic remains at 10%. See the comprehensive audit for remaining tasks before production deployment.

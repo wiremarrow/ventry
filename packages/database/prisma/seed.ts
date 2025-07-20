@@ -20,9 +20,15 @@ function generateLotNumber(date: Date, index: number): string {
 }
 
 async function clearDatabase() {
-  if (!isComprehensive) return;
+  // Clear business data for both comprehensive and regular seeds
+  // Only skip for basic-only mode
+  if (isBasicOnly) return;
   
-  console.log('🧹 Clearing existing data for comprehensive seed...');
+  if (isComprehensive) {
+    console.log('🧹 Clearing all data for comprehensive seed...');
+  } else {
+    console.log('🧹 Clearing business data (keeping users and organization)...');
+  }
   
   // Delete in reverse order of dependencies
   await prisma.notification.deleteMany();
@@ -62,11 +68,14 @@ async function clearDatabase() {
   await prisma.shippingMethod.deleteMany();
   await prisma.carrier.deleteMany();
   await prisma.paymentMethod.deleteMany();
-  await prisma.organizationMember.deleteMany();
-  await prisma.organization.deleteMany();
-  await prisma.userRole.deleteMany();
-  await prisma.employee.deleteMany();
-  await prisma.user.deleteMany();
+  // Only delete users and organizations in comprehensive mode
+  if (isComprehensive) {
+    await prisma.organizationMember.deleteMany();
+    await prisma.organization.deleteMany();
+    await prisma.userRole.deleteMany();
+    await prisma.employee.deleteMany();
+    await prisma.user.deleteMany();
+  }
 
   console.log('✅ Database cleared');
 }

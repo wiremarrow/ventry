@@ -11,35 +11,55 @@ datasource db {
 }
 
 model Organization {
-  id                 String               @id @default(cuid())
-  name               String
-  slug               String               @unique
-  domain             String?              @unique
-  logoUrl            String?              @map("logo_url")
-  settings           Json                 @default("{}")
-  subscriptionTier   String               @default("free") @map("subscription_tier")
-  subscriptionStatus String               @default("active") @map("subscription_status")
-  trialEndsAt        DateTime?            @map("trial_ends_at")
-  billingEmail       String?              @map("billing_email")
-  createdAt          DateTime             @default(now()) @map("created_at")
-  updatedAt          DateTime             @updatedAt @map("updated_at")
-  carriers           Carrier[]
-  customers          Customer[]
-  discounts          Discount[]
-  categories         ItemCategory[]
-  items              Item[]
-  orders             Order[]
-  members            OrganizationMember[]
-  paymentMethods     PaymentMethod[]
-  posTransactions    POSTransaction[]
-  purchaseOrders     PurchaseOrder[]
-  returns            Return[]
-  shipments          Shipment[]
-  shippingMethods    ShippingMethod[]
-  suppliers          Supplier[]
-  unitsOfMeasure     UnitOfMeasure[]
-  warehouses         Warehouse[]
-  auditLogs          AuditLog[]
+  id                  String               @id @default(cuid())
+  name                String
+  slug                String               @unique
+  domain              String?              @unique
+  logoUrl             String?              @map("logo_url")
+  settings            Json                 @default("{}")
+  subscriptionTier    String               @default("free") @map("subscription_tier")
+  subscriptionStatus  String               @default("active") @map("subscription_status")
+  trialEndsAt         DateTime?            @map("trial_ends_at")
+  billingEmail        String?              @map("billing_email")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+  carriers            Carrier[]
+  customers           Customer[]
+  discounts           Discount[]
+  categories          ItemCategory[]
+  items               Item[]
+  orders              Order[]
+  members             OrganizationMember[]
+  paymentMethods      PaymentMethod[]
+  posTransactions     POSTransaction[]
+  purchaseOrders      PurchaseOrder[]
+  returns             Return[]
+  shipments           Shipment[]
+  shippingMethods     ShippingMethod[]
+  suppliers           Supplier[]
+  unitsOfMeasure      UnitOfMeasure[]
+  warehouses          Warehouse[]
+  auditLogs           AuditLog[]
+  inventory           Inventory[]
+  locations           Location[]
+  stockMovements      StockMovement[]
+  stockAdjustments    StockAdjustment[]
+  orderItems          OrderItem[]
+  purchaseOrderItems  PurchaseOrderItem[]
+  receipts            Receipt[]
+  receiptItems        ReceiptItem[]
+  payments            Payment[]
+  addresses           Address[]
+  lots                Lot[]
+  serialNumbers       SerialNumber[]
+  itemImages          ItemImage[]
+  priceHistory        PriceHistory[]
+  cycleCounts         CycleCount[]
+  cycleCountItems     CycleCountItem[]
+  shipmentItems       ShipmentItem[]
+  returnItems         ReturnItem[]
+  supplierContacts    SupplierContact[]
+  posTransactionItems POSTransactionItem[]
 
   @@map("organizations")
 }
@@ -204,19 +224,22 @@ model UnitOfMeasure {
 }
 
 model ItemImage {
-  id         String   @id @default(cuid())
-  itemId     String   @map("item_id")
-  url        String
-  altText    String?  @map("alt_text")
-  isPrimary  Boolean  @default(false) @map("is_primary")
-  uploadedAt DateTime @default(now()) @map("uploaded_at")
-  item       Item     @relation(fields: [itemId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  itemId         String       @map("item_id")
+  url            String
+  altText        String?      @map("alt_text")
+  isPrimary      Boolean      @default(false) @map("is_primary")
+  uploadedAt     DateTime     @default(now()) @map("uploaded_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item         @relation(fields: [itemId], references: [id])
 
   @@map("item_images")
 }
 
 model Lot {
   id                  String               @id @default(cuid())
+  organizationId      String               @map("organization_id")
   itemId              String               @map("item_id")
   lotNumber           String               @unique @map("lot_number")
   manufactureDate     DateTime?            @map("manufacture_date")
@@ -229,6 +252,7 @@ model Lot {
   status              LotStatus            @default(AVAILABLE)
   createdAt           DateTime             @default(now()) @map("created_at")
   updatedAt           DateTime             @updatedAt @map("updated_at")
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   cycleCountItems     CycleCountItem[]
   inventory           Inventory[]
   item                Item                 @relation(fields: [itemId], references: [id])
@@ -247,6 +271,7 @@ model Lot {
 
 model SerialNumber {
   id                  String               @id @default(cuid())
+  organizationId      String               @map("organization_id")
   itemId              String               @map("item_id")
   serialNumber        String               @unique @map("serial_number")
   lotId               String?              @map("lot_id")
@@ -254,6 +279,7 @@ model SerialNumber {
   warrantyExpiration  DateTime?            @map("warranty_expiration")
   status              SerialStatus         @default(AVAILABLE)
   locationId          String?              @map("location_id")
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   inventory           Inventory[]
   orderItems          OrderItem[]
   posTransactionItems POSTransactionItem[]
@@ -292,6 +318,7 @@ model Warehouse {
 
 model Location {
   id               String            @id @default(cuid())
+  organizationId   String            @map("organization_id")
   description      String?
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
@@ -305,6 +332,7 @@ model Location {
   zone             String?
   cycleCounts      CycleCount[]
   inventory        Inventory[]
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   warehouse        Warehouse         @relation(fields: [warehouseId], references: [id])
   receiptItems     ReceiptItem[]
   serialNumbers    SerialNumber[]
@@ -317,20 +345,22 @@ model Location {
 }
 
 model Inventory {
-  id            String        @id @default(cuid())
-  itemId        String        @map("item_id")
-  lotId         String?       @map("lot_id")
-  serialId      String?       @map("serial_id")
-  locationId    String        @map("location_id")
-  qtyOnHand     Int           @default(0) @map("qty_on_hand")
-  qtyReserved   Int           @default(0) @map("qty_reserved")
-  qtyInTransit  Int           @default(0) @map("qty_in_transit")
-  lastCountedAt DateTime?     @map("last_counted_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  item          Item          @relation(fields: [itemId], references: [id])
-  location      Location      @relation(fields: [locationId], references: [id])
-  lot           Lot?          @relation(fields: [lotId], references: [id])
-  serialNumber  SerialNumber? @relation(fields: [serialId], references: [id])
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  itemId         String        @map("item_id")
+  lotId          String?       @map("lot_id")
+  serialId       String?       @map("serial_id")
+  locationId     String        @map("location_id")
+  qtyOnHand      Int           @default(0) @map("qty_on_hand")
+  qtyReserved    Int           @default(0) @map("qty_reserved")
+  qtyInTransit   Int           @default(0) @map("qty_in_transit")
+  lastCountedAt  DateTime?     @map("last_counted_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item          @relation(fields: [itemId], references: [id])
+  location       Location      @relation(fields: [locationId], references: [id])
+  lot            Lot?          @relation(fields: [lotId], references: [id])
+  serialNumber   SerialNumber? @relation(fields: [serialId], references: [id])
 
   @@unique([itemId, lotId, serialId, locationId])
   @@index([itemId])
@@ -340,6 +370,7 @@ model Inventory {
 
 model StockMovement {
   id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
   itemId         String        @map("item_id")
   lotId          String?       @map("lot_id")
   serialId       String?       @map("serial_id")
@@ -352,6 +383,7 @@ model StockMovement {
   movedById      String        @map("moved_by_id")
   movedAt        DateTime      @default(now()) @map("moved_at")
   notes          String?
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fromLocation   Location?     @relation("FromLocation", fields: [fromLocationId], references: [id])
   item           Item          @relation(fields: [itemId], references: [id])
   lot            Lot?          @relation(fields: [lotId], references: [id])
@@ -363,65 +395,73 @@ model StockMovement {
 }
 
 model StockAdjustment {
-  id           String   @id @default(cuid())
-  itemId       String   @map("item_id")
-  lotId        String?  @map("lot_id")
-  locationId   String   @map("location_id")
-  qtyBefore    Int      @map("qty_before")
-  qtyAfter     Int      @map("qty_after")
-  reason       String
-  adjustedById String   @map("adjusted_by_id")
-  adjustedAt   DateTime @default(now()) @map("adjusted_at")
-  notes        String?
-  adjustedBy   User     @relation(fields: [adjustedById], references: [id])
-  item         Item     @relation(fields: [itemId], references: [id])
-  location     Location @relation(fields: [locationId], references: [id])
-  lot          Lot?     @relation(fields: [lotId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  itemId         String       @map("item_id")
+  lotId          String?      @map("lot_id")
+  locationId     String       @map("location_id")
+  qtyBefore      Int          @map("qty_before")
+  qtyAfter       Int          @map("qty_after")
+  reason         String
+  adjustedById   String       @map("adjusted_by_id")
+  adjustedAt     DateTime     @default(now()) @map("adjusted_at")
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  adjustedBy     User         @relation(fields: [adjustedById], references: [id])
+  item           Item         @relation(fields: [itemId], references: [id])
+  location       Location     @relation(fields: [locationId], references: [id])
+  lot            Lot?         @relation(fields: [lotId], references: [id])
 
   @@map("stock_adjustments")
 }
 
 model CycleCount {
-  id           String           @id @default(cuid())
-  locationId   String           @map("location_id")
-  countDate    DateTime         @map("count_date")
-  countedById  String           @map("counted_by_id")
-  reviewedById String?          @map("reviewed_by_id")
-  status       CycleCountStatus @default(PENDING)
-  notes        String?
-  items        CycleCountItem[]
-  countedBy    User             @relation(fields: [countedById], references: [id])
-  location     Location         @relation(fields: [locationId], references: [id])
-  reviewedBy   User?            @relation("ReviewedCycleCounts", fields: [reviewedById], references: [id])
+  id             String           @id @default(cuid())
+  organizationId String           @map("organization_id")
+  locationId     String           @map("location_id")
+  countDate      DateTime         @map("count_date")
+  countedById    String           @map("counted_by_id")
+  reviewedById   String?          @map("reviewed_by_id")
+  status         CycleCountStatus @default(PENDING)
+  notes          String?
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items          CycleCountItem[]
+  countedBy      User             @relation(fields: [countedById], references: [id])
+  location       Location         @relation(fields: [locationId], references: [id])
+  reviewedBy     User?            @relation("ReviewedCycleCounts", fields: [reviewedById], references: [id])
 
   @@map("cycle_counts")
 }
 
 model CycleCountItem {
-  id         String     @id @default(cuid())
-  countId    String     @map("count_id")
-  itemId     String     @map("item_id")
-  lotId      String?    @map("lot_id")
-  qtyCounted Int        @map("qty_counted")
-  qtySystem  Int        @map("qty_system")
-  variance   Int
-  count      CycleCount @relation(fields: [countId], references: [id])
-  item       Item       @relation(fields: [itemId], references: [id])
-  lot        Lot?       @relation(fields: [lotId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  countId        String       @map("count_id")
+  itemId         String       @map("item_id")
+  lotId          String?      @map("lot_id")
+  qtyCounted     Int          @map("qty_counted")
+  qtySystem      Int          @map("qty_system")
+  variance       Int
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  count          CycleCount   @relation(fields: [countId], references: [id])
+  item           Item         @relation(fields: [itemId], references: [id])
+  lot            Lot?         @relation(fields: [lotId], references: [id])
 
   @@map("cycle_count_items")
 }
 
 model PriceHistory {
-  id         String    @id @default(cuid())
-  itemId     String    @map("item_id")
-  priceType  PriceType @map("price_type")
-  price      Decimal
-  currencyId String    @default("USD") @map("currency_id")
-  startDate  DateTime  @map("start_date")
-  endDate    DateTime? @map("end_date")
-  notes      String?
-  item       Item      @relation(fields: [itemId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  itemId         String       @map("item_id")
+  priceType      PriceType    @map("price_type")
+  price          Decimal
+  currencyId     String       @default("USD") @map("currency_id")
+  startDate      DateTime     @map("start_date")
+  endDate        DateTime?    @map("end_date")
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item         @relation(fields: [itemId], references: [id])
 
   @@map("price_history")
 }
@@ -459,15 +499,17 @@ model Supplier {
 }
 
 model SupplierContact {
-  id         String   @id @default(cuid())
-  supplierId String   @map("supplier_id")
-  firstName  String   @map("first_name")
-  lastName   String   @map("last_name")
-  email      String?
-  phone      String?
-  role       String?
-  notes      String?
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  supplierId     String       @map("supplier_id")
+  firstName      String       @map("first_name")
+  lastName       String       @map("last_name")
+  email          String?
+  phone          String?
+  role           String?
+  notes          String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  supplier       Supplier     @relation(fields: [supplierId], references: [id])
 
   @@map("supplier_contacts")
 }
@@ -502,50 +544,56 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id            String        @id @default(cuid())
-  poId          String        @map("po_id")
-  itemId        String        @map("item_id")
-  description   String?
-  qtyOrdered    Int           @map("qty_ordered")
-  qtyReceived   Int           @default(0) @map("qty_received")
-  unitCost      Decimal       @map("unit_cost")
-  taxRate       Decimal       @default(0) @map("tax_rate")
-  totalCost     Decimal       @map("total_cost")
-  item          Item          @relation(fields: [itemId], references: [id])
-  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  poId           String        @map("po_id")
+  itemId         String        @map("item_id")
+  description    String?
+  qtyOrdered     Int           @map("qty_ordered")
+  qtyReceived    Int           @default(0) @map("qty_received")
+  unitCost       Decimal       @map("unit_cost")
+  taxRate        Decimal       @default(0) @map("tax_rate")
+  totalCost      Decimal       @map("total_cost")
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item          @relation(fields: [itemId], references: [id])
+  purchaseOrder  PurchaseOrder @relation(fields: [poId], references: [id])
 
   @@map("purchase_order_items")
 }
 
 model Receipt {
-  id            String         @id @default(cuid())
-  poId          String?        @map("po_id")
-  receivedDate  DateTime       @default(now()) @map("received_date")
-  receivedById  String         @map("received_by_id")
-  reference     String?
-  notes         String?
-  createdAt     DateTime       @default(now()) @map("created_at")
-  items         ReceiptItem[]
-  purchaseOrder PurchaseOrder? @relation(fields: [poId], references: [id])
-  receivedBy    User           @relation(fields: [receivedById], references: [id])
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  poId           String?        @map("po_id")
+  receivedDate   DateTime       @default(now()) @map("received_date")
+  receivedById   String         @map("received_by_id")
+  reference      String?
+  notes          String?
+  createdAt      DateTime       @default(now()) @map("created_at")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  items          ReceiptItem[]
+  purchaseOrder  PurchaseOrder? @relation(fields: [poId], references: [id])
+  receivedBy     User           @relation(fields: [receivedById], references: [id])
 
   @@map("receipts")
 }
 
 model ReceiptItem {
-  id             String    @id @default(cuid())
-  receiptId      String    @map("receipt_id")
-  itemId         String    @map("item_id")
-  lotId          String?   @map("lot_id")
-  serialNumber   String?   @map("serial_number")
-  qtyReceived    Int       @map("qty_received")
-  unitCost       Decimal   @map("unit_cost")
-  expirationDate DateTime? @map("expiration_date")
-  locationId     String    @map("location_id")
-  item           Item      @relation(fields: [itemId], references: [id])
-  location       Location  @relation(fields: [locationId], references: [id])
-  lot            Lot?      @relation(fields: [lotId], references: [id])
-  receipt        Receipt   @relation(fields: [receiptId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  receiptId      String       @map("receipt_id")
+  itemId         String       @map("item_id")
+  lotId          String?      @map("lot_id")
+  serialNumber   String?      @map("serial_number")
+  qtyReceived    Int          @map("qty_received")
+  unitCost       Decimal      @map("unit_cost")
+  expirationDate DateTime?    @map("expiration_date")
+  locationId     String       @map("location_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item         @relation(fields: [itemId], references: [id])
+  location       Location     @relation(fields: [locationId], references: [id])
+  lot            Lot?         @relation(fields: [lotId], references: [id])
+  receipt        Receipt      @relation(fields: [receiptId], references: [id])
 
   @@map("receipt_items")
 }
@@ -579,23 +627,25 @@ model Customer {
 }
 
 model Address {
-  id          String      @id @default(cuid())
-  customerId  String?     @map("customer_id")
-  supplierId  String?     @map("supplier_id")
-  addressType AddressType @map("address_type")
-  line1       String
-  line2       String?
-  city        String
-  state       String
-  postalCode  String      @map("postal_code")
-  country     String
-  phone       String?
-  attention   String?
-  isDefault   Boolean     @default(false) @map("is_default")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  customer    Customer?   @relation(fields: [customerId], references: [id])
-  supplier    Supplier?   @relation(fields: [supplierId], references: [id])
+  id             String       @id @default(cuid())
+  organizationId String       @map("organization_id")
+  customerId     String?      @map("customer_id")
+  supplierId     String?      @map("supplier_id")
+  addressType    AddressType  @map("address_type")
+  line1          String
+  line2          String?
+  city           String
+  state          String
+  postalCode     String       @map("postal_code")
+  country        String
+  phone          String?
+  attention      String?
+  isDefault      Boolean      @default(false) @map("is_default")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  customer       Customer?    @relation(fields: [customerId], references: [id])
+  supplier       Supplier?    @relation(fields: [supplierId], references: [id])
 
   @@map("addresses")
 }
@@ -634,31 +684,34 @@ model Order {
 }
 
 model OrderItem {
-  id            String         @id @default(cuid())
-  orderId       String         @map("order_id")
-  itemId        String         @map("item_id")
-  description   String?
-  qtyOrdered    Int            @map("qty_ordered")
-  qtyAllocated  Int            @default(0) @map("qty_allocated")
-  qtyShipped    Int            @default(0) @map("qty_shipped")
-  unitPrice     Decimal        @map("unit_price")
-  discountPct   Decimal        @default(0) @map("discount_pct")
-  taxRate       Decimal        @default(0) @map("tax_rate")
-  totalPrice    Decimal        @map("total_price")
-  lotId         String?        @map("lot_id")
-  serialId      String?        @map("serial_id")
-  item          Item           @relation(fields: [itemId], references: [id])
-  lot           Lot?           @relation(fields: [lotId], references: [id])
-  order         Order          @relation(fields: [orderId], references: [id])
-  serialNumber  SerialNumber?  @relation(fields: [serialId], references: [id])
-  returnItems   ReturnItem[]
-  shipmentItems ShipmentItem[]
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  orderId        String         @map("order_id")
+  itemId         String         @map("item_id")
+  description    String?
+  qtyOrdered     Int            @map("qty_ordered")
+  qtyAllocated   Int            @default(0) @map("qty_allocated")
+  qtyShipped     Int            @default(0) @map("qty_shipped")
+  unitPrice      Decimal        @map("unit_price")
+  discountPct    Decimal        @default(0) @map("discount_pct")
+  taxRate        Decimal        @default(0) @map("tax_rate")
+  totalPrice     Decimal        @map("total_price")
+  lotId          String?        @map("lot_id")
+  serialId       String?        @map("serial_id")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item           @relation(fields: [itemId], references: [id])
+  lot            Lot?           @relation(fields: [lotId], references: [id])
+  order          Order          @relation(fields: [orderId], references: [id])
+  serialNumber   SerialNumber?  @relation(fields: [serialId], references: [id])
+  returnItems    ReturnItem[]
+  shipmentItems  ShipmentItem[]
 
   @@map("order_items")
 }
 
 model Payment {
   id              String        @id @default(cuid())
+  organizationId  String        @map("organization_id")
   orderId         String        @map("order_id")
   paymentMethodId String        @map("payment_method_id")
   amount          Decimal
@@ -669,6 +722,7 @@ model Payment {
   processedById   String        @map("processed_by_id")
   notes           String?
   createdAt       DateTime      @default(now()) @map("created_at")
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   order           Order         @relation(fields: [orderId], references: [id])
   paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id])
   processedBy     User          @relation(fields: [processedById], references: [id])
@@ -721,18 +775,20 @@ model Shipment {
 }
 
 model ShipmentItem {
-  id           String        @id @default(cuid())
-  shipmentId   String        @map("shipment_id")
-  orderItemId  String        @map("order_item_id")
-  itemId       String        @map("item_id")
-  lotId        String?       @map("lot_id")
-  serialId     String?       @map("serial_id")
-  qtyShipped   Int           @map("qty_shipped")
-  item         Item          @relation(fields: [itemId], references: [id])
-  lot          Lot?          @relation(fields: [lotId], references: [id])
-  orderItem    OrderItem     @relation(fields: [orderItemId], references: [id])
-  serialNumber SerialNumber? @relation(fields: [serialId], references: [id])
-  shipment     Shipment      @relation(fields: [shipmentId], references: [id])
+  id             String        @id @default(cuid())
+  organizationId String        @map("organization_id")
+  shipmentId     String        @map("shipment_id")
+  orderItemId    String        @map("order_item_id")
+  itemId         String        @map("item_id")
+  lotId          String?       @map("lot_id")
+  serialId       String?       @map("serial_id")
+  qtyShipped     Int           @map("qty_shipped")
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item          @relation(fields: [itemId], references: [id])
+  lot            Lot?          @relation(fields: [lotId], references: [id])
+  orderItem      OrderItem     @relation(fields: [orderItemId], references: [id])
+  serialNumber   SerialNumber? @relation(fields: [serialId], references: [id])
+  shipment       Shipment      @relation(fields: [shipmentId], references: [id])
 
   @@map("shipment_items")
 }
@@ -761,20 +817,22 @@ model Return {
 }
 
 model ReturnItem {
-  id           String          @id @default(cuid())
-  returnId     String          @map("return_id")
-  orderItemId  String?         @map("order_item_id")
-  itemId       String          @map("item_id")
-  lotId        String?         @map("lot_id")
-  serialId     String?         @map("serial_id")
-  qtyReturned  Int             @map("qty_returned")
-  condition    ReturnCondition
-  refundAmount Decimal         @map("refund_amount")
-  item         Item            @relation(fields: [itemId], references: [id])
-  lot          Lot?            @relation(fields: [lotId], references: [id])
-  orderItem    OrderItem?      @relation(fields: [orderItemId], references: [id])
-  return       Return          @relation(fields: [returnId], references: [id])
-  serialNumber SerialNumber?   @relation(fields: [serialId], references: [id])
+  id             String          @id @default(cuid())
+  organizationId String          @map("organization_id")
+  returnId       String          @map("return_id")
+  orderItemId    String?         @map("order_item_id")
+  itemId         String          @map("item_id")
+  lotId          String?         @map("lot_id")
+  serialId       String?         @map("serial_id")
+  qtyReturned    Int             @map("qty_returned")
+  condition      ReturnCondition
+  refundAmount   Decimal         @map("refund_amount")
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item            @relation(fields: [itemId], references: [id])
+  lot            Lot?            @relation(fields: [lotId], references: [id])
+  orderItem      OrderItem?      @relation(fields: [orderItemId], references: [id])
+  return         Return          @relation(fields: [returnId], references: [id])
+  serialNumber   SerialNumber?   @relation(fields: [serialId], references: [id])
 
   @@map("return_items")
 }
@@ -805,19 +863,21 @@ model POSTransaction {
 }
 
 model POSTransactionItem {
-  id           String         @id @default(cuid())
-  posTxId      String         @map("pos_tx_id")
-  itemId       String         @map("item_id")
-  lotId        String?        @map("lot_id")
-  serialId     String?        @map("serial_id")
-  qty          Int
-  unitPrice    Decimal        @map("unit_price")
-  discountPct  Decimal        @default(0) @map("discount_pct")
-  totalPrice   Decimal        @map("total_price")
-  item         Item           @relation(fields: [itemId], references: [id])
-  lot          Lot?           @relation(fields: [lotId], references: [id])
-  transaction  POSTransaction @relation(fields: [posTxId], references: [id])
-  serialNumber SerialNumber?  @relation(fields: [serialId], references: [id])
+  id             String         @id @default(cuid())
+  organizationId String         @map("organization_id")
+  posTxId        String         @map("pos_tx_id")
+  itemId         String         @map("item_id")
+  lotId          String?        @map("lot_id")
+  serialId       String?        @map("serial_id")
+  qty            Int
+  unitPrice      Decimal        @map("unit_price")
+  discountPct    Decimal        @default(0) @map("discount_pct")
+  totalPrice     Decimal        @map("total_price")
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  item           Item           @relation(fields: [itemId], references: [id])
+  lot            Lot?           @relation(fields: [lotId], references: [id])
+  transaction    POSTransaction @relation(fields: [posTxId], references: [id])
+  serialNumber   SerialNumber?  @relation(fields: [serialId], references: [id])
 
   @@map("pos_transaction_items")
 }
@@ -871,16 +931,16 @@ model ShippingMethod {
 }
 
 model AuditLog {
-  id             String       @id @default(cuid())
+  id             String      @id @default(cuid())
   action         AuditAction
-  userId         String       @map("user_id")
-  organizationId String       @map("organization_id")
-  afterData      Json?        @map("after_data")
-  beforeData     Json?        @map("before_data")
-  eventTime      DateTime     @default(now()) @map("event_time")
-  ipAddress      String?      @map("ip_address")
-  recordPk       String       @map("record_pk")
-  tableName      String       @map("table_name")
+  userId         String      @map("user_id")
+  organizationId String      @map("organization_id")
+  afterData      Json?       @map("after_data")
+  beforeData     Json?       @map("before_data")
+  eventTime      DateTime    @default(now()) @map("event_time")
+  ipAddress      String?     @map("ip_address")
+  recordPk       String      @map("record_pk")
+  tableName      String      @map("table_name")
 
   user         User         @relation(fields: [userId], references: [id])
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

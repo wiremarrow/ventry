@@ -126,7 +126,7 @@ export class AuthService {
     this.setAuthCookie(res, token);
 
     // Set active organization cookie
-    this.cookieService.setActiveOrganizationCookie(res, membership.organizationId);
+    CookieService.setActiveOrganization(res, membership.organizationId);
 
     // Log successful authentication
     this.logger.info({ userId: user.id, email: user.email }, 'User authenticated successfully');

@@ -149,6 +149,37 @@ pnpm format                # Format code
 - **Architecture**: **ESM-only** monorepo with workspace dependencies
 - **Monitoring**: Sentry error tracking + performance
 
+### **🔐 DATABASE SECURITY - DUAL USER PATTERN (CRITICAL)**
+**MANDATORY**: The system uses TWO PostgreSQL users for security:
+
+1. **`ventry` (ADMIN USER)**:
+   - **Purpose**: Migrations, seeding, admin tasks
+   - **Privileges**: SUPERUSER, BYPASSRLS=true
+   - **When to use**: ONLY for `db:migrate`, `db:seed`, `db:push`
+   - **Connection**: DATABASE_ADMIN_URL
+   - **WARNING**: NEVER use for application runtime
+
+2. **`ventry_app` (APPLICATION USER)**:
+   - **Purpose**: ALL runtime queries
+   - **Privileges**: Limited, BYPASSRLS=false
+   - **When to use**: ALWAYS for application runtime
+   - **Connection**: DATABASE_URL
+   - **Security**: Enforces Row-Level Security (RLS)
+
+**Environment Variables**:
+```bash
+# Admin connection - migrations/seeding ONLY
+DATABASE_ADMIN_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev"
+
+# Application connection - runtime queries (RLS enforced)
+DATABASE_URL="postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_dev"
+```
+
+**CRITICAL**: If you see cross-organization data leakage:
+1. Check DATABASE_URL uses `ventry_app`, not `ventry`
+2. Restart dev servers after env changes
+3. Verify with: `SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user;`
+
 ---
 
 ## 🚀 DEPLOYMENT - PRODUCTION READINESS
