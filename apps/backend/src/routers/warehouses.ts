@@ -1040,4 +1040,214 @@ export const warehousesRouter = createTRPCRouter({
         };
       }),
   }),
+
+  // List all locations across all warehouses
+  listAllLocations: organizationProcedure
+    .input(z.object({
+      search: z.string().optional(),
+      warehouseId: z.string().optional(),
+      zone: z.string().optional(),
+      tempControlled: z.boolean().optional(),
+      page: z.number().int().positive().default(1),
+      limit: z.number().int().positive().max(1000).default(100),
+    }))
+    .query(async ({ ctx, input }) => {
+      const where: Prisma.LocationWhereInput = {
+        organizationId: ctx.user.organizationId,
+      };
+
+      if (input.search) {
+        where.OR = [
+          { code: { contains: input.search, mode: 'insensitive' } },
+          { description: { contains: input.search, mode: 'insensitive' } },
+        ];
+      }
+
+      if (input.warehouseId) {
+        where.warehouseId = input.warehouseId;
+      }
+
+      if (input.zone) {
+        where.zone = input.zone;
+      }
+
+      if (input.tempControlled !== undefined) {
+        where.isTempControlled = input.tempControlled;
+      }
+
+      const [locations, total] = await Promise.all([
+        ctx.prisma.location.findMany({
+          where,
+          include: {
+            warehouse: true,
+            _count: {
+              select: { inventory: true },
+            },
+          },
+          orderBy: [
+            { warehouse: { name: 'asc' } },
+            { zone: 'asc' },
+            { aisle: 'asc' },
+            { shelf: 'asc' },
+            { bin: 'asc' },
+          ],
+          skip: (input.page - 1) * input.limit,
+          take: input.limit,
+        }),
+        ctx.prisma.location.count({ where }),
+      ]);
+
+      return {
+        locations,
+        pagination: {
+          page: input.page,
+          limit: input.limit,
+          total,
+          totalPages: Math.ceil(total / input.limit),
+        },
+      };
+    }),
+
+  // Get single location by ID
+  getLocation: organizationProcedure
+    .input(z.object({ locationId: z.string().cuid() }))
+    .query(async ({ ctx, input }) => {
+      const location = await ctx.prisma.location.findFirst({
+        where: {
+          id: input.locationId,
+          organizationId: ctx.user.organizationId,
+        },
+        include: {
+          warehouse: true,
+          _count: {
+            select: { inventory: true },
+          },
+        },
+      });
+
+      if (!location) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Location not found',
+        });
+      }
+
+      return location;
+    }),
+
+  // Create location (simplified from nested router)
+  createLocation: organizationProcedure
+    .input(locationCreateSchema)
+    .mutation(async ({ ctx, input }) => {
+      // Check for role permissions
+      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Insufficient permissions to create locations',
+        });
+      }
+
+      // Verify warehouse belongs to organization
+      const warehouse = await ctx.prisma.warehouse.findFirst({
+        where: {
+          id: input.warehouseId,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (!warehouse) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Warehouse not found',
+        });
+      }
+
+      // Check for duplicate code
+      const existing = await ctx.prisma.location.findUnique({
+        where: { code: input.code },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Location code already exists',
+        });
+      }
+
+      const location = await ctx.prisma.location.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId,
+        },
+        include: {
+          warehouse: true,
+        },
+      });
+
+      return location;
+    }),
+
+  // Update location
+  updateLocation: organizationProcedure
+    .input(z.object({
+      locationId: z.string().cuid(),
+      code: z.string().min(1).max(50).optional(),
+      description: z.string().optional().nullable(),
+      zone: z.string().optional().nullable(),
+      aisle: z.string().optional().nullable(),
+      shelf: z.string().optional().nullable(),
+      bin: z.string().optional().nullable(),
+      maxCapacity: z.number().int().min(0).optional().nullable(),
+      isTempControlled: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { locationId, ...data } = input;
+
+      // Check for role permissions
+      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Insufficient permissions to update locations',
+        });
+      }
+
+      // Verify location belongs to organization
+      const existing = await ctx.prisma.location.findFirst({
+        where: {
+          id: locationId,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (!existing) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Location not found',
+        });
+      }
+
+      // Check for duplicate code if changing
+      if (data.code && data.code !== existing.code) {
+        const duplicate = await ctx.prisma.location.findUnique({
+          where: { code: data.code },
+        });
+
+        if (duplicate) {
+          throw new TRPCError({
+            code: 'CONFLICT',
+            message: 'Location code already exists',
+          });
+        }
+      }
+
+      const location = await ctx.prisma.location.update({
+        where: { id: locationId },
+        data,
+        include: {
+          warehouse: true,
+        },
+      });
+
+      return location;
+    }),
 });
