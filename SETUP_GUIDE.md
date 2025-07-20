@@ -416,8 +416,8 @@ DATABASE_URL="file:./dev.db"
 # DATABASE_URL="postgresql://ventry:ventry_dev@localhost:5432/ventry_dev"
 
 # API Configuration
-NEXT_PUBLIC_API_URL="http://localhost:3000"
-API_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:6060"
+API_URL="http://localhost:6060"
 
 # Sentry (optional for local)
 NEXT_PUBLIC_SENTRY_DSN=""
@@ -434,7 +434,7 @@ NEXT_PUBLIC_ENABLE_ANALYTICS="false"
 # Auth
 JWT_SECRET="local-dev-secret-change-in-production"
 NEXTAUTH_SECRET="local-dev-secret-change-in-production"
-NEXTAUTH_URL="http://localhost:3001"
+FRONTEND_URL="http://localhost:6061"
 ```
 
 ### Verification Commands

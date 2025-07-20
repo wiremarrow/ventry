@@ -8,6 +8,7 @@ Ventry is an ambitious AI-native inventory management system designed to revolut
 
 **Current Status**: 🟡 In Development - Enterprise RLS Implementation Complete  
 **Production Readiness**: 7/10  
+**Active Branch**: `feat/supabase-migration` - Working on Supabase migration features  
 **Full Audit Report**: [Production Readiness Audit](./docs/PRODUCTION_READINESS_AUDIT.md)
 
 Recent security improvements include enterprise-grade Row-Level Security (RLS) implementation with PostgreSQL SECURITY DEFINER functions, preventing SQL injection at the database level. The lean implementation follows enterprise best practices while maintaining simplicity.
@@ -61,7 +62,8 @@ ventry/
     - ✅ **Products Page**: Complete CRUD operations with categories and units of measure
     - ✅ **Warehouses Page**: Complete location hierarchy, analytics, and warehouse management
     - ✅ **Analytics Dashboard**: **Live data integration with auto-refresh** - Real-time metrics and charts connected to tRPC analytics endpoints
-    - **Orders, Suppliers, Customers, Purchase Orders**: Planned for Phase 2-3
+    - ✅ **Suppliers Page**: Complete with UI and backend integration
+    - **Orders, Customers, Purchase Orders**: Planned for Phase 2.3
   - **Shared UI**: Enhanced with Select, Textarea, Switch, Skeleton, DropdownMenu, RadioGroup, Tabs components and Recharts integration
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: **Vitest** with component testing for all UI components
@@ -177,8 +179,11 @@ export const agentsRouter = createTRPCRouter({
 ## 🛠️ Technical Implementation
 
 ### Database Schema (Prisma)
+
+**📊 Complete Schema Documentation**: See [DATABASE.md](./DATABASE.md) for the full database schema with all 42 models and relationships.
+
 ```prisma
-// Core inventory tables
+// Core inventory tables (simplified view)
 model Product { ... }
 model Category { ... }
 model Location { ... }
@@ -279,7 +284,7 @@ The system uses a centralized authentication architecture with secure signed coo
   - tRPC + Fastify backend with full authentication
   - Next.js 15 frontend with shadcn/ui components
   - Comprehensive testing infrastructure (Unit, Integration, E2E)
-  - Production-ready CI/CD pipeline with 13 status checks
+  - Production-ready CI/CD pipeline with 9 main CI jobs
 - 🚧 **Phase 2**: Supabase Migration - In Progress
   - ✅ Designed comprehensive 40+ table inventory schema
   - ✅ Created detailed migration plan (3-4 week timeline)

@@ -44,7 +44,7 @@ graph TB
 ## Technology Stack
 
 ### Frontend
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **UI Components**: shadcn/ui
@@ -232,25 +232,30 @@ To add new real-time dashboard features:
 3. **Data Flow**: Use `refetchInterval` for live updates
 4. **Performance**: Consider query performance impact with large datasets
 
-## Module Architecture
+## tRPC Router Architecture
 
-### Backend Modules
+### Backend Routers
 
-#### Core Modules
-1. **AppModule**: Root module, configuration
-2. **ConfigModule**: Environment management
-3. **DatabaseModule**: Prisma integration
-4. **LoggerModule**: Structured logging
+#### Core Routers
+1. **AppRouter**: Root router combining all sub-routers
+2. **authRouter**: Authentication procedures (login, register, logout, refresh)
+3. **healthRouter**: System health checks and monitoring
+4. **organizationsRouter**: Multi-tenant organization management
 
-#### Feature Modules
-1. **AuthModule**: Authentication & authorization
-2. **UsersModule**: User management
-3. **InventoryModule**: Core inventory operations
-4. **ProductsModule**: Product catalog
-5. **SuppliersModule**: Supplier management
-6. **AgentsModule**: AI agent orchestration
-7. **NotificationsModule**: Email/SMS alerts
-8. **ReportsModule**: Analytics & reporting
+#### Business Logic Routers
+1. **itemsRouter**: Product/item catalog management
+2. **warehousesRouter**: Warehouse and location hierarchy
+3. **inventoryRouter**: Stock levels and movements
+4. **stockMovementsRouter**: Detailed movement tracking
+5. **suppliersRouter**: Supplier relationship management
+6. **customersRouter**: Customer management and credit tracking
+7. **ordersRouter**: Sales order processing
+8. **purchaseOrdersRouter**: Procurement workflows
+9. **returnsRouter**: RMA and return processing
+10. **shipmentsRouter**: Delivery tracking
+11. **reportsRouter**: Analytics and reporting
+12. **analyticsRouter**: Real-time dashboards
+13. **categoriesRouter**: Product categorization
 
 ### Frontend Structure
 

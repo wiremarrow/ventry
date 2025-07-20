@@ -1,5 +1,7 @@
 # RLS Implementation Summary
 
+> **Note**: For complete implementation details, see [RLS_IMPLEMENTATION_GUIDE.md](/RLS_IMPLEMENTATION_GUIDE.md)
+
 ## What We Built
 
 A lean, enterprise-grade Row-Level Security system for multi-tenant isolation.

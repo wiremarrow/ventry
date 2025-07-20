@@ -9,7 +9,7 @@
 **MANDATORY**: After implementing/debugging ANY feature or task, update **BOTH** `README.md` and `TODO.md` **BEFORE** opening a PR. PRs missing either update will be **REJECTED** by CI.
 
 ### **CI/CD PIPELINE COMPLIANCE**
-**MANDATORY**: ALL 12 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
+**MANDATORY**: ALL 9 CI jobs MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
 
 ### **TESTING REQUIREMENT** 
 **MANDATORY**: **ALL** tests must pass across **ALL** browsers (Chromium, Firefox, WebKit). **NEVER** merge with failing E2E tests.
@@ -19,22 +19,21 @@
 
 ---
 
-## 🔧 CI/CD SYSTEM - 12 REQUIRED STATUS CHECKS
+## 🔧 CI/CD SYSTEM - 9 MAIN CI JOBS
 
-These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
+These jobs **MUST** pass for every PR. **NO EXCEPTIONS**.
 
 1. **Documentation Check** - README.md + TODO.md updates for feat/fix/refactor/perf PRs
 2. **Lint and Type Check** - ESLint + TypeScript strict validation  
 3. **Unit Tests** - Vitest on Node.js 20 LTS
 4. **PostgreSQL Integration Tests** - Real database operations
-5. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
-6. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
-7. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
-8. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
-9. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
-10. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
-11. **Build** - Production build with Sentry integration
-12. **Coverage Gate** - Test coverage threshold validation
+5. **E2E Tests - chromium** - Browser testing with 2 parallel shards
+6. **E2E Tests - firefox** - Browser testing with 2 parallel shards  
+7. **E2E Tests - webkit** - Browser testing with 2 parallel shards
+8. **Build** - Production build with Sentry integration
+9. **Coverage Gate** - Test coverage threshold validation
+
+Note: E2E tests run with matrix strategy (3 browsers × 2 shards = 6 parallel jobs)
 
 ### **Optional Checks**
 - **Docker Build** - Only runs when Docker files change
@@ -73,7 +72,7 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 # MANDATORY: All must pass
 pnpm lint                    # ESLint validation
 pnpm typecheck              # TypeScript strict mode
-pnpm test                    # Vitest unit tests (excludes integration)
+pnpm test                    # All tests via Turbo (includes unit + integration)
 pnpm test:integration        # PostgreSQL integration tests
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
@@ -83,6 +82,12 @@ pnpm test:cov               # Vitest unit tests with coverage thresholds
 pnpm test:integration       # Integration tests with PostgreSQL
 # OR: pnpm --filter @ventry/backend test:cov
 # OR: pnpm --filter @ventry/backend test:integration
+
+# Additional test commands
+pnpm test:unit              # Unit tests only (excludes e2e)
+pnpm test:unit:fast         # Fast unit tests  
+pnpm test:e2e:ui            # Playwright UI mode
+pnpm test:e2e:debug         # Playwright debug mode
 ```
 
 ### **Database Testing Requirements**
@@ -141,9 +146,9 @@ pnpm format                # Format code
 
 ### **Technology Stack - FOLLOW THESE PATTERNS**
 - **Monorepo**: Turborepo + pnpm workspaces
-- **Backend**: **tRPC + Fastify** + Prisma + PostgreSQL
-- **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui
-- **API Layer**: **tRPC v11** with full-stack TypeScript type inference
+- **Backend**: **tRPC + Fastify** + Prisma ^6.11.1 + PostgreSQL 16
+- **Frontend**: Next.js 15.3.5 + React ^18.3.1 + TypeScript ^5 + Tailwind CSS ^3.4.0 + shadcn/ui
+- **API Layer**: **tRPC v11.4.3** with full-stack TypeScript type inference
 - **Testing**: **Vitest** (unit) + Playwright (E2E) + PostgreSQL (integration)
 - **Deployment**: Vercel (frontend) + containerized Fastify backend
 - **Architecture**: **ESM-only** monorepo with workspace dependencies
@@ -190,7 +195,7 @@ DATABASE_URL="postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_
 - **Production**: PostgreSQL + Sentry + full monitoring
 
 ### **Branch Protection Rules**
-- **main** branch: 12 status checks + PR reviews + linear history
+- **main** branch: 9 CI jobs + PR reviews + linear history
 - **Feature branches**: Full CI validation required
 - **NEVER** force push to main
 - **NEVER** bypass status checks
@@ -233,7 +238,7 @@ ventry/
 ## ⚠️ CONSEQUENCES - WHAT HAPPENS IF YOU VIOLATE THESE RULES
 
 1. **Missing Documentation Updates** → CI `docs-check` job **FAILS** → PR **BLOCKED**
-2. **Failing Tests** → 12 status checks **FAIL** → PR **BLOCKED**  
+2. **Failing Tests** → 9 CI jobs **FAIL** → PR **BLOCKED**  
 3. **Poor Code Quality** → Lint/TypeScript checks **FAIL** → PR **BLOCKED**
 4. **Architecture Violations** → Code review **REJECTION** → Rework required
 
@@ -241,7 +246,7 @@ ventry/
 
 ## 🎯 SUCCESS CRITERIA - WHEN YOU'VE DONE IT RIGHT
 
-✅ All 12 CI status checks are **GREEN**  
+✅ All 9 CI jobs are **GREEN**  
 ✅ README.md and TODO.md are **UPDATED**  
 ✅ All browsers pass E2E tests  
 ✅ PostgreSQL integration tests pass  

@@ -27,7 +27,7 @@ const warehouses = await withRLS(prisma, context, async (tx) => {
 ```sql
 ALTER TABLE new_table ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON new_table
-  USING (organization_id = current_setting('app.current_organization_id')::uuid);
+  USING (organization_id = current_setting('app.current_organization_id'));
 ```
 
 2. That's it. The pgTAP test will catch if you forget.

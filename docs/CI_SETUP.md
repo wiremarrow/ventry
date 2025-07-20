@@ -7,7 +7,7 @@ This guide walks you through setting up the external services and configurations
 ## What's Automated vs Manual
 
 ### ✅ Fully Automated (via scripts)
-- Branch protection with all 13 required status checks
+- Branch protection with all 9 required CI jobs
 - Security features (vulnerability alerts, Dependabot)
 - Environment creation (staging, production)
 - Secret configuration via CLI prompts
@@ -47,7 +47,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 ```bash
 # Step 1: Configure GitHub repository settings
 # This script automates:
-# - Branch protection with all 13 required status checks
+# - Branch protection with all 9 required CI jobs
 # - Security features (vulnerability alerts, Dependabot)
 # - Environment creation (staging, production)
 # - Security scanning configuration
@@ -64,7 +64,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 
 # Step 3: Validate your setup
 # This script verifies:
-# - All 13 status checks are configured
+# - All 9 CI jobs are configured
 # - Required secrets are present
 # - Branch protection is enabled
 # - Security features are active
@@ -128,7 +128,7 @@ Click **New environment** → Name it `production` → Add secrets:
 
 ### Automated Setup (Recommended)
 
-The `setup-github-repo.sh` script automatically configures branch protection with all 13 required status checks. The configuration is stored in `tools/scripts/branch-protection.json`.
+The `setup-github-repo.sh` script automatically configures branch protection with all 9 required CI jobs. The configuration is stored in `tools/scripts/branch-protection.json`.
 
 ### Manual Setup
 
@@ -268,7 +268,7 @@ Our CI pipeline includes several advanced features:
 
 #### Branch Protection Requirements
 - Pull request reviews required
-- All 13 status checks must pass
+- All 9 CI jobs must pass
 - Branches must be up to date
 - Conversation resolution required
 - Linear history enforced
@@ -316,7 +316,7 @@ Run the validation script to check your setup:
 ```
 
 This script verifies:
-- ✅ All 13 required status checks are configured
+- ✅ All 9 required CI jobs are configured
 - ✅ Required secrets are present
 - ✅ Environments are created
 - ✅ Branch protection is enabled
@@ -341,18 +341,14 @@ git push origin test/ci-verification
 ### Check GitHub PR
 
 1. Go to GitHub and create a Pull Request
-2. Verify all 13+ checks are running:
+2. Verify all 9 CI jobs are running:
    - ✅ Documentation Check
    - ✅ Lint and Type Check
-   - ✅ Unit Tests (18)
-   - ✅ Unit Tests (20)
+   - ✅ Unit Tests (Node.js 20)
    - ✅ PostgreSQL Integration Tests
-   - ✅ E2E Tests - chromium (1)
-   - ✅ E2E Tests - chromium (2)
-   - ✅ E2E Tests - firefox (1)
-   - ✅ E2E Tests - firefox (2)
-   - ✅ E2E Tests - webkit (1)
-   - ✅ E2E Tests - webkit (2)
+   - ✅ E2E Tests - chromium (with 2 shards)
+   - ✅ E2E Tests - firefox (with 2 shards)
+   - ✅ E2E Tests - webkit (with 2 shards)
    - ✅ Build
    - ✅ Coverage Gate
    - ⚠️ Docker Build (optional, only if Docker files changed)
