@@ -9,11 +9,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@ventry/ui';
-import { Badge } from '@ventry/ui';
-import { Button } from '@ventry/ui';
-import { Skeleton } from '@ventry/ui';
-import {
+  Badge,
+  Button,
+  Skeleton,
+  Card,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -83,13 +82,13 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
 
   if (error) {
     return (
-      <div className="bg-white p-8 rounded-lg border border-gray-200">
+      <Card className="p-8">
         <div className="text-center">
           <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <p className="text-gray-900 font-medium">Error loading orders</p>
           <p className="text-gray-600 text-sm mt-1">{error.message}</p>
         </div>
-      </div>
+      </Card>
     );
   }
 
@@ -145,7 +144,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
 
   return (
     <>
-      <div className="bg-white rounded-lg border border-gray-200">
+      <Card>
         <Table>
           <TableHeader>
             <TableRow>
@@ -300,7 +299,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
             </div>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* View Order Dialog */}
       <ViewOrderDialog

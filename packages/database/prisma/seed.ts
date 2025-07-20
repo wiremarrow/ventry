@@ -755,6 +755,73 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
 
   console.log(`👥 Created ${customers.length} customers`);
 
+  // Create orders for customers
+  console.log('🛒 Creating orders...');
+  const orders = [];
+  const orderCount = faker.number.int({ min: 25, max: 50 });
+  
+  for (let i = 1; i <= orderCount; i++) {
+    const customer = faker.helpers.arrayElement(customers);
+    const orderDate = faker.date.recent({ days: 90 });
+    const status = faker.helpers.arrayElement(['PENDING', 'CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED']);
+    const itemCount = faker.number.int({ min: 1, max: 5 });
+    
+    // Select random items for the order
+    const orderItems = [];
+    const selectedItems = faker.helpers.arrayElements(items, itemCount);
+    
+    let subtotal = 0;
+    let tax = 0;
+    
+    for (const item of selectedItems) {
+      const qtyOrdered = faker.number.int({ min: 1, max: 10 });
+      const unitPrice = item.defaultPrice || faker.number.float({ min: 10, max: 500, precision: 0.01 });
+      const discountPct = faker.datatype.boolean(0.3) ? faker.number.float({ min: 5, max: 25, precision: 0.01 }) : 0;
+      const taxRate = faker.number.float({ min: 5, max: 10, precision: 0.01 });
+      
+      const lineSubtotal = qtyOrdered * unitPrice * (1 - discountPct / 100);
+      const lineTax = lineSubtotal * (taxRate / 100);
+      const totalPrice = lineSubtotal + lineTax;
+      
+      subtotal += lineSubtotal;
+      tax += lineTax;
+      
+      orderItems.push({
+        itemId: item.id,
+        qtyOrdered,
+        qtyShipped: ['SHIPPED', 'DELIVERED'].includes(status) ? qtyOrdered : 
+                    ['PICKING', 'PACKED'].includes(status) ? faker.number.int({ min: 0, max: qtyOrdered }) : 0,
+        unitPrice,
+        discountPct,
+        taxRate,
+        totalPrice,
+        description: item.name
+      });
+    }
+    
+    const order = await prisma.order.create({
+      data: {
+        organizationId,
+        orderNumber: `ORD-${String(i).padStart(5, '0')}`,
+        customerId: customer.id,
+        orderDate,
+        requestedShipDate: faker.datatype.boolean(0.7) ? faker.date.soon({ days: 14, refDate: orderDate }) : null,
+        status,
+        subtotal,
+        tax,
+        total: subtotal + tax,
+        notes: faker.datatype.boolean(0.3) ? faker.lorem.sentence() : null,
+        items: {
+          create: orderItems
+        }
+      }
+    });
+    
+    orders.push(order);
+  }
+  
+  console.log(`🛒 Created ${orders.length} orders`);
+
   // Update comprehensive seed summary
   const totalInventoryValue = inventoryRecords.reduce((sum, inv) => {
     const item = items.find(i => i.id === inv.itemId);
@@ -826,7 +893,8 @@ async function main() {
         console.log('  • 12 suppliers with realistic contact information');
         console.log('  • 500-2000+ inventory records across multiple locations');
         console.log('  • 200-500 historical stock movements (last 90 days)');
-        console.log('  • 25-50 customers with order potential');
+        console.log('  • 25-50 customers with complete profiles');
+        console.log('  • 25-50 sales orders across various statuses');
         console.log('  • Realistic analytics data for meaningful dashboard metrics');
         console.log('  • Low stock scenarios for testing alerts and notifications');
       }
