@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@ventry/ui';
-import { Badge } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
 import {
@@ -88,20 +87,6 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
     );
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
-
-  const getRatingColor = (rating: number | null) => {
-    if (!rating) return 'text-gray-400';
-    if (rating >= 4.5) return 'text-green-600';
-    if (rating >= 3.5) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
   return (
     <>
       <div className="bg-white rounded-lg border border-gray-200">
@@ -112,9 +97,9 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
               <TableHead>Contact</TableHead>
               <TableHead>Location</TableHead>
               <TableHead className="text-center">Lead Time</TableHead>
-              <TableHead className="text-right">Open POs</TableHead>
-              <TableHead className="text-right">Total Business</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Purchase Orders</TableHead>
+              <TableHead className="text-right">YTD Value</TableHead>
+              <TableHead>Payment Terms</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -141,12 +126,21 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
               </TableRow>
             ) : (
               // Supplier rows
-              data?.suppliers.map((supplier) => (
+              data?.suppliers.map((supplier) => {
+                const hasRecentOrders = (supplier as any).lastOrderDate && 
+                  new Date((supplier as any).lastOrderDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+                
+                return (
                 <TableRow key={supplier.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium text-gray-900">{supplier.name}</p>
-                      <p className="text-sm text-gray-600">{supplier.supplierCode}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <Building2 className={`h-5 w-5 ${hasRecentOrders ? 'text-green-500' : 'text-gray-400'}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{supplier.name}</p>
+                        <p className="text-sm text-gray-600">Code: {supplier.supplierCode}</p>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -190,9 +184,9 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="default">
-                      Active
-                    </Badge>
+                    <span className="text-sm text-gray-600">
+                      {supplier.paymentTerms || 'Net 30'}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -229,7 +223,8 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
-              ))
+                );
+              })
             )}
           </TableBody>
         </Table>
