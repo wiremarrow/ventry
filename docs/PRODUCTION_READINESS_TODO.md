@@ -88,10 +88,9 @@ This comprehensive checklist covers all tasks required to make Ventry production
 - `/apps/backend/src/middleware/auth.ts`
 
 **Tasks:**
-- [ ] Remove `window.__organizationId` pattern:
+- [ ] Implement proper organization context handling:
   ```typescript
-  // BAD: window.__organizationId = orgId;
-  // GOOD: Use React Context or tRPC context
+  // Use React Context or tRPC context for organization state
   ```
 - [ ] Implement proper organization context propagation:
   ```typescript

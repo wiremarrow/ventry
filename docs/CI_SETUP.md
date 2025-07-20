@@ -7,7 +7,7 @@ This guide walks you through setting up the external services and configurations
 ## What's Automated vs Manual
 
 ### ✅ Fully Automated (via scripts)
-- Branch protection with all 9 required CI jobs
+- Branch protection with all 12 required CI jobs
 - Security features (vulnerability alerts, Dependabot)
 - Environment creation (staging, production)
 - Secret configuration via CLI prompts
@@ -47,7 +47,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 ```bash
 # Step 1: Configure GitHub repository settings
 # This script automates:
-# - Branch protection with all 9 required CI jobs
+# - Branch protection with all 12 required CI jobs
 # - Security features (vulnerability alerts, Dependabot)
 # - Environment creation (staging, production)
 # - Security scanning configuration
@@ -64,7 +64,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 
 # Step 3: Validate your setup
 # This script verifies:
-# - All 9 CI jobs are configured
+# - All 12 CI jobs are configured
 # - Required secrets are present
 # - Branch protection is enabled
 # - Security features are active
@@ -128,7 +128,7 @@ Click **New environment** → Name it `production` → Add secrets:
 
 ### Automated Setup (Recommended)
 
-The `setup-github-repo.sh` script automatically configures branch protection with all 9 required CI jobs. The configuration is stored in `tools/scripts/branch-protection.json`.
+The `setup-github-repo.sh` script automatically configures branch protection with all 12 required CI jobs. The configuration is stored in `tools/scripts/branch-protection.json`.
 
 ### Manual Setup
 
@@ -243,7 +243,7 @@ Our CI pipeline includes several advanced features:
 - Prevents incomplete documentation from reaching main branch
 
 #### 2. Enhanced Testing Strategy
-- **Unit Tests**: Matrix strategy across Node.js 18 & 20
+- **Unit Tests**: Node.js 20 LTS with Vitest
 - **Integration Tests**: Real PostgreSQL service container
 - **E2E Tests**: Browser matrix (3 browsers) × sharding (2 shards) = 6 parallel jobs
 - **Coverage**: Codecov integration with threshold gates
@@ -316,7 +316,7 @@ Run the validation script to check your setup:
 ```
 
 This script verifies:
-- ✅ All 9 required CI jobs are configured
+- ✅ All 12 required CI jobs are configured
 - ✅ Required secrets are present
 - ✅ Environments are created
 - ✅ Branch protection is enabled
@@ -341,14 +341,17 @@ git push origin test/ci-verification
 ### Check GitHub PR
 
 1. Go to GitHub and create a Pull Request
-2. Verify all 9 CI jobs are running:
+2. Verify all 12 CI jobs are running:
    - ✅ Documentation Check
    - ✅ Lint and Type Check
-   - ✅ Unit Tests (Node.js 20)
+   - ✅ Unit Tests
    - ✅ PostgreSQL Integration Tests
-   - ✅ E2E Tests - chromium (with 2 shards)
-   - ✅ E2E Tests - firefox (with 2 shards)
-   - ✅ E2E Tests - webkit (with 2 shards)
+   - ✅ E2E Tests - chromium (1)
+   - ✅ E2E Tests - chromium (2)
+   - ✅ E2E Tests - firefox (1)
+   - ✅ E2E Tests - firefox (2)
+   - ✅ E2E Tests - webkit (1)
+   - ✅ E2E Tests - webkit (2)
    - ✅ Build
    - ✅ Coverage Gate
    - ⚠️ Docker Build (optional, only if Docker files changed)

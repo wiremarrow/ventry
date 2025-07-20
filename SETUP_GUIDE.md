@@ -55,8 +55,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
   Required status checks (add after first CI run):
   - Documentation Check
   - Lint and Type Check
-  - Unit Tests (18)
-  - Unit Tests (20)
+  - Unit Tests
   - PostgreSQL Integration Tests
   - E2E Tests - chromium (1)
   - E2E Tests - chromium (2)
@@ -232,7 +231,7 @@ on:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test  # CI uses default PostgreSQL port
 
 jobs:
   docs-check:
@@ -245,7 +244,7 @@ jobs:
     
   test:
     name: Unit Tests
-    # Jest testing on Node.js 18 & 20 with coverage
+    # Vitest testing on Node.js 20 LTS with coverage
     
   postgres-integration:
     name: PostgreSQL Integration Tests
@@ -413,7 +412,7 @@ pnpm dev
 DATABASE_URL="file:./dev.db"
 
 # Or PostgreSQL if using Docker
-# DATABASE_URL="postgresql://ventry:ventry_dev@localhost:5432/ventry_dev"
+# DATABASE_URL="postgresql://ventry:ventry_dev@localhost:5487/ventry_dev"
 
 # API Configuration
 NEXT_PUBLIC_API_URL="http://localhost:6060"

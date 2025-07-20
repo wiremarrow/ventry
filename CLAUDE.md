@@ -9,7 +9,7 @@
 **MANDATORY**: After implementing/debugging ANY feature or task, update **BOTH** `README.md` and `TODO.md` **BEFORE** opening a PR. PRs missing either update will be **REJECTED** by CI.
 
 ### **CI/CD PIPELINE COMPLIANCE**
-**MANDATORY**: ALL 9 CI jobs MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
+**MANDATORY**: ALL 12 status checks MUST pass. **NEVER** bypass or ignore failing checks. **NEVER** commit if CI is broken.
 
 ### **TESTING REQUIREMENT** 
 **MANDATORY**: **ALL** tests must pass across **ALL** browsers (Chromium, Firefox, WebKit). **NEVER** merge with failing E2E tests.
@@ -19,21 +19,22 @@
 
 ---
 
-## 🔧 CI/CD SYSTEM - 9 MAIN CI JOBS
+## 🔧 CI/CD SYSTEM - 12 REQUIRED STATUS CHECKS
 
-These jobs **MUST** pass for every PR. **NO EXCEPTIONS**.
+These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 
 1. **Documentation Check** - README.md + TODO.md updates for feat/fix/refactor/perf PRs
 2. **Lint and Type Check** - ESLint + TypeScript strict validation  
 3. **Unit Tests** - Vitest on Node.js 20 LTS
 4. **PostgreSQL Integration Tests** - Real database operations
-5. **E2E Tests - chromium** - Browser testing with 2 parallel shards
-6. **E2E Tests - firefox** - Browser testing with 2 parallel shards  
-7. **E2E Tests - webkit** - Browser testing with 2 parallel shards
-8. **Build** - Production build with Sentry integration
-9. **Coverage Gate** - Test coverage threshold validation
-
-Note: E2E tests run with matrix strategy (3 browsers × 2 shards = 6 parallel jobs)
+5. **E2E Tests - chromium (1)** - Browser testing, shard 1/2
+6. **E2E Tests - chromium (2)** - Browser testing, shard 2/2  
+7. **E2E Tests - firefox (1)** - Browser testing, shard 1/2
+8. **E2E Tests - firefox (2)** - Browser testing, shard 2/2
+9. **E2E Tests - webkit (1)** - Browser testing, shard 1/2
+10. **E2E Tests - webkit (2)** - Browser testing, shard 2/2
+11. **Build** - Production build with Sentry integration
+12. **Coverage Gate** - Test coverage threshold validation
 
 ### **Optional Checks**
 - **Docker Build** - Only runs when Docker files change
@@ -139,7 +140,6 @@ pnpm dev
 ### **Daily Workflow Commands**
 ```bash
 pnpm dev                    # Start all services
-pnpm test:watch            # Watch mode testing
 pnpm lint                  # Check code quality
 pnpm format                # Format code
 ```
@@ -195,7 +195,7 @@ DATABASE_URL="postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_
 - **Production**: PostgreSQL + Sentry + full monitoring
 
 ### **Branch Protection Rules**
-- **main** branch: 9 CI jobs + PR reviews + linear history
+- **main** branch: 12 status checks + PR reviews + linear history
 - **Feature branches**: Full CI validation required
 - **NEVER** force push to main
 - **NEVER** bypass status checks
@@ -238,7 +238,7 @@ ventry/
 ## ⚠️ CONSEQUENCES - WHAT HAPPENS IF YOU VIOLATE THESE RULES
 
 1. **Missing Documentation Updates** → CI `docs-check` job **FAILS** → PR **BLOCKED**
-2. **Failing Tests** → 9 CI jobs **FAIL** → PR **BLOCKED**  
+2. **Failing Tests** → 12 status checks **FAIL** → PR **BLOCKED**  
 3. **Poor Code Quality** → Lint/TypeScript checks **FAIL** → PR **BLOCKED**
 4. **Architecture Violations** → Code review **REJECTION** → Rework required
 
@@ -246,7 +246,7 @@ ventry/
 
 ## 🎯 SUCCESS CRITERIA - WHEN YOU'VE DONE IT RIGHT
 
-✅ All 9 CI jobs are **GREEN**  
+✅ All 12 CI status checks are **GREEN**  
 ✅ README.md and TODO.md are **UPDATED**  
 ✅ All browsers pass E2E tests  
 ✅ PostgreSQL integration tests pass  
@@ -776,9 +776,9 @@ Follow conventional commits:
 
 ### **Critical Tasks Before Production**
 1. **Row-Level Security**: Implement database-level tenant isolation
-2. **Test Coverage**: Add tests for 19 untested business routers (90% currently untested)
+2. **Test Coverage**: Add tests for 18 untested business routers (82% currently untested)
 3. **Type Safety**: Replace 170+ `any` types with proper TypeScript types
-4. **Auth Security**: Fix race conditions and window.__organizationId pattern
+4. **Auth Security**: Fix race conditions in authentication flow
 5. **Infrastructure**: Configure connection pooling, backups, monitoring
 
 ### **New Security Patterns**

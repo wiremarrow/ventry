@@ -113,7 +113,7 @@ Only 2 of 21 backend routers have any tests. Critical business logic for invento
 **Effort**: 3-4 days  
 
 - Race conditions in auth checks
-- Insecure `window.__organizationId` pattern
+- Missing proper organization context handling
 - Missing CSRF protection
 
 ### 5. Missing Production Infrastructure
@@ -132,7 +132,7 @@ Only 2 of 21 backend routers have any tests. Critical business logic for invento
 ### Phase 1: Security & Stability (Week 1)
 - [ ] Implement RLS policies for all 32 tables
 - [ ] Fix authentication race conditions
-- [ ] Remove `window.__organizationId` anti-pattern
+- [ ] Implement proper organization context handling
 - [ ] Add CSRF tokens to all mutations
 - [ ] Implement request signing for API calls
 

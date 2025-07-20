@@ -47,7 +47,7 @@ const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
 Organization ID not being sent with requests
 
 **Solution:**
-1. Verify `window.__organizationId` is set in browser console
+1. Verify organization context is properly set in the application state
 2. Check `x-organization-id` header in API requests
 3. Ensure organization selection updates the context
 

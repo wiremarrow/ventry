@@ -4,6 +4,7 @@
  */
 
 import { z } from 'zod';
+import { createLogger } from '../lib/logger.js';
 
 // Define environment schema
 const envSchema = z.object({
@@ -35,25 +36,28 @@ const envSchema = z.object({
 // Type for validated environment
 export type Env = z.infer<typeof envSchema>;
 
+// Create logger for this module
+const logger = createLogger('config/env');
+
 // Validate environment variables
 function validateEnv(): Env {
   try {
     return envSchema.parse(process.env);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('❌ Invalid environment variables:');
+      logger.error({ errors: error.errors }, '❌ Invalid environment variables');
       error.errors.forEach(err => {
-        console.error(`  - ${err.path.join('.')}: ${err.message}`);
+        logger.error({ path: err.path, message: err.message }, `  - ${err.path.join('.')}: ${err.message}`);
       });
       
       // In production, fail fast
       if (process.env.NODE_ENV === 'production') {
-        console.error('\n🛑 Application startup aborted due to missing required environment variables.');
+        logger.fatal('\n🛑 Application startup aborted due to missing required environment variables.');
         process.exit(1);
       } else {
         // In development, show warning but continue with defaults where possible
-        console.warn('\n⚠️  Running in development mode with missing environment variables.');
-        console.warn('   Some features may not work correctly. Please check your .env file.');
+        logger.warn('\n⚠️  Running in development mode with missing environment variables.');
+        logger.warn('   Some features may not work correctly. Please check your .env file.');
         
         // For critical security variables, still fail in development
         const criticalMissing = error.errors.filter(err => 
@@ -61,11 +65,11 @@ function validateEnv(): Env {
         );
         
         if (criticalMissing.length > 0) {
-          console.error('\n🛑 Critical environment variables are missing:');
+          logger.fatal({ missing: criticalMissing.map(err => err.path.join('.')) }, '\n🛑 Critical environment variables are missing');
           criticalMissing.forEach(err => {
-            console.error(`  - ${err.path.join('.')}`);
+            logger.error({ path: err.path }, `  - ${err.path.join('.')}`);
           });
-          console.error('\nPlease set these variables in your .env file.');
+          logger.fatal('\nPlease set these variables in your .env file.');
           process.exit(1);
         }
       }

@@ -219,9 +219,9 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 
 ### 🚨 Critical Tasks Remaining:
 1. **Database Configuration**: Must use non-superuser role (current user bypasses RLS)
-2. **Test Coverage Crisis**: 19 of 21 backend routers have zero tests (90% untested)
+2. **Test Coverage Crisis**: 18 of 22 backend routers have zero tests (82% untested)
 3. **Type Safety**: 170+ uses of `any` type throughout codebase
-4. **Auth Architecture**: Race conditions and insecure `window.__organizationId` pattern
+4. **Auth Architecture**: Race conditions in authentication flow
 5. **Production Config**: Missing connection pooling, backups, monitoring
 
 ### 📚 New Documentation Created:
