@@ -19,16 +19,17 @@ import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 
 export default function PurchaseOrdersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | ''>('');
+  const [statusFilter, setStatusFilter] = useState<'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | 'all'>('all');
 
   // Fetch purchase orders with filtering
   const { data: orders, isLoading, refetch } = trpc.purchaseOrders.list.useQuery({
     search: searchTerm || undefined,
-    status: statusFilter || undefined,
+    status: statusFilter === 'all' ? undefined : statusFilter,
     limit: 100,
   });
 
@@ -116,7 +117,8 @@ export default function PurchaseOrdersPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex flex-col gap-6">
+      <DashboardLayout>
+        <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Purchase Orders</h1>
@@ -176,12 +178,12 @@ export default function PurchaseOrdersPage() {
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | '')}>
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | 'all')}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="DRAFT">Draft</SelectItem>
                 <SelectItem value="SUBMITTED">Submitted</SelectItem>
                 <SelectItem value="APPROVED">Approved</SelectItem>
@@ -325,6 +327,7 @@ export default function PurchaseOrdersPage() {
           </Table>
         </Card>
       </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }

@@ -18,6 +18,7 @@ import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 
 const purchaseOrderSchema = z.object({
   supplierId: z.string().min(1, 'Supplier is required'),
@@ -209,7 +210,8 @@ export default function CreatePurchaseOrderPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6">
+      <DashboardLayout>
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -435,6 +437,7 @@ export default function CreatePurchaseOrderPage() {
           </div>
         </form>
       </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }

@@ -20,6 +20,7 @@ import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 
 export default function PurchaseOrderDetailPage() {
   const params = useParams();
@@ -154,7 +155,8 @@ export default function PurchaseOrderDetailPage() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6">
+      <DashboardLayout>
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -448,6 +450,7 @@ export default function PurchaseOrderDetailPage() {
           </Card>
         )}
       </div>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
