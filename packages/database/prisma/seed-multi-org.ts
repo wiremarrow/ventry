@@ -156,6 +156,7 @@ async function main() {
         zone: 'A',
         aisle: '1',
         shelf: '1',
+        organizationId: techStart.id,
       },
     });
 
@@ -194,6 +195,7 @@ async function main() {
           locationId: techLocation.id,
           qtyOnHand,
           qtyReserved,
+          organizationId: techStart.id,
         },
       });
     }
@@ -268,6 +270,7 @@ async function main() {
         zone: 'B',
         aisle: '2',
         shelf: '1',
+        organizationId: globalRetail.id,
       },
     });
 
@@ -306,6 +309,7 @@ async function main() {
           locationId: retailLocation.id,
           qtyOnHand,
           qtyReserved,
+          organizationId: globalRetail.id,
         },
       });
     }
