@@ -70,6 +70,7 @@ ventry/
     - ✅ **Locations Page**: Consolidated warehouse/location management with capacity tracking
     - ✅ **Movements Page**: Comprehensive stock movement tracking with filters and dialogs
     - ✅ **Reports Page**: Report templates with filtering and export capabilities
+    - ✅ **Users Page**: User management with role-based access control and profile editing
   - **Shared UI**: Enhanced with Select, Textarea, Switch, Skeleton, DropdownMenu, RadioGroup, Tabs components and Recharts integration
 - **Testing**: Comprehensive 3-tier testing strategy (Unit + Integration + E2E)
   - **Unit Tests**: **Vitest** with component testing for all UI components
@@ -324,6 +325,7 @@ The system uses a centralized authentication architecture with secure signed coo
     - ✅ Locations with consolidated warehouse view
     - ✅ Stock movements with comprehensive tracking
     - ✅ Reports dashboard with templates and analytics
+    - ✅ Users management with role-based permissions and profile editing
     - ✅ Enhanced UI components library with comprehensive shadcn/ui integration
   - ✅ Enterprise Row-Level Security (RLS) implementation complete
   - 📅 Adding realtime capabilities with Supabase
@@ -339,7 +341,7 @@ The system uses a centralized authentication architecture with secure signed coo
 - **Scalable database design** supporting multi-warehouse inventory management
 - **Live Dashboard Integration** with real-time analytics, auto-refresh, and system monitoring
 - **Complete UI Implementation** (2025-01-21):
-  - All 12 major inventory management pages implemented and connected to tRPC routers
+  - All 13 major pages implemented and connected to tRPC routers
   - Consistent UI patterns: ProtectedRoute wrappers, dialog-based CRUD, card stats, table views
   - Purchase Orders: Create, list, detail views with approval workflow (draft/approved/cancelled)
   - Customers: Full CRUD with credit limits, contact info, and detailed customer views
@@ -348,6 +350,7 @@ The system uses a centralized authentication architecture with secure signed coo
   - Locations: Consolidated warehouse/location management with capacity utilization
   - Movements: Stock movement tracking with filters by type, date range, and detailed history
   - Reports: Pre-built report templates with category filtering and export capabilities
+  - Users: User management with role-based access, status control, and profile editing
 - **Warehouse & Location Management**:
   - Comprehensive warehouses router with CRUD operations and statistics
   - Hierarchical location management with zone/aisle/shelf/bin structure
