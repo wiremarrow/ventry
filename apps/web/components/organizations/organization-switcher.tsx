@@ -26,9 +26,9 @@ export default function OrganizationSwitcher() {
   const { currentOrganization, setOrganization } = useOrganization();
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: organizations, isLoading } = trpc.organizations.list.useQuery();
+  const { data, isLoading } = trpc.organizations.list.useQuery();
 
-  const handleSelectOrganization = async (org: typeof organizations extends Array<infer T> ? T : never) => {
+  const handleSelectOrganization = async (org: NonNullable<typeof data>['organizations'][0]) => {
     // Don't switch if already in this organization
     if (currentOrganization?.id === org.id) {
       setIsOpen(false);
@@ -57,7 +57,7 @@ export default function OrganizationSwitcher() {
     return <Skeleton className="h-10 w-48" />;
   }
 
-  const currentOrg = organizations?.find(org => org.id === currentOrganization?.id) || organizations?.[0];
+  const currentOrg = data?.organizations?.find(org => org.id === currentOrganization?.id) || data?.organizations?.[0];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -76,7 +76,7 @@ export default function OrganizationSwitcher() {
         <DropdownMenuLabel>Organizations</DropdownMenuLabel>
         <DropdownMenuSeparator />
         
-        {organizations?.map((org) => (
+        {data?.organizations?.map((org) => (
           <DropdownMenuItem
             key={org.id}
             onClick={() => handleSelectOrganization(org)}
