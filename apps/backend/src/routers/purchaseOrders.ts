@@ -361,6 +361,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
               taxRate: item.taxRate,
               totalCost: item.totalCost,
               description: item.notes || '', // Use description field instead of notes
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
@@ -797,6 +798,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
               reference: receiptNumber,
               receivedDate,
               receivedById: ctx.user.id,
+              organizationId: ctx.user.organizationId!,
               // status doesn't exist in Receipt model
             },
           });
@@ -825,6 +827,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
                 qtyInitial: receiveItem.qtyReceived,
                 qtyOnHand: receiveItem.qtyReceived,
                 unitCost: poItem.unitCost,
+                organizationId: ctx.user.organizationId!,
               },
             });
             lotId = lot.id;
@@ -857,6 +860,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
                 qtyOnHand: receiveItem.qtyReceived,
                 qtyReserved: 0,
                 qtyInTransit: 0,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -869,6 +873,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
               qty: receiveItem.qtyReceived,
               movementType: 'INBOUND',
               refType: 'PO',
+              organizationId: ctx.user.organizationId!,
               refId: poId,
               movedById: ctx.user.id,
               movedAt: receivedDate,
@@ -900,6 +905,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
                 locationId: receiveItem.locationId,
                 serialNumber: receiveItem.serialNumbers?.[0], // Take first serial number if available
                 expirationDate: receiveItem.expirationDate,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -914,6 +920,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
                   locationId: receiveItem.locationId,
                   lotId,
                   status: 'AVAILABLE',
+                  organizationId: ctx.user.organizationId!,
                   // receivedDate doesn't exist in SerialNumber
                 },
               });
@@ -1027,6 +1034,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
                 taxRate: item.taxRate,
                 totalCost: Number(item.totalCost),
                 description: item.description,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -1106,6 +1114,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
               ...input,
               qtyReceived: 0,
               totalCost,
+              organizationId: ctx.user.organizationId!,
             },
             include: {
               item: {

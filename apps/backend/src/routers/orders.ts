@@ -385,6 +385,7 @@ export const ordersRouter = createTRPCRouter({
               taxRate: item.taxRate,
               totalPrice: item.totalPrice,
               description: item.description,
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
@@ -640,6 +641,7 @@ export const ordersRouter = createTRPCRouter({
               qtyAllocated: 0,
               qtyShipped: 0,
               totalPrice,
+              organizationId: ctx.user.organizationId!,
             },
             include: {
               item: {
@@ -1050,6 +1052,7 @@ export const ordersRouter = createTRPCRouter({
               itemId: orderItem!.itemId,
               qtyShipped: shipItem.qtyShipped,
               lotId: shipItem.lotId,
+              organizationId: ctx.user.organizationId!,
             },
           });
 
@@ -1103,6 +1106,7 @@ export const ordersRouter = createTRPCRouter({
                 movedById: ctx.user.id,
                 movedAt: new Date(),
                 notes: `Shipment ${shipmentNumber}`,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }

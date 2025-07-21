@@ -421,6 +421,7 @@ export const receiptsRouter = createTRPCRouter({
             // status: 'PENDING', // Receipt doesn't have status field
             // hasDiscrepancies, // Receipt doesn't have hasDiscrepancies field
             notes,
+            organizationId: ctx.user.organizationId!,
           },
         });
 
@@ -442,6 +443,7 @@ export const receiptsRouter = createTRPCRouter({
                 qtyInitial: item.qtyReceived,
                 qtyOnHand: item.qtyReceived,
                 unitCost: poItem.unitCost,
+                organizationId: ctx.user.organizationId!,
               },
             });
             lotId = lot.id;
@@ -456,6 +458,7 @@ export const receiptsRouter = createTRPCRouter({
               // qtyRejected: item.qtyRejected, // Not in schema
               lotId,
               locationId: item.locationId,
+              organizationId: ctx.user.organizationId!,
               unitCost: poItem.unitCost,
               expirationDate: item.expirationDate,
               serialNumber: item.serialNumbers?.[0], // Store first serial number if provided
@@ -476,6 +479,7 @@ export const receiptsRouter = createTRPCRouter({
                   status: 'AVAILABLE',
                   // receivedDate, // Not in SerialNumber schema
                   purchaseDate: receivedDate,
+                  organizationId: ctx.user.organizationId!,
                 },
               });
 

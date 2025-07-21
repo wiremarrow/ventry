@@ -804,7 +804,10 @@ export const warehousesRouter = createTRPCRouter({
         // Create location with audit log
         const location = await ctx.prisma.$transaction(async (tx) => {
           const newLocation = await tx.location.create({
-            data: input,
+            data: {
+              ...input,
+              organizationId: ctx.user.organizationId!,
+            },
           });
 
           // Create audit log

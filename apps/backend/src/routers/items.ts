@@ -260,6 +260,7 @@ export const itemsRouter = createTRPCRouter({
               priceType: 'RETAIL',
               price: input.defaultPrice,
               startDate: new Date(),
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
@@ -361,6 +362,7 @@ export const itemsRouter = createTRPCRouter({
               priceType: 'RETAIL',
               price: data.defaultPrice,
               startDate: new Date(),
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
@@ -732,6 +734,7 @@ export const itemsRouter = createTRPCRouter({
               url: img.url,
               altText: img.altText,
               isPrimary: img.isPrimary,
+              organizationId: ctx.user.organizationId!,
             })),
           });
         }
@@ -744,6 +747,7 @@ export const itemsRouter = createTRPCRouter({
               priceType: 'RETAIL',
               price: newItem.defaultPrice,
               startDate: new Date(),
+              organizationId: ctx.user.organizationId!,
             },
           });
         }

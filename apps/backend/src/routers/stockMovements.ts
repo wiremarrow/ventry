@@ -342,6 +342,7 @@ export const stockMovementsRouter = createTRPCRouter({
                 qtyOnHand: input.qty,
                 qtyReserved: 0,
                 qtyInTransit: 0,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -361,6 +362,7 @@ export const stockMovementsRouter = createTRPCRouter({
             movedById: ctx.user.id,
             movedAt: new Date(),
             notes: input.notes,
+            organizationId: ctx.user.organizationId!,
           },
           include: {
             item: true,

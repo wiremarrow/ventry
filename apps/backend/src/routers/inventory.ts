@@ -626,6 +626,7 @@ export const inventoryRouter = createTRPCRouter({
             reason: `${input.adjustmentType}: ${input.reason}`,
             notes: input.notes,
             adjustedById: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
           },
         });
 
@@ -895,6 +896,7 @@ export const inventoryRouter = createTRPCRouter({
               qtyOnHand: input.qty,
               qtyReserved: 0,
               qtyInTransit: 0,
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
@@ -906,6 +908,7 @@ export const inventoryRouter = createTRPCRouter({
             lotId: input.lotId || sourceInventory.lotId,
             fromLocationId: input.fromLocationId,
             toLocationId: input.toLocationId,
+            organizationId: ctx.user.organizationId!,
             qty: input.qty,
             movementType: 'TRANSFER',
             movedById: ctx.user.id,
@@ -998,6 +1001,7 @@ export const inventoryRouter = createTRPCRouter({
             countedById: ctx.user.id,
             status: 'PENDING',
             notes: input.notes,
+            organizationId: ctx.user.organizationId!,
           },
         });
 
@@ -1044,6 +1048,7 @@ export const inventoryRouter = createTRPCRouter({
               qtyCounted: 0,
               qtySystem: inv.qtyOnHand,
               variance: 0,
+              organizationId: ctx.user.organizationId!,
             },
           });
         }

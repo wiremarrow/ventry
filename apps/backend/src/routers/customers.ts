@@ -621,7 +621,10 @@ export const customersRouter = createTRPCRouter({
         }
 
         const address = await ctx.prisma.address.create({
-          data: input,
+          data: {
+            ...input,
+            organizationId: ctx.user.organizationId!,
+          },
         });
 
         return address;

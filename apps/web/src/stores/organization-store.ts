@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface Organization {
   id: string;
@@ -44,66 +43,54 @@ const initialState = {
   error: null,
 };
 
-export const useOrganizationStore = create<OrganizationStore>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
+export const useOrganizationStore = create<OrganizationStore>()((set, get) => ({
+  ...initialState,
 
-      // Actions
-      setActiveOrganization: (organizationId: string) => {
-        set({ activeOrganizationId: organizationId, error: null });
-      },
+  // Actions
+  setActiveOrganization: (organizationId: string) => {
+    set({ activeOrganizationId: organizationId, error: null });
+  },
 
-      setOrganizations: (organizations: OrganizationMembership[]) => {
-        set({ organizations, error: null });
-        
-        // If no active organization is set and we have organizations, set the first one
-        const state = get();
-        if (!state.activeOrganizationId && organizations.length > 0) {
-          set({ activeOrganizationId: organizations[0].organizationId });
-        }
-      },
-
-      clearActiveOrganization: () => {
-        set({ activeOrganizationId: null });
-      },
-
-      reset: () => {
-        set(initialState);
-      },
-
-      setLoading: (isLoading: boolean) => {
-        set({ isLoading });
-      },
-
-      setError: (error: string | null) => {
-        set({ error });
-      },
-
-      // Computed
-      getActiveOrganization: () => {
-        const state = get();
-        if (!state.activeOrganizationId) return undefined;
-        return state.organizations.find(
-          (org) => org.organizationId === state.activeOrganizationId
-        );
-      },
-
-      getOrganizationById: (id: string) => {
-        const state = get();
-        return state.organizations.find((org) => org.organizationId === id);
-      },
-    }),
-    {
-      name: 'organization-store',
-      partialize: (state) => ({
-        // Only persist the active organization ID
-        // Organizations will be fetched from the API
-        activeOrganizationId: state.activeOrganizationId,
-      }),
+  setOrganizations: (organizations: OrganizationMembership[]) => {
+    set({ organizations, error: null });
+    
+    // If no active organization is set and we have organizations, set the first one
+    const state = get();
+    if (!state.activeOrganizationId && organizations.length > 0) {
+      set({ activeOrganizationId: organizations[0].organizationId });
     }
-  )
-);
+  },
+
+  clearActiveOrganization: () => {
+    set({ activeOrganizationId: null });
+  },
+
+  reset: () => {
+    set(initialState);
+  },
+
+  setLoading: (isLoading: boolean) => {
+    set({ isLoading });
+  },
+
+  setError: (error: string | null) => {
+    set({ error });
+  },
+
+  // Computed
+  getActiveOrganization: () => {
+    const state = get();
+    if (!state.activeOrganizationId) return undefined;
+    return state.organizations.find(
+      (org) => org.organizationId === state.activeOrganizationId
+    );
+  },
+
+  getOrganizationById: (id: string) => {
+    const state = get();
+    return state.organizations.find((org) => org.organizationId === id);
+  },
+}));
 
 // Selector hooks for common use cases
 export const useActiveOrganizationId = () => 

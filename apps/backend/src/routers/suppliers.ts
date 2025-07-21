@@ -494,7 +494,10 @@ export const suppliersRouter = createTRPCRouter({
         // TODO: Implement primary contact logic
 
         const contact = await ctx.prisma.supplierContact.create({
-          data: input,
+          data: {
+            ...input,
+            organizationId: ctx.user.organizationId!,
+          },
         });
 
         return contact;

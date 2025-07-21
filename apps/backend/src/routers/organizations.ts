@@ -84,11 +84,18 @@ export const organizationsRouter = createTRPCRouter({
         },
       });
 
-      return memberships.map((m) => ({
-        ...m.organization,
-        role: m.role,
-        joinedAt: m.joinedAt,
-      }));
+      // Get active organization from cookie
+      const { CookieService } = await import('../services/cookie-service.js');
+      const activeOrgId = CookieService.getActiveOrganization(ctx.req);
+
+      return {
+        organizations: memberships.map((m) => ({
+          ...m.organization,
+          role: m.role,
+          joinedAt: m.joinedAt,
+        })),
+        activeOrganizationId: activeOrgId || null,
+      };
     }),
 
   // Get organization details

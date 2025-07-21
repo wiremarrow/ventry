@@ -27,16 +27,16 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const utils = trpc.useUtils();
   const [isSwitching, setIsSwitching] = useState(false);
 
-  const { data: organizations, isLoading: isLoadingOrgs } = trpc.organizations.list.useQuery();
+  const { data: orgData, isLoading: isLoadingOrgs } = trpc.organizations.list.useQuery();
 
   useEffect(() => {
     setLoading(isLoadingOrgs);
   }, [isLoadingOrgs, setLoading]);
 
   useEffect(() => {
-    if (organizations) {
+    if (orgData) {
       // Transform the data to match our store format
-      const orgMemberships: OrganizationMembership[] = organizations.map(org => ({
+      const orgMemberships: OrganizationMembership[] = orgData.organizations.map(org => ({
         organizationId: org.id,
         userId: '', // Will be filled by the actual user data
         role: org.role as 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER',
@@ -51,8 +51,13 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
       }));
       
       setOrganizations(orgMemberships);
+      
+      // Set active organization from server (cookie)
+      if (orgData.activeOrganizationId) {
+        setActiveOrganization(orgData.activeOrganizationId);
+      }
     }
-  }, [organizations, setOrganizations]);
+  }, [orgData, setOrganizations, setActiveOrganization]);
 
   const switchOrgMutation = trpc.organizations.switchOrganization.useMutation({
     onSuccess: () => {
