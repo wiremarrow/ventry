@@ -51,6 +51,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Database Admin Operations & Comprehensive Seeding COMPLETE** (2025-07-21)
 ✅ **Frontend Performance & Rate Limiting Fixes COMPLETE** (2025-07-21)
 ✅ **Users Page RLS Fix COMPLETE** - Organization-Scoped User Management (2025-07-21)
+✅ **E2E Test Enhancements COMPLETE** - RLS Isolation & React Hydration Fix (2025-07-21)
 - **Created db-admin.sh script** for consistent admin database operations
 - **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
 - **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)
@@ -77,6 +78,15 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Updated permissions** - activate/deactivate now use organizationAdminProcedure
   - **Enhanced frontend** - shows organization-specific user counts and permissions
   - **Proper tenant isolation** - all user queries now respect organization boundaries
+- **E2E Test Enhancements**:
+  - **Created comprehensive RLS isolation tests** verifying multi-tenant data security across all pages
+  - **Fixed React hydration issue** with `waitForLoadState('networkidle')` and keyboard navigation
+  - **Added loginWithPage helper** for consistent authentication across all E2E tests
+  - **Enhanced test helpers** with proper organization-scoped data creation and cleanup
+  - **Fixed test data creation** with correct Prisma field names (companyName, supplierCode, etc.)
+  - **Updated API tests** to use GET for tRPC query procedures instead of POST
+  - **Verified cross-browser compatibility** - all 40 RLS tests passing across Chromium, Firefox, WebKit, and Mobile browsers
+  - **Improved test reliability** with proper wait strategies and flexible text matching
 - **Complete tRPC + Fastify backend** with end-to-end type-safe API architecture
 - **Comprehensive Prisma database schema** with inventory models and proper PostgreSQL enums
 - **JWT authentication with role-based access control** (Admin/Manager/User) via tRPC procedures

@@ -82,13 +82,20 @@ ventry/
     - ✅ Inventory components and router (100% coverage)
     - ✅ Products/Items components and router (100% coverage)
     - ✅ Auth flow and organization context
+    - ✅ RLS isolation tests ensuring multi-tenant data security
   - **E2E Architecture**: Enterprise-grade test isolation with dotenv-cli for environment management
+  - **E2E Features**:
+    - Multi-organization RLS isolation verification across all browsers
+    - React hydration issue handling with `waitForLoadState('networkidle')`
+    - Comprehensive test helpers for organization-scoped testing
+    - Cross-browser compatibility (Chromium, Firefox, WebKit, Mobile)
 - **Authentication**: Centralized auth system with secure signed cookies
   - **AuthService**: Unified authentication service handling login/logout/register
-  - **CookieService**: Consistent cookie management with proper error handling
+  - **CookieService**: Consistent cookie management with proper error handling and unsigning
   - **Organization Context**: Zustand-based state management with automatic cookie persistence
   - **httpOnly Cookies**: JWT tokens stored in signed cookies for XSS protection
   - **Dual Cookie System**: Both auth-token and active-organization cookies for seamless context switching
+  - **RLS Integration**: Organization context enforced at database level via `organizationProcedure`
 - **API Proxy**: Next.js rewrites ensure same-origin requests for cookie authentication (avoids cross-port CORS issues)
 - **Deployment**: Vercel for frontend, containerized Fastify backend services
 - **Monitoring**: Sentry for error tracking and performance insights

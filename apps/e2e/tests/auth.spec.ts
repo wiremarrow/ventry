@@ -1,6 +1,6 @@
-import { test, expect } from '../fixtures/base.fixture';
-import { createTestUser } from '../utils/test-helpers';
-import { cleanupTestDataForUser } from '../utils/db-cleanup';
+import { test, expect } from '../fixtures/base.fixture.js';
+import { createTestUser } from '../utils/test-helpers.js';
+import { cleanupTestDataForUser } from '../utils/db-cleanup.js';
 
 test.describe('Authentication', () => {
   test.beforeEach(async ({ cleanPage }) => {

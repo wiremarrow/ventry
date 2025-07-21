@@ -267,3 +267,127 @@ export async function getDatabaseStats() {
     testItems,
   };
 }
+
+// Cleanup all data for a specific organization
+export async function cleanupTestDataForOrganization(organizationId: string) {
+  console.log(`🧹 Cleaning up data for organization: ${organizationId}`);
+  
+  try {
+    // Delete in order of dependencies
+    
+    // Delete stock movements
+    await prisma.stockMovement.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete inventory
+    await prisma.inventory.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete order items
+    await prisma.orderItem.deleteMany({
+      where: { 
+        order: { organizationId }
+      },
+    });
+
+    // Delete orders
+    await prisma.order.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete purchase order items
+    await prisma.purchaseOrderItem.deleteMany({
+      where: {
+        purchaseOrder: { organizationId }
+      },
+    });
+
+    // Delete purchase orders
+    await prisma.purchaseOrder.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete shipment items
+    await prisma.shipmentItem.deleteMany({
+      where: {
+        shipment: { organizationId }
+      },
+    });
+
+    // Delete shipments
+    await prisma.shipment.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete receipt items
+    await prisma.receiptItem.deleteMany({
+      where: {
+        receipt: { organizationId }
+      },
+    });
+
+    // Delete receipts
+    await prisma.receipt.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete return items
+    await prisma.returnItem.deleteMany({
+      where: {
+        return: { organizationId }
+      },
+    });
+
+    // Delete returns
+    await prisma.return.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete customers
+    await prisma.customer.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete suppliers
+    await prisma.supplier.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete items
+    await prisma.item.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete item categories
+    await prisma.itemCategory.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete locations
+    await prisma.location.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete warehouses
+    await prisma.warehouse.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete organization members
+    await prisma.organizationMember.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete the organization itself
+    await prisma.organization.delete({
+      where: { id: organizationId },
+    });
+
+    console.log(`✅ Cleaned up organization: ${organizationId}`);
+  } catch (error) {
+    console.error(`❌ Error cleaning up organization ${organizationId}:`, error);
+    throw error;
+  }
+}

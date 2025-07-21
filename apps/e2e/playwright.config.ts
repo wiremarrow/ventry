@@ -98,7 +98,8 @@ export default defineConfig({
     },
     {
       command: 'pnpm --filter web dev',
-      url: 'http://localhost:6061',
+      // Wait for frontend health endpoint which also checks backend connectivity
+      url: 'http://localhost:6061/api/health',
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       env: {

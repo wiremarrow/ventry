@@ -332,7 +332,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         state: faker.location.state({ abbreviated: true }),
         postalCode: faker.location.zipCode(),
         country: 'USA',
-        phone: faker.phone.number('(###) ###-####'),
+        phone: faker.phone.number(),
         email: faker.internet.email(),
         website: faker.internet.url(),
         paymentTerms: ['NET30', 'NET60', '2/10 NET30'][i % 3],
@@ -345,7 +345,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
               lastName: faker.person.lastName(),
               role: 'Sales Representative',
               email: faker.internet.email(),
-              phone: faker.phone.number('(###) ###-####'),
+              phone: faker.phone.number(),
             },
             {
               organizationId,
@@ -353,7 +353,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
               lastName: faker.person.lastName(),
               role: 'Account Manager',
               email: faker.internet.email(),
-              phone: faker.phone.number('(###) ###-####'),
+              phone: faker.phone.number(),
             },
           ]
         }
@@ -375,7 +375,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         lastName: faker.person.lastName(),
         companyName: i % 3 === 0 ? faker.company.name() : null,
         email: faker.internet.email(),
-        phone: faker.phone.number('(###) ###-####'),
+        phone: faker.phone.number(),
         taxId: i % 2 === 0 ? faker.string.alphanumeric(9) : null,
         defaultPaymentTerms: ['NET30', 'NET60', 'COD'][i % 3],
       }
@@ -748,7 +748,7 @@ async function seedAllOtherDataForOrg(
           shippingCost: new Decimal(15 + Math.random() * 35),
           notes: faker.lorem.sentence(),
           items: {
-            create: order.items.map(orderItem => ({
+            create: order.items.map((orderItem: any) => ({
               organizationId,
               orderItemId: orderItem.id,
               itemId: orderItem.itemId,
@@ -763,7 +763,7 @@ async function seedAllOtherDataForOrg(
   console.log(`  🔄 Creating returns...`);
   
   // Create some returns
-  const deliveredOrders = orders.filter(o => o.status === 'DELIVERED');
+  const deliveredOrders = orders.filter((o: any) => o.status === 'DELIVERED');
   for (let i = 0; i < Math.min(5, deliveredOrders.length); i++) {
     const order = deliveredOrders[i];
     const rmaNumber = `${prefix}-RMA-${faker.string.numeric(6)}`;
@@ -781,7 +781,7 @@ async function seedAllOtherDataForOrg(
         refundAmount: order.grandTotal.mul(0.9),
         restockFee: order.grandTotal.mul(0.1),
         items: {
-          create: order.items.slice(0, Math.min(2, order.items.length)).map(orderItem => ({
+          create: order.items.slice(0, Math.min(2, order.items.length)).map((orderItem: any) => ({
             organizationId,
             orderItemId: orderItem.id,
             itemId: orderItem.itemId,

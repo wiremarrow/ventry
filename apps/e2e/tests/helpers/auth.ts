@@ -4,6 +4,11 @@ import { Page } from '@playwright/test';
  * Helper functions for authentication in E2E tests
  */
 
+export async function authenticateUser(page: Page) {
+  // Default to admin user for backwards compatibility
+  await loginAsAdmin(page);
+}
+
 export async function loginAsAdmin(page: Page) {
   await login(page, 'admin@ventry.com', 'password123');
 }
