@@ -1,10 +1,8 @@
 'use client';
 
-import { CreditCard, FileText, MapPin, Package, Truck, User } from 'lucide-react';
 
 import {
   Badge,
-  Button,
   Dialog,
   DialogContent,
   DialogDescription,

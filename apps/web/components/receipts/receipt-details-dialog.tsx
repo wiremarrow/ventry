@@ -18,7 +18,6 @@ import {
   Badge,
 } from '@ventry/ui';
 import { 
-  Package, 
   FileText, 
   Calendar, 
   User, 
@@ -28,7 +27,7 @@ import {
   Hash
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { ReceiptStatusBadge } from './receipt-status-badge';
 
 interface ReceiptDetailsDialogProps {

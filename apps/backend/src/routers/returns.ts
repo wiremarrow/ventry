@@ -416,6 +416,7 @@ export const returnsRouter = createTRPCRouter({
           serialId: item.serialId || null,
           condition: item.condition,
           refundAmount: item.refundAmount,
+          organizationId: ctx.user.organizationId!,
         }));
         
         await tx.returnItem.createMany({
@@ -823,6 +824,7 @@ export const returnsRouter = createTRPCRouter({
                   qtyOnHand: item.qtyReceived,
                   qtyReserved: 0,
                   lotId: returnItem.lotId || null,
+                  organizationId: ctx.user.organizationId!,
                 },
               });
             }
@@ -839,6 +841,7 @@ export const returnsRouter = createTRPCRouter({
                 notes: `Return ${existingReturn.returnNumber} - ${item.dispositionAction}`,
                 refType: 'RETURN',
                 refId: id,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }

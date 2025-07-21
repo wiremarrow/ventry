@@ -6,22 +6,20 @@ import { z } from 'zod';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 import {
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@ventry/ui/dialog';
-import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ventry/ui/form';
-import { Textarea } from '@ventry/ui/textarea';
-import { Button } from '@ventry/ui/button';
+  Textarea,
+} from '@ventry/ui';
 import { toast } from 'sonner';
 
 import { trpc } from '@/lib/trpc';

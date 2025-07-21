@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Input, Button, Skeleton } from '@ventry/ui';
-import { Plus, Search, FolderTree, Package, ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
+import { Plus, Search, FolderTree, Folder } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';

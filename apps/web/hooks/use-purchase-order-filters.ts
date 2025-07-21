@@ -27,7 +27,7 @@ const defaultFilters: PurchaseOrderFilters = {
   sortOrder: 'desc',
 };
 
-export const usePurchaseOrderFilters = create<PurchaseOrderFiltersStore>((set, get) => ({
+export const usePurchaseOrderFilters = create<PurchaseOrderFiltersStore>((set) => ({
   filters: defaultFilters,
   
   setFilters: (newFilters) =>

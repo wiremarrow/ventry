@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Badge, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Plus, Search, MoreHorizontal, Edit, UserCheck, UserX, Users as UsersIcon, Shield, User, Clock } from 'lucide-react';
+import { Card, Input, Button, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
+import { Search, MoreHorizontal, Edit, UserCheck, UserX, Users as UsersIcon, Shield, User, Clock } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';

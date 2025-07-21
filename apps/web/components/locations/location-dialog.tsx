@@ -56,9 +56,7 @@ export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: Lo
   );
 
   // Fetch all warehouses
-  const { data: warehousesData } = trpc.warehouses.list.useQuery({
-    limit: 100,
-  });
+  const { data: warehousesData } = trpc.warehouses.list.useQuery({});
 
   const {
     register,
@@ -173,7 +171,7 @@ export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: Lo
                     <SelectValue placeholder="Select a warehouse" />
                   </SelectTrigger>
                   <SelectContent>
-                    {warehousesData?.warehouses?.map((warehouse) => (
+                    {warehousesData?.map((warehouse) => (
                       <SelectItem key={warehouse.id} value={warehouse.id}>
                         {warehouse.name} ({warehouse.code})
                       </SelectItem>

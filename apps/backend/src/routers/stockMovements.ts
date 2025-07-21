@@ -10,11 +10,11 @@ const movementFilterSchema = z.object({
   itemId: z.string().cuid().optional(),
   warehouseId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
-  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN']).optional(),
+  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   userId: z.string().cuid().optional(),
-  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN']).optional(),
+  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
   referenceId: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(50),
@@ -28,8 +28,8 @@ const createMovementSchema = z.object({
   fromLocationId: z.string().cuid().optional(),
   toLocationId: z.string().cuid().optional(),
   qty: z.number().int().positive(),
-  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN']),
-  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN']).optional(),
+  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']),
+  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
   referenceId: z.string().optional(),
   notes: z.string().optional(),
   serialNumbers: z.array(z.string()).optional(),
@@ -561,6 +561,7 @@ export const stockMovementsRouter = createTRPCRouter({
                   qtyOnHand: movement.qty,
                   qtyReserved: 0,
                   qtyInTransit: 0,
+                  organizationId: ctx.user.organizationId!,
                 },
               });
             }
@@ -574,6 +575,7 @@ export const stockMovementsRouter = createTRPCRouter({
               movedAt: new Date(),
               refType: movement.referenceType || 'TRANSFER',
               refId: movement.referenceId || referenceId,
+              organizationId: ctx.user.organizationId!,
             },
           });
 
@@ -1152,6 +1154,7 @@ export const stockMovementsRouter = createTRPCRouter({
                 qtyOnHand: reversalData.qty,
                 qtyReserved: 0,
                 qtyInTransit: 0,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -1159,7 +1162,10 @@ export const stockMovementsRouter = createTRPCRouter({
 
         // Create reversal movement
         const newMovement = await tx.stockMovement.create({
-          data: reversalData,
+          data: {
+            ...reversalData,
+            organizationId: ctx.user.organizationId!,
+          },
         });
 
         // Create audit logs

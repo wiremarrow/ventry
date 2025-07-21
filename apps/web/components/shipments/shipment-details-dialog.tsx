@@ -15,11 +15,9 @@ import {
   TableRow,
   Alert,
   AlertDescription,
-  Badge,
   Button,
 } from '@ventry/ui';
 import { 
-  Package, 
   Truck, 
   Calendar, 
   User, 

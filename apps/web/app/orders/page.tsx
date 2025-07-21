@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
-import { Plus, Search, ShoppingCart, Package, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { formatCurrency } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';

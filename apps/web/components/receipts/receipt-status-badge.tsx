@@ -1,5 +1,5 @@
 import { Badge } from '@ventry/ui';
-import { CheckCircle2, AlertCircle, Package, Clock, XCircle, FileText } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Clock, XCircle, FileText, Package } from 'lucide-react';
 
 interface ReceiptStatusBadgeProps {
   poStatus: string;

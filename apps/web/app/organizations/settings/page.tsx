@@ -31,13 +31,13 @@ export default function OrganizationSettingsPage() {
   const { currentOrganization } = useOrganization();
 
   const { data: organization, isLoading, refetch } = trpc.organizations.get.useQuery(
-    { id: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { id: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const { data: usage } = trpc.organizations.getUsage.useQuery(
-    { organizationId: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { organizationId: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const {
@@ -72,10 +72,10 @@ export default function OrganizationSettingsPage() {
   });
 
   const onSubmit = (data: OrganizationFormData) => {
-    if (!currentOrganization?.id) return;
+    if (!currentOrganization?.organizationId) return;
     
     updateMutation.mutate({
-      id: currentOrganization.id,
+      id: currentOrganization.organizationId,
       ...data,
       domain: data.domain || null,
       logoUrl: data.logoUrl || null,

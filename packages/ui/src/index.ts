@@ -1,4 +1,5 @@
 // Export all UI components
+export * from "./components/ui/alert"
 export * from "./components/ui/button"
 export * from "./components/ui/input"
 export * from "./components/ui/card"
@@ -16,6 +17,7 @@ export * from "./components/ui/dropdown-menu"
 export * from "./components/ui/radio-group"
 export * from "./components/ui/tabs"
 export * from "./components/ui/sonner"
+export * from "./components/ui/progress"
 
 // Export utilities
 export * from "./lib/utils"

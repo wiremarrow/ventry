@@ -378,6 +378,7 @@ export const shipmentsRouter = createTRPCRouter({
                 qtyShipped: item.qtyShipped,
                 lotId: item.lotId,
                 serialId: item.serialId,
+                organizationId: ctx.user.organizationId!,
               })),
             },
           },
@@ -555,6 +556,7 @@ export const shipmentsRouter = createTRPCRouter({
               notes: `Shipped via shipment ${shipment.shipmentNumber}`,
               refType: 'SHIPMENT',
               refId: id,
+              organizationId: ctx.user.organizationId!,
             },
           });
 

@@ -537,6 +537,7 @@ export const itemsRouter = createTRPCRouter({
                 priceType: 'RETAIL',
                 price: item.defaultPrice,
                 startDate: new Date(),
+                organizationId: ctx.user.organizationId!,
               },
             });
           }

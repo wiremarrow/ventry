@@ -197,6 +197,7 @@ export const receiptsRouter = createTRPCRouter({
         totalReceived: receipt.items?.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) || 0,
         totalRejected: 0, // qtyRejected not in schema
         rejectionRate: 0, // Cannot calculate without qtyRejected
+        hasDiscrepancy: false, // TODO: Implement discrepancy detection
       }));
 
       return {
@@ -515,6 +516,7 @@ export const receiptsRouter = createTRPCRouter({
                   qtyOnHand: item.qtyReceived,
                   qtyReserved: 0,
                   qtyInTransit: 0,
+                  organizationId: ctx.user.organizationId!,
                 },
               });
             }
@@ -532,6 +534,7 @@ export const receiptsRouter = createTRPCRouter({
                 movedAt: receivedDate,
                 notes: `Receipt ${reference}`,
                 lotId,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }
@@ -646,6 +649,7 @@ export const receiptsRouter = createTRPCRouter({
                 qtyInitial: item.qtyReceived,
                 qtyOnHand: item.qtyReceived,
                 unitCost: poItem.unitCost,
+                organizationId: ctx.user.organizationId!,
               },
             });
             lotId = lot.id;
@@ -665,6 +669,7 @@ export const receiptsRouter = createTRPCRouter({
               serialNumber: item.serialNumbers?.[0], // Store first serial number if provided
               // rejectionReason: item.rejectionReason, // Not in schema
               // notes: item.notes, // Not in ReceiptItem schema
+              organizationId: ctx.user.organizationId!,
             },
           });
 
@@ -696,6 +701,7 @@ export const receiptsRouter = createTRPCRouter({
                   qtyOnHand: item.qtyReceived,
                   qtyReserved: 0,
                   qtyInTransit: 0,
+                  organizationId: ctx.user.organizationId!,
                 },
               });
             }
@@ -713,6 +719,7 @@ export const receiptsRouter = createTRPCRouter({
                 movedAt: receipt.receivedDate,
                 notes: `Receipt ${receipt.reference || 'N/A'}`,
                 lotId,
+                organizationId: ctx.user.organizationId!,
               },
             });
           }

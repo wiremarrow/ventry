@@ -209,7 +209,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                         <SelectContent>
                           {uoms?.map((uom) => (
                             <SelectItem key={uom.id} value={uom.id}>
-                              {uom.name} ({uom.code})
+                              {uom.description} ({uom.code})
                             </SelectItem>
                           ))}
                         </SelectContent>

@@ -53,6 +53,8 @@ ventry/
   - **Current**: PostgreSQL 16 with Prisma 6.x ORM (ESM support) for type-safe database access
   - **Multi-tenant**: Full organizationId scoping across all 40+ tables
   - **Schema**: Enterprise-grade inventory management (Items, Warehouses, Orders, PurchaseOrders, etc.)
+  - **Admin Operations**: All database operations use `db-admin.sh` for consistent admin privileges
+  - **Comprehensive Seeding**: Full demo data with 45 products, warehouses, inventory, and historical data
   - **TypeScript Migration**: ✅ **COMPLETE** - Backend configured as internal service with 0 TypeScript errors
   - **Testing**: ✅ All unit tests (19/19) and integration tests (49/49) passing
   - **Architecture**: Clean tRPC factory pattern avoiding circular dependencies
@@ -852,10 +854,12 @@ pnpm test:cov      # Backend tests with coverage
 pnpm lint          # Check code quality
 pnpm typecheck     # Type checking
 
-# Database
+# Database (all use db-admin.sh for admin privileges)
 pnpm db:push       # Push schema changes
 pnpm db:migrate    # Run migrations
-pnpm db:seed       # Seed test data
+pnpm db:seed       # Seed basic test data
+pnpm db:seed:comprehensive  # Seed with full demo data (45 products, warehouses, inventory)
+pnpm db:reset      # Reset database and reseed
 
 # AI Agents
 pnpm agents:test   # Test AI agent responses

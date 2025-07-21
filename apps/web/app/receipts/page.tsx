@@ -1,22 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Skeleton, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
+import { Card, Input, Button, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
 import { 
   Plus, 
   Search, 
   MoreHorizontal, 
   Eye, 
-  Package,
   FileText,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Calendar
+  AlertCircle
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
-import { toast } from '@/hooks/use-toast';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { CreateReceiptDialog } from '@/components/receipts/create-receipt-dialog';
@@ -45,18 +40,16 @@ export default function ReceiptsPage() {
   });
 
   // Filter by PO status locally
-  const filteredReceipts = receipts?.filter(receipt => {
+  const filteredReceipts = receipts?.receipts?.filter(receipt => {
     if (poStatusFilter === 'all') return true;
-    return receipt.purchaseOrder.status === poStatusFilter;
+    return receipt.purchaseOrder?.status === poStatusFilter;
   }) || [];
 
   // Calculate stats
   const stats = {
     total: filteredReceipts.length,
-    totalItems: filteredReceipts.reduce((sum, r) => sum + r.items.length, 0),
-    withDiscrepancies: filteredReceipts.filter(r => 
-      r.items.some(item => item.quantityReceived !== item.quantityOrdered)
-    ).length,
+    totalItems: filteredReceipts.reduce((sum, r) => sum + (r.itemCount || 0), 0),
+    withDiscrepancies: filteredReceipts.filter(r => r.hasDiscrepancy).length,
     recentWeek: filteredReceipts.filter(r => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
@@ -189,37 +182,35 @@ export default function ReceiptsPage() {
                   </TableRow>
                 ) : (
                   filteredReceipts.map((receipt) => {
-                    const hasDiscrepancy = receipt.items.some(
-                      item => item.quantityReceived !== item.quantityOrdered
-                    );
+                    const hasDiscrepancy = receipt.hasDiscrepancy;
                     
                     return (
                       <TableRow key={receipt.id}>
                         <TableCell className="font-medium">
-                          {receipt.receiptNumber}
+                          {receipt.reference || `RCP-${receipt.id.slice(-6)}`}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            {receipt.purchaseOrder.poNumber}
+                            {receipt.purchaseOrder?.poNumber || '-'}
                           </div>
                         </TableCell>
-                        <TableCell>{receipt.purchaseOrder.supplier.name}</TableCell>
+                        <TableCell>{receipt.purchaseOrder?.supplier?.name || '-'}</TableCell>
                         <TableCell>{formatDate(receipt.receivedDate)}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm">{receipt.items.length} items</span>
+                            <span className="text-sm">{receipt.itemCount || 0} items</span>
                             {hasDiscrepancy && (
                               <AlertCircle className="h-4 w-4 text-orange-500" />
                             )}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {receipt.receivedBy.firstName} {receipt.receivedBy.lastName}
+                          {receipt.receivedBy?.firstName} {receipt.receivedBy?.lastName}
                         </TableCell>
                         <TableCell>
                           <ReceiptStatusBadge 
-                            poStatus={receipt.purchaseOrder.status}
+                            poStatus={receipt.purchaseOrder?.status || 'PENDING'}
                             hasDiscrepancy={hasDiscrepancy}
                           />
                         </TableCell>

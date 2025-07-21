@@ -12,39 +12,31 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@ventry/ui/dialog';
-import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from '@ventry/ui/form';
-import { Input } from '@ventry/ui/input';
-import { Textarea } from '@ventry/ui/textarea';
-import { Button } from '@ventry/ui/button';
-import {
+  Input,
+  Textarea,
+  Button,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ventry/ui/select';
-import {
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@ventry/ui/table';
-import { Calendar } from '@ventry/ui/calendar';
-import {
+  Calendar,
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@ventry/ui/popover';
+} from '@ventry/ui';
 import { toast } from 'sonner';
 
 import { trpc } from '@/lib/trpc';
@@ -120,7 +112,7 @@ export function CreatePurchaseOrderDialog({
   });
 
   const createMutation = trpc.purchaseOrders.create.useMutation({
-    onSuccess: (newPO) => {
+    onSuccess: () => {
       toast.success('Purchase order created');
       utils.purchaseOrders.list.invalidate();
       onOpenChange(false);

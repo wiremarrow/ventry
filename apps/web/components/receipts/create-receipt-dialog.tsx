@@ -36,10 +36,10 @@ import {
   Alert,
   AlertDescription,
 } from '@ventry/ui';
-import { Package, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 
 const receiptItemSchema = z.object({
   poItemId: z.string(),

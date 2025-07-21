@@ -21,7 +21,7 @@ import {
   Button,
   Skeleton,
 } from '@ventry/ui';
-import { User, Mail, Lock } from 'lucide-react';
+import { User, Lock } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/lib/auth-store';

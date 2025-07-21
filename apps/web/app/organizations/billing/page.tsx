@@ -81,13 +81,13 @@ export default function OrganizationBillingPage() {
   const { currentOrganization } = useOrganization();
 
   const { data: organization, isLoading } = trpc.organizations.get.useQuery(
-    { id: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { id: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const { data: usage } = trpc.organizations.getUsage.useQuery(
-    { organizationId: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { organizationId: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const handleUpgrade = (planName: string) => {

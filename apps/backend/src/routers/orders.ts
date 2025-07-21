@@ -245,6 +245,7 @@ export const ordersRouter = createTRPCRouter({
           },
           shipments: {
             include: {
+              carrier: true,
               items: {
                 include: {
                   orderItem: {

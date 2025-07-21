@@ -7,7 +7,7 @@ import { WarehouseList } from '@/components/warehouses/warehouse-list';
 import { CreateWarehouseDialog } from '@/components/warehouses/create-warehouse-dialog';
 import { Button } from '@ventry/ui';
 import { Input } from '@ventry/ui';
-import { Plus, Download, Upload, Search, Warehouse, MapPin, Building2 } from 'lucide-react';
+import { Plus, Download, Upload, Search, Warehouse, Building2, MapPin } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 
 // Type for warehouse with stats

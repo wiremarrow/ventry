@@ -2,9 +2,12 @@
 import { vi } from 'vitest';
 
 // Mock environment variables
-process.env.JWT_SECRET = 'test-jwt-secret';
+process.env.JWT_SECRET = 'test-jwt-secret-must-be-at-least-32-characters-long';
 process.env.JWT_EXPIRES_IN = '1h';
+process.env.JWT_REFRESH_EXPIRES_IN = '30d';
+process.env.COOKIE_SECRET = 'test-cookie-secret-must-be-at-least-32-characters';
 process.env.NODE_ENV = 'test';
+process.env.FRONTEND_URL = 'http://localhost:6061';
 
 // Enterprise-grade database configuration for unit tests:
 // - Respect any environment-provided DATABASE_URL

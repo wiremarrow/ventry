@@ -1,5 +1,5 @@
 import { Badge } from '@ventry/ui';
-import { Clock, Package, Truck, CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
+import { Clock, Package, Truck, CheckCircle2, RotateCcw } from 'lucide-react';
 
 interface ShipmentStatusBadgeProps {
   status: string;

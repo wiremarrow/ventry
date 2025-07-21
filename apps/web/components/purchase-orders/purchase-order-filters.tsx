@@ -3,23 +3,21 @@
 import { useState } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 
-import { Button } from '@ventry/ui/button';
-import { Input } from '@ventry/ui/input';
-import { Label } from '@ventry/ui/label';
 import {
+  Badge,
+  Button,
+  Calendar,
+  Input,
+  Label,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@ventry/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@ventry/ui/popover';
-import { Badge } from '@ventry/ui/badge';
-import { Calendar } from '@ventry/ui/calendar';
+} from '@ventry/ui';
 import { format } from 'date-fns';
 
 import { trpc } from '@/lib/trpc';
@@ -37,7 +35,6 @@ const statusOptions = [
 
 export function PurchaseOrderFilters() {
   const { filters, setFilters, resetFilters, activeFilterCount } = usePurchaseOrderFilters();
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -218,7 +215,6 @@ export function PurchaseOrderFilters() {
                   size="sm"
                   onClick={() => {
                     handleDateRangeChange();
-                    setShowAdvanced(false);
                   }}
                 >
                   Apply

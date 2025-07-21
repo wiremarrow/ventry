@@ -38,13 +38,13 @@ export default function OrganizationMembersPage() {
   const [editRole, setEditRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
 
   const { data: members, isLoading, refetch } = trpc.organizations.getMembers.useQuery(
-    { organizationId: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { organizationId: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const { data: organization } = trpc.organizations.get.useQuery(
-    { id: currentOrganization?.id || '' },
-    { enabled: !!currentOrganization?.id }
+    { id: currentOrganization?.organizationId || '' },
+    { enabled: !!currentOrganization?.organizationId }
   );
 
   const inviteMutation = trpc.organizations.inviteUser.useMutation({
@@ -103,31 +103,31 @@ export default function OrganizationMembersPage() {
   });
 
   const handleInvite = () => {
-    if (!currentOrganization?.id || !inviteEmail) return;
+    if (!currentOrganization?.organizationId || !inviteEmail) return;
 
     inviteMutation.mutate({
-      organizationId: currentOrganization.id,
+      organizationId: currentOrganization.organizationId,
       email: inviteEmail,
       role: inviteRole,
     });
   };
 
   const handleUpdateRole = () => {
-    if (!currentOrganization?.id || !selectedMember) return;
+    if (!currentOrganization?.organizationId || !selectedMember) return;
 
     updateRoleMutation.mutate({
-      organizationId: currentOrganization.id,
+      organizationId: currentOrganization.organizationId,
       userId: selectedMember.userId,
       role: editRole,
     });
   };
 
   const handleRemoveMember = (member: NonNullable<typeof members>[number]) => {
-    if (!currentOrganization?.id) return;
+    if (!currentOrganization?.organizationId) return;
 
     if (confirm(`Are you sure you want to remove ${`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email} from the organization?`)) {
       removeMemberMutation.mutate({
-        organizationId: currentOrganization.id,
+        organizationId: currentOrganization.organizationId,
         userId: member.userId,
       });
     }

@@ -205,15 +205,19 @@ DATABASE_ADMIN_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventr
 DATABASE_URL="postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_dev"
 ```
 
-**Automatic Admin Connection for Schema Operations**:
-All Prisma schema commands automatically use DATABASE_ADMIN_URL through the `migrate-with-admin.sh` script:
+**Automatic Admin Connection for Database Operations**:
+All Prisma schema and seed commands automatically use DATABASE_ADMIN_URL through the `db-admin.sh` script:
 ```bash
 # These commands automatically use admin privileges:
-pnpm db:push       # Push schema changes
-pnpm db:migrate    # Create/apply migrations  
-pnpm db:reset      # Reset database
+pnpm db:push                      # Push schema changes
+pnpm db:migrate                   # Create/apply migrations  
+pnpm db:reset                     # Reset database
+pnpm db:seed                      # Seed with default data
+pnpm db:seed:basic               # Seed with basic users only
+pnpm db:seed:comprehensive       # Seed with full demo data
+pnpm db:seed:multi-org          # Seed with multi-org test data
 
-# Script location: packages/database/scripts/migrate-with-admin.sh
+# Script location: packages/database/scripts/db-admin.sh
 # Error handling: Clear message if DATABASE_ADMIN_URL is missing
 ```
 

@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { 
-  TrendingUp, 
   Package, 
-  Clock, 
-  CheckCircle2,
+  Clock,
   AlertCircle,
   DollarSign 
 } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@ventry/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@ventry/ui';
 
 import { trpc } from '@/lib/trpc';
 

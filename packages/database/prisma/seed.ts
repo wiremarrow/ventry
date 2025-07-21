@@ -295,6 +295,7 @@ async function seedBasicData(organizationId: string) {
     },
     update: {},
     create: {
+      organizationId,
       warehouseId: warehouse.id,
       code: 'A-1-1',
       description: 'Aisle A, Rack 1, Shelf 1',
@@ -372,6 +373,7 @@ async function seedComprehensiveData(organizationId: string) {
         },
         update: {},
         create: {
+          organizationId,
           warehouseId: warehouse.id,
           code: `${warehouseInfo.code}-${aisle}-${rack}-${shelf}`,
           description: `${warehouseInfo.name} - Aisle ${aisle}, Rack ${rack}, Shelf ${shelf}`,
@@ -531,6 +533,16 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
   
   const { items, suppliers, warehouses } = data;
   
+  // Get admin user for created by fields
+  const adminUser = await prisma.user.findFirst({
+    where: { email: 'admin@ventry.com' }
+  });
+
+  if (!adminUser) {
+    console.log('⚠️ Admin user not found, skipping inventory operations');
+    return;
+  }
+  
   // Get all locations across all warehouses
   const allLocations = await prisma.location.findMany({
     where: {
@@ -576,6 +588,7 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
         where: { lotNumber },
         update: {},
         create: {
+          organizationId,
           itemId: item.id,
           lotNumber,
           receivedDate: faker.date.recent({ days: 60 }),
@@ -589,6 +602,7 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
       // Create inventory record (simple create since we cleared database)
       const inventory = await prisma.inventory.create({
         data: {
+          organizationId,
           itemId: item.id,
           lotId: lot.id,
           locationId: location.id,
@@ -625,15 +639,6 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
   const movements = [];
   const movementCount = faker.number.int({ min: 200, max: 500 });
 
-  // Get admin user for movements
-  const adminUser = await prisma.user.findFirst({
-    where: { email: 'admin@ventry.com' }
-  });
-
-  if (!adminUser) {
-    console.log('⚠️ Admin user not found, skipping stock movements');
-    return;
-  }
 
   for (let i = 0; i < movementCount; i++) {
     const inventory = faker.helpers.arrayElement(inventoryRecords);
@@ -694,6 +699,7 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
 
     await prisma.stockMovement.create({
       data: {
+        organizationId,
         itemId: item.id,
         lotId: inventory.lotId,
         toLocationId: location.id,
@@ -787,6 +793,7 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
       tax += lineTax;
       
       orderItems.push({
+        organizationId,
         itemId: item.id,
         qtyOrdered,
         qtyShipped: ['SHIPPED', 'DELIVERED'].includes(status) ? qtyOrdered : 
@@ -808,9 +815,10 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
         requestedShipDate: faker.datatype.boolean(0.7) ? faker.date.soon({ days: 14, refDate: orderDate }) : null,
         status,
         subtotal,
-        tax,
-        total: subtotal + tax,
+        taxTotal: tax,
+        grandTotal: subtotal + tax,
         notes: faker.datatype.boolean(0.3) ? faker.lorem.sentence() : null,
+        createdById: adminUser.id,
         items: {
           create: orderItems
         }

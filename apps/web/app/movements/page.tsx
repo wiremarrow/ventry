@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Plus, Search, TrendingUp, TrendingDown, ArrowRight, MoreHorizontal, Eye, RotateCcw, Calendar, Filter } from 'lucide-react';
+import { Plus, Search, TrendingUp, TrendingDown, MoreHorizontal, Eye, RotateCcw, Calendar } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';

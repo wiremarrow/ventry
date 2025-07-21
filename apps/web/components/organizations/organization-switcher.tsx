@@ -30,7 +30,7 @@ export default function OrganizationSwitcher() {
 
   const handleSelectOrganization = async (org: NonNullable<typeof data>['organizations'][0]) => {
     // Don't switch if already in this organization
-    if (currentOrganization?.id === org.id) {
+    if (currentOrganization?.organizationId === org.id) {
       setIsOpen(false);
       return;
     }
@@ -57,7 +57,7 @@ export default function OrganizationSwitcher() {
     return <Skeleton className="h-10 w-48" />;
   }
 
-  const currentOrg = data?.organizations?.find(org => org.id === currentOrganization?.id) || data?.organizations?.[0];
+  const currentOrg = data?.organizations?.find(org => org.id === currentOrganization?.organizationId) || data?.organizations?.[0];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -91,7 +91,7 @@ export default function OrganizationSwitcher() {
                 </span>
               </div>
             </div>
-            {org.id === currentOrg?.id && (
+            {org.id === currentOrganization?.organizationId && (
               <Check className="h-4 w-4" />
             )}
           </DropdownMenuItem>

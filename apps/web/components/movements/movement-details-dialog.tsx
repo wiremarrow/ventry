@@ -175,10 +175,10 @@ export function MovementDetailsDialog({
                     <span className="text-sm text-muted-foreground">Lot Number</span>
                     <span className="font-medium">{movement.lot.lotNumber}</span>
                   </div>
-                  {movement.lot.expiryDate && (
+                  {movement.lot.expirationDate && (
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Expiry Date</span>
-                      <span>{formatDate(movement.lot.expiryDate)}</span>
+                      <span className="text-sm text-muted-foreground">Expiration Date</span>
+                      <span>{formatDate(movement.lot.expirationDate)}</span>
                     </div>
                   )}
                 </div>

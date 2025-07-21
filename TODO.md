@@ -48,6 +48,20 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Authentication Standardization COMPLETE** - Phase 1 Auth Flow (2025-01-18)
 ✅ **Items/Products Management COMPLETE** - Full CRUD with Categories & UOM (2025-01-18)
 ✅ **Row-Level Security Implementation COMPLETE** - Enterprise Multi-Tenancy (2025-01-20)
+✅ **Database Admin Operations & Comprehensive Seeding COMPLETE** (2025-07-21)
+- **Created db-admin.sh script** for consistent admin database operations
+- **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
+- **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)
+- **Comprehensive demo data** seeding with full inventory scenario:
+  - 45 products across Electronics, Office Supplies, and Furniture categories
+  - 4 warehouses (Main, West Coast, East Coast, Central) with 40 locations total
+  - 540 inventory records tracking stock levels across locations
+  - 365 historical stock movements showing realistic activity
+  - 25 customers and 33 orders with various statuses
+  - 12 suppliers with lead time and contact information
+- **Renamed migrate-with-admin.sh** to db-admin.sh for broader database admin functionality
+- **Updated all package.json scripts** to use unified db-admin.sh approach
+- **Updated CLAUDE.md** with new database operation patterns and documentation
 - **Complete tRPC + Fastify backend** with end-to-end type-safe API architecture
 - **Comprehensive Prisma database schema** with inventory models and proper PostgreSQL enums
 - **JWT authentication with role-based access control** (Admin/Manager/User) via tRPC procedures

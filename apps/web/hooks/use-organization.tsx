@@ -4,7 +4,6 @@ import { createContext, useContext, useEffect, ReactNode, useState } from 'react
 import { trpc } from '@/lib/trpc';
 import { 
   useOrganizationStore,
-  useActiveOrganizationId,
   useActiveOrganization,
   useSetActiveOrganization,
   type OrganizationMembership

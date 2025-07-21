@@ -8,15 +8,15 @@
   "scripts": {
     "build": "tsc",
     "db:generate": "dotenv -e ../../.env -- prisma generate",
-    "db:push": "./scripts/migrate-with-admin.sh db push --accept-data-loss",
-    "db:migrate": "./scripts/migrate-with-admin.sh migrate dev",
-    "db:migrate:deploy": "./scripts/migrate-with-admin.sh migrate deploy",
+    "db:push": "./scripts/db-admin.sh db push --accept-data-loss",
+    "db:migrate": "./scripts/db-admin.sh migrate dev",
+    "db:migrate:deploy": "./scripts/db-admin.sh migrate deploy",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
-    "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
-    "db:seed:basic": "dotenv -e ../../.env -- tsx prisma/seed.ts --basic",
-    "db:seed:comprehensive": "dotenv -e ../../.env -- tsx prisma/seed.ts --comprehensive",
-    "db:seed:multi-org": "dotenv -e ../../.env -- tsx prisma/seed-multi-org.ts",
-    "db:reset": "./scripts/migrate-with-admin.sh migrate reset --force"
+    "db:seed": "./scripts/db-admin.sh seed",
+    "db:seed:basic": "./scripts/db-admin.sh seed --basic",
+    "db:seed:comprehensive": "./scripts/db-admin.sh seed --comprehensive",
+    "db:seed:multi-org": "./scripts/db-admin.sh seed --multi-org",
+    "db:reset": "./scripts/db-admin.sh migrate reset --force"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",

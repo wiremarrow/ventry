@@ -1,24 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Skeleton, Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
+import { Card, Input, Button, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
 import { 
   Plus, 
   Search, 
   MoreHorizontal, 
   Eye, 
-  Truck,
   Package,
-  CheckCircle2,
   XCircle,
-  Clock,
-  Send,
-  Calendar,
-  DollarSign
+  Send
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
-import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { CreateShipmentDialog } from '@/components/shipments/create-shipment-dialog';
@@ -245,7 +240,9 @@ export default function ShipmentsPage() {
                           {shipment.order.orderNumber}
                         </div>
                       </TableCell>
-                      <TableCell>{shipment.order.customer.name}</TableCell>
+                      <TableCell>
+                        {shipment.order?.customer?.firstName || ''} {shipment.order?.customer?.lastName || ''}
+                      </TableCell>
                       <TableCell>
                         {shipment.shipDate ? formatDate(shipment.shipDate) : '-'}
                       </TableCell>

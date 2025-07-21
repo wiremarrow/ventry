@@ -3,8 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { Card, Button, Badge, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { 
-  ArrowLeft, 
-  Edit,
+  ArrowLeft,
   CheckCircle,
   Package,
   Truck,
@@ -17,7 +16,7 @@ import {
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 
@@ -26,7 +25,7 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const orderId = params.id as string;
 
-  const { data: order, isLoading, refetch } = trpc.orders.getById.useQuery(
+  const { data: order, isLoading, refetch } = trpc.orders.get.useQuery(
     { id: orderId },
     { enabled: !!orderId }
   );
@@ -248,10 +247,8 @@ export default function OrderDetailPage() {
                     </div>
                   )}
                   <div>
-                    <p className="text-sm text-muted-foreground">Created By</p>
-                    <p className="font-medium">
-                      {order.createdBy.firstName} {order.createdBy.lastName}
-                    </p>
+                    <p className="text-sm text-muted-foreground">Created</p>
+                    <p className="font-medium">{formatDate(order.createdAt)}</p>
                   </div>
                 </div>
               </div>
@@ -271,11 +268,11 @@ export default function OrderDetailPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Tax</span>
-                    <span className="font-medium">{formatCurrency(parseFloat(order.tax.toString()))}</span>
+                    <span className="font-medium">{formatCurrency(parseFloat(order.taxTotal.toString()))}</span>
                   </div>
                   <div className="flex justify-between text-lg">
                     <span className="font-semibold">Total</span>
-                    <span className="font-bold">{formatCurrency(parseFloat(order.total.toString()))}</span>
+                    <span className="font-bold">{formatCurrency(parseFloat(order.grandTotal.toString()))}</span>
                   </div>
                 </div>
               </div>
@@ -386,11 +383,11 @@ export default function OrderDetailPage() {
                 <TableBody>
                   {order.shipments.map((shipment) => (
                     <TableRow key={shipment.id}>
-                      <TableCell>{formatDate(shipment.shipDate)}</TableCell>
-                      <TableCell>{shipment.carrierName}</TableCell>
+                      <TableCell>{shipment.shipDate ? formatDate(shipment.shipDate) : '-'}</TableCell>
+                      <TableCell>{shipment.carrier?.name || '-'}</TableCell>
                       <TableCell>{shipment.trackingNumber || '-'}</TableCell>
-                      <TableCell>{shipment.items.length} items</TableCell>
-                      <TableCell>{formatCurrency(parseFloat(shipment.shippingCost.toString()))}</TableCell>
+                      <TableCell>{shipment.items?.length || 0} items</TableCell>
+                      <TableCell>{shipment.shippingCost ? formatCurrency(parseFloat(shipment.shippingCost.toString())) : '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

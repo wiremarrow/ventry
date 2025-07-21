@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress } from '@ventry/ui';
-import { Plus, Search, MapPin, Thermometer, Package, MoreHorizontal, Edit } from 'lucide-react';
+import { Plus, Search, MapPin, Thermometer, MoreHorizontal, Edit } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -16,9 +16,7 @@ export default function LocationsPage() {
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
 
   // Fetch all warehouses for filter
-  const { data: warehousesData } = trpc.warehouses.list.useQuery({
-    limit: 100,
-  });
+  const { data: warehousesData } = trpc.warehouses.list.useQuery({});
 
   // Fetch locations from all warehouses
   const { data: locationsData, isLoading, refetch } = trpc.warehouses.listAllLocations.useQuery({
@@ -129,7 +127,7 @@ export default function LocationsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Warehouses</SelectItem>
-                  {warehousesData?.warehouses?.map((warehouse) => (
+                  {warehousesData?.map((warehouse) => (
                     <SelectItem key={warehouse.id} value={warehouse.id}>
                       {warehouse.name}
                     </SelectItem>

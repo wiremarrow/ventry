@@ -33,10 +33,8 @@ import {
   TableRow,
   Textarea,
   Badge,
-  Alert,
-  AlertDescription,
 } from '@ventry/ui';
-import { Package, Truck, AlertCircle, CheckCircle2, MapPin } from 'lucide-react';
+import { Package, Truck, CheckCircle2, MapPin } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 
