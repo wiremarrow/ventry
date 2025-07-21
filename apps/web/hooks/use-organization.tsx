@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { 
   useOrganizationStore,
@@ -25,6 +25,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { setOrganizations, clearActiveOrganization, setLoading } = useOrganizationStore();
   const isLoading = useOrganizationStore((state) => state.isLoading);
   const utils = trpc.useUtils();
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const { data: organizations, isLoading: isLoadingOrgs } = trpc.organizations.list.useQuery();
 
@@ -69,11 +70,28 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   });
 
   const setOrganization = async (orgId: string) => {
-    // Update local state immediately for responsiveness
-    setActiveOrganization(orgId);
+    // Prevent concurrent switches
+    if (isSwitching) {
+      console.warn('Organization switch already in progress');
+      return;
+    }
     
-    // Send organization change to server
-    await switchOrgMutation.mutateAsync({ organizationId: orgId });
+    // Don't switch if already in this organization
+    if (activeOrganization?.organizationId === orgId) {
+      return;
+    }
+    
+    setIsSwitching(true);
+    
+    try {
+      // Update local state immediately for responsiveness
+      setActiveOrganization(orgId);
+      
+      // Send organization change to server
+      await switchOrgMutation.mutateAsync({ organizationId: orgId });
+    } finally {
+      setIsSwitching(false);
+    }
   };
 
   const clearOrganization = () => {

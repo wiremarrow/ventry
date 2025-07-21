@@ -91,6 +91,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       show: true, // TODO: Add proper permission check
     },
     {
+      label: 'Shipments',
+      href: '/shipments',
+      icon: TruckIcon,
+      show: true, // TODO: Add proper permission check
+    },
+    {
       label: 'Categories',
       href: '/categories',
       icon: Tags,

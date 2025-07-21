@@ -29,6 +29,12 @@ export default function OrganizationSwitcher() {
   const { data: organizations, isLoading } = trpc.organizations.list.useQuery();
 
   const handleSelectOrganization = async (org: typeof organizations extends Array<infer T> ? T : never) => {
+    // Don't switch if already in this organization
+    if (currentOrganization?.id === org.id) {
+      setIsOpen(false);
+      return;
+    }
+    
     try {
       await setOrganization(org.id);
       setIsOpen(false);
