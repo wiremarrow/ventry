@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@ventry/ui';
 import { Card } from '@ventry/ui';
 import { Badge } from '@ventry/ui';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import {
   FileText,
   Download,
@@ -132,111 +134,117 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Reports</h1>
-        <p className="text-gray-600">Generate insights and analytics from your inventory data</p>
-      </div>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="flex flex-col gap-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">Reports</h1>
+              <p className="text-muted-foreground">Generate insights and analytics from your inventory data</p>
+            </div>
+          </div>
 
-      {/* Category Filter */}
-      <div className="flex gap-2 mb-6 flex-wrap">
-        {categories.map((category) => (
-          <Button
-            key={category}
-            variant={selectedCategory === category ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setSelectedCategory(category)}
-          >
-            {category}
-          </Button>
-        ))}
-      </div>
+          {/* Category Filter */}
+          <div className="flex gap-2 flex-wrap">
+            {categories.map((category) => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
 
-      {/* Reports Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredReports.map((report) => {
-          const Icon = report.icon;
-          return (
-            <Card key={report.id} className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <Icon className="h-6 w-6 text-gray-700" />
+          {/* Reports Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredReports.map((report) => {
+              const Icon = report.icon;
+              return (
+                <Card key={report.id} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-2 bg-gray-100 rounded-lg">
+                      <Icon className="h-6 w-6 text-gray-700" />
+                    </div>
+                    <Badge variant={getFrequencyBadge(report.frequency)}>
+                      {report.frequency}
+                    </Badge>
+                  </div>
+                  
+                  <h3 className="font-semibold text-lg mb-2">{report.name}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{report.description}</p>
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(report.category)}`}>
+                      {report.category}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Last run: {report.lastRun}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button className="flex-1" size="sm">
+                      <FileText className="h-4 w-4 mr-2" />
+                      View
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Calendar className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Reports Run Today</p>
+                  <p className="text-2xl font-bold">23</p>
                 </div>
-                <Badge variant={getFrequencyBadge(report.frequency)}>
-                  {report.frequency}
-                </Badge>
-              </div>
-              
-              <h3 className="font-semibold text-lg mb-2">{report.name}</h3>
-              <p className="text-sm text-gray-600 mb-4">{report.description}</p>
-              
-              <div className="flex items-center justify-between mb-4">
-                <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(report.category)}`}>
-                  {report.category}
-                </span>
-                <span className="text-xs text-gray-500">
-                  Last run: {report.lastRun}
-                </span>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button className="flex-1" size="sm">
-                  <FileText className="h-4 w-4 mr-2" />
-                  View
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4" />
-                </Button>
+                <BarChart3 className="h-8 w-8 text-blue-500" />
               </div>
             </Card>
-          );
-        })}
-      </div>
-
-      {/* Quick Stats */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Reports Run Today</p>
-              <p className="text-2xl font-bold">23</p>
-            </div>
-            <BarChart3 className="h-8 w-8 text-blue-500" />
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Scheduled Reports</p>
+                  <p className="text-2xl font-bold">12</p>
+                </div>
+                <Calendar className="h-8 w-8 text-green-500" />
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Alerts</p>
+                  <p className="text-2xl font-bold">3</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-orange-500" />
+              </div>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Report Templates</p>
+                  <p className="text-2xl font-bold">15</p>
+                </div>
+                <FileText className="h-8 w-8 text-purple-500" />
+              </div>
+            </Card>
           </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Scheduled Reports</p>
-              <p className="text-2xl font-bold">12</p>
-            </div>
-            <Calendar className="h-8 w-8 text-green-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Alerts</p>
-              <p className="text-2xl font-bold">3</p>
-            </div>
-            <AlertTriangle className="h-8 w-8 text-orange-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Report Templates</p>
-              <p className="text-2xl font-bold">15</p>
-            </div>
-            <FileText className="h-8 w-8 text-purple-500" />
-          </div>
-        </Card>
-      </div>
-    </div>
+        </div>
+      </DashboardLayout>
+    </ProtectedRoute>
   );
 }
