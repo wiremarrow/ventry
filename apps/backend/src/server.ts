@@ -45,8 +45,9 @@ await server.register(helmet, {
 // await server.register(compress);
 
 await server.register(rateLimit, {
-  max: 100,
+  max: 500, // Increased from 100 to accommodate frontend needs
   timeWindow: '1 minute',
+  // TODO: Implement per-user rate limiting with different limits for authenticated users
 });
 
 await server.register(websocket);
