@@ -846,6 +846,603 @@ async function seedInventoryAndOperations(organizationId: string, data: any) {
   console.log(`📍 Total locations: ${allLocations.length}`);
 }
 
+async function seedShippingAndPaymentMethods(organizationId: string) {
+  if (!isComprehensive) return;
+  
+  console.log('💳 Creating payment methods and shipping options...');
+  
+  // Create payment methods
+  const paymentMethods = [
+    { methodName: 'Credit Card', provider: 'Stripe', detailsJson: { acceptedCards: ['Visa', 'MasterCard', 'AMEX'] }, isActive: true },
+    { methodName: 'Wire Transfer', provider: 'Bank', detailsJson: { type: 'wire' }, isActive: true },
+    { methodName: 'ACH Transfer', provider: 'Bank', detailsJson: { type: 'ach' }, isActive: true },
+    { methodName: 'Check', provider: null, detailsJson: null, isActive: true },
+    { methodName: 'Cash', provider: null, detailsJson: null, isActive: true },
+    { methodName: 'Net 30', provider: null, detailsJson: { terms: 30 }, isActive: true },
+    { methodName: 'Net 60', provider: null, detailsJson: { terms: 60 }, isActive: true },
+  ];
+
+  const createdPaymentMethods = [];
+  for (const method of paymentMethods) {
+    const created = await prisma.paymentMethod.create({
+      data: {
+        organizationId,
+        ...method
+      }
+    });
+    createdPaymentMethods.push(created);
+  }
+  
+  // Create carriers
+  const carriers = [
+    { name: 'FedEx', website: 'https://www.fedex.com', trackingUrlTpl: 'https://www.fedex.com/fedextrack/?tracknumbers={tracking}' },
+    { name: 'UPS', website: 'https://www.ups.com', trackingUrlTpl: 'https://www.ups.com/track?tracknum={tracking}' },
+    { name: 'USPS', website: 'https://www.usps.com', trackingUrlTpl: 'https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking}' },
+    { name: 'DHL Express', website: 'https://www.dhl.com', trackingUrlTpl: 'https://www.dhl.com/en/express/tracking.html?AWB={tracking}' },
+    { name: 'Local Delivery', website: null, trackingUrlTpl: null },
+  ];
+
+  const createdCarriers = [];
+  for (const carrier of carriers) {
+    const existing = await prisma.carrier.findFirst({
+      where: { name: carrier.name }
+    });
+    
+    if (!existing) {
+      const created = await prisma.carrier.create({
+        data: {
+          organizationId,
+          ...carrier
+        }
+      });
+      createdCarriers.push(created);
+    } else {
+      createdCarriers.push(existing);
+    }
+  }
+  
+  // Create shipping methods
+  const shippingMethods = [
+    { serviceName: 'Standard Shipping', carrierId: createdCarriers[0].id, transitDays: 7, baseCost: 9.99 },
+    { serviceName: 'Express Shipping', carrierId: createdCarriers[0].id, transitDays: 3, baseCost: 19.99 },
+    { serviceName: 'Overnight Shipping', carrierId: createdCarriers[0].id, transitDays: 1, baseCost: 39.99 },
+    { serviceName: 'Ground Shipping', carrierId: createdCarriers[1].id, transitDays: 5, baseCost: 12.99 },
+    { serviceName: 'Priority Mail', carrierId: createdCarriers[2].id, transitDays: 3, baseCost: 8.99 },
+    { serviceName: 'Local Delivery', carrierId: createdCarriers[4].id, transitDays: 0, baseCost: 15.00 },
+  ];
+
+  const createdShippingMethods = [];
+  for (const method of shippingMethods) {
+    const created = await prisma.shippingMethod.create({
+      data: {
+        organizationId,
+        ...method
+      }
+    });
+    createdShippingMethods.push(created);
+  }
+  
+  console.log(`💳 Created ${createdPaymentMethods.length} payment methods`);
+  console.log(`🚚 Created ${createdCarriers.length} carriers`);
+  console.log(`📦 Created ${createdShippingMethods.length} shipping methods`);
+  
+  return { paymentMethods: createdPaymentMethods, carriers: createdCarriers, shippingMethods: createdShippingMethods };
+}
+
+async function seedCustomerAddresses(organizationId: string, customers: any[]) {
+  if (!isComprehensive || !customers) return;
+  
+  console.log('🏠 Creating customer addresses...');
+  
+  let addressCount = 0;
+  for (const customer of customers) {
+    // Create billing address
+    const billingAddress = await prisma.address.create({
+      data: {
+        organizationId,
+        customerId: customer.id,
+        addressType: 'BILLING',
+        isDefault: true,
+        line1: faker.location.streetAddress(),
+        line2: faker.datatype.boolean(0.3) ? faker.location.secondaryAddress() : null,
+        city: faker.location.city(),
+        state: faker.location.state({ abbreviated: true }),
+        postalCode: faker.location.zipCode(),
+        country: 'US',
+        phone: customer.phone,
+        attention: `${customer.firstName} ${customer.lastName}`,
+      }
+    });
+    addressCount++;
+    
+    // 70% chance of having a different shipping address
+    if (faker.datatype.boolean(0.7)) {
+      await prisma.address.create({
+        data: {
+          organizationId,
+          customerId: customer.id,
+          addressType: 'SHIPPING',
+          isDefault: false,
+          line1: faker.location.streetAddress(),
+          line2: faker.datatype.boolean(0.3) ? faker.location.secondaryAddress() : null,
+          city: faker.location.city(),
+          state: faker.location.state({ abbreviated: true }),
+          postalCode: faker.location.zipCode(),
+          country: 'US',
+          phone: customer.phone,
+          attention: `${customer.firstName} ${customer.lastName}`,
+        }
+      });
+      addressCount++;
+    }
+  }
+  
+  console.log(`🏠 Created ${addressCount} customer addresses`);
+}
+
+async function seedPurchaseOrders(organizationId: string, suppliers: any[], items: any[], adminUser: any) {
+  if (!isComprehensive || !suppliers || !items || !adminUser) return;
+  
+  console.log('📋 Creating purchase orders...');
+  
+  const purchaseOrders = [];
+  const poCount = faker.number.int({ min: 15, max: 25 });
+  
+  for (let i = 1; i <= poCount; i++) {
+    const supplier = faker.helpers.arrayElement(suppliers);
+    const orderDate = faker.date.recent({ days: 90 });
+    const status = faker.helpers.arrayElement(['DRAFT', 'SUBMITTED', 'APPROVED', 'PARTIAL', 'RECEIVED', 'CANCELLED']);
+    
+    // Create PO items
+    const itemCount = faker.number.int({ min: 2, max: 8 });
+    const poItems = [];
+    let subtotal = 0;
+    
+    // Select random items, preferring items from this supplier
+    const availableItems = items.filter(item => 
+      item.defaultSupplierId === supplier.id || faker.datatype.boolean(0.3)
+    );
+    
+    const selectedItems = faker.helpers.arrayElements(availableItems, { min: itemCount, max: itemCount });
+    
+    for (const item of selectedItems) {
+      const qtyOrdered = faker.number.int({ min: 10, max: 200 });
+      const unitCost = parseFloat(item.defaultCost) || faker.number.float({ min: 5, max: 500, fractionDigits: 2 });
+      const lineTotal = qtyOrdered * unitCost;
+      
+      let qtyReceived = 0;
+      if (status === 'RECEIVED') {
+        qtyReceived = qtyOrdered;
+      } else if (status === 'PARTIAL') {
+        qtyReceived = faker.number.int({ min: 1, max: qtyOrdered - 1 });
+      }
+      
+      poItems.push({
+        organizationId,
+        itemId: item.id,
+        qtyOrdered,
+        qtyReceived,
+        unitCost,
+        totalCost: lineTotal,
+        description: item.name
+      });
+      
+      subtotal += lineTotal;
+    }
+    
+    const tax = subtotal * 0.0875; // 8.75% tax
+    const total = subtotal + tax;
+    
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        organizationId,
+        poNumber: `PO-${String(i).padStart(5, '0')}`,
+        supplierId: supplier.id,
+        status,
+        orderDate,
+        expectedDate: faker.date.soon({ days: 30, refDate: orderDate }),
+        subtotal,
+        tax: tax,
+        total: total,
+        notes: faker.datatype.boolean(0.4) ? faker.lorem.sentence() : null,
+        createdById: adminUser.id,
+        approvedById: ['APPROVED', 'PARTIAL', 'RECEIVED'].includes(status) ? adminUser.id : null,
+        items: {
+          create: poItems
+        }
+      }
+    });
+    
+    purchaseOrders.push(po);
+  }
+  
+  console.log(`📋 Created ${purchaseOrders.length} purchase orders`);
+  return purchaseOrders;
+}
+
+async function seedReceipts(organizationId: string, purchaseOrders: any[], warehouses: any[], adminUser: any) {
+  if (!isComprehensive || !purchaseOrders || !warehouses || !adminUser) return;
+  
+  console.log('📥 Creating receipts...');
+  
+  const receipts = [];
+  const receivablePOs = purchaseOrders.filter(po => 
+    ['APPROVED', 'PARTIAL', 'RECEIVED'].includes(po.status)
+  );
+  
+  for (const po of receivablePOs) {
+    // Get PO with items
+    const poWithItems = await prisma.purchaseOrder.findUnique({
+      where: { id: po.id },
+      include: { items: true }
+    });
+    
+    if (!poWithItems) continue;
+    
+    // Create one or more receipts for this PO
+    const receiptCount = po.status === 'PARTIAL' ? faker.number.int({ min: 1, max: 3 }) : 1;
+    
+    for (let r = 0; r < receiptCount; r++) {
+      const receiptDate = faker.date.between({ 
+        from: po.orderDate, 
+        to: new Date() 
+      });
+      
+      const warehouse = faker.helpers.arrayElement(warehouses);
+      
+      // Get locations for this warehouse
+      const locations = await prisma.location.findMany({
+        where: { warehouseId: warehouse.id },
+        take: 5
+      });
+      
+      if (locations.length === 0) continue;
+      
+      // Create receipt items
+      const receiptItems = [];
+      for (const poItem of poWithItems.items) {
+        const remainingQty = poItem.qtyOrdered - poItem.qtyReceived;
+        if (remainingQty > 0) {
+          const qtyToReceive = po.status === 'PARTIAL' 
+            ? faker.number.int({ min: 1, max: Math.min(remainingQty, 50) })
+            : remainingQty;
+            
+          receiptItems.push({
+            organizationId,
+            itemId: poItem.itemId,
+            qtyReceived: qtyToReceive,
+            unitCost: poItem.unitCost,
+            locationId: faker.helpers.arrayElement(locations).id,
+            expirationDate: faker.datatype.boolean(0.1) ? faker.date.future({ years: 2 }) : null
+          });
+        }
+      }
+      
+      if (receiptItems.length > 0) {
+        const receipt = await prisma.receipt.create({
+          data: {
+            organizationId,
+            poId: po.id,
+            receivedDate: receiptDate,
+            receivedById: adminUser.id,
+            reference: `REC-${faker.string.numeric(5)}`,
+            notes: faker.datatype.boolean(0.3) ? faker.lorem.sentence() : null,
+            items: {
+              create: receiptItems
+            }
+          }
+        });
+        
+        receipts.push(receipt);
+      }
+    }
+  }
+  
+  console.log(`📥 Created ${receipts.length} receipts`);
+  return receipts;
+}
+
+async function seedShipments(organizationId: string, orders: any[], warehouses: any[], adminUser: any) {
+  if (!isComprehensive || !orders || !warehouses || !adminUser) return;
+  
+  console.log('📤 Creating shipments...');
+  
+  const shipments = [];
+  const shippableOrders = orders.filter(order => 
+    ['PROCESSING', 'SHIPPED', 'DELIVERED'].includes(order.status)
+  );
+  
+  // Get shipping methods
+  const shippingMethods = await prisma.shippingMethod.findMany({
+    where: { organizationId },
+    include: { carrier: true }
+  });
+  
+  for (const order of shippableOrders) {
+    // Get order with items
+    const orderWithItems = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: { 
+        items: true,
+        customer: {
+          include: {
+            addresses: {
+              where: { addressType: 'SHIPPING' }
+            }
+          }
+        }
+      }
+    });
+    
+    if (!orderWithItems || orderWithItems.items.length === 0) continue;
+    
+    const shippingAddress = orderWithItems.customer.addresses[0];
+    if (!shippingAddress) continue;
+    
+    const warehouse = faker.helpers.arrayElement(warehouses);
+    const shippingMethod = faker.helpers.arrayElement(shippingMethods);
+    
+    // Determine shipment status based on order status
+    let shipmentStatus = 'PENDING';
+    if (order.status === 'DELIVERED') {
+      shipmentStatus = 'DELIVERED';
+    } else if (order.status === 'SHIPPED') {
+      shipmentStatus = faker.helpers.arrayElement(['SHIPPED', 'IN_TRANSIT']);
+    } else {
+      shipmentStatus = faker.helpers.arrayElement(['PENDING', 'PICKED', 'PACKED']);
+    }
+    
+    // Create shipment items
+    const shipmentItems = orderWithItems.items.map(item => ({
+      organizationId,
+      orderItemId: item.id,
+      itemId: item.itemId,
+      qtyShipped: item.qtyShipped,
+      lotId: null,
+      serialId: null
+    }));
+    
+    // Get locations from warehouse for shipping from
+    const warehouseLocations = await prisma.location.findMany({
+      where: { warehouseId: warehouse.id },
+      take: 1
+    });
+    
+    if (warehouseLocations.length === 0) continue;
+    
+    const shipment = await prisma.shipment.create({
+      data: {
+        organizationId,
+        shipmentNumber: `SHIP-${faker.string.numeric(5)}`,
+        orderId: order.id,
+        shippedFromLocationId: warehouseLocations[0].id,
+        status: shipmentStatus,
+        carrierId: shippingMethod.carrier?.id || null,
+        carrierService: shippingMethod.serviceName,
+        trackingNumber: ['SHIPPED', 'IN_TRANSIT', 'DELIVERED'].includes(shipmentStatus) 
+          ? faker.string.alphanumeric(15).toUpperCase() 
+          : null,
+        shippingCost: shippingMethod.baseCost,
+        shipDate: ['SHIPPED', 'IN_TRANSIT', 'DELIVERED'].includes(shipmentStatus)
+          ? faker.date.between({ from: order.orderDate, to: new Date() })
+          : null,
+        expectedDelivery: ['SHIPPED', 'IN_TRANSIT'].includes(shipmentStatus)
+          ? faker.date.soon({ days: shippingMethod.transitDays || 3 })
+          : shipmentStatus === 'DELIVERED' ? faker.date.recent({ days: 7 }) : null,
+        weightKg: faker.number.float({ min: 0.5, max: 50, fractionDigits: 2 }),
+        notes: faker.datatype.boolean(0.3) ? faker.lorem.sentence() : null,
+        shippedById: adminUser.id,
+        items: {
+          create: shipmentItems
+        }
+      }
+    });
+    
+    shipments.push(shipment);
+  }
+  
+  console.log(`📤 Created ${shipments.length} shipments`);
+  return shipments;
+}
+
+async function seedReturns(organizationId: string, orders: any[], warehouses: any[], adminUser: any) {
+  if (!isComprehensive || !orders || !warehouses || !adminUser) return;
+  
+  console.log('↩️ Creating returns...');
+  
+  const returns = [];
+  const deliveredOrders = orders.filter(order => order.status === 'DELIVERED');
+  
+  // Create returns for 15% of delivered orders
+  const ordersToReturn = faker.helpers.arrayElements(
+    deliveredOrders, 
+    { min: Math.floor(deliveredOrders.length * 0.1), max: Math.floor(deliveredOrders.length * 0.2) }
+  );
+  
+  for (const order of ordersToReturn) {
+    // Get order with items
+    const orderWithItems = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: { items: true }
+    });
+    
+    if (!orderWithItems || orderWithItems.items.length === 0) continue;
+    
+    const returnDate = faker.date.between({ from: order.orderDate, to: new Date() });
+    const warehouse = faker.helpers.arrayElement(warehouses);
+    const status = faker.helpers.arrayElement(['PENDING', 'APPROVED', 'RECEIVED', 'PROCESSED', 'REJECTED']);
+    
+    // Select items to return (1-3 items)
+    const itemsToReturn = faker.helpers.arrayElements(
+      orderWithItems.items,
+      { min: 1, max: Math.min(3, orderWithItems.items.length) }
+    );
+    
+    const returnItems = itemsToReturn.map(item => {
+      const qtyToReturn = faker.number.int({ min: 1, max: item.qtyShipped });
+      return {
+        organizationId,
+        orderItemId: item.id,
+        itemId: item.itemId,
+        qtyReturned: qtyToReturn,
+        reason: faker.helpers.arrayElement(['DEFECTIVE', 'WRONG_ITEM', 'NOT_AS_DESCRIBED', 'DAMAGED', 'OTHER']),
+        condition: faker.helpers.arrayElement(['NEW', 'OPENED', 'USED', 'DAMAGED']),
+        refundAmount: qtyToReturn * parseFloat(item.unitPrice.toString()),
+        notes: faker.datatype.boolean(0.5) ? faker.lorem.sentence() : null
+      };
+    });
+    
+    const subtotal = returnItems.reduce((sum, item) => sum + item.refundAmount, 0);
+    const tax = subtotal * 0.0875;
+    
+    const returnOrder = await prisma.return.create({
+      data: {
+        organizationId,
+        returnNumber: `RET-${faker.string.numeric(5)}`,
+        orderId: order.id,
+        customerId: order.customerId,
+        status,
+        returnDate,
+        warehouseId: warehouse.id,
+        reason: faker.helpers.arrayElement(['DEFECTIVE', 'WRONG_ITEM', 'NOT_AS_DESCRIBED', 'CUSTOMER_CHANGED_MIND', 'OTHER']),
+        subtotal,
+        taxRefund: tax,
+        shippingRefund: faker.datatype.boolean(0.3) ? faker.number.float({ min: 5, max: 20, fractionDigits: 2 }) : 0,
+        totalRefund: subtotal + tax,
+        notes: faker.datatype.boolean(0.4) ? faker.lorem.sentence() : null,
+        processedById: ['PROCESSED', 'REJECTED'].includes(status) ? adminUser.id : null,
+        processedAt: ['PROCESSED', 'REJECTED'].includes(status) ? faker.date.recent({ days: 7 }) : null,
+        items: {
+          create: returnItems
+        }
+      }
+    });
+    
+    returns.push(returnOrder);
+  }
+  
+  console.log(`↩️ Created ${returns.length} returns`);
+  return returns;
+}
+
+async function seedCycleCountsAndAdjustments(organizationId: string, warehouses: any[], inventory: any[], adminUser: any) {
+  if (!isComprehensive || !warehouses || !inventory || !adminUser) return;
+  
+  console.log('📊 Creating cycle counts and stock adjustments...');
+  
+  // Create cycle counts
+  const cycleCounts = [];
+  const cycleCountNum = faker.number.int({ min: 5, max: 10 });
+  
+  for (let i = 0; i < cycleCountNum; i++) {
+    const warehouse = faker.helpers.arrayElement(warehouses);
+    const status = faker.helpers.arrayElement(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']);
+    const countDate = faker.date.recent({ days: 60 });
+    
+    // Get some locations from this warehouse
+    const locations = await prisma.location.findMany({
+      where: { warehouseId: warehouse.id },
+      take: faker.number.int({ min: 3, max: 8 })
+    });
+    
+    if (locations.length === 0) continue;
+    
+    // Get inventory for these locations
+    const locationIds = locations.map(l => l.id);
+    const inventoryToCount = await prisma.inventory.findMany({
+      where: { 
+        locationId: { in: locationIds },
+        qtyOnHand: { gt: 0 }
+      },
+      take: faker.number.int({ min: 5, max: 15 })
+    });
+    
+    if (inventoryToCount.length === 0) continue;
+    
+    // Create a cycle count for each location
+    for (const location of locations) {
+      // Get inventory for this specific location
+      const locationInventory = inventoryToCount.filter(inv => inv.locationId === location.id);
+      if (locationInventory.length === 0) continue;
+      
+      // Create cycle count items for this location
+      const locationCountItems = locationInventory.map(inv => {
+        const variance = faker.number.int({ min: -5, max: 5 });
+        const countedQty = Math.max(0, inv.qtyOnHand + variance);
+        
+        return {
+          organizationId,
+          itemId: inv.itemId,
+          qtyCounted: countedQty,
+          qtySystem: inv.qtyOnHand,
+          variance
+        };
+      });
+      
+      const cycleCount = await prisma.cycleCount.create({
+        data: {
+          organizationId,
+          locationId: location.id,
+          countDate,
+          countedById: adminUser.id,
+          status,
+          reviewedById: status === 'COMPLETED' ? adminUser.id : null,
+          notes: faker.datatype.boolean(0.4) ? faker.lorem.sentence() : null,
+          items: {
+            create: locationCountItems
+          }
+        }
+      });
+      
+      cycleCounts.push(cycleCount);
+    }
+  }
+  
+  // Create stock adjustments
+  const adjustments = [];
+  const adjustmentNum = faker.number.int({ min: 10, max: 20 });
+  
+  // Select random inventory records to adjust
+  const inventoryToAdjust = faker.helpers.arrayElements(inventory, { min: adjustmentNum, max: adjustmentNum });
+  
+  for (const inv of inventoryToAdjust) {
+    const adjustmentQty = faker.number.int({ min: -10, max: 10 });
+    if (adjustmentQty === 0) continue;
+    
+    const newQty = Math.max(0, inv.qtyOnHand + adjustmentQty);
+    
+    const adjustment = await prisma.stockAdjustment.create({
+      data: {
+        organizationId,
+        itemId: inv.itemId,
+        locationId: inv.locationId,
+        lotId: inv.lotId || null,
+        qtyBefore: inv.qtyOnHand,
+        qtyAfter: newQty,
+        reason: faker.helpers.arrayElement([
+          'Cycle count variance',
+          'Damaged goods',
+          'Lost inventory',
+          'Found inventory',
+          'Expired product',
+          'Quality issue',
+          'Administrative adjustment'
+        ]),
+        notes: faker.lorem.sentence(),
+        adjustedById: adminUser.id,
+        adjustedAt: faker.date.recent({ days: 30 })
+      }
+    });
+    
+    adjustments.push(adjustment);
+  }
+  
+  console.log(`📊 Created ${cycleCounts.length} cycle counts`);
+  console.log(`📊 Created ${adjustments.length} stock adjustments`);
+  
+  return { cycleCounts, adjustments };
+}
+
 async function main() {
   console.log('🌱 Starting unified database seed...');
   
@@ -876,6 +1473,63 @@ async function main() {
         
         // Create inventory and operations data
         await seedInventoryAndOperations(organization.id, comprehensiveData);
+        
+        if (isComprehensive && comprehensiveData) {
+          // Create additional comprehensive data for all pages
+          await seedShippingAndPaymentMethods(organization.id);
+          
+          // Get customers to add addresses
+          const customers = await prisma.customer.findMany({
+            where: { organizationId: organization.id }
+          });
+          await seedCustomerAddresses(organization.id, customers);
+          
+          // Create purchase orders
+          const purchaseOrders = await seedPurchaseOrders(
+            organization.id, 
+            comprehensiveData.suppliers, 
+            comprehensiveData.items,
+            admin
+          );
+          
+          // Create receipts for purchase orders
+          await seedReceipts(
+            organization.id,
+            purchaseOrders,
+            comprehensiveData.warehouses,
+            admin
+          );
+          
+          // Get orders to create shipments
+          const orders = await prisma.order.findMany({
+            where: { organizationId: organization.id }
+          });
+          await seedShipments(
+            organization.id,
+            orders,
+            comprehensiveData.warehouses,
+            admin
+          );
+          
+          // Create returns
+          await seedReturns(
+            organization.id,
+            orders,
+            comprehensiveData.warehouses,
+            admin
+          );
+          
+          // Get inventory for cycle counts
+          const inventory = await prisma.inventory.findMany({
+            where: { organizationId: organization.id }
+          });
+          await seedCycleCountsAndAdjustments(
+            organization.id,
+            comprehensiveData.warehouses,
+            inventory,
+            admin
+          );
+        }
       }
     }
 
@@ -899,10 +1553,15 @@ async function main() {
         console.log('📊 Comprehensive demo data summary:');
         console.log('  • 45+ diverse products across Electronics, Office Supplies, Furniture');
         console.log('  • 12 suppliers with realistic contact information');
-        console.log('  • 500-2000+ inventory records across multiple locations');
-        console.log('  • 200-500 historical stock movements (last 90 days)');
-        console.log('  • 25-50 customers with complete profiles');
-        console.log('  • 25-50 sales orders across various statuses');
+        console.log('  • 540+ inventory records across multiple locations');
+        console.log('  • 365+ historical stock movements (last 90 days)');
+        console.log('  • 25+ customers with complete billing/shipping addresses');
+        console.log('  • 33+ sales orders across various statuses');
+        console.log('  • 15-25 purchase orders with receipts');
+        console.log('  • Shipments with tracking for delivered orders');
+        console.log('  • Customer returns for quality testing');
+        console.log('  • Cycle counts and stock adjustments');
+        console.log('  • Payment methods and shipping carriers');
         console.log('  • Realistic analytics data for meaningful dashboard metrics');
         console.log('  • Low stock scenarios for testing alerts and notifications');
       }
