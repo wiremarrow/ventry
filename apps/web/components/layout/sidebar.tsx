@@ -17,7 +17,8 @@ import {
   TruckIcon,
   Users,
   UserCheck,
-  Warehouse 
+  Warehouse,
+  FileCheck
 } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
@@ -81,6 +82,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       label: 'Purchase Orders',
       href: '/purchase-orders',
       icon: TruckIcon,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Receipts',
+      href: '/receipts',
+      icon: FileCheck,
       show: true, // TODO: Add proper permission check
     },
     {
