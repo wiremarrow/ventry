@@ -242,6 +242,9 @@ app/
 - **JWT Tokens**: Stateless authentication with organization context
 - **Role-Based Access Control**: Granular permissions (USER, ADMIN, MANAGER, etc.)
 - **Multi-Tenant Security**: Organization-level isolation with RLS
+  - All users, inventory, and business data scoped by organization
+  - Users page shows only members of the current organization
+  - Organization admins can only manage users within their organization
 - **API Security**: Rate limiting, CORS protection
 - **Data Validation**: Input sanitization, type checking
 - **Audit Logging**: Comprehensive action tracking
@@ -328,7 +331,7 @@ The system uses a centralized authentication architecture with secure signed coo
     - ✅ Locations with consolidated warehouse view
     - ✅ Stock movements with comprehensive tracking
     - ✅ Reports dashboard with templates and analytics
-    - ✅ Users management with role-based permissions and profile editing
+    - ✅ Users management with organization-scoped user lists and role-based permissions
     - ✅ Enhanced UI components library with comprehensive shadcn/ui integration
   - ✅ Enterprise Row-Level Security (RLS) implementation complete
   - 📅 Adding realtime capabilities with Supabase

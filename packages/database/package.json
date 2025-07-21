@@ -16,6 +16,7 @@
     "db:seed:basic": "./scripts/db-admin.sh seed --basic",
     "db:seed:comprehensive": "./scripts/db-admin.sh seed --comprehensive",
     "db:seed:multi-org": "./scripts/db-admin.sh seed --multi-org",
+    "db:seed:multi-org-comprehensive": "./scripts/db-admin.sh seed --multi-org-comprehensive",
     "db:reset": "./scripts/db-admin.sh migrate reset --force"
   },
   "dependencies": {

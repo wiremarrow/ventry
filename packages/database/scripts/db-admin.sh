@@ -47,6 +47,9 @@ case "$1" in
         if [ "$1" = "--multi-org" ]; then
             echo "🌱 Running multi-org seed with admin connection..."
             tsx prisma/seed-multi-org.ts
+        elif [ "$1" = "--multi-org-comprehensive" ]; then
+            echo "🌱 Running comprehensive multi-org seed with admin connection..."
+            tsx prisma/seed-multi-org-comprehensive.ts
         else
             echo "🌱 Running seed with admin connection..."
             tsx prisma/seed.ts "$@"

@@ -50,6 +50,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Row-Level Security Implementation COMPLETE** - Enterprise Multi-Tenancy (2025-01-20)
 ✅ **Database Admin Operations & Comprehensive Seeding COMPLETE** (2025-07-21)
 ✅ **Frontend Performance & Rate Limiting Fixes COMPLETE** (2025-07-21)
+✅ **Users Page RLS Fix COMPLETE** - Organization-Scoped User Management (2025-07-21)
 - **Created db-admin.sh script** for consistent admin database operations
 - **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
 - **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)
@@ -69,6 +70,13 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Fixed infinite re-render issues** on date-filtered pages (receipts, shipments, movements) using useMemo
   - **Resolved 429 rate limit errors** preventing data loading on multiple pages
   - **Fixed customers page data access** pattern to correctly handle paginated response structure
+- **Users Page RLS Fix**:
+  - **Converted users router** from protectedProcedure to organizationProcedure for proper multi-tenant isolation
+  - **Implemented organization filtering** - users now filtered through OrganizationMember relationship
+  - **Fixed critical RLS violation** where users could see accounts from other organizations
+  - **Updated permissions** - activate/deactivate now use organizationAdminProcedure
+  - **Enhanced frontend** - shows organization-specific user counts and permissions
+  - **Proper tenant isolation** - all user queries now respect organization boundaries
 - **Complete tRPC + Fastify backend** with end-to-end type-safe API architecture
 - **Comprehensive Prisma database schema** with inventory models and proper PostgreSQL enums
 - **JWT authentication with role-based access control** (Admin/Manager/User) via tRPC procedures

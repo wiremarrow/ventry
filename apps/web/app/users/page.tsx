@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card, Input, Button, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Search, MoreHorizontal, Edit, UserCheck, UserX, Users as UsersIcon, Shield, User, Clock } from 'lucide-react';
+import { Search, MoreHorizontal, Edit, UserCheck, UserX, Users as UsersIcon, Clock } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -11,6 +11,7 @@ import { UserStatusBadge } from '@/components/users/user-status-badge';
 import { UserRoleBadge } from '@/components/users/user-role-badge';
 import { formatDateTime } from '@/lib/utils';
 import { useAuthStore } from '@/lib/auth-store';
+import { useOrganization } from '@/hooks/use-organization';
 import { toast } from '@/hooks/use-toast';
 
 export default function UsersPage() {
@@ -18,8 +19,10 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { user: currentUser } = useAuthStore();
+  const { currentOrganization } = useOrganization();
   
-  const isAdmin = currentUser?.role === 'ADMIN';
+  // Check if user is organization admin (OWNER or ADMIN role in the organization)
+  const isOrgAdmin = currentOrganization && ['OWNER', 'ADMIN'].includes(currentOrganization.role);
 
   // Fetch users
   const { data: users, isLoading, refetch } = trpc.users.list.useQuery();
@@ -75,8 +78,7 @@ export default function UsersPage() {
   const stats = {
     total: users?.length || 0,
     active: users?.filter(u => u.isActive).length || 0,
-    admins: users?.filter(u => u.role === 'ADMIN').length || 0,
-    managers: users?.filter(u => u.role === 'MANAGER').length || 0,
+    inactive: users?.filter(u => !u.isActive).length || 0,
   };
 
   const handleEdit = (userId: string) => {
@@ -102,15 +104,15 @@ export default function UsersPage() {
         <div className="flex flex-col gap-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">Users</h1>
+              <h1 className="text-3xl font-bold">Organization Users</h1>
               <p className="text-muted-foreground">
-                Manage system users and their permissions
+                Manage users in your organization
               </p>
             </div>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
@@ -132,19 +134,10 @@ export default function UsersPage() {
             <Card className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Admins</p>
-                  <p className="text-2xl font-bold">{stats.admins}</p>
+                  <p className="text-sm text-muted-foreground">Inactive Users</p>
+                  <p className="text-2xl font-bold">{stats.inactive}</p>
                 </div>
-                <Shield className="h-8 w-8 text-purple-500" />
-              </div>
-            </Card>
-            <Card className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Managers</p>
-                  <p className="text-2xl font-bold">{stats.managers}</p>
-                </div>
-                <User className="h-8 w-8 text-orange-500" />
+                <UserX className="h-8 w-8 text-red-500" />
               </div>
             </Card>
           </div>
@@ -239,7 +232,7 @@ export default function UsersPage() {
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </DropdownMenuItem>
-                            {isAdmin && user.id !== currentUser?.id && (
+                            {isOrgAdmin && user.id !== currentUser?.id && (
                               <>
                                 {user.isActive ? (
                                   <DropdownMenuItem 
