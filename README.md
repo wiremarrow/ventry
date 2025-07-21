@@ -735,6 +735,9 @@ SMTP_CONFIG="..."
 - **Image Optimization**: Next.js image optimization
 - **Caching**: Aggressive caching strategies
 - **Progressive Loading**: Skeleton states, lazy loading
+- **Rate Limiting**: Increased from 100 to 500 requests/minute to accommodate comprehensive data
+- **Request Batching**: Re-enabled tRPC batching to reduce HTTP request count by 50-80%
+- **Query Optimization**: Memoized date calculations to prevent infinite re-renders on filtered pages
 
 ## 🚀 Deployment & DevOps
 

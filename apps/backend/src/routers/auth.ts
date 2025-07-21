@@ -92,4 +92,24 @@ export const authRouter = createTRPCRouter({
       const { token: _token, ...authResult } = result;
       return authResult;
     }),
+
+  // Debug endpoint to check current context
+  debug: protectedProcedure.query(({ ctx }) => {
+    const req = ctx.req as any;
+    return {
+      user: {
+        id: ctx.user.id,
+        email: ctx.user.email,
+        organizationId: ctx.user.organizationId,
+        organizationRole: ctx.user.organizationRole,
+      },
+      headers: {
+        'x-organization-id': req.headers['x-organization-id'],
+      },
+      cookies: {
+        'active-organization': req.cookies?.['active-organization'] || 'not found',
+        'auth-token': req.cookies?.['auth-token'] ? 'present' : 'not found',
+      },
+    };
+  }),
 });

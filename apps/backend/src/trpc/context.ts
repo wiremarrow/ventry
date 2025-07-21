@@ -87,6 +87,14 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
                        getOrganizationFromCookie(request) || 
                        jwtResult.organizationId;
           
+          // Debug logging
+          logger.debug({
+            headerOrgId: request.headers['x-organization-id'],
+            cookieOrgId: getOrganizationFromCookie(request),
+            jwtOrgId: jwtResult.organizationId,
+            finalOrgId: orgId,
+          }, 'Organization ID sources');
+          
           let organizationId: string | undefined;
           let organizationRole: AuthenticatedUser['organizationRole'] | undefined;
           
@@ -124,6 +132,11 @@ export async function createContext({ req, res }: CreateFastifyContextOptions) {
                 organizationId: orgId,
                 organizationRole: membership.role,
               }, 'RLS context configured for authenticated user with organization');
+            } else {
+              logger.warn({
+                userId: foundUser.id,
+                attemptedOrgId: orgId,
+              }, 'User does not have membership in requested organization');
             }
           }
           

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
 import { Plus, Search, TrendingUp, TrendingDown, MoreHorizontal, Eye, RotateCcw, Calendar } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
@@ -20,11 +20,14 @@ export default function MovementsPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [page, setPage] = useState(1);
 
-  // Calculate date filters
-  const dateFrom = new Date();
-  dateFrom.setDate(dateFrom.getDate() - dateRange.from);
-  const dateTo = new Date();
-  dateTo.setDate(dateTo.getDate() - dateRange.to);
+  // Calculate date filters - memoized to prevent re-renders
+  const { dateFrom, dateTo } = useMemo(() => {
+    const from = new Date();
+    from.setDate(from.getDate() - dateRange.from);
+    const to = new Date();
+    to.setDate(to.getDate() - dateRange.to);
+    return { dateFrom: from, dateTo: to };
+  }, [dateRange.from, dateRange.to]);
 
   // Fetch movements
   const { data: movementsData, isLoading, refetch } = trpc.stockMovements.list.useQuery({

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, Input, Button, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
 import { 
   Plus, 
@@ -28,11 +28,14 @@ export default function ShipmentsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
-  // Calculate date filter
-  const dateFrom = new Date();
-  dateFrom.setDate(dateFrom.getDate() - dateRange.from);
-  const dateTo = new Date();
-  dateTo.setDate(dateTo.getDate() - dateRange.to);
+  // Calculate date filter - memoized to prevent re-renders
+  const { dateFrom, dateTo } = useMemo(() => {
+    const from = new Date();
+    from.setDate(from.getDate() - dateRange.from);
+    const to = new Date();
+    to.setDate(to.getDate() - dateRange.to);
+    return { dateFrom: from, dateTo: to };
+  }, [dateRange.from, dateRange.to]);
 
   // Fetch shipments with filtering
   const { data, isLoading, refetch } = trpc.shipments.list.useQuery({

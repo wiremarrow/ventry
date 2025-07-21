@@ -32,7 +32,7 @@ const customerFilterSchema = z.object({
   creditStatus: z.enum(['GOOD', 'WARNING', 'BLOCKED', 'ALL']).default('ALL'),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['code', 'name', 'createdAt', 'totalRevenue']).default('name'),
+  sortBy: z.enum(['customerCode', 'firstName', 'lastName', 'createdAt', 'email']).default('lastName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
@@ -63,6 +63,35 @@ const customerMetricsSchema = z.object({
 });
 
 export const customersRouter = createTRPCRouter({
+  // Debug query to check RLS
+  debugCount: organizationProcedure
+    .query(async ({ ctx }) => {
+      // First, count with RLS proxy
+      const rlsCount = await ctx.prisma.customer.count({
+        where: { organizationId: ctx.user.organizationId }
+      });
+      
+      // Then count with base prisma (no RLS)
+      const { prisma: basePrisma } = await import('@ventry/database');
+      const directCount = await basePrisma.customer.count({
+        where: { organizationId: ctx.user.organizationId }
+      });
+      
+      // Also get total count regardless of organization
+      const totalCount = await basePrisma.customer.count();
+      
+      return {
+        organizationId: ctx.user.organizationId,
+        rlsCount,
+        directCount,
+        totalCount,
+        user: {
+          id: ctx.user.id,
+          email: ctx.user.email,
+        }
+      };
+    }),
+
   // List customers with filtering
   list: organizationProcedure
     .input(customerFilterSchema)
@@ -112,6 +141,14 @@ export const customersRouter = createTRPCRouter({
           },
         };
       }
+
+      // Debug logging
+      console.log('Customer list query:', {
+        organizationId: ctx.user.organizationId,
+        where: JSON.stringify(where),
+        page,
+        limit,
+      });
 
       // Execute queries
       const [customers, total] = await Promise.all([
@@ -199,7 +236,7 @@ export const customersRouter = createTRPCRouter({
         );
       }
 
-      return {
+      const result = {
         customers: filteredCustomers,
         pagination: {
           page,
@@ -208,6 +245,14 @@ export const customersRouter = createTRPCRouter({
           totalPages: Math.ceil(total / limit),
         },
       };
+
+      console.log('Customer list result:', {
+        customerCount: result.customers.length,
+        total: result.pagination.total,
+        firstCustomer: result.customers[0]?.email,
+      });
+
+      return result;
     }),
 
   // Get single customer with full details

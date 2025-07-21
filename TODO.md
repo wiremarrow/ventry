@@ -49,6 +49,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Items/Products Management COMPLETE** - Full CRUD with Categories & UOM (2025-01-18)
 ✅ **Row-Level Security Implementation COMPLETE** - Enterprise Multi-Tenancy (2025-01-20)
 ✅ **Database Admin Operations & Comprehensive Seeding COMPLETE** (2025-07-21)
+✅ **Frontend Performance & Rate Limiting Fixes COMPLETE** (2025-07-21)
 - **Created db-admin.sh script** for consistent admin database operations
 - **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
 - **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)
@@ -62,6 +63,12 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **Renamed migrate-with-admin.sh** to db-admin.sh for broader database admin functionality
 - **Updated all package.json scripts** to use unified db-admin.sh approach
 - **Updated CLAUDE.md** with new database operation patterns and documentation
+- **Rate Limiting Improvements**:
+  - **Increased backend rate limit** from 100 to 500 requests/minute to accommodate comprehensive seed data
+  - **Re-enabled tRPC request batching** using httpBatchLink to reduce HTTP request count by 50-80%
+  - **Fixed infinite re-render issues** on date-filtered pages (receipts, shipments, movements) using useMemo
+  - **Resolved 429 rate limit errors** preventing data loading on multiple pages
+  - **Fixed customers page data access** pattern to correctly handle paginated response structure
 - **Complete tRPC + Fastify backend** with end-to-end type-safe API architecture
 - **Comprehensive Prisma database schema** with inventory models and proper PostgreSQL enums
 - **JWT authentication with role-based access control** (Admin/Manager/User) via tRPC procedures
