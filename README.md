@@ -722,9 +722,9 @@ SMTP_CONFIG="..."
 
 ### Backend Testing
 - **Unit Tests**: Service layer, utilities, tRPC routers
-  - **Current Coverage**: 73% of backend routers have comprehensive unit tests (16 of 22)
-  - **Completed Routers**: auth, users, orders, inventory, items, warehouses, customers, suppliers, purchaseOrders, receipts, stockMovements, products, categories, itemCategories
-  - **Test Count**: 350 unit tests across covered routers
+  - **Current Coverage**: 100% of backend routers have comprehensive unit tests (22 of 22) ✅
+  - **Completed Routers**: auth, users, orders, inventory, items, warehouses, customers, suppliers, purchaseOrders, receipts, stockMovements, products, categories, itemCategories, unitsOfMeasure, analytics, health, organizations, reports, returns, shipments
+  - **Test Count**: 591 unit tests across all routers (all passing)
 - **Integration Tests**: API endpoints, database operations
 - **E2E Tests**: Critical user workflows
 - **AI Agent Tests**: Mock LLM responses, prompt validation
@@ -742,8 +742,15 @@ SMTP_CONFIG="..."
 - **✅ receipts.test.ts**: 21 tests - Receipt creation, item management, discrepancy tracking
 - **✅ stockMovements.test.ts**: 21 tests - Movement tracking, batch operations, history
 - **✅ products.test.ts**: 21 tests - Product management, search, activity tracking
-- **✅ categories.test.ts**: 24 tests - Hierarchical category management, tree structure, statistics (5 tests skipped due to missing organizationId checks)
-- **✅ itemCategories.test.ts**: 18 tests - Category-item associations, validation (2 tests skipped due to implementation differences)
+- **✅ categories.test.ts**: 24 tests - Hierarchical category management, tree structure, statistics
+- **✅ itemCategories.test.ts**: 18 tests - Category-item associations, validation
+- **✅ unitsOfMeasure.test.ts**: 23 tests - UOM management, conversion factors, base unit constraints
+- **✅ analytics.test.ts**: 21 tests - Dashboard data, inventory metrics, trend analysis
+- **✅ health.test.ts**: 8 tests - System health checks, database connectivity
+- **✅ organizations.test.ts**: 29 tests - Organization management, member operations, role assignments
+- **✅ reports.test.ts**: 30 tests - Report generation, filtering, export functionality
+- **✅ returns.test.ts**: 21 tests - Return processing, RMA management, refund handling
+- **✅ shipments.test.ts**: 21 tests - Shipment tracking, delivery management, package operations
 
 ### Testing Patterns Established
 - **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
@@ -756,8 +763,15 @@ SMTP_CONFIG="..."
 - **Implementation Bug Discovery**: Tests revealing security issues (e.g., missing organizationId checks)
 
 ### Implementation Issues Discovered Through Testing
-- **categories router**: Missing organizationId checks in several findFirst queries, creating a potential security vulnerability where users could access categories from other organizations
+- **categories router**: Fixed missing organizationId checks in several findFirst queries, eliminating a security vulnerability where users could access categories from other organizations
 - **itemCategories router**: Properly implements organization-scoped queries throughout, serving as the correct pattern to follow
+
+### Recent Test Infrastructure Updates (2025-01-22)
+- **Authentication Testing**: Updated transaction mocking to properly handle user registration flow with organization creation
+- **Cookie Service Integration**: Migrated all cookie handling tests to use CookieService for signed cookie management
+- **RLS Service Updates**: Updated tests to use secure `$executeRaw` tagged templates instead of `$executeRawUnsafe`
+- **Context Creation**: Fixed tRPC context tests to work with new RLS proxy implementation
+- **Integration Test Fixes**: Resolved username length validation issues in user update tests
 
 ### Frontend Testing
 - **Component Tests**: UI component behavior

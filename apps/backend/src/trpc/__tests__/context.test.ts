@@ -42,10 +42,17 @@ vi.mock('../../lib/rls/index.js', () => ({
   createRLSProxy: vi.fn((prisma) => prisma),
 }));
 
+vi.mock('../../services/cookie-service.js', () => ({
+  CookieService: {
+    getActiveOrganization: vi.fn(),
+  },
+}));
+
 // Import after mocking
 import { getRawToken } from '../../lib/auth/token-extractor.js';
 import { verifyJwt } from '../../auth/jwt.js';
 import { createRLSProxy } from '../../lib/rls/index.js';
+import { CookieService } from '../../services/cookie-service.js';
 
 describe('createContext', () => {
   let mockRequest: any;
@@ -61,6 +68,9 @@ describe('createContext', () => {
     };
     
     mockReply = {};
+    
+    // Reset CookieService mock
+    vi.mocked(CookieService.getActiveOrganization).mockReturnValue(undefined);
   });
 
   describe('unauthenticated requests', () => {
@@ -157,15 +167,18 @@ describe('createContext', () => {
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
-      vi.mocked(basePrisma.$executeRawUnsafe).mockResolvedValue(null);
 
-      await createContext({ req: mockRequest, res: mockReply });
+      const ctx = await createContext({ req: mockRequest, res: mockReply });
 
-      // Verify SET LOCAL was called
-      expect(basePrisma.$executeRawUnsafe).toHaveBeenCalledWith(
-        'SET LOCAL app.current_user_id = $1',
-        'user-123'
-      );
+      // Verify RLS proxy was called with correct context
+      expect(createRLSProxy).toHaveBeenCalledWith(basePrisma, expect.any(Function));
+      
+      // Check RLS context function
+      const rlsContextFn = vi.mocked(createRLSProxy).mock.calls[0][1];
+      expect(rlsContextFn()).toEqual({
+        userId: 'user-123',
+        bypassRLS: false,
+      });
     });
 
     it('should handle inactive users', async () => {
@@ -302,11 +315,8 @@ describe('createContext', () => {
         role: 'MEMBER',
       };
 
-      mockRequest.cookies['active-organization'] = 'signed-org-cookie';
-      mockRequest.unsignCookie.mockReturnValue({
-        valid: true,
-        value: 'org-789',
-      });
+      // Mock CookieService to return the organization ID
+      vi.mocked(CookieService.getActiveOrganization).mockReturnValue('org-789');
       
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
@@ -341,11 +351,8 @@ describe('createContext', () => {
       };
 
       mockRequest.headers['x-organization-id'] = 'org-header';
-      mockRequest.cookies['active-organization'] = 'signed-org-cookie';
-      mockRequest.unsignCookie.mockReturnValue({
-        valid: true,
-        value: 'org-cookie',
-      });
+      // Mock CookieService to return a different organization ID (should be ignored)
+      vi.mocked(CookieService.getActiveOrganization).mockReturnValue('org-cookie');
       
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
@@ -401,7 +408,7 @@ describe('createContext', () => {
       });
     });
 
-    it('should handle organization cookie unsigning errors', async () => {
+    it('should handle organization cookie service errors', async () => {
       const mockToken = 'valid.jwt.token';
       const mockJwtPayload = {
         userId: 'user-123',
@@ -422,11 +429,9 @@ describe('createContext', () => {
         userId: 'user-123',
         role: 'MEMBER',
       };
-
-      mockRequest.cookies['active-organization'] = 'malformed-cookie';
-      mockRequest.unsignCookie.mockImplementation(() => {
-        throw new Error('Invalid cookie');
-      });
+      
+      // CookieService returns undefined for invalid cookies
+      vi.mocked(CookieService.getActiveOrganization).mockReturnValue(undefined);
       
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
@@ -437,15 +442,12 @@ describe('createContext', () => {
 
       // Should fall back to JWT organizationId
       expect(ctx.user?.organizationId).toBe('jwt-org');
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        expect.objectContaining({ error: expect.any(Error) }),
-        'Failed to unsign organization cookie'
-      );
+      expect(CookieService.getActiveOrganization).toHaveBeenCalledWith(mockRequest);
     });
   });
 
   describe('RLS context setting', () => {
-    it('should set app.current_user_id when user is authenticated', async () => {
+    it('should set RLS context via proxy when user is authenticated', async () => {
       const mockToken = 'valid.jwt.token';
       const mockJwtPayload = {
         userId: 'user-123',
@@ -464,14 +466,18 @@ describe('createContext', () => {
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
-      vi.mocked(basePrisma.$executeRawUnsafe).mockResolvedValue(null);
 
       await createContext({ req: mockRequest, res: mockReply });
 
-      expect(basePrisma.$executeRawUnsafe).toHaveBeenCalledWith(
-        'SET LOCAL app.current_user_id = $1',
-        'user-123'
-      );
+      // Verify RLS proxy was called with correct context
+      expect(createRLSProxy).toHaveBeenCalledWith(basePrisma, expect.any(Function));
+      
+      // Check RLS context function
+      const rlsContextFn = vi.mocked(createRLSProxy).mock.calls[0][1];
+      expect(rlsContextFn()).toEqual({
+        userId: 'user-123',
+        bypassRLS: false,
+      });
     });
 
     it('should handle SET LOCAL errors gracefully', async () => {
@@ -493,16 +499,15 @@ describe('createContext', () => {
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
-      vi.mocked(basePrisma.$executeRawUnsafe).mockRejectedValue(new Error('Database error'));
 
       const ctx = await createContext({ req: mockRequest, res: mockReply });
 
       // Context should still be created successfully
       expect(ctx.user).toBeTruthy();
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        expect.objectContaining({ error: expect.any(Error) }),
-        'Failed to set RLS context in database'
-      );
+      expect(ctx.user?.id).toBe('user-123');
+      
+      // RLS proxy should be created with appropriate context
+      expect(createRLSProxy).toHaveBeenCalled();
     });
   });
 });

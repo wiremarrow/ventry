@@ -47,6 +47,7 @@ vi.mock('@ventry/database', () => {
     organization: {
       create: vi.fn(),
     },
+    $transaction: vi.fn(),
   };
   
   return { 
@@ -59,27 +60,8 @@ vi.mock('@ventry/database', () => {
   };
 });
 
-// Access the mocked prisma for tests
-const mockPrisma = {
-  user: {
-    findUnique: vi.fn(),
-    findFirst: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-  },
-  organizationMember: {
-    findFirst: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-  },
-  organization: {
-    create: vi.fn(),
-  },
-  $transaction: vi.fn().mockImplementation(async (fn) => {
-    // Simple transaction mock that just calls the function with mockPrisma
-    return await fn(mockPrisma);
-  }),
-};
+// Import the mocked prisma for tests
+import { prisma as mockPrisma } from '@ventry/database';
 
 describe('Auth Router', () => {
   let caller: Awaited<ReturnType<typeof createDirectCaller>>;
@@ -173,8 +155,57 @@ describe('Auth Router', () => {
   describe('register', () => {
     it('should register new user', async () => {
       mockPrisma.user.findFirst.mockResolvedValue(null); // No existing user
-      mockPrisma.user.create.mockResolvedValue(mockUser);
       vi.mocked(bcrypt.hash).mockResolvedValue('hashedpassword' as never);
+
+      // Mock the transaction
+      const mockOrg = { 
+        id: 'org-123', 
+        name: "New's Organization",
+        slug: 'newuser-org-123456'
+      };
+      const newUser = {
+        ...mockUser,
+        email: 'new@example.com',
+        username: 'newuser',
+        firstName: 'New',
+        lastName: 'User',
+      };
+
+      const mockMembership = {
+        id: 'member-123',
+        userId: newUser.id,
+        organizationId: mockOrg.id,
+        role: 'OWNER'
+      };
+
+      mockPrisma.$transaction.mockImplementation(async (fn) => {
+        const txMock = {
+          user: {
+            create: vi.fn().mockResolvedValue(newUser)
+          },
+          organization: {
+            create: vi.fn().mockResolvedValue(mockOrg)
+          },
+          organizationMember: {
+            create: vi.fn().mockResolvedValue(mockMembership)
+          }
+        };
+        
+        const result = await fn(txMock);
+        
+        // Verify the transaction calls
+        expect(txMock.user.create).toHaveBeenCalledWith({
+          data: {
+            email: 'new@example.com',
+            username: 'newuser',
+            firstName: 'New',
+            lastName: 'User',
+            password: 'hashedpassword',
+          },
+        });
+        
+        return result;
+      });
 
       const result = await caller.auth.register({
         email: 'new@example.com',
@@ -186,25 +217,10 @@ describe('Auth Router', () => {
 
       expect(result).toHaveProperty('success', true);
       expect(result).toHaveProperty('user');
-      expect(mockPrisma.user.create).toHaveBeenCalledWith({
-        data: {
-          email: 'new@example.com',
-          username: 'newuser',
-          firstName: 'New',
-          lastName: 'User',
-          password: 'hashedpassword',
-        },
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-        },
-      });
+      expect(result.user.email).toBe('new@example.com');
+      expect(result.user.organizationId).toBe(mockOrg.id);
+      expect(result.user.organizationRole).toBe('OWNER');
+      expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
 
     it('should throw error for existing email', async () => {

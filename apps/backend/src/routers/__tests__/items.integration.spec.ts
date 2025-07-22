@@ -116,6 +116,7 @@ describe('Items Router Integration Tests', () => {
         code: `ITEMS-TEST-${Date.now()}`,
         description: 'Test Location',
         warehouseId: warehouse.id,
+        organizationId,
       },
     });
     locationId = location.id;

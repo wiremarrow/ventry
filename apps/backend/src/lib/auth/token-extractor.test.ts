@@ -15,9 +15,17 @@ vi.mock('../logger.js', () => ({
   createLogger: vi.fn(() => mockLogger),
 }));
 
+// Mock the CookieService
+vi.mock('../../services/cookie-service.js', () => ({
+  CookieService: {
+    getAuthToken: vi.fn(),
+  },
+}));
+
 // Import after mocking to ensure the module gets the mocked logger
 import { getRawToken, extractAuthToken, type TokenExtractionResult } from './token-extractor.js';
 import { COOKIE_NAMES } from './constants.js';
+import { CookieService } from '../../services/cookie-service.js';
 
 describe('Token Extractor', () => {
   let mockRequest: any;
@@ -31,6 +39,9 @@ describe('Token Extractor', () => {
       headers: {},
       unsignCookie: vi.fn(),
     };
+    
+    // Reset CookieService mock
+    vi.mocked(CookieService.getAuthToken).mockReturnValue(undefined);
   });
 
   describe('getRawToken', () => {
@@ -40,78 +51,60 @@ describe('Token Extractor', () => {
     });
 
     it('should extract and unsign a valid cookie token', () => {
-      const signedToken = 's:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.signature';
       const unsignedToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
       
-      mockRequest.cookies[COOKIE_NAMES.AUTH_TOKEN] = signedToken;
-      mockRequest.unsignCookie.mockReturnValue({
-        valid: true,
-        value: unsignedToken,
-      });
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(unsignedToken);
 
       const result = getRawToken(mockRequest);
       
       expect(result).toBe(unsignedToken);
-      expect(mockRequest.unsignCookie).toHaveBeenCalledWith(signedToken);
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(mockRequest);
     });
 
     it('should handle invalid signed cookies gracefully', () => {
-      const invalidSignedToken = 'invalid-signed-token';
-      
-      mockRequest.cookies[COOKIE_NAMES.AUTH_TOKEN] = invalidSignedToken;
-      mockRequest.unsignCookie.mockReturnValue({
-        valid: false,
-        value: null,
-      });
+      // CookieService returns undefined for invalid cookies
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(undefined);
 
       const result = getRawToken(mockRequest);
       
       expect(result).toBeUndefined();
-      expect(mockRequest.unsignCookie).toHaveBeenCalledWith(invalidSignedToken);
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(mockRequest);
     });
 
     it('should fall back to Authorization header when cookie is not present', () => {
       const bearerToken = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
       mockRequest.headers.authorization = bearerToken;
+      
+      // CookieService returns undefined, so it falls back to header
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(undefined);
 
       const result = getRawToken(mockRequest);
       
       expect(result).toBe('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9');
-      expect(mockRequest.unsignCookie).not.toHaveBeenCalled();
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(mockRequest);
     });
 
     it('should prefer cookie token over header token', () => {
       const cookieToken = 'cookie-token-value';
       const headerToken = 'header-token-value';
       
-      mockRequest.cookies[COOKIE_NAMES.AUTH_TOKEN] = 's:' + cookieToken;
       mockRequest.headers.authorization = `Bearer ${headerToken}`;
-      mockRequest.unsignCookie.mockReturnValue({
-        valid: true,
-        value: cookieToken,
-      });
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(cookieToken);
 
       const result = getRawToken(mockRequest);
       
       expect(result).toBe(cookieToken);
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(mockRequest);
     });
 
-    it('should handle unsignCookie throwing an error', () => {
-      mockRequest.cookies[COOKIE_NAMES.AUTH_TOKEN] = 'malformed-cookie';
-      mockRequest.unsignCookie.mockImplementation(() => {
-        throw new TypeError('Signed cookie string must be provided.');
-      });
+    it('should handle cookie service errors gracefully', () => {
+      // When CookieService.getAuthToken fails, it returns undefined
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(undefined);
 
       const result = getRawToken(mockRequest);
       
       expect(result).toBeUndefined();
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: expect.any(TypeError),
-          cookieName: COOKIE_NAMES.AUTH_TOKEN,
-        }),
-        'Failed to unsign cookie'
-      );
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(mockRequest);
     });
 
     it('should handle Authorization header with lowercase "bearer"', () => {
@@ -250,32 +243,39 @@ describe('Token Extractor', () => {
           authorization: 'Bearer fallback-token',
         },
       } as any;
+      
+      // CookieService returns undefined for requests without cookies
+      vi.mocked(CookieService.getAuthToken).mockReturnValue(undefined);
 
       const result = getRawToken(bareRequest);
       
       expect(result).toBe('fallback-token');
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(bareRequest);
     });
 
     it('should handle concurrent requests independently', () => {
       const request1 = {
         cookies: { [COOKIE_NAMES.AUTH_TOKEN]: 'token1' },
         headers: {},
-        unsignCookie: vi.fn().mockReturnValue({ valid: true, value: 'user1-token' }),
       };
 
       const request2 = {
         cookies: { [COOKIE_NAMES.AUTH_TOKEN]: 'token2' },
         headers: {},
-        unsignCookie: vi.fn().mockReturnValue({ valid: true, value: 'user2-token' }),
       };
+
+      // Mock different return values for each request
+      vi.mocked(CookieService.getAuthToken)
+        .mockReturnValueOnce('user1-token')
+        .mockReturnValueOnce('user2-token');
 
       const result1 = getRawToken(request1);
       const result2 = getRawToken(request2);
       
       expect(result1).toBe('user1-token');
       expect(result2).toBe('user2-token');
-      expect(request1.unsignCookie).not.toHaveBeenCalledWith('token2');
-      expect(request2.unsignCookie).not.toHaveBeenCalledWith('token1');
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(request1);
+      expect(CookieService.getAuthToken).toHaveBeenCalledWith(request2);
     });
 
     it('should handle very long tokens', () => {

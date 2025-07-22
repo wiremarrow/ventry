@@ -171,13 +171,13 @@ describe('Users Router Integration', () => {
         data: {
           firstName: 'Updated',
           lastName: 'Name',
-          username: `updated-${Date.now()}`,
+          username: `upd${Date.now()}`.slice(0, 20), // Ensure max 20 chars
         }
       });
 
       expect(result.firstName).toBe('Updated');
       expect(result.lastName).toBe('Name');
-      expect(result.username).toContain('updated-');
+      expect(result.username).toContain('upd');
     });
 
     it('should hash password when updating', async () => {

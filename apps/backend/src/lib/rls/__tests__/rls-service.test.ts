@@ -4,17 +4,20 @@ import { type ValidatedRLSContext, type RLSContext } from '../types.js';
 import { RLS_ERRORS } from '../constants.js';
 
 // Mock Prisma
+const mockExecuteRaw = vi.fn();
 const mockExecuteRawUnsafe = vi.fn();
 const mockQueryRaw = vi.fn();
 const mockTransaction = vi.fn();
 
 const mockPrisma = {
+  $executeRaw: mockExecuteRaw,
   $executeRawUnsafe: mockExecuteRawUnsafe,
   $queryRaw: mockQueryRaw,
   $transaction: mockTransaction,
 };
 
 const mockTx = {
+  $executeRaw: mockExecuteRaw,
   $executeRawUnsafe: mockExecuteRawUnsafe,
   $queryRaw: mockQueryRaw,
 };
@@ -47,11 +50,14 @@ describe('RLS Service', () => {
 
       await setRLSContext(mockTx as any, context);
 
-      expect(mockExecuteRawUnsafe).toHaveBeenCalledTimes(1);
-      expect(mockExecuteRawUnsafe).toHaveBeenCalledWith(
-        'SET LOCAL app.current_organization_id = $1',
-        'clh3sa7gu0000qzrmn831i7rn'
-      );
+      expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+      // Check that the tagged template was called with the right arguments
+      const call = mockExecuteRaw.mock.calls[0];
+      expect(call[0]).toEqual(expect.arrayContaining([
+        expect.stringContaining('SELECT set_rls_context'),
+      ]));
+      expect(call[1]).toBe('clh3sa7gu0000qzrmn831i7rn');
+      expect(call[2]).toBeUndefined();
     });
 
     it('should set both organization and user ID when provided', async () => {
@@ -63,17 +69,14 @@ describe('RLS Service', () => {
 
       await setRLSContext(mockTx as any, context);
 
-      expect(mockExecuteRawUnsafe).toHaveBeenCalledTimes(2);
-      expect(mockExecuteRawUnsafe).toHaveBeenNthCalledWith(
-        1,
-        'SET LOCAL app.current_organization_id = $1',
-        'clh3sa7gu0000qzrmn831i7rn'
-      );
-      expect(mockExecuteRawUnsafe).toHaveBeenNthCalledWith(
-        2,
-        'SET LOCAL app.current_user_id = $1',
-        'clh3sa7gu0000qzrmn831i7ro'
-      );
+      expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+      // The new implementation uses a single function call with both parameters
+      const call = mockExecuteRaw.mock.calls[0];
+      expect(call[0]).toEqual(expect.arrayContaining([
+        expect.stringContaining('SELECT set_rls_context'),
+      ]));
+      expect(call[1]).toBe('clh3sa7gu0000qzrmn831i7rn');
+      expect(call[2]).toBe('clh3sa7gu0000qzrmn831i7ro');
     });
 
     it('should throw error if setting session variables fails', async () => {
@@ -82,7 +85,7 @@ describe('RLS Service', () => {
         bypassRLS: false,
       };
 
-      mockExecuteRawUnsafe.mockRejectedValue(new Error('Database error'));
+      mockExecuteRaw.mockRejectedValue(new Error('Database error'));
 
       await expect(setRLSContext(mockTx as any, context)).rejects.toThrow(
         RLS_ERRORS.SESSION_VAR_FAILED
@@ -94,19 +97,15 @@ describe('RLS Service', () => {
     it('should reset session variables', async () => {
       await clearRLSContext(mockTx as any);
 
-      expect(mockExecuteRawUnsafe).toHaveBeenCalledTimes(2);
-      expect(mockExecuteRawUnsafe).toHaveBeenNthCalledWith(
-        1,
-        'RESET app.current_organization_id'
-      );
-      expect(mockExecuteRawUnsafe).toHaveBeenNthCalledWith(
-        2,
-        'RESET app.current_user_id'
-      );
+      expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
+      const call = mockExecuteRaw.mock.calls[0];
+      expect(call[0]).toEqual(expect.arrayContaining([
+        expect.stringContaining('SELECT clear_rls_context'),
+      ]));
     });
 
     it('should not throw if clearing fails', async () => {
-      mockExecuteRawUnsafe.mockRejectedValue(new Error('Database error'));
+      mockExecuteRaw.mockRejectedValue(new Error('Database error'));
 
       await expect(clearRLSContext(mockTx as any)).resolves.not.toThrow();
     });
@@ -134,10 +133,12 @@ describe('RLS Service', () => {
       expect(result.context.bypassed).toBe(false);
       expect(result.timing.totalMs).toBeGreaterThanOrEqual(0);
       
-      expect(mockExecuteRawUnsafe).toHaveBeenCalledWith(
-        'SET LOCAL app.current_organization_id = $1',
-        context.organizationId
-      );
+      // Should call setRLSContext which uses $executeRaw
+      expect(mockExecuteRaw).toHaveBeenCalled();
+      const call = mockExecuteRaw.mock.calls[0];
+      expect(call[0]).toEqual(expect.arrayContaining([
+        expect.stringContaining('SELECT set_rls_context'),
+      ]));
       expect(mockOperation).toHaveBeenCalledWith(mockTx);
     });
 
@@ -157,7 +158,7 @@ describe('RLS Service', () => {
 
       expect(result.data).toEqual({ result: 'success' });
       expect(result.context.bypassed).toBe(true);
-      expect(mockExecuteRawUnsafe).not.toHaveBeenCalled();
+      expect(mockExecuteRaw).not.toHaveBeenCalled();
     });
 
     it('should reject invalid context', async () => {
@@ -178,14 +179,26 @@ describe('RLS Service', () => {
     it('should return true when RLS is properly configured', async () => {
       mockQueryRaw
         .mockResolvedValueOnce([
+          { routine_name: 'set_rls_context' },
+          { routine_name: 'clear_rls_context' },
+          { routine_name: 'get_rls_context' },
           { routine_name: 'current_organization_id' },
           { routine_name: 'current_user_id' },
         ])
+        .mockResolvedValueOnce([])  // SELECT set_rls_context
+        .mockResolvedValueOnce([    // SELECT get_rls_context
+          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' }
+        ])
+        .mockResolvedValueOnce([])  // SELECT clear_rls_context
         .mockResolvedValueOnce([
           { relname: 'items', relrowsecurity: true },
           { relname: 'orders', relrowsecurity: true },
           { relname: 'inventory', relrowsecurity: true },
         ]);
+
+      mockTransaction.mockImplementation(async (fn) => {
+        return fn(mockTx);
+      });
 
       const result = await validateRLSConfiguration(mockPrisma as any);
       expect(result).toBe(true);
@@ -201,14 +214,26 @@ describe('RLS Service', () => {
     it('should return false when RLS is not enabled on tables', async () => {
       mockQueryRaw
         .mockResolvedValueOnce([
+          { routine_name: 'set_rls_context' },
+          { routine_name: 'clear_rls_context' },
+          { routine_name: 'get_rls_context' },
           { routine_name: 'current_organization_id' },
           { routine_name: 'current_user_id' },
         ])
+        .mockResolvedValueOnce([])  // SELECT set_rls_context
+        .mockResolvedValueOnce([    // SELECT get_rls_context
+          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' }
+        ])
+        .mockResolvedValueOnce([])  // SELECT clear_rls_context
         .mockResolvedValueOnce([
           { relname: 'items', relrowsecurity: false },
           { relname: 'orders', relrowsecurity: true },
           { relname: 'inventory', relrowsecurity: true },
         ]);
+
+      mockTransaction.mockImplementation(async (fn) => {
+        return fn(mockTx);
+      });
 
       const result = await validateRLSConfiguration(mockPrisma as any);
       expect(result).toBe(false);

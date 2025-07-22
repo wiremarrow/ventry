@@ -54,7 +54,10 @@ export async function createIntegrationContext(authToken?: string) {
   };
   const mockRes = {
     // Mock header method for response
-    header: () => {}
+    header: () => {},
+    // Mock cookie methods for auth handling
+    setCookie: () => {},
+    clearCookie: () => {}
   };
   
   return await createContext({ 
