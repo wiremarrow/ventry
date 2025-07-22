@@ -7,19 +7,19 @@ import { createTRPCRouter, organizationProcedure } from '../trpc/trpc.js';
 const itemCategoryCreateSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().cuid().optional(),
 });
 
 const itemCategoryUpdateSchema = z.object({
-  id: z.string(),
+  id: z.string().cuid(),
   name: z.string().min(1).max(100).optional(),
   description: z.string().optional().nullable(),
-  parentId: z.string().optional().nullable(),
+  parentId: z.string().cuid().optional().nullable(),
 });
 
 const itemCategoryListSchema = z.object({
   search: z.string().optional(),
-  parentId: z.string().optional().nullable(),
+  parentId: z.string().cuid().optional().nullable(),
   includeChildren: z.boolean().optional().default(false),
 });
 
@@ -72,7 +72,7 @@ export const itemCategoriesRouter = createTRPCRouter({
 
   // Get a single category by ID
   getById: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const category = await ctx.prisma.itemCategory.findFirst({
         where: {
@@ -236,7 +236,7 @@ export const itemCategoriesRouter = createTRPCRouter({
 
   // Delete a category
   delete: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       // Verify category exists and belongs to organization
       const category = await ctx.prisma.itemCategory.findFirst({

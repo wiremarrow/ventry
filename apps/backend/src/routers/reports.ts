@@ -864,7 +864,7 @@ export const reportsRouter = createTRPCRouter({
 
         // Process returns
         returns.forEach(ret => {
-          ret.returnItems.forEach((returnItem: any) => {
+          ret.items.forEach((returnItem: any) => {
             const itemData = itemSales.get(returnItem.itemId);
             if (itemData) {
               itemData.returnQuantity += returnItem.qtyReturned;

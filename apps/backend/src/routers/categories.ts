@@ -9,19 +9,19 @@ import type { ItemCategory } from '@ventry/database';
 const categoryCreateSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().cuid().optional(),
 });
 
 const categoryUpdateSchema = z.object({
-  id: z.string(),
+  id: z.string().cuid(),
   name: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().cuid().optional().nullable(),
 });
 
 const categoryFilterSchema = z.object({
   search: z.string().optional(),
-  parentId: z.string().optional(),
+  parentId: z.string().cuid().optional(),
   page: z.number().int().positive().default(1),
   limit: z.number().int().positive().max(100).default(20),
   sortBy: z.enum(['name', 'createdAt']).default('name'),
@@ -125,11 +125,12 @@ export const categoriesRouter = createTRPCRouter({
 
   // Get single category by ID
   getById: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const category = await ctx.prisma.itemCategory.findFirst({
         where: {
           id: input.id,
+          organizationId: ctx.user.organizationId,
         },
         include: {
           parent: true,
@@ -173,7 +174,8 @@ export const categoriesRouter = createTRPCRouter({
         const parent = await ctx.prisma.itemCategory.findFirst({
           where: {
             id: input.parentId,
-            },
+            organizationId: ctx.user.organizationId,
+          },
         });
 
         if (!parent) {
@@ -228,6 +230,7 @@ export const categoriesRouter = createTRPCRouter({
       const existing = await ctx.prisma.itemCategory.findFirst({
         where: {
           id,
+          organizationId: ctx.user.organizationId,
         },
       });
 
@@ -251,7 +254,8 @@ export const categoriesRouter = createTRPCRouter({
           const parent = await ctx.prisma.itemCategory.findFirst({
             where: {
               id: data.parentId,
-                },
+              organizationId: ctx.user.organizationId,
+            },
           });
 
           if (!parent) {
@@ -307,7 +311,7 @@ export const categoriesRouter = createTRPCRouter({
 
   // Delete category
   delete: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -321,6 +325,7 @@ export const categoriesRouter = createTRPCRouter({
       const category = await ctx.prisma.itemCategory.findFirst({
         where: {
           id: input.id,
+          organizationId: ctx.user.organizationId,
         },
         include: {
           _count: {
@@ -381,11 +386,12 @@ export const categoriesRouter = createTRPCRouter({
 
   // Get category statistics
   stats: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const category = await ctx.prisma.itemCategory.findFirst({
         where: {
           id: input.id,
+          organizationId: ctx.user.organizationId,
         },
       });
 
@@ -406,18 +412,21 @@ export const categoriesRouter = createTRPCRouter({
         ctx.prisma.item.count({
           where: {
             categoryId: input.id,
-            },
+            organizationId: ctx.user.organizationId,
+          },
         }),
         ctx.prisma.item.count({
           where: {
             categoryId: input.id,
-            },
+            organizationId: ctx.user.organizationId,
+          },
         }),
         ctx.prisma.inventory.aggregate({
           where: {
             item: {
               categoryId: input.id,
-                },
+              organizationId: ctx.user.organizationId,
+            },
           },
           _sum: {
             qtyOnHand: true,
@@ -426,6 +435,7 @@ export const categoriesRouter = createTRPCRouter({
         ctx.prisma.itemCategory.count({
           where: {
             parentId: input.id,
+            organizationId: ctx.user.organizationId,
           },
         }),
       ]);

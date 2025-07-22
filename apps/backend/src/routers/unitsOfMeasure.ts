@@ -12,7 +12,7 @@ const unitOfMeasureCreateSchema = z.object({
 });
 
 const unitOfMeasureUpdateSchema = z.object({
-  id: z.string(),
+  id: z.string().cuid(),
   code: z.string().min(1).max(10).optional(),
   description: z.string().min(1).max(100).optional(),
   isBase: z.boolean().optional(),
@@ -74,7 +74,7 @@ export const unitsOfMeasureRouter = createTRPCRouter({
 
   // Get a single unit of measure by ID
   getById: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const unit = await ctx.prisma.unitOfMeasure.findFirst({
         where: {
@@ -260,7 +260,7 @@ export const unitsOfMeasureRouter = createTRPCRouter({
 
   // Delete a unit of measure
   delete: organizationProcedure
-    .input(z.object({ id: z.string() }))
+    .input(z.object({ id: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       // Verify unit exists and belongs to organization
       const unit = await ctx.prisma.unitOfMeasure.findFirst({

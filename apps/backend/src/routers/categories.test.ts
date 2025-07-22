@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createDirectCaller } from '../test-utils/trpc-test-client.js';
 import { mockUser, mockAuthenticatedUser } from '../test-utils/test-data.js';
+import { prisma as mockPrisma } from '@ventry/database';
 
 // Helper to create valid CUID-like IDs for testing
 const testId = (prefix: string) => `cl${prefix}1234567890abcdefghij`;
@@ -12,10 +13,17 @@ vi.mock('@ventry/database', () => {
       findMany: vi.fn(),
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       count: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+    },
+    item: {
+      count: vi.fn(),
+    },
+    inventory: {
+      aggregate: vi.fn(),
     },
     auditLog: {
       create: vi.fn(),
@@ -23,7 +31,12 @@ vi.mock('@ventry/database', () => {
     $transaction: vi.fn(),
   };
   
-  return { 
+  // Set up transaction mock
+  mockPrisma.$transaction.mockImplementation(async (fn) => {
+    return await fn(mockPrisma);
+  });
+  
+  return {
     prisma: mockPrisma,
     Prisma: {
       CategoryWhereInput: {},
@@ -43,31 +56,25 @@ vi.mock('@ventry/database', () => {
   };
 });
 
-// Access the mocked prisma for tests
-const mockPrisma = {
-  itemCategory: {
-    findMany: vi.fn(),
-    findFirst: vi.fn(),
-    findUnique: vi.fn(),
-    count: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  auditLog: {
-    create: vi.fn(),
-  },
-  $transaction: vi.fn().mockImplementation(async (fn) => {
-    return await fn(mockPrisma);
-  }),
-};
-
 describe('Categories Router', () => {
   let caller: Awaited<ReturnType<typeof createDirectCaller>>;
   let mockRes: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    
+    // Reset all mock implementations to avoid interference between tests
+    mockPrisma.itemCategory.findMany.mockReset();
+    mockPrisma.itemCategory.findFirst.mockReset();
+    mockPrisma.itemCategory.findUnique.mockReset();
+    mockPrisma.itemCategory.findUniqueOrThrow.mockReset();
+    mockPrisma.itemCategory.count.mockReset();
+    mockPrisma.itemCategory.create.mockReset();
+    mockPrisma.itemCategory.update.mockReset();
+    mockPrisma.itemCategory.delete.mockReset();
+    mockPrisma.item.count.mockReset();
+    mockPrisma.inventory.aggregate.mockReset();
+    mockPrisma.auditLog.create.mockReset();
     
     // Create a proper mock response object
     mockRes = {
@@ -380,14 +387,17 @@ describe('Categories Router', () => {
         ...existingCategory,
         parentId: testId('cat1'),
         updatedAt: new Date(),
+        parent: parentCategory,
+        _count: { items: 0 },
       };
 
-      // Need to mock all findFirst calls
+      // Mock the database calls in sequence
       mockPrisma.itemCategory.findFirst
-        .mockResolvedValueOnce(existingCategory) // Check category exists  
-        .mockResolvedValueOnce(null) // Check no duplicate name
-        .mockResolvedValueOnce(parentCategory); // Check parent exists
+        .mockResolvedValueOnce(existingCategory) // First call: check category exists
+        .mockResolvedValueOnce(parentCategory); // Second call: check parent exists
+      mockPrisma.itemCategory.findUniqueOrThrow.mockResolvedValue(parentCategory); // For circular check
       mockPrisma.itemCategory.update.mockResolvedValue(updatedCategory);
+      mockPrisma.auditLog.create.mockResolvedValue({});
 
       const result = await caller.categories.update({
         id: testId('cat2'),
@@ -416,7 +426,7 @@ describe('Categories Router', () => {
     });
 
     it('should throw NOT_FOUND when category does not exist', async () => {
-      mockPrisma.itemCategory.findFirst.mockResolvedValueOnce(null); // Category not found
+      mockPrisma.itemCategory.findFirst.mockResolvedValue(null); // Category not found
 
       await expect(
         caller.categories.update({
@@ -568,5 +578,75 @@ describe('Categories Router', () => {
       expect(result[1].children).toHaveLength(0);
     });
 
+  });
+
+  describe('stats', () => {
+    it('should get category statistics', async () => {
+      const mockCategory = {
+        id: testId('cat1'),
+        name: 'Electronics',
+        organizationId: testId('org'),
+      };
+
+      mockPrisma.itemCategory.findFirst.mockResolvedValue(mockCategory);
+      mockPrisma.item.count
+        .mockResolvedValueOnce(25) // totalItems
+        .mockResolvedValueOnce(20); // activeItems
+      mockPrisma.inventory.aggregate.mockResolvedValue({
+        _sum: {
+          qtyOnHand: 150,
+        },
+      });
+      mockPrisma.itemCategory.count.mockResolvedValue(3); // subcategories
+
+      const result = await caller.categories.stats({
+        id: testId('cat1'),
+      });
+
+      expect(result).toEqual({
+        totalItems: 25,
+        activeItems: 20,
+        totalQuantity: 150,
+        subcategories: 3,
+      });
+    });
+
+    it('should handle category with no inventory', async () => {
+      const mockCategory = {
+        id: testId('cat1'),
+        name: 'Electronics',
+        organizationId: testId('org'),
+      };
+
+      mockPrisma.itemCategory.findFirst.mockResolvedValue(mockCategory);
+      mockPrisma.item.count
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
+      mockPrisma.inventory.aggregate.mockResolvedValue({
+        _sum: {
+          qtyOnHand: null,
+        },
+      });
+      mockPrisma.itemCategory.count.mockResolvedValue(0);
+
+      const result = await caller.categories.stats({
+        id: testId('cat1'),
+      });
+
+      expect(result).toEqual({
+        totalItems: 0,
+        activeItems: 0,
+        totalQuantity: 0,
+        subcategories: 0,
+      });
+    });
+
+    it('should throw NOT_FOUND when category does not exist', async () => {
+      mockPrisma.itemCategory.findFirst.mockResolvedValue(null);
+
+      await expect(
+        caller.categories.stats({ id: testId('nonexistent') })
+      ).rejects.toThrow('Category not found');
+    });
   });
 });
