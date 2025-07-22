@@ -235,11 +235,11 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
     - Cleaned up linting issues: removed unused imports/variables, consolidated imports
   - **Results**: Build compilation successful, all warehouse tests passing (9/9), zero TypeScript errors
 
-## 📊 Test Coverage Progress (NEW - 2025-01-22)
+## 📊 Test Coverage Progress (UPDATED - 2025-01-22)
 
 ### Backend Unit Test Coverage Improvements
-- **Status**: 32% of backend routers now have comprehensive unit tests (7 of 22)
-- **Tests Added**: 148 unit tests across 7 routers
+- **Status**: 55% of backend routers now have comprehensive unit tests (12 of 22)
+- **Tests Added**: 269 unit tests across 12 routers (up from 148)
 - **Testing Infrastructure**: Established comprehensive patterns for tRPC testing
 
 ### ✅ Completed Test Suites:
@@ -250,6 +250,11 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 5. **items.test.ts** (21 tests) - Item CRUD, bulk operations, variant management
 6. **warehouses.test.ts** (19 tests) - Warehouse operations, location hierarchy, capacity tracking
 7. **customers.test.ts** (20 tests) - Customer management, addresses, credit checks
+8. **suppliers.test.ts** (28 tests) - Supplier CRUD, contacts management, import operations
+9. **purchaseOrders.test.ts** (23 tests) - PO lifecycle, approvals, receiving workflow
+10. **receipts.test.ts** (21 tests) - Receipt creation, item management, discrepancy tracking
+11. **stockMovements.test.ts** (21 tests) - Movement tracking, batch operations, history
+12. **products.test.ts** (28 tests) - Product management, search, activity tracking
 
 ### Testing Patterns Established:
 - **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
@@ -257,11 +262,14 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **ID Generation**: CUID helper function for valid test identifiers
 - **Permission Testing**: Role-based access control validation across all endpoints
 - **Error Coverage**: Comprehensive testing of error scenarios (NOT_FOUND, CONFLICT, FORBIDDEN)
+- **Complex Operations**: Transaction mocking, nested routers, decimal type handling
+- **Batch Operations**: Testing bulk imports, batch creates, and validation-only modes
 
 ### 📦 Remaining Routers to Test:
-- suppliers, purchaseOrders, receipts, returns, shipments
-- reports, analytics, categories, itemCategories, unitsOfMeasure
-- organizations, health, stockMovements, lots, productionOrders
+- categories, itemCategories, unitsOfMeasure
+- returns, shipments
+- reports, analytics
+- organizations, health
 
 ## 🔒 Production Readiness Progress (NEW - 2025-01-15)
 
