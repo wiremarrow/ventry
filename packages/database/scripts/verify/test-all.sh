@@ -388,6 +388,32 @@ run_test "Boolean false in WHERE" show item --where "isActive = false"
 # Date comparisons (if supported)
 run_test "Recent records" show item --order-by createdAt --order desc --limit 5
 
+echo "=== Enhanced WHERE Clause Tests ==="
+echo ""
+
+# IN operator tests
+run_test "IN operator with strings" count order --where "status IN ('PENDING', 'PROCESSING')"
+run_test "IN operator with numbers" count item --where "reorderPoint IN (10, 20, 50)"
+run_test "IN operator in show" show order --where "status IN ('PENDING', 'PROCESSING')" --limit 5
+run_test "IN operator in stats" stats order --where "status IN ('PENDING', 'CANCELLED')" --count id
+
+# LIKE operator tests
+run_test "LIKE with wildcards" count item --where "name LIKE '%Widget%'"
+run_test "LIKE prefix match" show item --where "sku LIKE 'WIDGET%'" --limit 5
+run_test "LIKE suffix match" count customer --where "email LIKE '%@ventry.com'"
+run_test "LIKE in stats" stats item --where "name LIKE '%Tool%'" --count id
+
+# IS NULL / IS NOT NULL tests
+run_test "IS NULL check" count customer --where "phone IS NULL"
+run_test "IS NOT NULL check" count item --where "defaultSupplierId IS NOT NULL"
+run_test "IS NULL in show" show customer --where "phone IS NULL" --limit 3
+run_test "IS NOT NULL in stats" stats item --where "defaultSupplierId IS NOT NULL" --count id
+
+# Complex AND conditions
+run_test "AND with IN and comparison" count order --where "status IN ('PENDING', 'PROCESSING') AND grandTotal > 1000"
+run_test "AND with LIKE and NULL" count customer --where "email LIKE '%@%.com' AND phone IS NOT NULL"
+run_test "AND with field comparison and IN" count inventory --where "qtyOnHand > 0 AND locationId IN (1, 2, 3)"
+
 echo "=== Performance Tests ==="
 echo ""
 

@@ -227,7 +227,7 @@ pnpm db:seed:multi-org          # Seed with multi-org test data
 3. Verify with: `SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user;`
 
 ### **Database Verification Tool**
-A comprehensive READ-ONLY tool for inspecting database state, analyzing business data, and testing RLS policies. Supports cross-table comparisons and complex business queries.
+A comprehensive READ-ONLY tool for inspecting database state, analyzing business data, and testing RLS policies. Supports cross-table comparisons, advanced WHERE clauses, and utility commands.
 
 **Quick Examples**:
 ```bash
@@ -249,8 +249,14 @@ pnpm db:verify stats inventory --group-by locationId --sum qtyOnHand --count id
 # Order status distribution
 pnpm db:verify stats order --group-by status --count id --sum grandTotal
 
-# High-value pending orders
+# Orders with specific statuses (IN operator)
+pnpm db:verify count order --where "status IN ('PENDING', 'CONFIRMED')"
+
+# High-value pending orders (AND conditions)
 pnpm db:verify show order --where "status = 'PENDING' AND grandTotal > 5000" --order-by grandTotal --order desc
+
+# Recent orders (date comparison)
+pnpm db:verify count order --where "orderDate > NOW() - INTERVAL '7 days'"
 
 # SUPPLIER PERFORMANCE
 # Overdue purchase orders
@@ -259,6 +265,12 @@ pnpm db:verify show purchaseOrder --where "status = 'ORDERED' AND expectedDate <
 # CUSTOMER INSIGHTS
 # Top customers by revenue
 pnpm db:verify stats order --group-by customerId --sum grandTotal --count id
+
+# Find customers by pattern (LIKE operator)
+pnpm db:verify show customer --where "email LIKE '%@ventry.com'" --limit 10
+
+# Customers missing data (IS NULL)
+pnpm db:verify count customer --where "phone IS NULL"
 
 # RLS TESTING
 # Test what employee can see
@@ -270,10 +282,25 @@ pnpm db:verify compare customer --users "admin@ventry.com,manager@ventry.com,emp
 # DATA EXPORT
 # Export inventory snapshot
 pnpm db:verify show inventory --select "item.sku,location.code,qtyOnHand" --format csv > inventory.csv
+
+# UTILITY COMMANDS
+# Show all fields for a table
+pnpm db:verify fields inventory
+
+# Show table relationships
+pnpm db:verify relationships order
+
+# Get random sample data
+pnpm db:verify sample item --size 5
+
+# Run data integrity checks
+pnpm db:verify validate
 ```
 
 **Key Features**:
+- **Enhanced WHERE clauses**: IN, LIKE, IS NULL/NOT NULL, date comparisons, AND conditions
 - **Cross-table comparisons**: Compare fields across related tables (e.g., `inventory.qtyOnHand <= item.reorderPoint`)
+- **Utility commands**: fields, relationships, sample, validate for database inspection
 - **Business queries**: Pre-built patterns for inventory, orders, suppliers, customers, finance
 - **45+ tables supported**: All core business entities with proper relationships
 - **Multiple output formats**: table (default), json, csv, count

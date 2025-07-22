@@ -303,12 +303,59 @@ Just the number:
 
 ### WHERE Clause Syntax
 
-Currently supports simple conditions:
-- Equality: `field = 'value'`
-- Numeric comparison: `field > 10`, `field <= 100`
-- Multiple conditions: Use multiple commands or raw SQL
+The tool supports a variety of WHERE clause patterns for flexible querying:
 
-Complex queries planned for future releases.
+#### Basic Comparisons
+- Equality: `field = 'value'`, `field = true`, `field = 123`
+- Numeric: `field > 10`, `field >= 100`, `field < 50`, `field <= 20`
+- Not equal: `field != 'value'`
+
+#### Field-to-Field Comparisons
+- Same table: `qtyOnHand <= qtyReserved`
+- Cross-table: `qtyOnHand <= item.reorderPoint`
+- With table prefix: `inventory.qtyOnHand <= item.reorderPoint`
+
+#### Advanced Operators
+- **IN clause**: `status IN ('PENDING', 'PROCESSING', 'APPROVED')`
+- **LIKE pattern**: `name LIKE '%Widget%'`, `sku LIKE 'WIDGET%'`, `email LIKE '%@ventry.com'`
+- **NULL checks**: `phone IS NULL`, `deletedAt IS NOT NULL`
+- **Date comparisons**: `createdAt > NOW() - INTERVAL '7 days'`, `expiryDate < NOW()`, `orderDate >= CURRENT_DATE`
+
+#### Combining Conditions
+- Simple AND: `status = 'ACTIVE' AND price > 100`
+- Multiple ANDs: `isActive = true AND qtyOnHand > 0 AND locationId IS NOT NULL`
+- With IN: `status IN ('PENDING', 'PROCESSING') AND grandTotal > 1000`
+- With LIKE: `name LIKE '%Tool%' AND isActive = true`
+- With field comparison: `qtyOnHand > 0 AND qtyOnHand <= item.reorderPoint`
+
+#### Examples
+```bash
+# Find orders with specific statuses
+pnpm db:verify count order --where "status IN ('PENDING', 'PROCESSING')"
+
+# Search for items by name pattern
+pnpm db:verify show item --where "name LIKE '%Widget%'" --limit 10
+
+# Find customers without phone numbers
+pnpm db:verify count customer --where "phone IS NULL"
+
+# Complex query with multiple conditions
+pnpm db:verify show inventory --where "qtyOnHand > 0 AND qtyOnHand <= item.reorderPoint AND locationId IS NOT NULL"
+
+# Case-insensitive pattern matching
+pnpm db:verify show customer --where "email LIKE '%@VENTRY.COM'"
+
+# Find recent orders
+pnpm db:verify count order --where "orderDate > NOW() - INTERVAL '7 days'"
+
+# Find overdue purchase orders
+pnpm db:verify show purchaseOrder --where "expectedDate < NOW() AND status = 'ORDERED'" --limit 10
+
+# Find items created this month
+pnpm db:verify count item --where "createdAt >= CURRENT_DATE - INTERVAL '1 month'"
+```
+
+**Note**: Complex queries with mixed AND/OR operators are not yet supported. For these cases, use multiple queries or export data for external analysis.
 
 ## Scripting Examples
 
@@ -371,6 +418,10 @@ pnpm db:verify show inventory --where "qtyOnHand <= item.reorderPoint" \
   --select "item.sku,item.name,item.category.name,qtyOnHand,item.reorderPoint" \
   --order-by qtyOnHand --limit 20
 
+# Find specific product categories low on stock
+pnpm db:verify show inventory --where "qtyOnHand <= item.reorderPoint AND item.name LIKE '%Widget%'" \
+  --select "item.sku,item.name,qtyOnHand,item.reorderPoint"
+
 # Over-reserved inventory (potential issues)
 pnpm db:verify show inventory --where "qtyReserved > qtyOnHand" \
   --select "item.sku,qtyOnHand,qtyReserved,location.code"
@@ -392,6 +443,12 @@ pnpm db:verify count item --where "id NOT IN (SELECT itemId FROM inventory)"
 ```bash
 # Order status distribution
 pnpm db:verify stats order --group-by status --count id --sum grandTotal
+
+# Orders with specific statuses
+pnpm db:verify count order --where "status IN ('PENDING', 'PROCESSING', 'APPROVED')"
+pnpm db:verify show order --where "status IN ('PENDING', 'PROCESSING')" \
+  --select "orderNumber,status,customer.companyName,grandTotal" \
+  --limit 20
 
 # High-value pending orders
 pnpm db:verify show order --where "status = 'PENDING' AND grandTotal > 5000" \
@@ -506,8 +563,18 @@ pnpm db:verify stats returnItem --group-by condition \
 # Items missing required fields
 pnpm db:verify count item --where "reorderPoint IS NULL OR reorderQty IS NULL"
 
+# Items with missing supplier
+pnpm db:verify count item --where "defaultSupplierId IS NULL"
+pnpm db:verify show item --where "defaultSupplierId IS NULL" \
+  --select "sku,name,categoryId" --limit 10
+
 # Customers without addresses
 pnpm db:verify count customer --where "id NOT IN (SELECT customerId FROM address)"
+
+# Find customers with incomplete contact info
+pnpm db:verify count customer --where "phone IS NULL AND email IS NOT NULL"
+pnpm db:verify show customer --where "phone IS NULL AND companyName LIKE '%Corp%'" \
+  --select "customerCode,companyName,email"
 
 # Orders without items
 pnpm db:verify count order --where "id NOT IN (SELECT orderId FROM orderItem)"

@@ -197,9 +197,72 @@ export function getTableInfo(tableName: string): TableInfo {
 export function parseWhereClause(where: string | undefined, tableInfo: TableInfo): any {
   if (!where) return undefined;
 
-  // Check for AND/OR operators first - we don't support these yet
+  // Handle IN operator
+  const inMatch = where.match(/^(\w+)\s+IN\s*\((.*)\)$/i);
+  if (inMatch) {
+    const [, field, values] = inMatch;
+    if (!tableInfo.fields.includes(field)) {
+      throw new Error(`Field '${field}' not found in table '${tableInfo.name}'. Available fields: ${tableInfo.fields.join(', ')}`);
+    }
+    // Parse values - handle both quoted and unquoted
+    const parsedValues = values.split(',').map(v => {
+      const trimmed = v.trim();
+      // Remove quotes if present
+      if ((trimmed.startsWith("'") && trimmed.endsWith("'")) || 
+          (trimmed.startsWith('"') && trimmed.endsWith('"'))) {
+        return trimmed.slice(1, -1);
+      }
+      return trimmed;
+    });
+    return { _inClause: { field, values: parsedValues } };
+  }
+
+  // Handle LIKE operator
+  const likeMatch = where.match(/^(\w+)\s+LIKE\s+['"]([^'"]+)['"]$/i);
+  if (likeMatch) {
+    const [, field, pattern] = likeMatch;
+    if (!tableInfo.fields.includes(field)) {
+      throw new Error(`Field '${field}' not found in table '${tableInfo.name}'. Available fields: ${tableInfo.fields.join(', ')}`);
+    }
+    return { _likeClause: { field, pattern } };
+  }
+
+  // Handle IS NULL / IS NOT NULL
+  const nullMatch = where.match(/^(\w+)\s+IS\s+(NOT\s+)?NULL$/i);
+  if (nullMatch) {
+    const [, field, notPart] = nullMatch;
+    if (!tableInfo.fields.includes(field)) {
+      throw new Error(`Field '${field}' not found in table '${tableInfo.name}'. Available fields: ${tableInfo.fields.join(', ')}`);
+    }
+    return { _nullCheck: { field, isNotNull: !!notPart } };
+  }
+
+  // Handle date comparisons (basic support for NOW() and INTERVAL)
+  const dateMatch = where.match(/^(\w+)\s*([<>]=?)\s*(NOW\(\)|CURRENT_DATE|CURRENT_TIMESTAMP)(?:\s*([+-])\s*INTERVAL\s*'([^']+)')?$/i);
+  if (dateMatch) {
+    const [, field, operator, dateFn, intervalOp, intervalValue] = dateMatch;
+    if (!tableInfo.fields.includes(field)) {
+      throw new Error(`Field '${field}' not found in table '${tableInfo.name}'. Available fields: ${tableInfo.fields.join(', ')}`);
+    }
+    return { 
+      _dateComparison: { 
+        field, 
+        operator, 
+        dateFn: dateFn.toUpperCase(),
+        intervalOp,
+        intervalValue 
+      } 
+    };
+  }
+
+  // Check for AND/OR operators - support simple AND for now
   if (where.match(/\b(AND|OR)\b/i)) {
-    throw new Error(`Complex WHERE clauses with AND/OR not yet supported. Use simple conditions like "field = 'value'", "field = true", or "field > 10"`);
+    if (where.includes(' AND ') && !where.includes(' OR ')) {
+      const parts = where.split(/\s+AND\s+/i).map(p => p.trim());
+      const conditions = parts.map(part => parseWhereClause(part, tableInfo));
+      return { _andClause: conditions };
+    }
+    throw new Error(`Complex WHERE clauses with mixed AND/OR not yet supported. Use simple conditions or multiple queries.`);
   }
 
   // Basic parsing - in a real implementation, this would be more sophisticated
@@ -326,42 +389,109 @@ export async function executeCount(
   const tableInfo = getTableInfo(tableName);
   const where = parseWhereClause(options.where, tableInfo);
   
-  // Check if this is a field comparison
-  if (where && where._fieldComparison) {
-    const { sourceTable, field1, operator, targetTable, field2 } = where._fieldComparison;
+  // Check if this is a special clause type that needs raw SQL
+  if (where && (where._fieldComparison || where._inClause || where._likeClause || where._nullCheck || where._dateComparison || where._andClause)) {
     const dbTableName = getDbTableName(tableName);
+    let sql = `SELECT COUNT(*) as count FROM "${dbTableName}"`;
+    let whereClause = '';
+    let params: any[] = [];
+    let paramIndex = 1;
     
-    // Convert field names to snake_case
-    const snakeField1 = toSnakeCase(field1);
-    const snakeField2 = toSnakeCase(field2);
-    
-    // Build SQL based on whether it's cross-table or same-table
-    let sql: string;
-    
-    if (sourceTable === targetTable) {
-      // Same table comparison
-      sql = `SELECT COUNT(*) as count FROM "${dbTableName}" WHERE "${snakeField1}" ${operator} "${snakeField2}"`;
-    } else {
-      // Cross-table comparison - need JOIN
-      const joinInfo = getJoinInfo(tableName, targetTable);
-      if (!joinInfo) {
-        throw new Error(`Cannot determine relationship between tables '${tableName}' and '${targetTable}'`);
+    // Handle different clause types
+    if (where._fieldComparison) {
+      const { sourceTable, field1, operator, targetTable, field2 } = where._fieldComparison;
+      const snakeField1 = toSnakeCase(field1);
+      const snakeField2 = toSnakeCase(field2);
+      
+      if (sourceTable === targetTable) {
+        whereClause = `"${snakeField1}" ${operator} "${snakeField2}"`;
+      } else {
+        const joinInfo = getJoinInfo(tableName, targetTable);
+        if (!joinInfo) {
+          throw new Error(`Cannot determine relationship between tables '${tableName}' and '${targetTable}'`);
+        }
+        
+        const sourceDbTable = getDbTableName(sourceTable);
+        const targetDbTable = getDbTableName(targetTable);
+        
+        sql = `SELECT COUNT(*) as count FROM "${dbTableName}" ${joinInfo.joinClause}`;
+        whereClause = `"${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
       }
-      
-      const sourceDbTable = getDbTableName(sourceTable);
-      const targetDbTable = getDbTableName(targetTable);
-      
-      sql = `SELECT COUNT(*) as count FROM "${dbTableName}" ${joinInfo.joinClause} WHERE "${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
+    } else if (where._inClause) {
+      const { field, values } = where._inClause;
+      const snakeField = toSnakeCase(field);
+      const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+      // Special handling for known enum fields
+      if ((tableName === 'order' && field === 'status') ||
+          (tableName === 'purchaseOrder' && field === 'status') ||
+          (tableName === 'payment' && field === 'status') ||
+          (tableName === 'user' && field === 'role')) {
+        // Cast enum values for PostgreSQL
+        const enumType = getEnumTypeName(tableName, field);
+        whereClause = `"${snakeField}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`;
+      } else {
+        whereClause = `"${snakeField}" IN (${placeholders})`;
+      }
+      params.push(...values);
+      paramIndex += values.length;
+    } else if (where._likeClause) {
+      const { field, pattern } = where._likeClause;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" LIKE $${paramIndex}`;
+      params.push(pattern);
+      paramIndex++;
+    } else if (where._nullCheck) {
+      const { field, isNotNull } = where._nullCheck;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" IS ${isNotNull ? 'NOT NULL' : 'NULL'}`;
+    } else if (where._dateComparison) {
+      const { field, operator, dateFn, intervalOp, intervalValue } = where._dateComparison;
+      const snakeField = toSnakeCase(field);
+      let dateExpression = dateFn;
+      if (intervalOp && intervalValue) {
+        dateExpression = `${dateFn} ${intervalOp} INTERVAL '${intervalValue}'`;
+      }
+      whereClause = `"${snakeField}" ${operator} ${dateExpression}`;
+    } else if (where._andClause) {
+      // Handle AND clause recursively
+      const clauses: string[] = [];
+      where._andClause.forEach((clause: any) => {
+        if (clause._fieldComparison) {
+          const { field1, operator, field2 } = clause._fieldComparison;
+          clauses.push(`"${toSnakeCase(field1)}" ${operator} "${toSnakeCase(field2)}"`);
+        } else if (clause._inClause) {
+          const { field, values } = clause._inClause;
+          const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+          // Check for enum fields
+          if ((tableName === 'order' && field === 'status') ||
+              (tableName === 'purchaseOrder' && field === 'status') ||
+              (tableName === 'payment' && field === 'status') ||
+              (tableName === 'user' && field === 'role')) {
+            const enumType = getEnumTypeName(tableName, field);
+            clauses.push(`"${toSnakeCase(field)}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`);
+          } else {
+            clauses.push(`"${toSnakeCase(field)}" IN (${placeholders})`);
+          }
+          params.push(...values);
+          paramIndex += values.length;
+        }
+        // Add more clause types as needed
+      });
+      whereClause = clauses.join(' AND ');
+    }
+    
+    if (whereClause) {
+      sql += ` WHERE ${whereClause}`;
     }
     
     // Add organization filter if specified
     if (options.org) {
-      sql += ` AND "${dbTableName}".organization_id = (SELECT id FROM organizations WHERE slug = $1 LIMIT 1)`;
-      const result = await prisma.$queryRawUnsafe(sql, options.org);
-      return Number((result as any)[0].count);
+      sql += whereClause ? ' AND' : ' WHERE';
+      sql += ` "${dbTableName}".organization_id = (SELECT id FROM organizations WHERE slug = $${paramIndex} LIMIT 1)`;
+      params.push(options.org);
     }
     
-    const result = await prisma.$queryRawUnsafe(sql);
+    const result = await prisma.$queryRawUnsafe(sql, ...params);
     return Number((result as any)[0].count);
   }
   
@@ -389,45 +519,147 @@ export async function executeShow(
   const tableInfo = getTableInfo(tableName);
   const where = parseWhereClause(options.where, tableInfo);
   
-  // Check if this is a field comparison - need to use raw SQL
-  if (where && where._fieldComparison) {
-    const { sourceTable, field1, operator, targetTable, field2 } = where._fieldComparison;
+  // Check if this needs raw SQL (field comparison, IN, LIKE, IS NULL, date, AND)
+  if (where && (where._fieldComparison || where._inClause || where._likeClause || where._nullCheck || where._dateComparison || where._andClause)) {
     const dbTableName = getDbTableName(tableName);
+    let sql = `SELECT "${dbTableName}".* FROM "${dbTableName}"`;
+    let whereClause = '';
+    let params: any[] = [];
+    let paramIndex = 1;
     
-    // Convert field names to snake_case
-    const snakeField1 = toSnakeCase(field1);
-    const snakeField2 = toSnakeCase(field2);
-    
-    // Build SELECT clause
-    let selectClause = `"${dbTableName}".*`;
-    if (options.select) {
-      // For cross-table queries, include joined table fields if needed
-      // For now, we'll select main table columns when using raw SQL
-      selectClause = `"${dbTableName}".*`;
+    // Handle different clause types
+    if (where._fieldComparison) {
+      const { sourceTable, field1, operator, targetTable, field2 } = where._fieldComparison;
+      const snakeField1 = toSnakeCase(field1);
+      const snakeField2 = toSnakeCase(field2);
+      
+      if (sourceTable === targetTable) {
+        whereClause = `"${snakeField1}" ${operator} "${snakeField2}"`;
+      } else {
+        const joinInfo = getJoinInfo(tableName, targetTable);
+        if (!joinInfo) {
+          throw new Error(`Cannot determine relationship between tables '${tableName}' and '${targetTable}'`);
+        }
+        
+        const sourceDbTable = getDbTableName(sourceTable);
+        const targetDbTable = getDbTableName(targetTable);
+        
+        sql = `SELECT "${dbTableName}".* FROM "${dbTableName}" ${joinInfo.joinClause}`;
+        whereClause = `"${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
+      }
+    } else if (where._inClause) {
+      const { field, values } = where._inClause;
+      const snakeField = toSnakeCase(field);
+      const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+      // Special handling for known enum fields
+      if ((tableName === 'order' && field === 'status') ||
+          (tableName === 'purchaseOrder' && field === 'status') ||
+          (tableName === 'payment' && field === 'status') ||
+          (tableName === 'user' && field === 'role')) {
+        // Cast enum values for PostgreSQL
+        const enumType = getEnumTypeName(tableName, field);
+        whereClause = `"${snakeField}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`;
+      } else {
+        whereClause = `"${snakeField}" IN (${placeholders})`;
+      }
+      params.push(...values);
+      paramIndex += values.length;
+    } else if (where._likeClause) {
+      const { field, pattern } = where._likeClause;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" LIKE $${paramIndex}`;
+      params.push(pattern);
+      paramIndex++;
+    } else if (where._nullCheck) {
+      const { field, isNotNull } = where._nullCheck;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" IS ${isNotNull ? 'NOT NULL' : 'NULL'}`;
+    } else if (where._dateComparison) {
+      const { field, operator, dateFn, intervalOp, intervalValue } = where._dateComparison;
+      const snakeField = toSnakeCase(field);
+      let dateExpression = dateFn;
+      if (intervalOp && intervalValue) {
+        dateExpression = `${dateFn} ${intervalOp} INTERVAL '${intervalValue}'`;
+      }
+      whereClause = `"${snakeField}" ${operator} ${dateExpression}`;
+    } else if (where._andClause) {
+      // Handle AND clause recursively
+      const clauses: string[] = [];
+      where._andClause.forEach((clause: any) => {
+        if (clause._fieldComparison) {
+          const { field1, operator, field2 } = clause._fieldComparison;
+          clauses.push(`"${toSnakeCase(field1)}" ${operator} "${toSnakeCase(field2)}"`);
+        } else if (clause._inClause) {
+          const { field, values } = clause._inClause;
+          const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+          // Check for enum fields
+          if ((tableName === 'order' && field === 'status') ||
+              (tableName === 'purchaseOrder' && field === 'status') ||
+              (tableName === 'payment' && field === 'status') ||
+              (tableName === 'user' && field === 'role')) {
+            const enumType = getEnumTypeName(tableName, field);
+            clauses.push(`"${toSnakeCase(field)}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`);
+          } else {
+            clauses.push(`"${toSnakeCase(field)}" IN (${placeholders})`);
+          }
+          params.push(...values);
+          paramIndex += values.length;
+        } else if (clause._likeClause) {
+          const { field, pattern } = clause._likeClause;
+          clauses.push(`"${toSnakeCase(field)}" LIKE $${paramIndex}`);
+          params.push(pattern);
+          paramIndex++;
+        } else if (clause._nullCheck) {
+          const { field, isNotNull } = clause._nullCheck;
+          clauses.push(`"${toSnakeCase(field)}" IS ${isNotNull ? 'NOT NULL' : 'NULL'}`);
+        } else if (clause._dateComparison) {
+          const { field, operator, dateFn, intervalOp, intervalValue } = clause._dateComparison;
+          const snakeField = toSnakeCase(field);
+          let dateExpression = dateFn;
+          if (intervalOp && intervalValue) {
+            dateExpression = `${dateFn} ${intervalOp} INTERVAL '${intervalValue}'`;
+          }
+          clauses.push(`"${snakeField}" ${operator} ${dateExpression}`);
+        } else {
+          // Handle simple conditions
+          for (const [field, value] of Object.entries(clause)) {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              // Handle operators like gt, lt, etc.
+              for (const [op, val] of Object.entries(value)) {
+                const operators: Record<string, string> = {
+                  gt: '>',
+                  gte: '>=',
+                  lt: '<',
+                  lte: '<='
+                };
+                if (operators[op]) {
+                  clauses.push(`"${toSnakeCase(field)}" ${operators[op]} $${paramIndex}`);
+                  params.push(val);
+                  paramIndex++;
+                }
+              }
+            } else {
+              // Simple equality
+              clauses.push(`"${toSnakeCase(field)}" = $${paramIndex}`);
+              params.push(value);
+              paramIndex++;
+            }
+          }
+        }
+      });
+      whereClause = clauses.join(' AND ');
     }
     
-    // Build SQL based on whether it's cross-table or same-table
-    let sql: string;
-    
-    if (sourceTable === targetTable) {
-      // Same table comparison
-      sql = `SELECT ${selectClause} FROM "${dbTableName}" WHERE "${snakeField1}" ${operator} "${snakeField2}"`;
-    } else {
-      // Cross-table comparison - need JOIN
-      const joinInfo = getJoinInfo(tableName, targetTable);
-      if (!joinInfo) {
-        throw new Error(`Cannot determine relationship between tables '${tableName}' and '${targetTable}'`);
-      }
-      
-      const sourceDbTable = getDbTableName(sourceTable);
-      const targetDbTable = getDbTableName(targetTable);
-      
-      sql = `SELECT ${selectClause} FROM "${dbTableName}" ${joinInfo.joinClause} WHERE "${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
+    if (whereClause) {
+      sql += ` WHERE ${whereClause}`;
     }
     
     // Add organization filter if specified
     if (options.org) {
-      sql += ` AND "${dbTableName}".organization_id = (SELECT id FROM organizations WHERE slug = $1 LIMIT 1)`;
+      sql += whereClause ? ' AND' : ' WHERE';
+      sql += ` "${dbTableName}".organization_id = (SELECT id FROM organizations WHERE slug = $${paramIndex} LIMIT 1)`;
+      params.push(options.org);
+      paramIndex++;
     }
     
     // Add ORDER BY if specified
@@ -440,15 +672,10 @@ export async function executeShow(
     sql += ` LIMIT ${options.limit} OFFSET ${options.offset}`;
     
     // Execute query
-    let result: any[];
-    if (options.org) {
-      result = await prisma.$queryRawUnsafe(sql, options.org);
-    } else {
-      result = await prisma.$queryRawUnsafe(sql);
-    }
+    const result = await prisma.$queryRawUnsafe(sql, ...params);
     
     // Convert Decimal and BigInt objects to strings for proper display
-    return result.map(row => {
+    return (result as any[]).map(row => {
       const converted: any = {};
       for (const [key, value] of Object.entries(row)) {
         if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'Decimal') {
@@ -463,7 +690,7 @@ export async function executeShow(
     });
   }
   
-  // Normal Prisma query for non-field comparisons
+  // Normal Prisma query for non-special WHERE clauses
   const model = (prisma as any)[tableInfo.name];
   if (!model) {
     throw new Error(`Model '${tableInfo.name}' not found in Prisma client`);
@@ -542,6 +769,62 @@ const TABLE_NAME_MAP: Record<string, string> = {
 
 function getDbTableName(modelName: string): string {
   return TABLE_NAME_MAP[modelName] || modelName;
+}
+
+// Get enum type name for a field
+function getEnumTypeName(tableName: string, fieldName: string): string {
+  // Map common enum fields to their PostgreSQL enum types
+  const enumMap: Record<string, Record<string, string>> = {
+    order: {
+      status: 'OrderStatus'
+    },
+    purchaseOrder: {
+      status: 'PurchaseOrderStatus'
+    },
+    shipment: {
+      status: 'ShipmentStatus'
+    },
+    payment: {
+      status: 'PaymentStatus'
+    },
+    return: {
+      status: 'ReturnStatus'
+    },
+    cycleCount: {
+      status: 'CycleCountStatus'
+    },
+    receipt: {
+      status: 'ReceiptStatus'
+    },
+    stockMovement: {
+      movementType: 'MovementType'
+    },
+    user: {
+      role: 'UserRole'
+    },
+    organization: {
+      subscriptionStatus: 'SubscriptionStatus'
+    },
+    returnItem: {
+      condition: 'ReturnCondition'
+    },
+    address: {
+      type: 'AddressType'
+    },
+    discount: {
+      type: 'DiscountType'
+    },
+    unitOfMeasure: {
+      type: 'UOMType'
+    }
+  };
+  
+  if (enumMap[tableName] && enumMap[tableName][fieldName]) {
+    return enumMap[tableName][fieldName];
+  }
+  
+  // Default: try PascalCase version of field name
+  return fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
 }
 
 // Get join information between two tables
@@ -660,8 +943,10 @@ export async function executeStats(
   const groupBy = groupByField ? `GROUP BY "${groupByField}"` : '';
   
   // Parse WHERE clause
-  let where = '';
+  let whereClause = '';
   let joinClause = '';
+  let params: any[] = [];
+  let paramIndex = 1;
   
   if (options.where) {
     const parsedWhere = parseWhereClause(options.where, tableInfo);
@@ -674,7 +959,7 @@ export async function executeStats(
       
       if (sourceTable === targetTable) {
         // Same table comparison
-        where = `WHERE "${snakeField1}" ${operator} "${snakeField2}"`;
+        whereClause = `"${snakeField1}" ${operator} "${snakeField2}"`;
       } else {
         // Cross-table comparison - need JOIN
         const joinInfo = getJoinInfo(tableName, targetTable);
@@ -686,9 +971,110 @@ export async function executeStats(
         const targetDbTable = getDbTableName(targetTable);
         
         joinClause = joinInfo.joinClause;
-        where = `WHERE "${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
+        whereClause = `"${sourceDbTable}"."${snakeField1}" ${operator} "${targetDbTable}"."${snakeField2}"`;
       }
-    } else {
+    } else if (parsedWhere && parsedWhere._inClause) {
+      const { field, values } = parsedWhere._inClause;
+      const snakeField = toSnakeCase(field);
+      const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+      // Special handling for known enum fields
+      if ((tableName === 'order' && field === 'status') ||
+          (tableName === 'purchaseOrder' && field === 'status') ||
+          (tableName === 'payment' && field === 'status') ||
+          (tableName === 'user' && field === 'role')) {
+        // Cast enum values for PostgreSQL
+        const enumType = getEnumTypeName(tableName, field);
+        whereClause = `"${snakeField}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`;
+      } else {
+        whereClause = `"${snakeField}" IN (${placeholders})`;
+      }
+      params.push(...values);
+      paramIndex += values.length;
+    } else if (parsedWhere && parsedWhere._likeClause) {
+      const { field, pattern } = parsedWhere._likeClause;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" LIKE $${paramIndex}`;
+      params.push(pattern);
+      paramIndex++;
+    } else if (parsedWhere && parsedWhere._nullCheck) {
+      const { field, isNotNull } = parsedWhere._nullCheck;
+      const snakeField = toSnakeCase(field);
+      whereClause = `"${snakeField}" IS ${isNotNull ? 'NOT NULL' : 'NULL'}`;
+    } else if (parsedWhere && parsedWhere._dateComparison) {
+      const { field, operator, dateFn, intervalOp, intervalValue } = parsedWhere._dateComparison;
+      const snakeField = toSnakeCase(field);
+      let dateExpression = dateFn;
+      if (intervalOp && intervalValue) {
+        dateExpression = `${dateFn} ${intervalOp} INTERVAL '${intervalValue}'`;
+      }
+      whereClause = `"${snakeField}" ${operator} ${dateExpression}`;
+    } else if (parsedWhere && parsedWhere._andClause) {
+      // Handle AND clause recursively
+      const clauses: string[] = [];
+      parsedWhere._andClause.forEach((clause: any) => {
+        if (clause._fieldComparison) {
+          const { field1, operator, field2 } = clause._fieldComparison;
+          clauses.push(`"${toSnakeCase(field1)}" ${operator} "${toSnakeCase(field2)}"`);
+        } else if (clause._inClause) {
+          const { field, values } = clause._inClause;
+          const placeholders = values.map((_, i) => `$${paramIndex + i}`).join(', ');
+          // Check for enum fields
+          if ((tableName === 'order' && field === 'status') ||
+              (tableName === 'purchaseOrder' && field === 'status') ||
+              (tableName === 'payment' && field === 'status') ||
+              (tableName === 'user' && field === 'role')) {
+            const enumType = getEnumTypeName(tableName, field);
+            clauses.push(`"${toSnakeCase(field)}" IN (${values.map((_, i) => `$${paramIndex + i}::"${enumType}"`).join(', ')})`);
+          } else {
+            clauses.push(`"${toSnakeCase(field)}" IN (${placeholders})`);
+          }
+          params.push(...values);
+          paramIndex += values.length;
+        } else if (clause._likeClause) {
+          const { field, pattern } = clause._likeClause;
+          clauses.push(`"${toSnakeCase(field)}" LIKE $${paramIndex}`);
+          params.push(pattern);
+          paramIndex++;
+        } else if (clause._nullCheck) {
+          const { field, isNotNull } = clause._nullCheck;
+          clauses.push(`"${toSnakeCase(field)}" IS ${isNotNull ? 'NOT NULL' : 'NULL'}`);
+        } else if (clause._dateComparison) {
+          const { field, operator, dateFn, intervalOp, intervalValue } = clause._dateComparison;
+          const snakeField = toSnakeCase(field);
+          let dateExpression = dateFn;
+          if (intervalOp && intervalValue) {
+            dateExpression = `${dateFn} ${intervalOp} INTERVAL '${intervalValue}'`;
+          }
+          clauses.push(`"${snakeField}" ${operator} ${dateExpression}`);
+        } else {
+          // Handle simple conditions
+          for (const [field, value] of Object.entries(clause)) {
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              // Handle operators like gt, lt, etc.
+              for (const [op, val] of Object.entries(value)) {
+                const operators: Record<string, string> = {
+                  gt: '>',
+                  gte: '>=',
+                  lt: '<',
+                  lte: '<='
+                };
+                if (operators[op]) {
+                  clauses.push(`"${toSnakeCase(field)}" ${operators[op]} $${paramIndex}`);
+                  params.push(val);
+                  paramIndex++;
+                }
+              }
+            } else {
+              // Simple equality
+              clauses.push(`"${toSnakeCase(field)}" = $${paramIndex}`);
+              params.push(value);
+              paramIndex++;
+            }
+          }
+        }
+      });
+      whereClause = clauses.join(' AND ');
+    } else if (parsedWhere) {
       // Simple WHERE clause - convert field names to snake_case
       let processedWhere = options.where;
       tableInfo.fields.forEach(field => {
@@ -699,7 +1085,7 @@ export async function executeStats(
           processedWhere = processedWhere.replace(regex, snakeField);
         }
       });
-      where = `WHERE ${processedWhere}`;
+      whereClause = processedWhere;
     }
   }
 
@@ -707,11 +1093,11 @@ export async function executeStats(
     SELECT ${groupByField ? `"${groupByField}",` : ''} ${aggregates.join(', ')}
     FROM "${dbTableName}"
     ${joinClause}
-    ${where}
+    ${whereClause ? `WHERE ${whereClause}` : ''}
     ${groupBy}
   `;
 
-  const result = await prisma.$queryRawUnsafe(sql);
+  const result = await prisma.$queryRawUnsafe(sql, ...params);
   
   // Convert Decimal objects to strings for proper display
   return (result as any[]).map(row => {
