@@ -23,7 +23,7 @@ Recent security improvements include enterprise-grade Row-Level Security (RLS) i
 - **CRITICAL**: Application uses `ventry_app` user to enforce RLS (no bypass)
 - [RLS Implementation Guide](./RLS_IMPLEMENTATION_GUIDE.md) | [RLS Guide](./docs/RLS_GUIDE.md) | [Implementation Summary](./docs/RLS_IMPLEMENTATION_SUMMARY.md)
 
-**⚠️ CRITICAL**: Test coverage for business logic remains at 10%. See the comprehensive audit for remaining tasks before production deployment.
+**⚠️ CRITICAL**: Test coverage for business logic has improved from 10% to 32% (7 of 22 backend routers now tested). See the comprehensive audit for remaining tasks before production deployment.
 
 ## 🏗️ Architecture Overview
 
@@ -721,10 +721,29 @@ SMTP_CONFIG="..."
 ## 🧪 Testing Strategy
 
 ### Backend Testing
-- **Unit Tests**: Service layer, utilities
+- **Unit Tests**: Service layer, utilities, tRPC routers
+  - **Current Coverage**: 32% of backend routers have comprehensive unit tests (7 of 22)
+  - **Completed Routers**: auth, users, orders, inventory, items, warehouses, customers
+  - **Test Count**: 148 unit tests across covered routers
 - **Integration Tests**: API endpoints, database operations
 - **E2E Tests**: Critical user workflows
 - **AI Agent Tests**: Mock LLM responses, prompt validation
+
+### Test Coverage Progress (2025-01-22)
+- **✅ auth.test.ts**: 17 tests - Authentication, JWT tokens, cookie management
+- **✅ users.test.ts**: 17 tests - User CRUD, role management, organization context
+- **✅ orders.test.ts**: 33 tests - Order lifecycle, allocations, shipments, returns
+- **✅ inventory.test.ts**: 21 tests - Stock adjustments, movement tracking, lot management
+- **✅ items.test.ts**: 21 tests - Item CRUD, bulk operations, variant management
+- **✅ warehouses.test.ts**: 19 tests - Warehouse operations, location hierarchy
+- **✅ customers.test.ts**: 20 tests - Customer management, addresses, credit checks
+
+### Testing Patterns Established
+- **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
+- **Auth Testing**: Response object mocks with setCookie/clearCookie methods
+- **ID Generation**: CUID helper function for valid test identifiers
+- **Permission Testing**: Role-based access control validation across all endpoints
+- **Error Coverage**: Comprehensive testing of error scenarios (NOT_FOUND, CONFLICT, FORBIDDEN)
 
 ### Frontend Testing
 - **Component Tests**: UI component behavior

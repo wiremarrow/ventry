@@ -235,6 +235,34 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
     - Cleaned up linting issues: removed unused imports/variables, consolidated imports
   - **Results**: Build compilation successful, all warehouse tests passing (9/9), zero TypeScript errors
 
+## 📊 Test Coverage Progress (NEW - 2025-01-22)
+
+### Backend Unit Test Coverage Improvements
+- **Status**: 32% of backend routers now have comprehensive unit tests (7 of 22)
+- **Tests Added**: 148 unit tests across 7 routers
+- **Testing Infrastructure**: Established comprehensive patterns for tRPC testing
+
+### ✅ Completed Test Suites:
+1. **auth.test.ts** (17 tests) - Authentication flows, JWT handling, cookie management
+2. **users.test.ts** (17 tests) - User CRUD operations, role management, organization context
+3. **orders.test.ts** (33 tests) - Order lifecycle, allocations, shipments, returns
+4. **inventory.test.ts** (21 tests) - Stock adjustments, movement tracking, lot management
+5. **items.test.ts** (21 tests) - Item CRUD, bulk operations, variant management
+6. **warehouses.test.ts** (19 tests) - Warehouse operations, location hierarchy, capacity tracking
+7. **customers.test.ts** (20 tests) - Customer management, addresses, credit checks
+
+### Testing Patterns Established:
+- **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
+- **Auth Testing**: Response object mocks with setCookie/clearCookie methods
+- **ID Generation**: CUID helper function for valid test identifiers
+- **Permission Testing**: Role-based access control validation across all endpoints
+- **Error Coverage**: Comprehensive testing of error scenarios (NOT_FOUND, CONFLICT, FORBIDDEN)
+
+### 📦 Remaining Routers to Test:
+- suppliers, purchaseOrders, receipts, returns, shipments
+- reports, analytics, categories, itemCategories, unitsOfMeasure
+- organizations, health, stockMovements, lots, productionOrders
+
 ## 🔒 Production Readiness Progress (NEW - 2025-01-15)
 
 ### Comprehensive Security & Performance Audit Completed
@@ -258,7 +286,9 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 
 ### 🚨 Critical Tasks Remaining:
 1. **Database Configuration**: Must use non-superuser role (current user bypasses RLS)
-2. **Test Coverage Crisis**: 18 of 22 backend routers have zero tests (82% untested)
+2. **Test Coverage Improvement**: 7 of 22 backend routers now have comprehensive unit tests (32% covered, up from 18%)
+   - ✅ Completed: auth, users, orders, inventory, items, warehouses, customers (148 total tests)
+   - 📦 Remaining: suppliers, purchaseOrders, receipts, returns, shipments, reports, analytics, and 8 others
 3. **Type Safety**: 170+ uses of `any` type throughout codebase
 4. **Auth Architecture**: Race conditions in authentication flow
 5. **Production Config**: Missing connection pooling, backups, monitoring

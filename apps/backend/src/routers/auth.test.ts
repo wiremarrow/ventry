@@ -3,6 +3,12 @@ import bcrypt from 'bcryptjs';
 import { createDirectCaller } from '../test-utils/trpc-test-client.js';
 import { mockUser, mockAuthenticatedUser } from '../test-utils/test-data.js';
 
+// Mock JWT module first to avoid hoisting issues
+vi.mock('../auth/jwt.js', () => ({
+  signJWT: vi.fn().mockReturnValue('mock-jwt-token'),
+  verifyJWT: vi.fn(),
+}));
+
 // Mock bcrypt
 vi.mock('bcryptjs', () => ({
   default: {
@@ -10,6 +16,19 @@ vi.mock('bcryptjs', () => ({
     hash: vi.fn(),
   },
 }));
+
+// Mock the auth service to ensure it uses our mock prisma
+vi.mock('../services/auth-service.js', async () => {
+  const actual = await vi.importActual('../services/auth-service.js');
+  return {
+    ...actual,
+    createAuthService: vi.fn().mockImplementation((options) => {
+      // Create a real AuthService instance but with our mocked prisma
+      const AuthService = (actual as any).AuthService;
+      return new AuthService(options);
+    }),
+  };
+});
 
 // Mock @ventry/database
 vi.mock('@ventry/database', () => {
@@ -56,14 +75,30 @@ const mockPrisma = {
   organization: {
     create: vi.fn(),
   },
+  $transaction: vi.fn().mockImplementation(async (fn) => {
+    // Simple transaction mock that just calls the function with mockPrisma
+    return await fn(mockPrisma);
+  }),
 };
 
 describe('Auth Router', () => {
   let caller: Awaited<ReturnType<typeof createDirectCaller>>;
+  let mockRes: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    caller = await createDirectCaller({ prisma: mockPrisma as any });
+    
+    // Create a proper mock response object with setCookie
+    mockRes = {
+      setCookie: vi.fn(),
+      clearCookie: vi.fn(),
+      header: vi.fn(),
+    };
+    
+    caller = await createDirectCaller({ 
+      prisma: mockPrisma as any,
+      res: mockRes
+    });
   });
 
   describe('login', () => {
@@ -205,7 +240,8 @@ describe('Auth Router', () => {
     it('should return current user when authenticated', async () => {
       const authenticatedCaller = await createDirectCaller({ 
         user: mockAuthenticatedUser,
-        prisma: mockPrisma as any 
+        prisma: mockPrisma as any,
+        res: mockRes
       });
 
       const result = await authenticatedCaller.auth.me();
@@ -215,6 +251,85 @@ describe('Auth Router', () => {
 
     it('should throw error when not authenticated', async () => {
       await expect(caller.auth.me()).rejects.toThrow('UNAUTHORIZED');
+    });
+  });
+
+  describe('logout', () => {
+    it('should successfully logout authenticated user', async () => {
+      const authenticatedCaller = await createDirectCaller({ 
+        user: mockAuthenticatedUser,
+        prisma: mockPrisma as any,
+        res: mockRes
+      });
+
+      const result = await authenticatedCaller.auth.logout();
+
+      expect(result).toEqual({ success: true });
+      // Check that clearCookie was called for each cookie
+      expect(mockRes.clearCookie).toHaveBeenCalledTimes(4); // auth-token, active-organization, refresh-token, session-id
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('auth-token', expect.any(Object));
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('active-organization', expect.any(Object));
+    });
+
+    it('should handle logout when not authenticated', async () => {
+      const result = await caller.auth.logout();
+
+      expect(result).toEqual({ success: true });
+      // Should still clear cookies even if not authenticated
+      expect(mockRes.clearCookie).toHaveBeenCalledTimes(4); // auth-token, active-organization, refresh-token, session-id
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('auth-token', expect.any(Object));
+      expect(mockRes.clearCookie).toHaveBeenCalledWith('active-organization', expect.any(Object));
+    });
+  });
+
+  describe('refreshToken', () => {
+    it('should throw NOT_IMPLEMENTED error', async () => {
+      await expect(
+        caller.auth.refreshToken({
+          refreshToken: 'any-refresh-token',
+        })
+      ).rejects.toThrow('Refresh token not implemented yet');
+    });
+  });
+
+  describe('debug', () => {
+    it('should return debug information for authenticated user', async () => {
+      const mockReq = {
+        headers: { 'x-organization-id': 'org-123' },
+        cookies: {
+          'active-organization': 'org-123',
+          'auth-token': 'token-123',
+        },
+      };
+
+      const authenticatedCaller = await createDirectCaller({ 
+        user: mockAuthenticatedUser,
+        prisma: mockPrisma as any,
+        res: mockRes,
+        req: mockReq
+      });
+
+      const result = await authenticatedCaller.auth.debug();
+
+      expect(result).toEqual({
+        user: {
+          id: mockAuthenticatedUser.id,
+          email: mockAuthenticatedUser.email,
+          organizationId: mockAuthenticatedUser.organizationId,
+          organizationRole: mockAuthenticatedUser.organizationRole,
+        },
+        headers: {
+          'x-organization-id': 'org-123',
+        },
+        cookies: {
+          'active-organization': 'org-123',
+          'auth-token': 'present',
+        },
+      });
+    });
+
+    it('should throw error when not authenticated', async () => {
+      await expect(caller.auth.debug()).rejects.toThrow('UNAUTHORIZED');
     });
   });
 });
