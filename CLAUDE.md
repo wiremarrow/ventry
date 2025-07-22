@@ -226,6 +226,67 @@ pnpm db:seed:multi-org          # Seed with multi-org test data
 2. Restart dev servers after env changes
 3. Verify with: `SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user;`
 
+### **Database Verification Tool**
+A comprehensive READ-ONLY tool for inspecting database state, analyzing business data, and testing RLS policies. Supports cross-table comparisons and complex business queries.
+
+**Quick Examples**:
+```bash
+# After seeding, verify counts
+pnpm db:verify count all
+
+# INVENTORY ANALYSIS
+# Low stock items (cross-table comparison!)
+pnpm db:verify count inventory --where "qtyOnHand <= item.reorderPoint"
+pnpm db:verify show inventory --where "qtyOnHand <= item.reorderPoint" --select "item.sku,item.name,qtyOnHand,item.reorderPoint"
+
+# Over-reserved inventory
+pnpm db:verify show inventory --where "qtyReserved > qtyOnHand" --select "item.sku,qtyOnHand,qtyReserved"
+
+# Inventory value by warehouse
+pnpm db:verify stats inventory --group-by locationId --sum qtyOnHand --count id
+
+# ORDER MANAGEMENT
+# Order status distribution
+pnpm db:verify stats order --group-by status --count id --sum grandTotal
+
+# High-value pending orders
+pnpm db:verify show order --where "status = 'PENDING' AND grandTotal > 5000" --order-by grandTotal --order desc
+
+# SUPPLIER PERFORMANCE
+# Overdue purchase orders
+pnpm db:verify show purchaseOrder --where "status = 'ORDERED' AND expectedDate < NOW()"
+
+# CUSTOMER INSIGHTS
+# Top customers by revenue
+pnpm db:verify stats order --group-by customerId --sum grandTotal --count id
+
+# RLS TESTING
+# Test what employee can see
+pnpm db:verify access order --as employee@ventry.com
+
+# Compare user access across roles
+pnpm db:verify compare customer --users "admin@ventry.com,manager@ventry.com,employee@ventry.com"
+
+# DATA EXPORT
+# Export inventory snapshot
+pnpm db:verify show inventory --select "item.sku,location.code,qtyOnHand" --format csv > inventory.csv
+```
+
+**Key Features**:
+- **Cross-table comparisons**: Compare fields across related tables (e.g., `inventory.qtyOnHand <= item.reorderPoint`)
+- **Business queries**: Pre-built patterns for inventory, orders, suppliers, customers, finance
+- **45+ tables supported**: All core business entities with proper relationships
+- **Multiple output formats**: table (default), json, csv, count
+- **RLS testing**: Simulate any user to test Row-Level Security policies
+- **READ-ONLY**: All operations are safe SELECT queries, no data modifications
+
+**Security Context**:
+- `--user admin`: Uses DATABASE_ADMIN_URL (sees everything, bypasses RLS)
+- `--user app`: Uses DATABASE_URL (respects RLS, requires auth)
+- `--auth <email>`: Simulates authenticated context for RLS testing
+
+**Full Documentation**: See [DATABASE_VERIFICATION.md](./docs/DATABASE_VERIFICATION.md) or run `pnpm db:verify --help` for extensive business query examples
+
 ---
 
 ## 🚀 DEPLOYMENT - PRODUCTION READINESS

@@ -657,6 +657,11 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **tRPC Client**: Replaced `any` with proper window type extension
   - **Database Types**: Replaced `any` with `unknown` in Supabase placeholder types
   - **Remaining**: Test files contain mock `as any` casts which are common practice
+- ✅ **Low Stock Filter Fix (2025-01-22)**: Fixed low stock filter to include items with zero quantity
+  - **Root Cause**: Backend inventory list procedure was filtering out items with `qtyOnHand = 0` by default
+  - **Solution**: Modified filter logic to automatically include zero quantity items when `lowStock` is true
+  - **Impact**: All items below their reorder point now appear in the low stock filter, including out-of-stock items
+  - **Test Coverage**: Added unit test to verify zero quantity items are included in low stock filtering
 
 ### Project Status
 
@@ -918,8 +923,15 @@ pnpm typecheck     # Type checking
 pnpm db:push       # Push schema changes
 pnpm db:migrate    # Run migrations
 pnpm db:seed       # Seed basic test data
-pnpm db:seed:comprehensive  # Seed with full demo data (45 products, warehouses, inventory)
+pnpm db:seed:single # Seed single org with comprehensive data
+pnpm db:seed:multi  # Seed multi-org with comprehensive data
 pnpm db:reset      # Reset database and reseed
+
+# Database Verification
+pnpm db:verify count all        # Verify seed data
+pnpm db:verify show items --limit 5  # Check specific data
+pnpm db:verify access items --as employee@ventry.com  # Test RLS
+pnpm db:verify --help          # Full documentation
 
 # AI Agents
 pnpm agents:test   # Test AI agent responses

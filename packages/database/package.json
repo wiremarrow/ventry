@@ -13,11 +13,11 @@
     "db:migrate:deploy": "./scripts/db-admin.sh migrate deploy",
     "db:studio": "dotenv -e ../../.env -- prisma studio",
     "db:seed": "./scripts/db-admin.sh seed",
-    "db:seed:basic": "./scripts/db-admin.sh seed --basic",
-    "db:seed:comprehensive": "./scripts/db-admin.sh seed --comprehensive",
-    "db:seed:multi-org": "./scripts/db-admin.sh seed --multi-org",
-    "db:seed:multi-org-comprehensive": "./scripts/db-admin.sh seed --multi-org-comprehensive",
-    "db:reset": "./scripts/db-admin.sh migrate reset --force"
+    "db:seed:single": "./scripts/db-admin.sh seed-single",
+    "db:seed:multi": "./scripts/db-admin.sh seed-multi",
+    "db:reset": "./scripts/db-admin.sh migrate reset --force",
+    "db:verify": "./scripts/db-admin.sh verify",
+    "db:verify:help": "tsx scripts/db-verify.ts --help"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
@@ -26,7 +26,8 @@
   "devDependencies": {
     "@faker-js/faker": "^9.9.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^24.0.10",
+    "@types/node": "^24.0.13",
+    "commander": "^14.0.0",
     "dotenv-cli": "^8.0.0",
     "prisma": "^6.11.1",
     "ts-node": "^10.9.1",

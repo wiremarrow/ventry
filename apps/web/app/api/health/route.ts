@@ -29,7 +29,7 @@ export async function GET() {
     } else {
       services.backend = 'unhealthy';
     }
-  } catch (error) {
+  } catch (_error) {
     services.backend = 'unreachable';
   }
 

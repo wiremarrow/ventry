@@ -276,6 +276,62 @@ describe('Inventory Router', () => {
       expect(result.inventory[0].lowStock).toBe(true);
     });
 
+    it('should include zero quantity items when filtering for low stock', async () => {
+      const mockInventory = [
+        {
+          id: testId('inv1'),
+          qtyOnHand: 0,  // Zero quantity
+          qtyReserved: 0,
+          item: {
+            reorderPoint: 10,  // Has reorder point
+            category: {},
+            unitOfMeasure: {},
+          },
+          location: {
+            warehouse: {},
+          },
+          lot: null,
+        },
+        {
+          id: testId('inv2'),
+          qtyOnHand: 5,  // Below reorder point
+          qtyReserved: 0,
+          item: {
+            reorderPoint: 20,
+            category: {},
+            unitOfMeasure: {},
+          },
+          location: {
+            warehouse: {},
+          },
+          lot: null,
+        },
+      ];
+
+      mockPrisma.inventory.findMany.mockResolvedValue(mockInventory);
+      mockPrisma.inventory.count.mockResolvedValue(2);
+
+      const result = await caller.inventory.list({
+        lowStock: true,
+        page: 1,
+        limit: 20,
+      });
+
+      // Should include both items (zero quantity and low quantity)
+      expect(result.inventory).toHaveLength(2);
+      expect(result.inventory[0].lowStock).toBe(true);
+      expect(result.inventory[1].lowStock).toBe(true);
+      
+      // Verify that zero quantity filtering was NOT applied when lowStock is true
+      expect(mockPrisma.inventory.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({
+            qtyOnHand: { gt: 0 }
+          })
+        })
+      );
+    });
+
     it('should require organization context', async () => {
       const noOrgCaller = await createDirectCaller({ 
         prisma: mockPrisma as any,

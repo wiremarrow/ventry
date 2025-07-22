@@ -117,14 +117,14 @@ export const inventoryRouter = createTRPCRouter({
       }
 
       // Quantity filters
-      if (!includeZeroQuantity) {
+      // When filtering for low stock, we need to include zero quantity items
+      // since they are by definition below their reorder point
+      if (!includeZeroQuantity && !lowStock) {
         where.qtyOnHand = { gt: 0 };
       }
 
-      // Low stock filter
-      if (lowStock) {
-        // We'll filter low stock items in post-processing since we can't compare fields directly in Prisma
-      }
+      // Low stock filter - handled differently due to Prisma limitations
+      // We need to fetch all items and filter in memory when lowStock is true
 
       // Expiring soon filter
       if (expiringSoon) {
@@ -139,9 +139,14 @@ export const inventoryRouter = createTRPCRouter({
         };
       }
 
-      // Execute queries
-      const [inventory, total] = await Promise.all([
-        ctx.prisma.inventory.findMany({
+      // Execute queries - special handling for lowStock filter
+      let inventory;
+      let total;
+      
+      if (lowStock) {
+        // When filtering by low stock, we need to fetch all items first
+        // because Prisma doesn't support field-to-field comparisons
+        const allInventory = await ctx.prisma.inventory.findMany({
           where,
           include: {
             item: {
@@ -157,8 +162,6 @@ export const inventoryRouter = createTRPCRouter({
             },
             lot: true,
           },
-          skip: (page - 1) * limit,
-          take: limit,
           orderBy: sortBy === 'item' 
             ? { item: { name: sortOrder } }
             : sortBy === 'location'
@@ -166,12 +169,51 @@ export const inventoryRouter = createTRPCRouter({
             : sortBy === 'quantity'
             ? { qtyOnHand: sortOrder }
             : { lastCountedAt: sortOrder },
-        }),
-        ctx.prisma.inventory.count({ where }),
-      ]);
+        });
+        
+        // Filter for low stock items
+        const lowStockInventory = allInventory.filter(inv => 
+          inv.item.reorderPoint && inv.qtyOnHand <= inv.item.reorderPoint
+        );
+        
+        // Apply pagination to filtered results
+        total = lowStockInventory.length;
+        inventory = lowStockInventory.slice((page - 1) * limit, page * limit);
+      } else {
+        // Normal pagination when not filtering by low stock
+        [inventory, total] = await Promise.all([
+          ctx.prisma.inventory.findMany({
+            where,
+            include: {
+              item: {
+                include: {
+                  category: true,
+                  unitOfMeasure: true,
+                },
+              },
+              location: {
+                include: {
+                  warehouse: true,
+                },
+              },
+              lot: true,
+            },
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: sortBy === 'item' 
+              ? { item: { name: sortOrder } }
+              : sortBy === 'location'
+              ? { location: { code: sortOrder } }
+              : sortBy === 'quantity'
+              ? { qtyOnHand: sortOrder }
+              : { lastCountedAt: sortOrder },
+          }),
+          ctx.prisma.inventory.count({ where }),
+        ]);
+      }
 
-      // Calculate available quantities and filter if needed
-      let inventoryWithAvailable = inventory.map(inv => ({
+      // Calculate available quantities
+      const inventoryWithAvailable = inventory.map(inv => ({
         ...inv,
         qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
         lowStock: inv.item.reorderPoint ? inv.qtyOnHand <= inv.item.reorderPoint : false,
@@ -180,10 +222,7 @@ export const inventoryRouter = createTRPCRouter({
           false,
       }));
 
-      // Apply low stock filter if requested
-      if (lowStock) {
-        inventoryWithAvailable = inventoryWithAvailable.filter(inv => inv.lowStock);
-      }
+      // Note: Low stock filtering is already applied during query execution above
 
       return {
         inventory: inventoryWithAvailable,

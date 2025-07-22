@@ -64,6 +64,12 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - rls-service.test.ts: Migrated from $executeRawUnsafe to secure $executeRaw
 - **Test count**: 591 unit tests all passing (0 failures, 1 skipped)
 - **Security improvements**: Fixed categories router missing organizationId vulnerability
+✅ **Low Stock Filter Bug Fix COMPLETE** - Zero Quantity Items Now Included (2025-01-22)
+- **Root Cause**: Inventory list procedure was excluding items with `qtyOnHand = 0` when `includeZeroQuantity` was false
+- **Solution**: Updated filter logic to skip zero quantity filtering when `lowStock` filter is active
+- **Technical Details**: Modified `inventory.ts` line 122 to check `if (!includeZeroQuantity && !lowStock)`
+- **Impact**: Users can now see ALL items that need reordering, including completely out-of-stock items
+- **Test Coverage**: Added unit test to verify zero quantity items are properly included in low stock results
 - **Created db-admin.sh script** for consistent admin database operations
 - **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
 - **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)

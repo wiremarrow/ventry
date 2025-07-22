@@ -1,20 +1,21 @@
 #!/usr/bin/env tsx
 /**
- * Comprehensive Multi-Organization Test Data Seeder
+ * Multi-Organization Comprehensive Seeder
  * 
- * This script creates comprehensive test data for multiple organizations to test:
- * - Row-Level Security (RLS) isolation across ALL pages
- * - Multi-tenant data separation for all entities
- * - Organization context switching with full data
+ * Creates 3 organizations with full comprehensive data:
+ * - Ventry Corporation (default org)
+ * - TechStart Inc.
+ * - Global Retail Co.
  * 
- * Each organization gets the same volume of data as the comprehensive seed:
+ * Each organization gets the same volume of data:
  * - 45 products across 3 categories
- * - 4 warehouses with 10 locations each
+ * - 4 warehouses with 40+ locations each
  * - 25 customers with addresses
  * - 12 suppliers with contacts
- * - Purchase orders, receipts, shipments, returns, etc.
+ * - Purchase orders, sales orders, shipments, returns, etc.
+ * - Full historical data for analytics
  * 
- * Run with: pnpm db:seed:multi-org-comprehensive
+ * Run with: pnpm db:seed:multi
  */
 
 import { prisma } from '../index.js';
@@ -25,8 +26,8 @@ import { faker } from '@faker-js/faker';
 // Set consistent seed for reproducible data
 faker.seed(12345);
 
-async function clearBusinessData() {
-  console.log('🧹 Clearing existing business data...');
+async function clearDatabase() {
+  console.log('🧹 Clearing entire database...');
   
   // Delete in reverse order of dependencies
   await prisma.notification.deleteMany();
@@ -66,34 +67,21 @@ async function clearBusinessData() {
   await prisma.shippingMethod.deleteMany();
   await prisma.carrier.deleteMany();
   await prisma.paymentMethod.deleteMany();
+  await prisma.organizationMember.deleteMany();
+  await prisma.organization.deleteMany();
+  await prisma.userRole.deleteMany();
+  await prisma.employee.deleteMany();
+  await prisma.user.deleteMany();
   
-  // Delete org members and organizations except the default
-  await prisma.organizationMember.deleteMany({
-    where: {
-      organization: {
-        slug: { not: 'ventry' }
-      }
-    }
-  });
-  await prisma.organization.deleteMany({
-    where: { slug: { not: 'ventry' } }
-  });
-  
-  // Delete non-core users
-  await prisma.user.deleteMany({
-    where: {
-      email: {
-        notIn: ['admin@ventry.com', 'manager@ventry.com', 'employee@ventry.com', 'user@ventry.com']
-      }
-    }
-  });
-  
-  console.log('✅ Business data cleared\n');
+  console.log('✅ Database cleared');
 }
 
 // Helper to create organization-prefixed data
 function orgPrefix(orgSlug: string, value: string): string {
-  return orgSlug === 'techstart' ? `TS-${value}` : `GR-${value}`;
+  if (orgSlug === 'ventry-corp') return value; // No prefix for Ventry
+  if (orgSlug === 'techstart') return `TS-${value}`;
+  if (orgSlug === 'global-retail') return `GR-${value}`;
+  return value;
 }
 
 async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
@@ -134,22 +122,22 @@ async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'techstart' ? 'Electronics' : 'Apparel',
-        description: orgSlug === 'techstart' ? 'Electronic devices and accessories' : 'Clothing and accessories',
+        name: orgSlug === 'ventry-corp' ? 'Electronics' : (orgSlug === 'techstart' ? 'Electronics' : 'Apparel'),
+        description: orgSlug === 'ventry-corp' ? 'Electronic devices and accessories' : (orgSlug === 'techstart' ? 'Electronic devices and accessories' : 'Clothing and accessories'),
       }
     }),
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'techstart' ? 'Computer Accessories' : 'Home & Garden',
-        description: orgSlug === 'techstart' ? 'Keyboards, mice, cables, etc.' : 'Home decor and garden supplies',
+        name: orgSlug === 'ventry-corp' ? 'Office Supplies' : (orgSlug === 'techstart' ? 'Computer Accessories' : 'Home & Garden'),
+        description: orgSlug === 'ventry-corp' ? 'Office supplies and stationery' : (orgSlug === 'techstart' ? 'Keyboards, mice, cables, etc.' : 'Home decor and garden supplies'),
       }
     }),
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'techstart' ? 'Office Equipment' : 'Sports & Outdoors',
-        description: orgSlug === 'techstart' ? 'Printers, scanners, office supplies' : 'Sporting goods and outdoor equipment',
+        name: orgSlug === 'ventry-corp' ? 'Furniture' : (orgSlug === 'techstart' ? 'Office Equipment' : 'Sports & Outdoors'),
+        description: orgSlug === 'ventry-corp' ? 'Office and home furniture' : (orgSlug === 'techstart' ? 'Printers, scanners, office supplies' : 'Sporting goods and outdoor equipment'),
       }
     }),
   ]);
@@ -159,7 +147,7 @@ async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
 
 async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: string, basicData: any) {
   const { uoms, categories } = basicData;
-  const prefix = orgSlug === 'techstart' ? 'TS' : 'GR';
+  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
   
   console.log(`  🏭 Creating warehouses...`);
   
@@ -401,7 +389,7 @@ async function seedInventoryAndOperationsForOrg(
   adminUser: any
 ) {
   const { items, locations, customers, suppliers, warehouses } = data;
-  const prefix = orgSlug === 'techstart' ? 'TS' : 'GR';
+  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
   
   console.log(`  📊 Creating inventory records...`);
   
@@ -427,6 +415,75 @@ async function seedInventoryAndOperationsForOrg(
       inventoryRecords.push(inventory);
     }
   }
+
+  // Create low-stock test scenarios for each organization
+  console.log('  🚨 Creating low-stock test items...');
+  
+  // Critical stock items (first 5 items have 0-4 units)
+  for (let i = 0; i < Math.min(5, items.length); i++) {
+    const item = items[i];
+    const location = locations[0];
+    
+    // Find existing inventory record
+    const existingInventory = inventoryRecords.find(
+      inv => inv.itemId === item.id && inv.locationId === location.id
+    );
+    
+    if (existingInventory) {
+      await prisma.inventory.update({
+        where: { id: existingInventory.id },
+        data: {
+          qtyOnHand: Math.floor(Math.random() * 5), // 0-4 units
+          qtyReserved: 0
+        }
+      });
+    }
+  }
+  
+  // Below reorder point items (next 5 items)
+  for (let i = 5; i < Math.min(10, items.length); i++) {
+    const item = items[i];
+    const location = locations[0];
+    
+    const existingInventory = inventoryRecords.find(
+      inv => inv.itemId === item.id && inv.locationId === location.id
+    );
+    
+    if (existingInventory && item.reorderPoint > 0) {
+      const belowReorderQty = Math.max(1, item.reorderPoint - Math.floor(Math.random() * 5) - 1);
+      await prisma.inventory.update({
+        where: { id: existingInventory.id },
+        data: {
+          qtyOnHand: belowReorderQty,
+          qtyReserved: 0
+        }
+      });
+    }
+  }
+  
+  // Zero stock items (next 3 items)
+  for (let i = 10; i < Math.min(13, items.length); i++) {
+    const item = items[i];
+    const location = locations[0];
+    
+    const existingInventory = inventoryRecords.find(
+      inv => inv.itemId === item.id && inv.locationId === location.id
+    );
+    
+    if (existingInventory) {
+      await prisma.inventory.update({
+        where: { id: existingInventory.id },
+        data: {
+          qtyOnHand: 0,
+          qtyReserved: 0
+        }
+      });
+    }
+  }
+  
+  console.log('    ✓ Items 1-5: Critical stock (0-4 units)');
+  console.log('    ✓ Items 6-10: Below reorder point');
+  console.log('    ✓ Items 11-13: Zero stock');
 
   console.log(`  📈 Creating stock movements...`);
   
@@ -521,7 +578,7 @@ async function seedAllOtherDataForOrg(
   adminUser: any
 ) {
   const { suppliers, items, warehouses, customers, orders } = data;
-  const prefix = orgSlug === 'techstart' ? 'TS' : 'GR';
+  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
   
   console.log(`  🚚 Creating shipping and payment methods...`);
   
@@ -907,14 +964,59 @@ async function createOrganizationWithFullData(
 }
 
 async function main() {
-  console.log('🔒 Creating comprehensive multi-organization test data...\n');
+  console.log('🌱 Starting multi-organization comprehensive seed...\n');
 
   try {
-    // Clear existing business data first
-    await clearBusinessData();
+    // Clear entire database first
+    await clearDatabase();
     
     // Create password hash once for all users
     const password = await bcrypt.hash('password123', 10);
+
+    // Create Ventry Corporation users
+    const admin = await prisma.user.create({
+      data: {
+        email: 'admin@ventry.com',
+        username: 'admin',
+        firstName: 'Admin',
+        lastName: 'User',
+        password,
+        role: 'ADMIN',
+      },
+    });
+
+    const manager = await prisma.user.create({
+      data: {
+        email: 'manager@ventry.com',
+        username: 'manager',
+        firstName: 'Manager',
+        lastName: 'User',
+        password,
+        role: 'MANAGER',
+      },
+    });
+
+    const employee = await prisma.user.create({
+      data: {
+        email: 'employee@ventry.com',
+        username: 'employee',
+        firstName: 'Employee',
+        lastName: 'User',
+        password,
+        role: 'EMPLOYEE',
+      },
+    });
+
+    const user = await prisma.user.create({
+      data: {
+        email: 'user@ventry.com',
+        username: 'user',
+        firstName: 'Regular',
+        lastName: 'User',
+        password,
+        role: 'USER',
+      },
+    });
 
     // Create users for TechStart
     const alice = await prisma.user.create({
@@ -962,6 +1064,22 @@ async function main() {
       },
     });
 
+    // Create Ventry Corporation with full data
+    await createOrganizationWithFullData(
+      'Ventry Corporation',
+      'ventry-corp',
+      { admin, employee: manager }
+    );
+    
+    // Add employee to Ventry org
+    await prisma.organizationMember.create({
+      data: {
+        organizationId: (await prisma.organization.findFirst({ where: { slug: 'ventry-corp' } }))!.id,
+        userId: employee.id,
+        role: 'MEMBER',
+      }
+    });
+
     // Create TechStart with full data
     await createOrganizationWithFullData(
       'TechStart Inc.',
@@ -976,47 +1094,60 @@ async function main() {
       { admin: charlie, employee: diana }
     );
 
-    console.log('\n✅ Comprehensive RLS test data created successfully!');
-    console.log('\n📊 Summary:');
+    console.log('\n✅ Multi-organization comprehensive seed completed!\n');
+    console.log('📊 Summary:');
     console.log('═══════════════════════════════════════════════════════════════');
-    console.log('\n🏢 Organization 1: TechStart Inc.');
-    console.log('   Users: alice@techstart.com (admin), bob@techstart.com (employee)');
+    console.log('👤 Users:');
+    console.log('  • admin@ventry.com / password123 (ADMIN role)');
+    console.log('  • manager@ventry.com / password123 (MANAGER role)');
+    console.log('  • employee@ventry.com / password123 (EMPLOYEE role)');
+    console.log('  • user@ventry.com / password123 (USER role - no org access)');
+    console.log('  • alice@techstart.com / password123 (ADMIN role)');
+    console.log('  • bob@techstart.com / password123 (EMPLOYEE role)');
+    console.log('  • charlie@globalretail.com / password123 (ADMIN role)');
+    console.log('  • diana@globalretail.com / password123 (EMPLOYEE role)');
+    
+    console.log('\n🏢 Organization 1: Ventry Corporation');
+    console.log('   Members: admin (OWNER), manager (ADMIN), employee (MEMBER)');
+    console.log('   Data:');
+    console.log('   - 45 items (Electronics, Office Supplies, Furniture)');
+    console.log('   - 4 warehouses with 40+ locations');
+    console.log('   - 25 customers, 12 suppliers');
+    console.log('   - 35 sales orders, 20 purchase orders');
+    console.log('   - Full inventory with movements, shipments, returns');
+    console.log('   - NO prefix for SKUs/codes');
+    
+    console.log('\n🏢 Organization 2: TechStart Inc.');
+    console.log('   Members: alice@techstart.com (OWNER), bob@techstart.com (MEMBER)');
     console.log('   Data:');
     console.log('   - 45 items (Electronics, Computer Accessories, Office Equipment)');
-    console.log('   - 4 warehouses with 40 locations total');
-    console.log('   - 25 customers with addresses');
-    console.log('   - 12 suppliers with contacts');
-    console.log('   - 33 sales orders');
-    console.log('   - 15 purchase orders with receipts');
-    console.log('   - Shipments, returns, cycle counts, adjustments');
+    console.log('   - 4 warehouses with 40 locations');
+    console.log('   - 25 customers, 12 suppliers');
+    console.log('   - 33 sales orders, 15 purchase orders');
+    console.log('   - Full inventory with movements, shipments, returns');
     console.log('   - All items/codes prefixed with TS-');
     
-    console.log('\n🏢 Organization 2: Global Retail Co.');
-    console.log('   Users: charlie@globalretail.com (admin), diana@globalretail.com (employee)');
+    console.log('\n🏢 Organization 3: Global Retail Co.');
+    console.log('   Members: charlie@globalretail.com (OWNER), diana@globalretail.com (MEMBER)');
     console.log('   Data:');
     console.log('   - 45 items (Apparel, Home & Garden, Sports & Outdoors)');
-    console.log('   - 4 warehouses with 40 locations total');
-    console.log('   - 25 customers with addresses');
-    console.log('   - 12 suppliers with contacts');
-    console.log('   - 33 sales orders');
-    console.log('   - 15 purchase orders with receipts');
-    console.log('   - Shipments, returns, cycle counts, adjustments');
+    console.log('   - 4 warehouses with 40 locations');
+    console.log('   - 25 customers, 12 suppliers');
+    console.log('   - 33 sales orders, 15 purchase orders');
+    console.log('   - Full inventory with movements, shipments, returns');
     console.log('   - All items/codes prefixed with GR-');
     
-    console.log('\n🔐 All users password: password123');
-    
-    console.log('\n🧪 Testing RLS Isolation:');
-    console.log('   1. Login as alice@techstart.com');
-    console.log('      - Should see ONLY TechStart data on ALL pages');
-    console.log('      - All SKUs, codes, etc. should start with TS-');
-    console.log('   2. Login as charlie@globalretail.com');
-    console.log('      - Should see ONLY Global Retail data on ALL pages');
-    console.log('      - All SKUs, codes, etc. should start with GR-');
-    console.log('   3. Verify complete isolation on:');
-    console.log('      - Dashboard, Items, Warehouses, Locations, Inventory');
-    console.log('      - Customers, Suppliers, Orders, Purchase Orders');
-    console.log('      - Receipts, Shipments, Returns, Movements');
-    console.log('      - Reports, Users, and all other pages');
+    console.log('\n🧪 Testing Multi-Tenancy:');
+    console.log('   1. Login as admin@ventry.com');
+    console.log('      - Should see ONLY Ventry Corporation data');
+    console.log('      - SKUs have no prefix');
+    console.log('   2. Login as alice@techstart.com');
+    console.log('      - Should see ONLY TechStart data');
+    console.log('      - All SKUs start with TS-');
+    console.log('   3. Login as charlie@globalretail.com');
+    console.log('      - Should see ONLY Global Retail data');
+    console.log('      - All SKUs start with GR-');
+    console.log('   4. user@ventry.com has NO organization access');
     console.log('═══════════════════════════════════════════════════════════════');
 
   } catch (error) {

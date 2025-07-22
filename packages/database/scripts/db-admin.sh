@@ -4,7 +4,7 @@
 # 
 # Supported operations:
 # - Migrations: db push, migrate dev, migrate deploy, migrate reset
-# - Seeding: seed, seed --basic, seed --comprehensive, seed --multi-org
+# - Seeding: seed, seed-single, seed-multi
 # - Other Prisma commands that require admin access
 #
 # Why this is needed:
@@ -42,18 +42,26 @@ echo "📍 Using DATABASE_URL: ${DATABASE_URL%@*}@***" # Hide password in output
 # Handle different commands
 case "$1" in
     "seed")
-        # Handle seed commands
-        shift # Remove 'seed' from arguments
-        if [ "$1" = "--multi-org" ]; then
-            echo "🌱 Running multi-org seed with admin connection..."
-            tsx prisma/seed-multi-org.ts
-        elif [ "$1" = "--multi-org-comprehensive" ]; then
-            echo "🌱 Running comprehensive multi-org seed with admin connection..."
-            tsx prisma/seed-multi-org-comprehensive.ts
-        else
-            echo "🌱 Running seed with admin connection..."
-            tsx prisma/seed.ts "$@"
-        fi
+        # Handle basic seed
+        echo "🌱 Running basic seed with admin connection..."
+        tsx prisma/seed.ts
+        ;;
+    "seed-single")
+        # Handle single org comprehensive seed
+        echo "🌱 Running single organization comprehensive seed with admin connection..."
+        tsx prisma/seed-single-comprehensive.ts
+        ;;
+    "seed-multi")
+        # Handle multi org comprehensive seed
+        echo "🌱 Running multi-organization comprehensive seed with admin connection..."
+        tsx prisma/seed-multi-comprehensive.ts
+        ;;
+    "verify")
+        # Handle verify command
+        echo "🔍 Running database verification tool..."
+        # Pass all arguments after 'verify' to the db-verify script
+        shift # Remove 'verify' from arguments
+        tsx scripts/db-verify.ts "$@"
         ;;
     *)
         # All other commands go to Prisma
