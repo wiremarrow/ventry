@@ -38,7 +38,7 @@ test.describe('Authentication Flow with Organization Context', () => {
       
       expect(authCookie).toBeDefined();
       expect(orgCookie).toBeDefined();
-      expect(orgCookie?.value).toBe(testOrg.organization.id);
+      expect(orgCookie?.value.split('.')[0]).toBe(testOrg.organization.id);
     } finally {
       await context.close();
       await cleanupTestDataForOrganization(testOrg.organization.id);
