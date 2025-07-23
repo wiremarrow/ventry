@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, beforeAll, afterAll } from 'vitest';
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_API_URL = 'http://localhost:6060/trpc';
@@ -48,3 +48,46 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
+
+// Add pointer capture methods to HTMLElement prototype for JSDOM compatibility
+if (!HTMLElement.prototype.hasPointerCapture) {
+  HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+  HTMLElement.prototype.setPointerCapture = vi.fn();
+  HTMLElement.prototype.releasePointerCapture = vi.fn();
+}
+
+// Add scrollIntoView mock
+HTMLElement.prototype.scrollIntoView = vi.fn();
+
+// Mock console methods to reduce noise in tests
+const originalError = console.error;
+const originalWarn = console.warn;
+
+beforeAll(() => {
+  console.error = (...args: unknown[]) => {
+    // Ignore known React warnings that are not actual errors
+    const message = args[0]?.toString() || '';
+    if (
+      message.includes('Warning: Function components cannot be given refs') ||
+      message.includes('Warning: An update to') ||
+      message.includes('act()')
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+
+  console.warn = (...args: unknown[]) => {
+    // Ignore known warnings
+    const message = args[0]?.toString() || '';
+    if (message.includes('act()')) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+  console.warn = originalWarn;
+});

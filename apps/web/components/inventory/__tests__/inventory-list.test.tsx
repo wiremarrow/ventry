@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, userEvent, waitFor } from '@/test-utils/render';
+import { render, screen, waitFor, userEvent } from '@/test-utils/render';
+import { waitForDialog } from '@/test-utils/act-helpers';
 import { InventoryList } from '../inventory-list';
 import { trpc } from '@/lib/trpc';
 
@@ -11,10 +12,7 @@ vi.mock('@/lib/trpc', () => ({
         useQuery: vi.fn(),
       },
       adjust: {
-        useMutation: vi.fn(() => ({
-          mutate: vi.fn(),
-          isPending: false,
-        })),
+        useMutation: vi.fn(),
       },
     },
     useUtils: vi.fn(() => ({
@@ -83,16 +81,40 @@ describe('InventoryList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('renders inventory items correctly', () => {
+    
+    // Set up default mock responses
     vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
       data: mockInventoryData,
       isLoading: false,
+      isError: false,
       error: null,
+      refetch: vi.fn(),
+      isSuccess: true,
+      isFetching: false,
+      isRefetching: false,
+      status: 'success',
     } as any);
+    
+    vi.mocked(trpc.inventory.adjust.useMutation).mockReturnValue({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isPending: false,
+      isIdle: true,
+      isError: false,
+      isSuccess: false,
+      error: null,
+      data: undefined,
+      reset: vi.fn(),
+    } as any);
+  });
 
+  it('renders inventory items correctly', async () => {
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
+    
+    // Wait for data to load
+    await waitFor(() => {
+      expect(screen.getByText('Test Product 1')).toBeInTheDocument();
+    });
 
     // Check if items are displayed
     expect(screen.getByText('Test Product 1')).toBeInTheDocument();
@@ -109,7 +131,13 @@ describe('InventoryList', () => {
     vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
       data: undefined,
       isLoading: true,
+      isError: false,
       error: null,
+      refetch: vi.fn(),
+      isSuccess: false,
+      isFetching: false,
+      isRefetching: false,
+      status: 'loading',
     } as any);
 
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
@@ -122,7 +150,13 @@ describe('InventoryList', () => {
     vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
       data: undefined,
       isLoading: false,
+      isError: true,
       error: new Error('Failed to fetch inventory'),
+      refetch: vi.fn(),
+      isSuccess: false,
+      isFetching: false,
+      isRefetching: false,
+      status: 'error',
     } as any);
 
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
@@ -147,7 +181,13 @@ describe('InventoryList', () => {
     vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
       data: lowStockData,
       isLoading: false,
+      isError: false,
       error: null,
+      refetch: vi.fn(),
+      isSuccess: true,
+      isFetching: false,
+      isRefetching: false,
+      status: 'success',
     } as any);
 
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
@@ -157,12 +197,6 @@ describe('InventoryList', () => {
   });
 
   it('filters by warehouse', () => {
-    vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
-      data: mockInventoryData,
-      isLoading: false,
-      error: null,
-    } as any);
-
     const { rerender } = render(
       <InventoryList warehouseId="wh1" searchTerm="" showLowStock={false} />
     );
@@ -185,12 +219,6 @@ describe('InventoryList', () => {
   });
 
   it('applies search filter', () => {
-    vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
-      data: mockInventoryData,
-      isLoading: false,
-      error: null,
-    } as any);
-
     render(<InventoryList warehouseId="all" searchTerm="Product 1" showLowStock={false} />);
 
     expect(trpc.inventory.list.useQuery).toHaveBeenCalledWith(
@@ -202,21 +230,18 @@ describe('InventoryList', () => {
 
   it('opens stock adjustment dialog when clicking adjust button', async () => {
     const user = userEvent.setup();
-    vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
-      data: mockInventoryData,
-      isLoading: false,
-      error: null,
-    } as any);
-
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
+
+    // Wait for data to load
+    await waitFor(() => {
+      expect(screen.getByText('Test Product 1')).toBeInTheDocument();
+    });
 
     // Click the adjust button for the first item
     const adjustButtons = screen.getAllByText('Adjust');
     await user.click(adjustButtons[0]);
 
-    // Check if the dialog opens (you might need to adjust based on your dialog implementation)
-    await waitFor(() => {
-      expect(screen.getByText('Adjust Stock')).toBeInTheDocument();
-    });
+    // Check if the dialog opens - use helper to avoid act() warnings
+    await waitForDialog('Adjust Stock');
   });
 });

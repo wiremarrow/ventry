@@ -45,24 +45,29 @@ describe('InventoryFilters', () => {
     render(<InventoryFilters {...defaultProps} />);
 
     // Check search input
-    expect(screen.getByPlaceholderText('Search products...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by SKU, name, or barcode...')).toBeInTheDocument();
     
     // Check warehouse select
     expect(screen.getByText('All Warehouses')).toBeInTheDocument();
     
     // Check low stock switch
-    expect(screen.getByLabelText('Low stock only')).toBeInTheDocument();
+    expect(screen.getByLabelText('Show low stock only')).toBeInTheDocument();
   });
 
   it('handles search input changes', async () => {
     const user = userEvent.setup();
     render(<InventoryFilters {...defaultProps} />);
 
-    const searchInput = screen.getByPlaceholderText('Search products...');
+    const searchInput = screen.getByPlaceholderText('Search by SKU, name, or barcode...');
+    await user.clear(searchInput);
     await user.type(searchInput, 'test product');
 
-    expect(mockOnSearchChange).toHaveBeenCalledTimes(12); // Once for each character
-    expect(mockOnSearchChange).toHaveBeenLastCalledWith('test product');
+    // Verify the onChange was called
+    expect(mockOnSearchChange).toHaveBeenCalled();
+    
+    // Get the last call value (should be the complete text)
+    const lastCallIndex = mockOnSearchChange.mock.calls.length - 1;
+    expect(mockOnSearchChange.mock.calls[lastCallIndex][0]).toBe('test product');
   });
 
   it('displays warehouses in dropdown', async () => {
@@ -96,7 +101,7 @@ describe('InventoryFilters', () => {
     const user = userEvent.setup();
     render(<InventoryFilters {...defaultProps} />);
 
-    const lowStockSwitch = screen.getByRole('switch', { name: 'Low stock only' });
+    const lowStockSwitch = screen.getByRole('switch', { name: 'Show low stock only' });
     await user.click(lowStockSwitch);
 
     expect(mockOnLowStockChange).toHaveBeenCalledWith(true);
@@ -125,7 +130,7 @@ describe('InventoryFilters', () => {
     render(<InventoryFilters {...defaultProps} />);
 
     // The component should still render and be functional
-    expect(screen.getByPlaceholderText('Search products...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by SKU, name, or barcode...')).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 });

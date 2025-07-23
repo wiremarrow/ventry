@@ -1,8 +1,9 @@
 /// <reference types="vitest" />
+/* global URL */
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -15,6 +16,7 @@ export default defineConfig({
       '@/app': resolve(__dirname, './app'),
       '@/lib': resolve(__dirname, './lib'),
       '@/hooks': resolve(__dirname, './hooks'),
+      '@/test-utils': resolve(__dirname, './test-utils'),
     },
   },
   test: {

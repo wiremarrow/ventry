@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor, userEvent } from '@/test-utils/render';
 import { EditProductDialog } from '../edit-product-dialog';
 import { trpc } from '@/lib/trpc';
 
@@ -141,17 +140,22 @@ describe('EditProductDialog', () => {
   it('populates form with product data', () => {
     render(<EditProductDialog {...defaultProps} />);
 
+    // Check text inputs
     expect(screen.getByDisplayValue('PROD-001')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test Product')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('50')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('100')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('2.5')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('30')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('20')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('15')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('10')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('20')).toBeInTheDocument();
+    
+    // Check numeric inputs (some values appear multiple times)
+    expect(screen.getByDisplayValue('50')).toBeInTheDocument(); // defaultCost
+    expect(screen.getByDisplayValue('100')).toBeInTheDocument(); // defaultPrice
+    expect(screen.getByDisplayValue('2.5')).toBeInTheDocument(); // weightKg
+    expect(screen.getByDisplayValue('30')).toBeInTheDocument(); // lengthCm
+    expect(screen.getByDisplayValue('15')).toBeInTheDocument(); // heightCm
+    expect(screen.getByDisplayValue('10')).toBeInTheDocument(); // reorderPoint
+    
+    // Check that there are inputs with value 20 (widthCm and reorderQty)
+    const twentyInputs = screen.getAllByDisplayValue('20');
+    expect(twentyInputs).toHaveLength(2);
   });
 
   it('handles product with nested data', () => {
@@ -190,14 +194,14 @@ describe('EditProductDialog', () => {
 
     // Check that empty/default values are shown
     expect(screen.getByLabelText('Description')).toHaveValue('');
-    expect(screen.getByLabelText('Default Cost')).toHaveValue('');
-    expect(screen.getByLabelText('Default Price')).toHaveValue('');
-    expect(screen.getByLabelText('Weight (kg)')).toHaveValue('');
-    expect(screen.getByLabelText('L (cm)')).toHaveValue('');
-    expect(screen.getByLabelText('W (cm)')).toHaveValue('');
-    expect(screen.getByLabelText('H (cm)')).toHaveValue('');
-    expect(screen.getByLabelText('Reorder Point')).toHaveValue('0');
-    expect(screen.getByLabelText('Reorder Quantity')).toHaveValue('1');
+    expect(screen.getByLabelText('Default Cost')).toHaveValue(null);
+    expect(screen.getByLabelText('Default Price')).toHaveValue(null);
+    expect(screen.getByLabelText('Weight (kg)')).toHaveValue(null);
+    expect(screen.getByLabelText('L (cm)')).toHaveValue(null);
+    expect(screen.getByLabelText('W (cm)')).toHaveValue(null);
+    expect(screen.getByLabelText('H (cm)')).toHaveValue(null);
+    expect(screen.getByLabelText('Reorder Point')).toHaveValue(0);
+    expect(screen.getByLabelText('Reorder Quantity')).toHaveValue(1);
   });
 
   it('updates form when product changes', () => {
@@ -272,7 +276,8 @@ describe('EditProductDialog', () => {
     render(<EditProductDialog {...defaultProps} />);
 
     // Select "No supplier"
-    await user.click(screen.getByText('Supplier A'));
+    const supplierCombobox = screen.getAllByRole('combobox')[2]; // Supplier is the third combobox
+    await user.click(supplierCombobox);
     await user.click(screen.getByText('No supplier'));
 
     // Submit form

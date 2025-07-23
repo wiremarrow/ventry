@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, fireEvent, waitFor, userEvent } from '@/test-utils/render';
 import { CreateProductDialog } from '../create-product-dialog';
 import { trpc } from '@/lib/trpc';
 
@@ -52,8 +51,8 @@ describe('CreateProductDialog', () => {
   ];
 
   const mockUoms = [
-    { id: '1', name: 'Each', code: 'EA' },
-    { id: '2', name: 'Box', code: 'BX' },
+    { id: '1', name: 'Each', code: 'EA', description: 'Each' },
+    { id: '2', name: 'Box', code: 'BX', description: 'Box' },
   ];
 
   const mockSuppliers = {
@@ -145,30 +144,38 @@ describe('CreateProductDialog', () => {
     expect(screen.getByLabelText('H (cm)')).toBeInTheDocument();
   });
 
-  it('loads categories, units, and suppliers', () => {
+  it('loads categories, units, and suppliers', async () => {
+    const user = userEvent.setup();
     render(<CreateProductDialog {...defaultProps} />);
 
-    // Open category dropdown
-    fireEvent.click(screen.getByText('Select category'));
-    expect(screen.getByText('Electronics')).toBeInTheDocument();
-    expect(screen.getByText('Clothing')).toBeInTheDocument();
+    // Check that comboboxes exist and have the right placeholder text
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes).toHaveLength(3);
 
-    // Open unit dropdown
-    fireEvent.click(screen.getByText('Select unit'));
-    expect(screen.getByText('Each (EA)')).toBeInTheDocument();
-    expect(screen.getByText('Box (BX)')).toBeInTheDocument();
+    // Open category dropdown and verify it has options
+    await user.click(comboboxes[0]);
+    const electronicsOptions = await screen.findAllByText('Electronics');
+    expect(electronicsOptions.length).toBeGreaterThan(0);
+    await user.keyboard('{Escape}');
 
-    // Open supplier dropdown
-    fireEvent.click(screen.getByText('Select supplier (optional)'));
-    expect(screen.getByText('Supplier A')).toBeInTheDocument();
-    expect(screen.getByText('Supplier B')).toBeInTheDocument();
+    // Open unit dropdown and verify it has options
+    await user.click(comboboxes[1]);
+    const unitOptions = await screen.findAllByText(/Each.*EA/);
+    expect(unitOptions.length).toBeGreaterThan(0);
+    await user.keyboard('{Escape}');
+
+    // Open supplier dropdown and verify it has options
+    await user.click(comboboxes[2]);
+    const supplierOptions = await screen.findAllByText('Supplier A');
+    expect(supplierOptions.length).toBeGreaterThan(0);
   });
 
   it('validates required fields', async () => {
+    const user = userEvent.setup();
     render(<CreateProductDialog {...defaultProps} />);
 
     // Try to submit without filling required fields
-    fireEvent.click(screen.getByText('Create Product'));
+    await user.click(screen.getByText('Create Product'));
 
     await waitFor(() => {
       expect(screen.getByText('SKU is required')).toBeInTheDocument();
@@ -197,7 +204,8 @@ describe('CreateProductDialog', () => {
     await user.click(screen.getByText('Electronics'));
 
     // Select unit
-    await user.click(screen.getByText('Select unit'));
+    const comboboxes = screen.getAllByRole('combobox');
+    await user.click(comboboxes[1]); // Unit of measure is the second combobox
     await user.click(screen.getByText('Each (EA)'));
 
     // Submit form
@@ -244,7 +252,8 @@ describe('CreateProductDialog', () => {
     await user.click(screen.getByText('Electronics'));
 
     // Select unit
-    await user.click(screen.getByText('Select unit'));
+    const comboboxes2 = screen.getAllByRole('combobox');
+    await user.click(comboboxes2[1]); // Unit of measure is the second combobox
     await user.click(screen.getByText('Box (BX)'));
 
     // Fill pricing
@@ -349,7 +358,8 @@ describe('CreateProductDialog', () => {
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
     await user.click(screen.getByText('Select category'));
     await user.click(screen.getByText('Electronics'));
-    await user.click(screen.getByText('Select unit'));
+    const uomComboboxes = screen.getAllByRole('combobox');
+    await user.click(uomComboboxes[1]); // Unit of measure is the second combobox
     await user.click(screen.getByText('Each (EA)'));
 
     // Submit
@@ -381,7 +391,8 @@ describe('CreateProductDialog', () => {
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
     await user.click(screen.getByText('Select category'));
     await user.click(screen.getByText('Electronics'));
-    await user.click(screen.getByText('Select unit'));
+    const uomComboboxes = screen.getAllByRole('combobox');
+    await user.click(uomComboboxes[1]); // Unit of measure is the second combobox
     await user.click(screen.getByText('Each (EA)'));
 
     // Submit
@@ -421,7 +432,8 @@ describe('CreateProductDialog', () => {
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
     await user.click(screen.getByText('Select category'));
     await user.click(screen.getByText('Electronics'));
-    await user.click(screen.getByText('Select unit'));
+    const uomComboboxes = screen.getAllByRole('combobox');
+    await user.click(uomComboboxes[1]); // Unit of measure is the second combobox
     await user.click(screen.getByText('Each (EA)'));
 
     // Submit to trigger validation

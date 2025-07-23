@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, userEvent, waitFor } from '@/test-utils/render';
 import { ProductFilters } from '../product-filters';
 import { trpc } from '@/lib/trpc';
 
@@ -43,8 +43,10 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('Search by SKU, name, or barcode...')).toBeInTheDocument();
-    expect(screen.getByText('Select category')).toBeInTheDocument();
-    expect(screen.getByText('Select status')).toBeInTheDocument();
+    
+    // Check for select triggers (comboboxes)
+    const comboboxes = screen.getAllByRole('combobox');
+    expect(comboboxes).toHaveLength(2); // Category and Status selects
   });
 
   it('displays search value correctly', () => {
@@ -63,63 +65,84 @@ describe('ProductFilters', () => {
     expect(defaultProps.onSearchChange).toHaveBeenCalledWith('new search');
   });
 
-  it('renders categories from API', () => {
+  it('renders categories from API', async () => {
+    const user = userEvent.setup();
     render(<ProductFilters {...defaultProps} />);
 
     // Open category dropdown
-    fireEvent.click(screen.getByText('Select category'));
+    const categorySelect = screen.getAllByRole('combobox')[0];
+    await user.click(categorySelect);
 
-    expect(screen.getByText('All Categories')).toBeInTheDocument();
-    expect(screen.getByText('Electronics')).toBeInTheDocument();
-    expect(screen.getByText('Clothing')).toBeInTheDocument();
-    expect(screen.getByText('Food')).toBeInTheDocument();
+    // Wait for dropdown to open and check options exist
+    await waitFor(() => {
+      const allCategoriesOptions = screen.getAllByText('All Categories');
+      expect(allCategoriesOptions.length).toBeGreaterThan(0);
+      
+      const electronicsOptions = screen.getAllByText('Electronics');
+      expect(electronicsOptions.length).toBeGreaterThan(0);
+      
+      const clothingOptions = screen.getAllByText('Clothing');
+      expect(clothingOptions.length).toBeGreaterThan(0);
+      
+      const foodOptions = screen.getAllByText('Food');
+      expect(foodOptions.length).toBeGreaterThan(0);
+    });
   });
 
-  it('calls onCategoryChange when category is selected', () => {
+  it('calls onCategoryChange when category is selected', async () => {
+    const user = userEvent.setup();
     render(<ProductFilters {...defaultProps} />);
 
     // Open category dropdown
-    fireEvent.click(screen.getByText('Select category'));
+    const categorySelect = screen.getAllByRole('combobox')[0];
+    await user.click(categorySelect);
     
     // Select a category
-    fireEvent.click(screen.getByText('Electronics'));
+    await user.click(screen.getByText('Electronics'));
 
     expect(defaultProps.onCategoryChange).toHaveBeenCalledWith('1');
   });
 
-  it('renders status options correctly', () => {
+  it('renders status options correctly', async () => {
+    const user = userEvent.setup();
     render(<ProductFilters {...defaultProps} />);
 
     // Open status dropdown
-    fireEvent.click(screen.getByText('Select status'));
+    const statusSelect = screen.getAllByRole('combobox')[1];
+    await user.click(statusSelect);
 
-    expect(screen.getByText('All Status')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
-    expect(screen.getByText('Inactive')).toBeInTheDocument();
+    await waitFor(() => {
+      const allStatusOptions = screen.getAllByText('All Status');
+      expect(allStatusOptions.length).toBeGreaterThan(0);
+      
+      const activeOptions = screen.getAllByText('Active');
+      expect(activeOptions.length).toBeGreaterThan(0);
+      
+      const inactiveOptions = screen.getAllByText('Inactive');
+      expect(inactiveOptions.length).toBeGreaterThan(0);
+    });
   });
 
-  it('calls onStatusChange when status is selected', () => {
+  it('calls onStatusChange when status is selected', async () => {
+    const user = userEvent.setup();
     render(<ProductFilters {...defaultProps} />);
 
     // Open status dropdown
-    fireEvent.click(screen.getByText('Select status'));
+    const statusSelect = screen.getAllByRole('combobox')[1];
+    await user.click(statusSelect);
     
     // Select a status
-    fireEvent.click(screen.getByText('Active'));
+    await user.click(screen.getByText('Active'));
 
     expect(defaultProps.onStatusChange).toHaveBeenCalledWith('ACTIVE');
   });
 
   it('shows selected category', () => {
-    const { rerender } = render(<ProductFilters {...defaultProps} />);
+    render(<ProductFilters {...defaultProps} selectedCategory="1" />);
 
-    // Rerender with selected category
-    rerender(<ProductFilters {...defaultProps} selectedCategory="1" />);
-
-    // The select should show the category name
-    // Note: This would normally show "Electronics" but testing Select components is tricky
-    // We'll verify the prop is passed correctly
-    expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'false');
+    // When a category is selected, the Select component should show the category name
+    const categorySelect = screen.getAllByRole('combobox')[0];
+    expect(categorySelect).toHaveTextContent('Electronics');
   });
 
   it('shows selected status', () => {
@@ -132,7 +155,8 @@ describe('ProductFilters', () => {
     expect(screen.getAllByRole('combobox')[1]).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('handles empty categories gracefully', () => {
+  it('handles empty categories gracefully', async () => {
+    const user = userEvent.setup();
     vi.mocked(trpc.itemCategories.list.useQuery).mockReturnValue({
       data: [],
       isLoading: false,
@@ -142,10 +166,14 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     // Open category dropdown
-    fireEvent.click(screen.getByText('Select category'));
+    const categorySelect = screen.getAllByRole('combobox')[0];
+    await user.click(categorySelect);
 
     // Should still show "All Categories" option
-    expect(screen.getByText('All Categories')).toBeInTheDocument();
+    await waitFor(() => {
+      const allCategoriesOptions = screen.getAllByText('All Categories');
+      expect(allCategoriesOptions.length).toBeGreaterThan(0);
+    });
   });
 
   it('handles null categories data', () => {

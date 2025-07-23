@@ -783,6 +783,9 @@ SMTP_CONFIG="..."
 - **Hierarchical Data**: Testing tree structures and parent-child relationships
 - **Statistics Aggregation**: Testing complex aggregation queries
 - **Implementation Bug Discovery**: Tests revealing security issues (e.g., missing organizationId checks)
+- **Frontend Test Mocking**: Each test file creates its own `vi.mock()` following monorepo patterns
+- **React Act Helpers**: Utility functions to prevent act() warnings in React tests
+- **tRPC Mock Factory**: Consistent mock data structures for frontend tests
 
 ### Implementation Issues Discovered Through Testing
 - **categories router**: Fixed missing organizationId checks in several findFirst queries, eliminating a security vulnerability where users could access categories from other organizations
