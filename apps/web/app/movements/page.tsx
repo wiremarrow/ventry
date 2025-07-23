@@ -106,7 +106,7 @@ export default function MovementsPage() {
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Outbound Qty</p>
-                <p className="text-2xl font-bold text-red-600">-{stats.outbound.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-red-600">{stats.outbound.toLocaleString()}</p>
                 <Badge variant="destructive" className="text-xs">
                   <TrendingDown className="h-3 w-3 mr-1" />
                   Shipped

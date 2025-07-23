@@ -51,7 +51,7 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
     categoryId?: string | null;
     category?: { id: string; name: string } | null;
     uomId?: string | null;
-    unitOfMeasure?: { id: string; name: string } | null;
+    unitOfMeasure?: { id: string; description: string; code: string } | null;
     defaultSupplierId?: string | null;
     defaultSupplier?: { id: string; name: string } | null;
     defaultCost?: number | null;
@@ -177,10 +177,10 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                     )}
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm">{item.unitOfMeasure?.name || 'Each'}</span>
+                    <span className="text-sm">{item.unitOfMeasure?.description || 'Each'}</span>
                   </TableCell>
                   <TableCell className="text-right">
-                    {item.defaultPrice ? formatCurrency(item.defaultPrice) : '-'}
+                    {item.defaultPrice ? formatCurrency(Number(item.defaultPrice)) : '-'}
                   </TableCell>
                   <TableCell className="text-right">
                     {item.reorderPoint || '-'}
@@ -200,12 +200,24 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setEditingProduct(item)}>
+                        <DropdownMenuItem onClick={() => setEditingProduct({
+                          ...item,
+                          defaultCost: item.defaultCost ? Number(item.defaultCost) : null,
+                          defaultPrice: item.defaultPrice ? Number(item.defaultPrice) : null,
+                          weightKg: item.weightKg ? Number(item.weightKg) : null,
+                          lengthCm: item.lengthCm ? Number(item.lengthCm) : null,
+                          widthCm: item.widthCm ? Number(item.widthCm) : null,
+                          heightCm: item.heightCm ? Number(item.heightCm) : null,
+                        })}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => duplicateMutation.mutate({ id: item.id })}
+                          onClick={() => duplicateMutation.mutate({ 
+                            itemId: item.id, 
+                            newSku: `${item.sku}-COPY`,
+                            newName: `${item.name} (Copy)`
+                          })}
                         >
                           <Copy className="mr-2 h-4 w-4" />
                           Duplicate

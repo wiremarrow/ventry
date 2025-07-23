@@ -53,6 +53,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Users Page RLS Fix COMPLETE** - Organization-Scoped User Management (2025-07-21)
 ✅ **E2E Test Enhancements COMPLETE** - RLS Isolation & React Hydration Fix (2025-07-21)
 ✅ **Backend Test Coverage 100% COMPLETE** - All 22 Routers Fully Tested (2025-01-22)
+✅ **Database Verification Tool & UI Fixes COMPLETE** - Enhanced Database Inspection & Bug Fixes (2025-07-23)
 - **Achieved 100% router test coverage**: Added comprehensive tests for remaining 6 routers
   - unitsOfMeasure (23 tests), analytics (21 tests), health (8 tests)
   - organizations (29 tests), reports (30 tests), returns (21 tests), shipments (21 tests)
@@ -70,6 +71,21 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **Technical Details**: Modified `inventory.ts` line 122 to check `if (!includeZeroQuantity && !lowStock)`
 - **Impact**: Users can now see ALL items that need reordering, including completely out-of-stock items
 - **Test Coverage**: Added unit test to verify zero quantity items are properly included in low stock results
+- **Database Verification Tool Enhancement**:
+  - **Query Builder Overhaul**: Added support for advanced WHERE clauses (IN, LIKE, IS NULL, AND, date comparisons)
+  - **Cross-Table Comparisons**: Compare fields across related tables (e.g., `inventory.qtyOnHand <= item.reorderPoint`)
+  - **Utility Commands**: Added fields, relationships, sample, validate for database exploration
+  - **Business Query Library**: 50+ pre-built query examples for inventory, orders, suppliers, finance
+  - **Performance**: Optimized queries with proper joins and indexes for 45+ table schema
+  - **Documentation**: Created comprehensive DATABASE_VERIFICATION.md with extensive examples
+- **Seed Script Enhancements**:
+  - **Receipt Creation**: Added receipt generation for RECEIVED/PARTIAL purchase orders
+  - **Shipment Creation**: Added shipment generation for SHIPPED orders
+  - **Field Name Fixes**: Corrected receipt table mapping (poId not purchaseOrderId, reference not receiptNumber)
+  - **Data Completeness**: Fixed single-org seed to match multi-org seed functionality
+- **UI Bug Fixes**:
+  - **Categories Page**: Fixed limit validation error by changing request from 1000 to 100
+  - **Stock Movements**: Fixed double minus sign display by removing redundant minus for negative quantities
 - **Created db-admin.sh script** for consistent admin database operations
 - **Fixed seed script** to include organizationId for all models (Location, Lot, Inventory, StockMovement, OrderItem)
 - **Fixed Order model** field mapping (tax → taxTotal, total → grandTotal)

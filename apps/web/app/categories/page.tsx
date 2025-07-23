@@ -19,19 +19,24 @@ export default function CategoriesPage() {
   const { data: categoryTree, isLoading, refetch } = trpc.categories.tree.useQuery();
 
   // Fetch flat list for stats
-  const { data: categoriesData } = trpc.categories.list.useQuery({
-    limit: 1000,
+  const { data: categoriesData, isLoading: isLoadingStats, error: statsError } = trpc.categories.list.useQuery({
+    limit: 100,
   });
 
-  // Calculate stats
+  // Calculate stats - handle both loading states
   const stats = {
-    total: categoriesData?.categories?.length || 0,
+    total: categoriesData?.pagination?.total || categoriesData?.categories?.length || 0,
     rootCategories: categoryTree?.length || 0,
     totalItems: categoriesData?.categories?.reduce((sum, cat) => sum + (cat._count?.items || 0), 0) || 0,
     mostUsed: categoriesData?.categories?.reduce((max, cat) => 
-      (cat._count?.items || 0) > (max._count?.items || 0) ? cat : max
-    , categoriesData?.categories?.[0]),
+      (!max || (cat._count?.items || 0) > (max._count?.items || 0)) ? cat : max
+    , null as any),
   };
+
+  // Log error if there is one
+  if (statsError) {
+    console.error('Error loading categories:', statsError);
+  }
 
   const handleEdit = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -96,30 +101,51 @@ export default function CategoriesPage() {
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Total Categories</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats.total}</p>
+                )}
               </div>
             </Card>
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Root Categories</p>
-                <p className="text-2xl font-bold">{stats.rootCategories}</p>
+                {isLoading ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats.rootCategories}</p>
+                )}
               </div>
             </Card>
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-bold">{stats.totalItems}</p>
+                {isLoadingStats ? (
+                  <Skeleton className="h-8 w-16" />
+                ) : (
+                  <p className="text-2xl font-bold">{stats.totalItems}</p>
+                )}
               </div>
             </Card>
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Most Used</p>
-                <p className="text-lg font-medium truncate">
-                  {stats.mostUsed?.name || '-'}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {stats.mostUsed ? `${stats.mostUsed._count?.items || 0} items` : ''}
-                </p>
+                {isLoadingStats ? (
+                  <>
+                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-4 w-16" />
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg font-medium truncate">
+                      {stats.mostUsed?.name || '-'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.mostUsed ? `${stats.mostUsed._count?.items || 0} items` : ''}
+                    </p>
+                  </>
+                )}
               </div>
             </Card>
           </div>

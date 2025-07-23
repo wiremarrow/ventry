@@ -647,6 +647,23 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **Warehouse List Query**: Fixed stats-cards component to use correct warehouse list parameters
   - **Order Dialog**: Updated create-order-dialog to match backend schema expectations
   - **Result**: Build now compiles successfully with only ESLint warnings about `any` types
+- ✅ **Database Verification Tool Enhancement (2025-07-23)**: Comprehensive database inspection utility
+  - **Enhanced WHERE Clauses**: Added support for IN, LIKE, IS NULL/NOT NULL, AND conditions, date comparisons
+  - **Cross-Table Comparisons**: Can now compare fields across related tables (e.g., `inventory.qtyOnHand <= item.reorderPoint`)
+  - **Utility Commands**: Added fields, relationships, sample, validate commands for database inspection
+  - **Business Queries**: Pre-built patterns for inventory, orders, suppliers, customers, finance analysis
+  - **45+ Tables Support**: All core business entities with proper relationships
+  - **Multiple Output Formats**: table (default), json, csv, count
+  - **RLS Testing**: Simulate any user context to test Row-Level Security policies
+  - **Documentation**: Comprehensive DATABASE_VERIFICATION.md with 50+ business query examples
+- ✅ **Seed Script Enhancements (2025-07-23)**: Fixed missing receipt and shipment data
+  - **Receipt Creation**: Added receipt generation for RECEIVED/PARTIAL purchase orders in single-org seed
+  - **Shipment Creation**: Added shipment generation for SHIPPED orders in single-org seed
+  - **Field Name Fixes**: Corrected receipt table field names (poId, reference) in verification tool
+  - **Documentation**: Updated CLAUDE.md seed command names to match actual scripts
+- ✅ **UI Bug Fixes (2025-07-23)**: Fixed frontend display issues
+  - **Categories Page**: Fixed limit validation error (changed from 1000 to 100 to comply with backend)
+  - **Stock Movements**: Fixed double minus sign display for outbound quantities (removed redundant minus)
 - ✅ **ESLint Type Safety Improvements (2025-07-15)**: Fixed `any` type warnings in production code
   - **Page Components**: Fixed type inference for customer, organization member, and warehouse types
   - **Dialog Components**: Imported proper types from `@ventry/database` for Order and Supplier entities

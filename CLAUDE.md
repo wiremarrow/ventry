@@ -101,25 +101,22 @@ pnpm test:e2e:debug         # Playwright debug mode
 ### **Database Seeding Options**
 ```bash
 # Basic seed - Only creates 4 demo users (minimal)
-pnpm --filter @ventry/database db:seed:basic
-
-# Default seed - Users + organization with basic data (RECOMMENDED)
 pnpm --filter @ventry/database db:seed
 
-# Comprehensive seed - Full demo data for testing/demos
-pnpm --filter @ventry/database db:seed:comprehensive
+# Single-org comprehensive seed - Full demo data for single organization
+pnpm --filter @ventry/database db:seed:single
 
-# Multi-org seed - For testing RLS/multi-tenancy
-pnpm --filter @ventry/database db:seed:multi-org
+# Multi-org comprehensive seed - Multiple organizations for testing RLS/multi-tenancy
+pnpm --filter @ventry/database db:seed:multi
 ```
 
-**Demo Accounts (default/comprehensive seeds)**:
+**Demo Accounts (all seeds)**:
 - admin@ventry.com / password123 (ADMIN role)
 - manager@ventry.com / password123 (MANAGER role)
 - employee@ventry.com / password123 (EMPLOYEE role)
 - user@ventry.com / password123 (USER role - no org access)
 
-**Multi-org Test Accounts**:
+**Additional Multi-org Test Accounts (db:seed:multi only)**:
 - alice@techstart.com / password123 (TechStart admin)
 - charlie@globalretail.com / password123 (GlobalRetail admin)
 

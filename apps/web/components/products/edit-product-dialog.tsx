@@ -58,7 +58,7 @@ interface EditProductDialogProps {
     categoryId?: string | null;
     category?: { id: string; name: string } | null;
     uomId?: string | null;
-    unitOfMeasure?: { id: string; name: string } | null;
+    unitOfMeasure?: { id: string; description: string; code: string } | null;
     defaultSupplierId?: string | null;
     defaultSupplier?: { id: string; name: string } | null;
     defaultCost?: number | null;
@@ -262,7 +262,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                         <SelectContent>
                           {uoms?.map((uom) => (
                             <SelectItem key={uom.id} value={uom.id}>
-                              {uom.name} ({uom.code})
+                              {uom.description} ({uom.code})
                             </SelectItem>
                           ))}
                         </SelectContent>

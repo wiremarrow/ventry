@@ -16,7 +16,7 @@
  * Run with: pnpm db:seed:single
  */
 
-import { prisma } from '../index.js';
+import { prisma, OrderStatus, POStatus, MovementType } from '../index.js';
 import bcrypt from 'bcryptjs';
 import { Decimal } from '@prisma/client/runtime/library';
 import { faker } from '@faker-js/faker';
@@ -765,7 +765,7 @@ async function seedCustomers(organizationId: string) {
         firstName,
         lastName,
         email: faker.internet.email({ firstName, lastName }).toLowerCase(),
-        phone: faker.phone.number('(###) ###-####'),
+        phone: faker.phone.number(),
         taxId: faker.string.numeric(9),
         defaultPaymentTerms: faker.helpers.arrayElement(['Net 30', 'Net 60', 'Due on Receipt']),
       }
@@ -814,9 +814,6 @@ async function seedOrders(
   organizationId: string,
   customers: any[],
   items: any[],
-  warehouses: any[],
-  shippingMethods: any[],
-  paymentMethods: any[],
   userId: string
 ) {
   console.log('🛒 Creating sales orders...');
@@ -834,12 +831,12 @@ async function seedOrders(
         organizationId,
         orderNumber: `ORD-${new Date().getFullYear()}-${String(i + 1).padStart(5, '0')}`,
         customerId: customer.id,
-        status,
+        status: status as OrderStatus,
         orderDate,
         requestedShipDate: faker.date.soon({ days: 7, refDate: orderDate }),
         subtotal: new Decimal(0),
         taxTotal: new Decimal(0),
-        shippingTotal: new Decimal(faker.number.float({ min: 10, max: 50, precision: 0.01 })),
+        shippingTotal: new Decimal(faker.number.float({ min: 10, max: 50, fractionDigits: 2 })),
         grandTotal: new Decimal(0),
         notes: faker.helpers.maybe(() => faker.commerce.productDescription(), { probability: 0.3 }),
         createdById: userId,
@@ -895,7 +892,6 @@ async function seedPurchaseOrders(
   organizationId: string,
   suppliers: any[],
   items: any[],
-  warehouses: any[],
   userId: string
 ) {
   console.log('📦 Creating purchase orders...');
@@ -913,7 +909,7 @@ async function seedPurchaseOrders(
         organizationId,
         poNumber: `PO-${new Date().getFullYear()}-${String(i + 1).padStart(5, '0')}`,
         supplierId: supplier.id,
-        status,
+        status: status as POStatus,
         orderDate,
         expectedDate: faker.date.soon({ days: 14, refDate: orderDate }),
         subtotal: new Decimal(0),
@@ -1000,7 +996,7 @@ async function seedStockMovements(
         itemId: inventory.itemId,
         fromLocationId: ['OUTBOUND', 'TRANSFER', 'DAMAGE', 'LOSS'].includes(movementType) ? inventory.locationId : undefined,
         toLocationId: ['INBOUND', 'TRANSFER', 'RETURN'].includes(movementType) ? inventory.locationId : undefined,
-        movementType,
+        movementType: movementType as MovementType,
         qty: isPositive ? quantity : -quantity,
         refType: movementType === 'INBOUND' ? 'PURCHASE_ORDER' : 'ORDER',
         refId: faker.string.uuid(),
@@ -1057,9 +1053,6 @@ async function main() {
       organization.id,
       customers,
       items,
-      warehouses,
-      basicData.shippingMethods,
-      basicData.paymentMethods,
       admin.id
     );
 
@@ -1068,9 +1061,86 @@ async function main() {
       organization.id,
       suppliers,
       items,
-      warehouses,
       admin.id
     );
+
+    // Create receipts for received/partial purchase orders
+    console.log('📥 Creating receipts...');
+    let receiptCount = 0;
+    for (const po of purchaseOrders) {
+      if (['PARTIAL', 'RECEIVED'].includes(po.status)) {
+        const poWithItems = await prisma.purchaseOrder.findUnique({
+          where: { id: po.id },
+          include: { items: true }
+        });
+        
+        if (poWithItems && poWithItems.items.length > 0) {
+          await prisma.receipt.create({
+            data: {
+              organizationId: organization.id,
+              poId: po.id,
+              reference: `REC-${new Date().getFullYear()}-${String(receiptCount + 1).padStart(5, '0')}`,
+              receivedDate: faker.date.between({ from: po.orderDate, to: new Date() }),
+              receivedById: admin.id,
+              notes: faker.lorem.sentence(),
+              items: {
+                create: poWithItems.items.map(poItem => ({
+                  organizationId: organization.id,
+                  itemId: poItem.itemId,
+                  qtyReceived: po.status === 'RECEIVED' ? poItem.qtyOrdered : Math.floor(poItem.qtyOrdered * 0.7),
+                  unitCost: poItem.unitCost,
+                  locationId: locations[Math.floor(Math.random() * locations.length)].id,
+                }))
+              }
+            }
+          });
+          receiptCount++;
+        }
+      }
+    }
+    console.log(`✅ Created ${receiptCount} receipts`);
+
+    // Create shipments for shipped/delivered orders
+    console.log('📦 Creating shipments...');
+    let shipmentCount = 0;
+    for (const order of orders) {
+      if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
+        const orderWithItems = await prisma.order.findUnique({
+          where: { id: order.id },
+          include: { items: true }
+        });
+        
+        if (orderWithItems && orderWithItems.items.length > 0) {
+          const carrier = basicData.carriers[Math.floor(Math.random() * basicData.carriers.length)];
+          await prisma.shipment.create({
+            data: {
+              organizationId: organization.id,
+              orderId: order.id,
+              shipmentNumber: `SHP-${new Date().getFullYear()}-${String(shipmentCount + 1).padStart(6, '0')}`,
+              carrierId: carrier.id,
+              trackingNumber: faker.string.alphanumeric(20).toUpperCase(),
+              shipDate: faker.date.between({ from: order.orderDate, to: new Date() }),
+              expectedDelivery: faker.date.soon({ days: 5 }),
+              shippedFromLocationId: locations[0].id,
+              shippedById: admin.id,
+              status: order.status === 'DELIVERED' ? 'DELIVERED' : 'IN_TRANSIT',
+              shippingCost: new Decimal(15 + Math.random() * 35),
+              notes: faker.lorem.sentence(),
+              items: {
+                create: orderWithItems.items.map(orderItem => ({
+                  organizationId: organization.id,
+                  orderItemId: orderItem.id,
+                  itemId: orderItem.itemId,
+                  qtyShipped: orderItem.qtyOrdered,
+                }))
+              }
+            }
+          });
+          shipmentCount++;
+        }
+      }
+    }
+    console.log(`✅ Created ${shipmentCount} shipments`);
 
     // Create stock movements
     await seedStockMovements(organization.id, inventoryRecords, items, admin.id);
@@ -1091,6 +1161,8 @@ async function main() {
     console.log(`  • ${customers.length} customers with addresses`);
     console.log(`  • ${orders.length} sales orders`);
     console.log(`  • ${purchaseOrders.length} purchase orders`);
+    console.log(`  • ${receiptCount} receipts`);
+    console.log(`  • ${shipmentCount} shipments`);
     console.log(`  • ${inventoryRecords.length} inventory records`);
     console.log('  • 200+ stock movements (90-day history)');
     console.log('  • Payment methods, shipping carriers, and more');

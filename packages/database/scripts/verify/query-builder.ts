@@ -140,13 +140,13 @@ const MODEL_INFO: Record<string, TableInfo> = {
   },
   receipt: {
     name: 'receipt',
-    fields: ['id', 'organizationId', 'receiptNumber', 'purchaseOrderId', 'receivedDate', 'receivedById', 'status', 'notes', 'createdAt', 'updatedAt'],
+    fields: ['id', 'organizationId', 'poId', 'receivedDate', 'receivedById', 'reference', 'notes', 'createdAt'],
     relations: { organization: 'organization', purchaseOrder: 'purchaseOrder', receivedBy: 'user', items: 'receiptItem' }
   },
   receiptitem: {
     name: 'receiptItem',
-    fields: ['id', 'organizationId', 'receiptId', 'purchaseOrderItemId', 'qtyReceived', 'qtyAccepted', 'qtyRejected', 'rejectionReason', 'lotNumber', 'locationId'],
-    relations: { organization: 'organization', receipt: 'receipt', purchaseOrderItem: 'purchaseOrderItem', location: 'location' }
+    fields: ['id', 'organizationId', 'receiptId', 'itemId', 'lotId', 'serialNumber', 'qtyReceived', 'unitCost', 'expirationDate', 'locationId'],
+    relations: { organization: 'organization', receipt: 'receipt', item: 'item', lot: 'lot', location: 'location' }
   },
   carrier: {
     name: 'carrier',
@@ -792,9 +792,6 @@ function getEnumTypeName(tableName: string, fieldName: string): string {
     },
     cycleCount: {
       status: 'CycleCountStatus'
-    },
-    receipt: {
-      status: 'ReceiptStatus'
     },
     stockMovement: {
       movementType: 'MovementType'
