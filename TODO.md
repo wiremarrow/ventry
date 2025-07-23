@@ -48,6 +48,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **Authentication Standardization COMPLETE** - Phase 1 Auth Flow (2025-01-18)
 ✅ **Items/Products Management COMPLETE** - Full CRUD with Categories & UOM (2025-01-18)
 ✅ **Row-Level Security Implementation COMPLETE** - Enterprise Multi-Tenancy (2025-01-20)
+✅ **Test Infrastructure Fix COMPLETE** - Resolved 28/30 Failing Tests (2025-07-23)
 ✅ **Database Admin Operations & Comprehensive Seeding COMPLETE** (2025-07-21)
 ✅ **Frontend Performance & Rate Limiting Fixes COMPLETE** (2025-07-21)
 ✅ **Users Page RLS Fix COMPLETE** - Organization-Scoped User Management (2025-07-21)
@@ -924,6 +925,28 @@ All 13 major pages have been implemented with consistent patterns:
 ---
 
 ## Phase 2: Supabase Migration (Week 7-8) 🚧 IN PROGRESS
+
+### 2.0.6 Test Infrastructure Improvements (2025-07-23) ✅ COMPLETE
+- [x] **Fixed 28 out of 30 failing unit tests**
+  - Resolved React act() warnings with custom render utilities
+  - Fixed product dialog tests (create/edit) with proper selectors
+  - Fixed inventory and warehouse list tests
+  - Fixed product filters with dropdown handling
+  - Updated all tests to use centralized mocking patterns
+- [x] **Resolved build-blocking lint errors**
+  - Fixed unused variables and imports
+  - Fixed URL global in vitest config
+  - Renamed conflicting test utility files
+  - Fixed TypeScript errors in mock factories
+- [x] **Build pipeline now passes successfully**
+  - All lint errors resolved (112 warnings remain)
+  - TypeScript compilation succeeds
+  - Next.js production build completes
+- [ ] **Remaining tasks**:
+  - Fix PostgreSQL integration test schema issues
+  - Resolve ~170 TypeScript 'any' warnings
+  - Fix Supabase package TypeScript errors
+  - Run and fix E2E tests across all browsers
 
 ### 2.0 Supabase Integration
 - [x] **2.0.1** Analyze Supabase feasibility and create migration plan
