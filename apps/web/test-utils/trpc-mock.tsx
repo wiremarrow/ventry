@@ -2,7 +2,6 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from '@ventry/backend';
-import superjson from 'superjson';
 
 // Create a mock tRPC instance
 export const mockTrpc = createTRPCReact<AppRouter>();
@@ -13,7 +12,7 @@ export const createTestQueryClient = () =>
     defaultOptions: {
       queries: {
         retry: false,
-        cacheTime: 0,
+        gcTime: 0,
       },
       mutations: {
         retry: false,
@@ -32,7 +31,6 @@ export function TRPCMockProvider({
   queryClient = createTestQueryClient() 
 }: TRPCMockProviderProps) {
   const trpcClient = mockTrpc.createClient({
-    transformer: superjson,
     links: [],
   });
 

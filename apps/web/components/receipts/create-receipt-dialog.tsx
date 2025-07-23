@@ -84,7 +84,7 @@ export function CreateReceiptDialog({
   });
 
   // Fetch selected PO details
-  const { data: selectedPo } = trpc.purchaseOrders.getById.useQuery(
+  const { data: selectedPo } = trpc.purchaseOrders.get.useQuery(
     { id: selectedPoId! },
     { enabled: !!selectedPoId }
   );
@@ -123,7 +123,15 @@ export function CreateReceiptDialog({
 
   const onSubmit = (data: CreateReceiptFormData) => {
     // Filter out items with 0 quantity
-    const itemsToReceive = data.items.filter(item => item.quantityReceived > 0);
+    const itemsToReceive = data.items
+      .filter(item => item.quantityReceived > 0)
+      .map(item => ({
+        poItemId: item.poItemId,
+        itemId: selectedPo?.items.find(i => i.id === item.poItemId)?.itemId || '',
+        qtyReceived: item.quantityReceived,
+        locationId: '', // TODO: Add location selection
+        notes: item.notes,
+      }));
     
     if (itemsToReceive.length === 0) {
       toast({

@@ -87,9 +87,7 @@ export function PurchaseOrderReceiveDialog({
   const utils = trpc.useUtils();
 
   // Fetch warehouses with locations
-  const { data: warehouses } = trpc.warehouses.list.useQuery({
-    limit: 100,
-  });
+  const { data: warehouses } = trpc.warehouses.list.useQuery({});
 
   const receiveMutation = trpc.purchaseOrders.receive.useMutation({
     onSuccess: (result) => {
@@ -139,7 +137,7 @@ export function PurchaseOrderReceiveDialog({
         locationId: item.locationId,
         lotNumber: item.lotNumber || undefined,
         expirationDate: item.expirationDate || undefined,
-        serialNumbers: item.serialNumbers?.length > 0 ? item.serialNumbers : undefined,
+        serialNumbers: item.serialNumbers && item.serialNumbers.length > 0 ? item.serialNumbers : undefined,
         notes: item.notes || undefined,
       }));
 
@@ -292,7 +290,7 @@ export function PurchaseOrderReceiveDialog({
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
                         <SelectContent>
-                          {warehouses?.warehouses.map((warehouse) => (
+                          {warehouses?.map((warehouse) => (
                             <SelectItem 
                               key={warehouse.id} 
                               value={warehouse.id}

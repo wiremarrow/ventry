@@ -123,8 +123,8 @@ export function ShipmentDetailsDialog({
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Customer</p>
-                  <p className="font-medium">{shipment.order.customer.name}</p>
-                  <p className="text-sm text-muted-foreground">{shipment.order.shippingAddress}</p>
+                  <p className="font-medium">{shipment.order.customer.companyName || shipment.order.customer.email || 'Unknown'}</p>
+                  <p className="text-sm text-muted-foreground">Order #{shipment.order.orderNumber}</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -188,7 +188,7 @@ export function ShipmentDetailsDialog({
                     <p className="text-sm text-muted-foreground">Shipping Cost</p>
                     <p className="font-medium flex items-center gap-1">
                       <DollarSign className="h-4 w-4 text-muted-foreground" />
-                      {formatCurrency(shipment.shippingCost)}
+                      {formatCurrency(Number(shipment.shippingCost))}
                     </p>
                   </div>
                 )}
@@ -208,7 +208,7 @@ export function ShipmentDetailsDialog({
                 Ship From Location
               </h3>
               <p className="font-medium">{shipment.shippedFromLocation.warehouse.name}</p>
-              <p className="text-sm text-muted-foreground">{shipment.shippedFromLocation.name}</p>
+              <p className="text-sm text-muted-foreground">{shipment.shippedFromLocation.code}</p>
             </div>
 
             {/* Notes */}

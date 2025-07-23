@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, Input, Label, Button, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
+import { Card, Input, Label, Button, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Skeleton } from '@ventry/ui';
 import { 
   ArrowLeft, 
   Plus, 
@@ -37,7 +37,7 @@ interface OrderItem {
   totalCost: number;
 }
 
-export default function CreatePurchaseOrderPage() {
+function CreatePurchaseOrderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const duplicateId = searchParams.get('duplicate');
@@ -437,6 +437,61 @@ export default function CreatePurchaseOrderPage() {
           </div>
         </form>
       </div>
+      </DashboardLayout>
+    </ProtectedRoute>
+  );
+}
+
+export default function CreatePurchaseOrderPage() {
+  return (
+    <Suspense fallback={<CreatePurchaseOrderSkeleton />}>
+      <CreatePurchaseOrderContent />
+    </Suspense>
+  );
+}
+
+function CreatePurchaseOrderSkeleton() {
+  return (
+    <ProtectedRoute>
+      <DashboardLayout>
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-20" />
+            <div>
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-48" />
+            </div>
+          </div>
+
+          {/* Form skeleton */}
+          <Card className="p-6">
+            <Skeleton className="h-6 w-32 mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-24 w-full col-span-2" />
+            </div>
+          </Card>
+
+          {/* Items skeleton */}
+          <Card className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <Skeleton className="h-6 w-24" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+            <Skeleton className="h-64 w-full" />
+          </Card>
+
+          {/* Actions skeleton */}
+          <div className="flex justify-end gap-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-40" />
+          </div>
+        </div>
       </DashboardLayout>
     </ProtectedRoute>
   );

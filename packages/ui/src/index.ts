@@ -18,6 +18,9 @@ export * from "./components/ui/radio-group"
 export * from "./components/ui/tabs"
 export * from "./components/ui/sonner"
 export * from "./components/ui/progress"
+export * from "./components/ui/popover"
+export * from "./components/ui/calendar"
+export * from "./components/ui/pagination"
 
 // Export utilities
 export * from "./lib/utils"

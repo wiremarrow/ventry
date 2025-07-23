@@ -42,7 +42,7 @@ export function ReceiptDetailsDialog({
   onOpenChange 
 }: ReceiptDetailsDialogProps) {
   // Fetch receipt details
-  const { data: receipt, isLoading } = trpc.receipts.getById.useQuery(
+  const { data: receipt, isLoading } = trpc.receipts.get.useQuery(
     { id: receiptId },
     { enabled: open && !!receiptId }
   );
@@ -50,7 +50,13 @@ export function ReceiptDetailsDialog({
   if (!open) return null;
 
   const hasDiscrepancy = receipt?.items.some(
-    item => item.quantityReceived !== item.quantityOrdered
+    item => {
+      // Find the corresponding PO item to check quantities
+      const poItem = receipt.purchaseOrder?.items.find(
+        poi => poi.itemId === item.itemId
+      );
+      return poItem && item.qtyReceived !== poItem.qtyOrdered;
+    }
   );
 
   return (
@@ -75,22 +81,22 @@ export function ReceiptDetailsDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Receipt Number</p>
+                  <p className="text-sm text-muted-foreground">Receipt ID</p>
                   <p className="font-medium flex items-center gap-2">
                     <Hash className="h-4 w-4 text-muted-foreground" />
-                    {receipt.receiptNumber}
+                    {receipt.id}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Purchase Order</p>
                   <p className="font-medium flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
-                    {receipt.purchaseOrder.poNumber}
+                    {receipt.purchaseOrder?.poNumber || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Supplier</p>
-                  <p className="font-medium">{receipt.purchaseOrder.supplier.name}</p>
+                  <p className="font-medium">{receipt.purchaseOrder?.supplier?.name || 'N/A'}</p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -111,7 +117,7 @@ export function ReceiptDetailsDialog({
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
                   <ReceiptStatusBadge 
-                    poStatus={receipt.purchaseOrder.status}
+                    poStatus={receipt.purchaseOrder?.status || 'PENDING'}
                     hasDiscrepancy={hasDiscrepancy}
                   />
                 </div>
@@ -155,18 +161,23 @@ export function ReceiptDetailsDialog({
                   </TableHeader>
                   <TableBody>
                     {receipt.items.map((item) => {
-                      const difference = item.quantityReceived - item.quantityOrdered;
+                      // Find the corresponding PO item to get ordered quantity
+                      const poItem = receipt.purchaseOrder?.items.find(
+                        poi => poi.itemId === item.itemId
+                      );
+                      const qtyOrdered = poItem?.qtyOrdered || 0;
+                      const difference = item.qtyReceived - qtyOrdered;
                       const hasItemDiscrepancy = difference !== 0;
                       
                       return (
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">
-                            {item.purchaseOrderItem.item.name}
+                            {item.item.name}
                           </TableCell>
-                          <TableCell>{item.purchaseOrderItem.item.sku}</TableCell>
-                          <TableCell className="text-right">{item.quantityOrdered}</TableCell>
+                          <TableCell>{item.item.sku}</TableCell>
+                          <TableCell className="text-right">{qtyOrdered}</TableCell>
                           <TableCell className="text-right font-medium">
-                            {item.quantityReceived}
+                            {item.qtyReceived}
                           </TableCell>
                           <TableCell className="text-right">
                             {hasItemDiscrepancy ? (
@@ -194,7 +205,7 @@ export function ReceiptDetailsDialog({
                               <div className="flex items-center gap-1">
                                 <Warehouse className="h-3 w-3 text-muted-foreground" />
                                 <span className="text-sm">
-                                  {item.location.warehouse.name} - {item.location.name}
+                                  {item.location.warehouse.name} - {item.location.code}
                                 </span>
                               </div>
                             ) : (
@@ -202,8 +213,8 @@ export function ReceiptDetailsDialog({
                             )}
                           </TableCell>
                           <TableCell>
-                            {item.notes ? (
-                              <span className="text-sm text-muted-foreground">{item.notes}</span>
+                            {item.serialNumber ? (
+                              <span className="text-sm text-muted-foreground">SN: {item.serialNumber}</span>
                             ) : (
                               '-'
                             )}
@@ -226,12 +237,12 @@ export function ReceiptDetailsDialog({
                 <div>
                   <p className="text-sm text-muted-foreground">Total Quantity Received</p>
                   <p className="font-medium">
-                    {receipt.items.reduce((sum, item) => sum + item.quantityReceived, 0)}
+                    {receipt.items.reduce((sum, item) => sum + item.qtyReceived, 0)}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">PO Status</p>
-                  <p className="font-medium">{receipt.purchaseOrder.status}</p>
+                  <p className="font-medium">{receipt.purchaseOrder?.status || 'N/A'}</p>
                 </div>
               </div>
             </div>

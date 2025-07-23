@@ -1,5 +1,5 @@
 import { Badge } from '@ventry/ui';
-import { Shield, UserCog, User, HardHat } from 'lucide-react';
+import { Shield, UserCog, User, HardHat, Warehouse, ShoppingCart } from 'lucide-react';
 import type { Role } from '@ventry/database';
 
 interface UserRoleBadgeProps {
@@ -27,6 +27,16 @@ export function UserRoleBadge({ role }: UserRoleBadgeProps) {
       icon: User,
       label: 'User',
       className: 'bg-gray-100 text-gray-800 hover:bg-gray-100',
+    },
+    WAREHOUSE: {
+      icon: Warehouse,
+      label: 'Warehouse',
+      className: 'bg-orange-100 text-orange-800 hover:bg-orange-100',
+    },
+    SALES: {
+      icon: ShoppingCart,
+      label: 'Sales',
+      className: 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100',
     },
   };
 

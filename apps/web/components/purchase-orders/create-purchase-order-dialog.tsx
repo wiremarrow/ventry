@@ -32,10 +32,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-  Calendar,
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Calendar,
 } from '@ventry/ui';
 import { toast } from 'sonner';
 
@@ -93,7 +93,6 @@ export function CreatePurchaseOrderDialog({
     defaultValues: {
       supplierId: '',
       items: [],
-      taxRate: 0,
     },
   });
 

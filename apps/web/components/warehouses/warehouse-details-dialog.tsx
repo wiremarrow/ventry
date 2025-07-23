@@ -57,7 +57,7 @@ export function WarehouseDetailsDialog({
 }: WarehouseDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [createLocationOpen, setCreateLocationOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<unknown>(null);
+  const [editingLocation, setEditingLocation] = useState<any>(null);
 
   const utils = trpc.useUtils();
 
@@ -98,8 +98,8 @@ export function WarehouseDetailsDialog({
     return 'text-green-600 bg-green-100';
   };
 
-  const groupLocationsByZone = (locations: unknown[]) => {
-    return locations.reduce((groups: Record<string, unknown[]>, location: unknown) => {
+  const groupLocationsByZone = (locations: any[]) => {
+    return locations.reduce((groups: Record<string, any[]>, location: any) => {
       const zone = location.zone || 'No Zone';
       if (!groups[zone]) groups[zone] = [];
       groups[zone].push(location);
@@ -129,25 +129,25 @@ export function WarehouseDetailsDialog({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-2xl font-bold text-blue-600">
-                {warehouse?.stats?.locationCount || 0}
+                {stats?.locations?.total || 0}
               </div>
               <div className="text-sm text-gray-600">Locations</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-green-600">
-                {warehouse?.stats?.inventoryCount || 0}
+                {stats?.inventory?.totalItems || 0}
               </div>
               <div className="text-sm text-gray-600">Items</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-purple-600">
-                {warehouse?.stats?.totalStock || 0}
+                {stats?.inventory?.totalQuantity || 0}
               </div>
               <div className="text-sm text-gray-600">Total Stock</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-orange-600">
-                {warehouse?.stats?.utilizationRate || 0}%
+                {stats?.locations?.utilizationRate || 0}%
               </div>
               <div className="text-sm text-gray-600">Utilized</div>
             </div>
@@ -202,7 +202,7 @@ export function WarehouseDetailsDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {locations.map((location: unknown) => {
+                    {locations.map((location: any) => {
                       const inventoryCount = location._count?.inventory || 0;
                       const utilization = location.maxCapacity && inventoryCount > 0
                         ? Math.round((inventoryCount / location.maxCapacity) * 100)

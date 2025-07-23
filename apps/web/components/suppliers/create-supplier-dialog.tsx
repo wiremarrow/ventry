@@ -101,8 +101,22 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
 
   const onSubmit = (data: CreateSupplierFormData) => {
     createMutation.mutate({
-      ...data,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
+      supplierCode: data.code,
+      name: data.name,
+      phone: data.phone || null,
+      email: data.email || null,
+      website: data.website || null,
+      currencyId: data.currency,
+      paymentTerms: data.paymentTerms || null,
+      leadTimeDays: data.leadTimeDays || 0,
+      line1: data.address || '',
+      line2: null,
+      city: data.city || '',
+      state: data.state || '',
+      postalCode: data.postalCode || '',
+      country: data.country || '',
+      taxId: data.taxId || null,
+      notes: data.notes || null,
     });
   };
 

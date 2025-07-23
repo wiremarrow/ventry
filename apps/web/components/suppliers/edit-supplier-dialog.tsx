@@ -84,25 +84,25 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
     if (supplier) {
       form.reset({
         name: supplier.name,
-        type: supplier.type,
+        type: 'DISTRIBUTOR', // Default value since supplier doesn't have type field
         email: supplier.email || '',
         phone: supplier.phone || '',
         website: supplier.website || '',
-        taxId: supplier.taxId || '',
-        address: supplier.address || '',
+        taxId: '', // Supplier doesn't have taxId field
+        address: supplier.line1 || '',
         city: supplier.city || '',
         state: supplier.state || '',
         country: supplier.country || '',
         postalCode: supplier.postalCode || '',
-        contactName: supplier.contactName || '',
-        contactEmail: supplier.contactEmail || '',
-        contactPhone: supplier.contactPhone || '',
+        contactName: '', // Supplier doesn't have contact fields
+        contactEmail: '',
+        contactPhone: '',
         paymentTerms: supplier.paymentTerms || 'Net 30',
-        currency: supplier.currency || 'USD',
+        currency: supplier.currencyId || 'USD',
         leadTimeDays: supplier.leadTimeDays || 0,
-        minimumOrderValue: supplier.minimumOrderValue || 0,
+        minimumOrderValue: 0, // Supplier doesn't have this field
         notes: supplier.notes || '',
-        isActive: supplier.status === 'ACTIVE',
+        isActive: true, // Supplier doesn't have status field
       });
     }
   }, [supplier, form]);
@@ -112,8 +112,21 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
 
     updateMutation.mutate({
       id: supplier.id,
-      ...data,
-      status: data.isActive ? 'ACTIVE' : 'INACTIVE',
+      name: data.name,
+      phone: data.phone || null,
+      email: data.email || null,
+      website: data.website || null,
+      currencyId: data.currency,
+      paymentTerms: data.paymentTerms || null,
+      leadTimeDays: data.leadTimeDays || 0,
+      line1: data.address || supplier.line1,
+      line2: supplier.line2,
+      city: data.city || supplier.city,
+      state: data.state || supplier.state,
+      postalCode: data.postalCode || supplier.postalCode,
+      country: data.country || supplier.country,
+      // taxId field doesn't exist in Supplier model
+      notes: data.notes || null,
     });
   };
 
@@ -138,7 +151,7 @@ export function EditSupplierDialog({ supplier, open, onOpenChange }: EditSupplie
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Supplier Code</p>
-                  <p className="text-sm text-gray-600">{supplier.code}</p>
+                  <p className="text-sm text-gray-600">{supplier.supplierCode}</p>
                 </div>
 
                 <FormField

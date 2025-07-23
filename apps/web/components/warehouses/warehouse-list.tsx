@@ -38,7 +38,7 @@ interface WarehouseListProps {
 }
 
 export function WarehouseList({ searchTerm }: WarehouseListProps) {
-  const [editingWarehouse, setEditingWarehouse] = useState<unknown>(null);
+  const [editingWarehouse, setEditingWarehouse] = useState<any>(null);
   const [detailsWarehouseId, setDetailsWarehouseId] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
@@ -119,8 +119,8 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
               // Warehouse rows
               filteredWarehouses.map((warehouse) => {
                 const locationCount = warehouse._count?.locations || 0;
-                const totalCapacity = warehouse.stats?.totalCapacity || 0;
-                const utilization = warehouse.stats?.utilizationRate || 0;
+                const totalCapacity = 0; // Stats not included in list query
+                const utilization = 0; // Stats not included in list query
                 
                 return (
                   <TableRow key={warehouse.id}>

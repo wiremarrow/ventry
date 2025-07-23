@@ -95,10 +95,8 @@ export function CreateShipmentDialog({
     { enabled: !!selectedOrderId }
   );
 
-  // Fetch locations
-  const { data: locations, isLoading: locationsLoading } = trpc.warehouses.locationsList.useQuery({
-    limit: 100,
-  });
+  // Fetch warehouses
+  const { data: warehousesData, isLoading: warehousesLoading } = trpc.warehouses.list.useQuery({});
 
   // Fetch carriers (using suppliers as carriers for now)
   const { data: carriers } = trpc.suppliers.list.useQuery({
@@ -220,7 +218,7 @@ export function CreateShipmentDialog({
                                 <Package className="h-4 w-4 text-muted-foreground" />
                                 <span>{order.orderNumber}</span>
                                 <span className="text-muted-foreground">-</span>
-                                <span>{order.customer.name}</span>
+                                <span>{order.customer.companyName || order.customer.email || 'Unknown'}</span>
                               </div>
                               <Badge>{order.status}</Badge>
                             </div>
@@ -257,22 +255,20 @@ export function CreateShipmentDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {locationsLoading ? (
+                      {warehousesLoading ? (
                         <div className="p-2">
                           <Skeleton className="h-8 w-full" />
                         </div>
-                      ) : locations?.locations?.length === 0 ? (
+                      ) : !warehousesData?.length ? (
                         <div className="p-4 text-center text-muted-foreground">
-                          No locations available
+                          No warehouses available
                         </div>
                       ) : (
-                        locations?.locations?.map((location) => (
-                          <SelectItem key={location.id} value={location.id}>
+                        warehousesData.map(warehouse => (
+                          <SelectItem key={warehouse.id} value={warehouse.id}>
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4 text-muted-foreground" />
-                              <span>{location.warehouse.name}</span>
-                              <span className="text-muted-foreground">-</span>
-                              <span>{location.name}</span>
+                              <span>{warehouse.name}</span>
                             </div>
                           </SelectItem>
                         ))
@@ -360,14 +356,14 @@ export function CreateShipmentDialog({
                 <div className="rounded-lg border p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{selectedOrder.customer.name}</p>
+                      <p className="font-medium">{selectedOrder.customer.companyName || selectedOrder.customer.email || 'Unknown'}</p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedOrder.shippingAddress}
+                        Order #{selectedOrder.orderNumber}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Order Total</p>
-                      <p className="font-medium">${selectedOrder.totalAmount.toFixed(2)}</p>
+                      <p className="font-medium">${Number(selectedOrder.grandTotal).toFixed(2)}</p>
                     </div>
                   </div>
                 </div>

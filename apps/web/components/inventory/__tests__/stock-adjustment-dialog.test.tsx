@@ -11,13 +11,13 @@ vi.mock('@/lib/trpc', () => ({
         useMutation: vi.fn(),
       },
     },
-    useUtils: () => ({
+    useUtils: vi.fn(() => ({
       inventory: {
         list: {
           invalidate: vi.fn(),
         },
       },
-    }),
+    })),
   },
 }));
 
@@ -31,21 +31,78 @@ vi.mock('sonner', () => ({
 
 describe('StockAdjustmentDialog', () => {
   const mockInventoryItem = {
+    // Base Inventory fields
     id: 'inv1',
+    organizationId: 'org1',
+    itemId: 'item1',
+    locationId: 'loc1',
+    lotId: null,
+    serialId: null,
+    qtyOnHand: 100,
+    qtyReserved: 20,
+    qtyInTransit: 0,
+    lastCountedAt: null,
+    updatedAt: new Date('2024-01-01T00:00:00Z'),
+    // Relations
     item: {
       id: 'item1',
+      organizationId: 'org1',
       name: 'Test Product',
       sku: 'SKU001',
+      description: null,
+      upc: null,
+      categoryId: 'cat1',
+      uomId: 'uom1',
+      defaultSupplierId: null,
+      defaultCost: null,
+      defaultPrice: null,
+      weightKg: null,
+      lengthCm: null,
+      widthCm: null,
+      heightCm: null,
+      reorderPoint: 50,
+      reorderQty: 100,
+      isActive: true,
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      updatedAt: new Date('2024-01-01T00:00:00Z'),
     },
     location: {
       id: 'loc1',
-      name: 'A-1-1',
+      organizationId: 'org1',
+      warehouseId: 'wh1',
+      zone: 'A',
+      aisle: '1',
+      shelf: '1',
+      bin: null,
+      code: 'A-1-1',
+      description: null,
+      maxCapacity: null,
+      isTempControlled: false,
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      updatedAt: new Date('2024-01-01T00:00:00Z'),
       warehouse: {
         id: 'wh1',
+        organizationId: 'org1',
         name: 'Main Warehouse',
+        code: 'MAIN',
+        line1: '123 Main St',
+        line2: null,
+        city: 'Anytown',
+        state: 'CA',
+        postalCode: '12345',
+        country: 'US',
+        phone: null,
+        notes: null,
+        isActive: true,
+        createdAt: new Date('2024-01-01T00:00:00Z'),
+        updatedAt: new Date('2024-01-01T00:00:00Z'),
       },
     },
-    qtyOnHand: 100,
+    lot: null,
+    // Computed fields
+    qtyAvailable: 80,
+    lowStock: false,
+    expiring: false,
   };
 
   const mockOnOpenChange = vi.fn();
