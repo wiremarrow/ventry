@@ -57,7 +57,19 @@ export function WarehouseDetailsDialog({
 }: WarehouseDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [createLocationOpen, setCreateLocationOpen] = useState(false);
-  const [editingLocation, setEditingLocation] = useState<any>(null);
+  type LocationType = {
+    id: string;
+    code: string;
+    zone?: string | null;
+    aisle?: string | null;
+    shelf?: string | null;
+    bin?: string | null;
+    description?: string | null;
+    maxCapacity?: number | null;
+    isTempControlled?: boolean;
+    _count?: { inventory: number };
+  };
+  const [editingLocation, setEditingLocation] = useState<LocationType | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -98,8 +110,8 @@ export function WarehouseDetailsDialog({
     return 'text-green-600 bg-green-100';
   };
 
-  const groupLocationsByZone = (locations: any[]) => {
-    return locations.reduce((groups: Record<string, any[]>, location: any) => {
+  const groupLocationsByZone = (locations: LocationType[]) => {
+    return locations.reduce((groups: Record<string, LocationType[]>, location) => {
       const zone = location.zone || 'No Zone';
       if (!groups[zone]) groups[zone] = [];
       groups[zone].push(location);
@@ -202,7 +214,7 @@ export function WarehouseDetailsDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {locations.map((location: any) => {
+                    {locations.map((location) => {
                       const inventoryCount = location._count?.inventory || 0;
                       const utilization = location.maxCapacity && inventoryCount > 0
                         ? Math.round((inventoryCount / location.maxCapacity) * 100)

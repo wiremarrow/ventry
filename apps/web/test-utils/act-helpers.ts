@@ -183,7 +183,7 @@ export const suppressConsole = () => {
   });
   
   return {
-    getErrorCalls: () => (console.error as any).mock.calls,
-    getWarnCalls: () => (console.warn as any).mock.calls,
+    getErrorCalls: () => (console.error as ReturnType<typeof vi.fn>).mock.calls,
+    getWarnCalls: () => (console.warn as ReturnType<typeof vi.fn>).mock.calls,
   };
 };
