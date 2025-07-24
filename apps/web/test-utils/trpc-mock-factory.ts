@@ -50,8 +50,22 @@ export const createQueryResult = (data?: any, options?: Partial<{
   isSuccess: !options?.isLoading && !options?.isError,
   isFetching: false,
   isRefetching: false,
+  isPending: options?.isLoading ?? false,
+  isLoadingError: options?.isLoading && !!options?.error,
+  isRefetchError: false,
+  isPlaceholderData: false,
+  isStale: false,
+  isIdle: false,
+  isInitialLoading: options?.isLoading ?? false,
+  dataUpdatedAt: Date.now(),
+  errorUpdateCount: 0,
+  errorUpdatedAt: 0,
+  failureCount: 0,
+  failureReason: options?.error ?? null,
+  fetchStatus: 'idle' as const,
   status: options?.isLoading ? 'loading' : options?.isError ? 'error' : 'success' as const,
-});
+  trpc: {} as any,
+} as any);
 
 // Default mutation mock that can be customized
 export const createMutationMock = (options?: {

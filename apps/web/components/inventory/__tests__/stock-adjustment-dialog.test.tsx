@@ -389,9 +389,9 @@ describe('StockAdjustmentDialog', () => {
     const user = userEvent.setup();
     
     // Set up the mutation to call onSuccess callback
-    let capturedOnSuccess: (() => void) | undefined;
+    let capturedOnSuccess: ((data: any, variables: any, context: any) => void) | undefined;
     vi.mocked(trpc.inventory.adjust.useMutation).mockImplementation((options) => {
-      capturedOnSuccess = options?.onSuccess;
+      capturedOnSuccess = options?.onSuccess as any;
       return {
         mutate: mockMutate,
         isPending: false,
@@ -419,7 +419,7 @@ describe('StockAdjustmentDialog', () => {
     });
     
     // Call the onSuccess callback
-    capturedOnSuccess?.();
+    capturedOnSuccess?.({} as any, {} as any, {} as any);
 
     await waitFor(() => {
       expect(mockOnSuccess).toHaveBeenCalled();

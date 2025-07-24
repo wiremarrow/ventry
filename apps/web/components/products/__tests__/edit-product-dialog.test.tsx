@@ -164,7 +164,7 @@ describe('EditProductDialog', () => {
       categoryId: null,
       category: { id: '2', name: 'Clothing' },
       uomId: null,
-      unitOfMeasure: { id: '2', name: 'Box' },
+      unitOfMeasure: { id: '2', code: 'BX', description: 'Box' },
       defaultSupplierId: null,
       defaultSupplier: { id: '2', name: 'Supplier B' },
     };
@@ -356,12 +356,12 @@ describe('EditProductDialog', () => {
       },
     } as any);
 
-    let onSuccess: (() => void) | undefined;
+    let onSuccess: ((data: any, variables: any, context: any) => void) | undefined;
     vi.mocked(trpc.items.update.useMutation).mockImplementation((options) => {
-      onSuccess = options?.onSuccess;
+      onSuccess = options?.onSuccess as any;
       return {
         mutate: vi.fn(() => {
-          onSuccess?.();
+          onSuccess?.({} as any, {} as any, {} as any);
         }),
         isPending: false,
       } as any;
@@ -388,7 +388,7 @@ describe('EditProductDialog', () => {
   it('handles mutation error', async () => {
     let onError: ((error: any) => void) | undefined;
     vi.mocked(trpc.items.update.useMutation).mockImplementation((options) => {
-      onError = options?.onError;
+      onError = options?.onError as any;
       return {
         mutate: vi.fn(() => {
           onError?.({ message: 'Failed to update product' });
@@ -413,7 +413,7 @@ describe('EditProductDialog', () => {
       isPending: false,
     } as any);
 
-    render(<EditProductDialog {...defaultProps} product={{ ...mockProduct, id: undefined }} />);
+    render(<EditProductDialog {...defaultProps} product={{ ...mockProduct, id: '' }} />);
 
     // Try to submit
     fireEvent.click(screen.getByText('Update Product'));

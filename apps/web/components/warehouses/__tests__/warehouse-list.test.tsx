@@ -103,7 +103,8 @@ describe('WarehouseList', () => {
       error: null,
       data: undefined,
       reset: vi.fn(),
-    });
+      trpc: {} as any,
+    } as any);
   });
 
   it('renders loading state correctly', () => {
