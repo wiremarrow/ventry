@@ -942,6 +942,11 @@ All 13 major pages have been implemented with consistent patterns:
   - All lint errors resolved (112 warnings remain)
   - TypeScript compilation succeeds
   - Next.js production build completes
+- [x] **Fixed remaining frontend unit tests (2025-01-22)**:
+  - Fixed inventory-filters search test using fireEvent.change for controlled input
+  - Fixed create-product-dialog validation test by simplifying to text inputs only
+  - Fixed create-product-dialog submit tests with proper dropdown selection
+  - All 103 unit tests now passing in web package
 - [ ] **Remaining tasks**:
   - Fix PostgreSQL integration test schema issues
   - Resolve ~170 TypeScript 'any' warnings

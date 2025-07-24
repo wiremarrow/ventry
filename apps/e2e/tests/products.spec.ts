@@ -82,7 +82,7 @@ test.describe('Products Page', () => {
 
   test('should edit an existing product', async ({ page }) => {
     // Create a test product first
-    const testItem = await createTestItem({
+    await createTestItem({
       sku: 'E2E-EDIT-001',
       name: 'Product to Edit',
     });

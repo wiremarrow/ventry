@@ -32,8 +32,8 @@ test.describe('Row-Level Security (RLS) Isolation', () => {
     org2 = orgSetup2;
 
     // Create test data for each organization
-    org1Data = await createOrgTestData(org1.organization.id, org1.owner.id);
-    org2Data = await createOrgTestData(org2.organization.id, org2.owner.id);
+    org1Data = await createOrgTestData(org1.organization.id);
+    org2Data = await createOrgTestData(org2.organization.id);
   });
 
   test.afterAll(async () => {
@@ -216,9 +216,6 @@ test.describe('Row-Level Security (RLS) Isolation', () => {
       // Add a small delay to ensure data is loaded
       await page.waitForTimeout(1000);
 
-      // Use more specific selectors that target table cells
-      const tableRows = page.locator('table tbody tr');
-      
       // Should see org1 item (use contains for flexible matching)
       await expect(page.getByText(org1Data.item.name, { exact: false })).toBeVisible();
       await expect(page.getByText(org1Data.item.sku, { exact: false })).toBeVisible();

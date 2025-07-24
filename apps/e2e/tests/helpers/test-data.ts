@@ -40,7 +40,6 @@ export async function createTestItem(data: {
     uom = await prisma.unitOfMeasure.create({
       data: {
         code: 'EA',
-        name: 'Each',
         description: 'Each unit',
         isBase: true,
         conversionFactorToBase: 1,
@@ -102,6 +101,11 @@ export async function createTestSupplier(data: {
       supplierCode: data.code,
       name: data.name,
       organizationId: organization.id,
+      line1: '123 Test St',
+      city: 'Test City',
+      state: 'TS',
+      postalCode: '12345',
+      country: 'US',
     },
   });
 }
@@ -120,6 +124,11 @@ export async function createTestWarehouse(data: {
       code: data.code,
       name: data.name,
       organizationId: organization.id,
+      line1: '456 Warehouse Way',
+      city: 'Storage City',
+      state: 'WH',
+      postalCode: '67890',
+      country: 'US',
     },
   });
 }
@@ -128,11 +137,21 @@ export async function createTestLocation(warehouseId: string, data: {
   code: string;
   description: string;
 }) {
+  const warehouse = await prisma.warehouse.findUnique({
+    where: { id: warehouseId },
+    select: { organizationId: true },
+  });
+  
+  if (!warehouse) {
+    throw new Error('Warehouse not found');
+  }
+
   return await prisma.location.create({
     data: {
       warehouseId,
       code: data.code,
       description: data.description,
+      organizationId: warehouse.organizationId,
     },
   });
 }

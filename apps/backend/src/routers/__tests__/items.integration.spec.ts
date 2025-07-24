@@ -522,6 +522,7 @@ describe('Items Router Integration Tests', () => {
         data: {
           itemId: created.id,
           locationId,
+          organizationId,
           qtyOnHand: 10,
           qtyReserved: 0,
           qtyInTransit: 0,
@@ -635,6 +636,7 @@ describe('Items Router Integration Tests', () => {
         data: {
           itemId: item.id,
           locationId,
+          organizationId,
           qtyOnHand: 5,
           qtyReserved: 0,
           qtyInTransit: 0,

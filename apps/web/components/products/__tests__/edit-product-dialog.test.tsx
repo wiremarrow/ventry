@@ -278,7 +278,9 @@ describe('EditProductDialog', () => {
     // Select "No supplier"
     const supplierCombobox = screen.getAllByRole('combobox')[2]; // Supplier is the third combobox
     await user.click(supplierCombobox);
-    await user.click(screen.getByText('No supplier'));
+    // Use getAllByText to handle multiple elements and select the one in the dropdown
+    const noSupplierOptions = screen.getAllByText('No supplier');
+    await user.click(noSupplierOptions[noSupplierOptions.length - 1]);
 
     // Submit form
     await user.click(screen.getByText('Update Product'));

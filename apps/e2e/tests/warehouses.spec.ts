@@ -202,7 +202,7 @@ test.describe('Warehouses Page', () => {
 
     // Check edit dialog opens with pre-filled data
     await expect(page.getByText('Edit Warehouse')).toBeVisible();
-    await expect(page.getByDisplayValue('Original Warehouse Name')).toBeVisible();
+    await expect(page.getByRole('textbox', { name: 'Warehouse Name *' })).toHaveValue('Original Warehouse Name');
 
     // Update the name
     await page.getByLabel('Warehouse Name *').fill('Updated Warehouse Name');

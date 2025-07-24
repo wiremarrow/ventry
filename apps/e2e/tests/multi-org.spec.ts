@@ -4,7 +4,6 @@ import {
   createMultiOrgTestUser,
   addUserToOrganization,
   createOrgTestData,
-  switchOrganization,
 } from '../utils/test-helpers.js';
 import { cleanupTestDataForUser, cleanupTestDataForOrganization } from '../utils/db-cleanup.js';
 
@@ -20,12 +19,10 @@ test.describe('Multi-Organization Management', () => {
     
     // Create test data for each organization
     org1Data = await createOrgTestData(
-      multiOrgSetup.organizations[0].id,
-      multiOrgSetup.user.id
+      multiOrgSetup.organizations[0].id
     );
     org2Data = await createOrgTestData(
-      multiOrgSetup.organizations[1].id,
-      multiOrgSetup.user.id
+      multiOrgSetup.organizations[1].id
     );
 
     // Create a shared user who belongs to both organizations

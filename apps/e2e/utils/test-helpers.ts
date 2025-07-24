@@ -205,29 +205,58 @@ export async function addUserToOrganization(
 }
 
 // Test product creation
-export async function createTestProduct(userId: string, overrides: Record<string, any> = {}): Promise<any> {
+export async function createTestProduct(overrides: Record<string, any> = {}): Promise<any> {
   const testId = generateTestId();
   
+  const organization = await prisma.organization.findFirst();
+  if (!organization) {
+    throw new Error('No organization found for testing');
+  }
+
   // Ensure we have a test category
-  const category = await prisma.category.upsert({
-    where: { name: 'E2E Test Category' },
-    update: {},
-    create: {
-      name: 'E2E Test Category',
-      description: 'Category for E2E tests',
+  let category = await prisma.itemCategory.findFirst({
+    where: { 
+      organizationId: organization.id,
+      name: 'E2E Test Category' 
     },
   });
+  
+  if (!category) {
+    category = await prisma.itemCategory.create({
+      data: {
+        name: 'E2E Test Category',
+        description: 'Category for E2E tests',
+        organizationId: organization.id,
+      },
+    });
+  }
 
-  const product = await prisma.product.create({
+  // Get or create unit of measure
+  let uom = await prisma.unitOfMeasure.findFirst({
+    where: { organizationId: organization.id },
+  });
+  if (!uom) {
+    uom = await prisma.unitOfMeasure.create({
+      data: {
+        code: 'EA',
+        description: 'Each',
+        isBase: true,
+        conversionFactorToBase: 1,
+        organizationId: organization.id,
+      },
+    });
+  }
+
+  const product = await prisma.item.create({
     data: {
       sku: `TEST-${testId}`,
       name: `Test Product ${testId}`,
       description: 'Product created for E2E testing',
       categoryId: category.id,
-      unitPrice: 99.99,
-      cost: 50.00,
-      createdById: userId,
-      updatedById: userId,
+      uomId: uom.id,
+      defaultPrice: 99.99,
+      defaultCost: 50.00,
+      organizationId: organization.id,
       ...overrides,
     },
   });
@@ -236,14 +265,19 @@ export async function createTestProduct(userId: string, overrides: Record<string
 }
 
 // Test inventory creation
-export async function createTestInventory(productId: string, locationId: string, quantity: number = 100) {
-  const inventory = await prisma.inventoryItem.create({
+export async function createTestInventory(itemId: string, locationId: string, quantity: number = 100) {
+  const organization = await prisma.organization.findFirst();
+  if (!organization) {
+    throw new Error('No organization found for testing');
+  }
+
+  const inventory = await prisma.inventory.create({
     data: {
-      productId,
+      itemId,
       locationId,
-      quantity,
-      reorderPoint: 10,
-      maxStock: 200,
+      qtyOnHand: quantity,
+      qtyReserved: 0,
+      organizationId: organization.id,
     },
   });
 
@@ -252,15 +286,45 @@ export async function createTestInventory(productId: string, locationId: string,
 
 // Get or create test location
 export async function getTestLocation() {
-  const location = await prisma.location.upsert({
-    where: { name: 'E2E Test Location' },
-    update: {},
-    create: {
-      name: 'E2E Test Location',
-      description: 'Location for E2E tests',
-      address: '123 Test Street, E2E City',
-    },
+  const organization = await prisma.organization.findFirst();
+  if (!organization) {
+    throw new Error('No organization found for testing');
+  }
+
+  // First get or create a warehouse
+  let warehouse = await prisma.warehouse.findFirst({
+    where: { organizationId: organization.id },
   });
+  
+  if (!warehouse) {
+    warehouse = await prisma.warehouse.create({
+      data: {
+        code: 'E2E-WH',
+        name: 'E2E Test Warehouse',
+        organizationId: organization.id,
+        line1: '123 Test St',
+        city: 'Test City',
+        state: 'TS',
+        postalCode: '12345',
+        country: 'US',
+      },
+    });
+  }
+
+  let location = await prisma.location.findFirst({
+    where: { code: 'E2E-LOC' },
+  });
+  
+  if (!location) {
+    location = await prisma.location.create({
+      data: {
+        code: 'E2E-LOC',
+        description: 'E2E Test Location',
+        organizationId: organization.id,
+        warehouseId: warehouse.id,
+      },
+    });
+  }
 
   return location;
 }
@@ -452,7 +516,7 @@ export async function verifyOrganizationIsolation(
 }
 
 // Create test data for organization
-export async function createOrgTestData(organizationId: string, userId: string) {
+export async function createOrgTestData(organizationId: string) {
   // Create category
   const category = await prisma.itemCategory.create({
     data: {

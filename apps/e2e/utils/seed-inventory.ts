@@ -1,6 +1,23 @@
 import { prisma } from '@ventry/database';
 
 export async function seedTestInventory(organizationId: string) {
+  // Get or create default unit of measure
+  let unitOfMeasure = await prisma.unitOfMeasure.findFirst({
+    where: { organizationId },
+  });
+  
+  if (!unitOfMeasure) {
+    unitOfMeasure = await prisma.unitOfMeasure.create({
+      data: {
+        code: 'EA',
+        description: 'Each',
+        isBase: true,
+        conversionFactorToBase: 1,
+        organizationId,
+      },
+    });
+  }
+
   // Create categories
   const electronicsCategory = await prisma.itemCategory.create({
     data: {
@@ -24,13 +41,11 @@ export async function seedTestInventory(organizationId: string) {
       code: 'MAIN',
       name: 'Main Warehouse',
       organizationId,
-      address: {
-        line1: '123 Test St',
-        city: 'Test City',
-        state: 'TS',
-        postalCode: '12345',
-        country: 'US',
-      },
+      line1: '123 Test St',
+      city: 'Test City',
+      state: 'TS',
+      postalCode: '12345',
+      country: 'US',
     },
   });
 
@@ -39,13 +54,11 @@ export async function seedTestInventory(organizationId: string) {
       code: 'SEC',
       name: 'Secondary Warehouse',
       organizationId,
-      address: {
-        line1: '456 Test Ave',
-        city: 'Test City',
-        state: 'TS',
-        postalCode: '12346',
-        country: 'US',
-      },
+      line1: '456 Test Ave',
+      city: 'Test City',
+      state: 'TS',
+      postalCode: '12346',
+      country: 'US',
     },
   });
 
@@ -57,7 +70,8 @@ export async function seedTestInventory(organizationId: string) {
         const location = await prisma.location.create({
           data: {
             code: `${warehouse.code}-A${aisle}-S${shelf}`,
-            name: `Aisle ${aisle}, Shelf ${shelf}`,
+            description: `Aisle ${aisle}, Shelf ${shelf}`,
+            organizationId,
             warehouseId: warehouse.id,
             aisle: `A${aisle}`,
             shelf: `S${shelf}`,
@@ -149,6 +163,7 @@ export async function seedTestInventory(organizationId: string) {
         description: `Test description for ${itemData.name}`,
         categoryId: itemData.category,
         organizationId,
+        uomId: unitOfMeasure.id,
         defaultCost: itemData.price * 0.6,
         defaultPrice: itemData.price,
         reorderPoint: itemData.reorderPoint,
@@ -165,21 +180,30 @@ export async function seedTestInventory(organizationId: string) {
         locationId: location.id,
         qtyOnHand: itemData.stock,
         qtyReserved: reserved,
-        qtyAvailable: itemData.stock - reserved,
+        organizationId,
         lastCountedAt: new Date(),
       },
     });
 
+    // Get a system user for stock movements
+    const systemUser = await prisma.user.findFirst({
+      where: { email: 'admin@ventry.com' },
+    });
+    
+    if (!systemUser) {
+      throw new Error('System user not found');
+    }
+
     // Create initial stock movement
     await prisma.stockMovement.create({
       data: {
+        organizationId,
         itemId: item.id,
-        locationId: location.id,
+        toLocationId: location.id,
         qty: itemData.stock,
         movementType: 'ADJUSTMENT',
         notes: 'Initial stock for E2E testing',
-        movedBy: 'system',
-        movedAt: new Date(),
+        movedById: systemUser.id,
       },
     });
   }

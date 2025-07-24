@@ -60,7 +60,7 @@ test('product creation', async ({ browser }) => {
   
   try {
     // Your test logic here
-    const product = await createTestProduct(testUser.id);
+    const product = await createTestProduct();
     // Test with the product
   } finally {
     // Always cleanup

@@ -18,7 +18,7 @@ async function globalTeardown(_config: FullConfig) {
     const statsBefore = await getDatabaseStats();
     console.log('📈 Final database stats:');
     console.log(`   Total users: ${statsBefore.totalUsers} (${statsBefore.testUsers} test users)`);
-    console.log(`   Total products: ${statsBefore.totalProducts} (${statsBefore.testProducts} test products)`);
+    console.log(`   Total items: ${statsBefore.totalItems} (${statsBefore.testItems} test items)`);
 
     // Final cleanup
     console.log('\n🧹 Final test data cleanup...');
@@ -28,7 +28,7 @@ async function globalTeardown(_config: FullConfig) {
     const statsAfter = await getDatabaseStats();
     console.log('\n📈 Database after cleanup:');
     console.log(`   Total users: ${statsAfter.totalUsers} (${statsAfter.testUsers} test users)`);
-    console.log(`   Total products: ${statsAfter.totalProducts} (${statsAfter.testProducts} test products)`);
+    console.log(`   Total items: ${statsAfter.totalItems} (${statsAfter.testItems} test items)`);
 
     console.log('\n✅ E2E Global Teardown Complete!\n');
 

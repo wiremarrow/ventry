@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, userEvent } from '@/test-utils/render';
+import { render, screen, userEvent, fireEvent } from '@/test-utils/render';
 import { InventoryFilters } from '../inventory-filters';
 import { trpc } from '@/lib/trpc';
 
@@ -54,20 +54,16 @@ describe('InventoryFilters', () => {
     expect(screen.getByLabelText('Show low stock only')).toBeInTheDocument();
   });
 
-  it('handles search input changes', async () => {
-    const user = userEvent.setup();
+  it('handles search input changes', () => {
     render(<InventoryFilters {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by SKU, name, or barcode...');
-    await user.clear(searchInput);
-    await user.type(searchInput, 'test product');
-
-    // Verify the onChange was called
-    expect(mockOnSearchChange).toHaveBeenCalled();
     
-    // Get the last call value (should be the complete text)
-    const lastCallIndex = mockOnSearchChange.mock.calls.length - 1;
-    expect(mockOnSearchChange.mock.calls[lastCallIndex][0]).toBe('test product');
+    // Simulate typing by directly firing change event with final value
+    fireEvent.change(searchInput, { target: { value: 'test product' } });
+
+    // Verify onChange was called with the correct value
+    expect(mockOnSearchChange).toHaveBeenCalledWith('test product');
   });
 
   it('displays warehouses in dropdown', async () => {

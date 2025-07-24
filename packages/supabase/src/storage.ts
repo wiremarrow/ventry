@@ -43,9 +43,11 @@ export class SupabaseStorageService {
     productId: string,
     files: FileList | File[]
   ) {
-    const uploads = Array.from(files).map((file, index) =>
-      this.uploadProductImage(productId, file, `image-${index + 1}.${file.name.split('.').pop()}`)
-    );
+    const uploads = Array.from(files).map((file, index) => {
+      const fileName = file instanceof File ? file.name : 'image.jpg';
+      const extension = fileName.split('.').pop() || 'jpg';
+      return this.uploadProductImage(productId, file, `image-${index + 1}.${extension}`);
+    });
 
     return Promise.all(uploads);
   }
@@ -65,7 +67,8 @@ export class SupabaseStorageService {
     file: File | Blob,
     metadata?: Record<string, any>
   ) {
-    const fileName = `${type}/${new Date().toISOString().split('T')[0]}/${Date.now()}-${file.name}`;
+    const name = file instanceof File ? file.name : 'document';
+    const fileName = `${type}/${new Date().toISOString().split('T')[0]}/${Date.now()}-${name}`;
 
     const { data, error } = await this.client.storage
       .from(this.bucketName)

@@ -24,7 +24,7 @@ async function globalSetup(config: FullConfig) {
     const statsBefore = await getDatabaseStats();
     console.log('\n📈 Database stats before cleanup:');
     console.log(`   Total users: ${statsBefore.totalUsers} (${statsBefore.testUsers} test users)`);
-    console.log(`   Total products: ${statsBefore.totalProducts} (${statsBefore.testProducts} test products)`);
+    console.log(`   Total items: ${statsBefore.totalItems} (${statsBefore.testItems} test items)`);
 
     // Clean up any leftover test data from previous runs
     console.log('\n🧹 Cleaning up leftover test data...');
@@ -34,7 +34,7 @@ async function globalSetup(config: FullConfig) {
     const statsAfter = await getDatabaseStats();
     console.log('\n📈 Database stats after cleanup:');
     console.log(`   Total users: ${statsAfter.totalUsers} (${statsAfter.testUsers} test users)`);
-    console.log(`   Total products: ${statsAfter.totalProducts} (${statsAfter.testProducts} test products)`);
+    console.log(`   Total items: ${statsAfter.totalItems} (${statsAfter.testItems} test items)`);
 
     // Verify seed data exists
     console.log('\n🌱 Verifying seed data...');
