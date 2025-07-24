@@ -67,7 +67,7 @@ export default function CategoriesPage() {
   const filterCategories = (categories: CategoryWithChildren[], search: string): CategoryWithChildren[] => {
     if (!search) return categories;
     
-    return categories.reduce((acc, category) => {
+    return categories.reduce((acc: CategoryWithChildren[], category) => {
       const matchesSearch = category.name.toLowerCase().includes(search.toLowerCase()) ||
                           category.description?.toLowerCase().includes(search.toLowerCase());
       const filteredChildren = filterCategories(category.children || [], search);

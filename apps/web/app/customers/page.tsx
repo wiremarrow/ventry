@@ -285,10 +285,12 @@ export default function CustomersPage() {
                 Update customer information
               </DialogDescription>
             </DialogHeader>
-            <CustomerForm 
-              customer={editCustomer} 
-              onSuccess={handleEditSuccess}
-            />
+            {editCustomer && (
+              <CustomerForm 
+                customer={editCustomer} 
+                onSuccess={handleEditSuccess}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>

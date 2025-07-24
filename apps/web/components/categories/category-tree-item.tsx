@@ -55,7 +55,7 @@ export function CategoryTreeItem({
   });
 
   const handleDelete = () => {
-    if (category._count?.items > 0) {
+    if ((category._count?.items ?? 0) > 0) {
       toast({
         title: 'Cannot delete',
         description: 'This category contains items and cannot be deleted',
