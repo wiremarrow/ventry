@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, Input, Button, Skeleton } from '@ventry/ui';
 import { Plus, Search, FolderTree, Folder } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import type { ItemCategory } from '@ventry/database';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { CategoryDialog } from '@/components/categories/category-dialog';
@@ -30,7 +31,7 @@ export default function CategoriesPage() {
     totalItems: categoriesData?.categories?.reduce((sum, cat) => sum + (cat._count?.items || 0), 0) || 0,
     mostUsed: categoriesData?.categories?.reduce((max, cat) => 
       (!max || (cat._count?.items || 0) > (max._count?.items || 0)) ? cat : max
-    , null as any),
+    , null as (typeof categoriesData.categories[0] | null)),
   };
 
   // Log error if there is one
@@ -58,7 +59,12 @@ export default function CategoriesPage() {
     setExpandedCategories(newExpanded);
   };
 
-  const filterCategories = (categories: any[], search: string): any[] => {
+  type CategoryWithChildren = ItemCategory & { 
+    _count?: { items: number };
+    children?: CategoryWithChildren[];
+  };
+  
+  const filterCategories = (categories: CategoryWithChildren[], search: string): CategoryWithChildren[] => {
     if (!search) return categories;
     
     return categories.reduce((acc, category) => {

@@ -62,7 +62,14 @@ export default function MovementsPage() {
   stats.netChange = stats.inbound - stats.outbound;
 
 
-  const formatLocation = (location: any) => {
+  type LocationWithWarehouse = {
+    code: string;
+    warehouse: {
+      name: string;
+    };
+  };
+
+  const formatLocation = (location: LocationWithWarehouse | null) => {
     if (!location) return '-';
     return `${location.warehouse.name} > ${location.code}`;
   };

@@ -138,7 +138,8 @@ export function CreatePurchaseOrderDialog({
     });
   };
 
-  const handleAddItem = (item: any) => {
+  type ItemType = { id: string; sku: string; name: string; unitCost?: number };
+  const handleAddItem = (item: ItemType) => {
     const exists = selectedItems.find((i) => i.itemId === item.id);
     if (!exists) {
       setSelectedItems([
@@ -158,7 +159,7 @@ export function CreatePurchaseOrderDialog({
     setItemSearch('');
   };
 
-  const handleUpdateItem = (index: number, field: keyof SelectedItem, value: any) => {
+  const handleUpdateItem = (index: number, field: keyof SelectedItem, value: string | number) => {
     const updated = [...selectedItems];
     updated[index] = { ...updated[index], [field]: value };
     setSelectedItems(updated);

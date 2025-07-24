@@ -70,7 +70,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
       toast.success('Supplier archived successfully');
       utils.suppliers.list.invalidate();
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast.error(error.message);
     },
   });
@@ -127,8 +127,9 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
             ) : (
               // Supplier rows
               data?.suppliers.map((supplier) => {
-                const hasRecentOrders = (supplier as any).lastOrderDate && 
-                  new Date((supplier as any).lastOrderDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+                const supplierWithStats = supplier as typeof supplier & { lastOrderDate?: Date | string; totalOrderValue12Months?: number };
+                const hasRecentOrders = supplierWithStats.lastOrderDate && 
+                  new Date(supplierWithStats.lastOrderDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
                 
                 return (
                 <TableRow key={supplier.id}>
@@ -179,7 +180,7 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                     <div className="flex items-center justify-end gap-1">
                       <DollarSign className="h-3 w-3 text-gray-400" />
                       <span className="font-medium">
-                        ${((supplier as any).totalOrderValue12Months || 0).toLocaleString()}
+                        ${(supplierWithStats.totalOrderValue12Months || 0).toLocaleString()}
                       </span>
                     </div>
                   </TableCell>

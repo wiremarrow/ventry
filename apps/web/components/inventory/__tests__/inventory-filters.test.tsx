@@ -38,7 +38,11 @@ describe('InventoryFilters', () => {
       ],
       isLoading: false,
       error: null,
-    } as any);
+      refetch: vi.fn(),
+      isSuccess: true,
+      isError: false,
+      status: 'success',
+    } as ReturnType<typeof trpc.warehouses.list.useQuery>);
   });
 
   it('renders all filter components', () => {
@@ -108,7 +112,11 @@ describe('InventoryFilters', () => {
       data: undefined,
       isLoading: true,
       error: null,
-    } as any);
+      refetch: vi.fn(),
+      isSuccess: false,
+      isError: false,
+      status: 'loading',
+    } as ReturnType<typeof trpc.warehouses.list.useQuery>);
 
     render(<InventoryFilters {...defaultProps} />);
 
@@ -121,7 +129,11 @@ describe('InventoryFilters', () => {
       data: undefined,
       isLoading: false,
       error: new Error('Failed to fetch warehouses'),
-    } as any);
+      refetch: vi.fn(),
+      isSuccess: false,
+      isError: true,
+      status: 'error',
+    } as ReturnType<typeof trpc.warehouses.list.useQuery>);
 
     render(<InventoryFilters {...defaultProps} />);
 

@@ -6,8 +6,16 @@ import { ChevronRight, ChevronDown, Folder, FolderOpen, MoreHorizontal, Edit, Tr
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 
+type Category = {
+  id: string;
+  name: string;
+  description?: string | null;
+  children?: Category[];
+  _count?: { items: number };
+};
+
 interface CategoryTreeItemProps {
-  category: any;
+  category: Category;
   level: number;
   expandedCategories: Set<string>;
   onToggleExpand: (categoryId: string) => void;
@@ -141,7 +149,7 @@ export function CategoryTreeItem({
 
       {isExpanded && hasChildren && (
         <div>
-          {category.children.map((child: any) => (
+          {category.children.map((child) => (
             <CategoryTreeItem
               key={child.id}
               category={child}

@@ -45,8 +45,9 @@ interface OrderListProps {
 
 export function OrderList({ searchTerm, status }: OrderListProps) {
   const [page, setPage] = useState(1);
-  const [viewingOrder, setViewingOrder] = useState<any>(null);
-  const [editingOrder, setEditingOrder] = useState<any>(null);
+  type OrderWithRelations = NonNullable<NonNullable<typeof data>['orders']>[0];
+  const [viewingOrder, setViewingOrder] = useState<OrderWithRelations | null>(null);
+  const [editingOrder, setEditingOrder] = useState<OrderWithRelations | null>(null);
   const limit = 20;
 
   const utils = trpc.useUtils();
@@ -109,8 +110,8 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
     }).format(new Date(date));
   };
 
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
+  const getStatusColor = (status: string): 'secondary' | 'warning' | 'info' | 'success' | 'destructive' => {
+    const colors: Record<string, 'secondary' | 'warning' | 'info' | 'success' | 'destructive'> = {
       DRAFT: 'secondary',
       PENDING: 'warning',
       CONFIRMED: 'info',
@@ -204,7 +205,7 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                     {formatCurrency(order.total)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getStatusColor(order.status) as any}>
+                    <Badge variant={getStatusColor(order.status)}>
                       <span className="flex items-center gap-1">
                         {getStatusIcon(order.status)}
                         {order.status}

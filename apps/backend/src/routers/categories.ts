@@ -42,7 +42,11 @@ export const categoriesRouter = createTRPCRouter({
         sortOrder,
       } = input;
 
-      const where: any = {
+      const where: {
+        organizationId: string;
+        OR?: Array<{ name?: { contains: string; mode: 'insensitive' }; description?: { contains: string; mode: 'insensitive' } }>;
+        parentId?: string | null;
+      } = {
         organizationId: ctx.user.organizationId,
       };
 
@@ -108,10 +112,13 @@ export const categoriesRouter = createTRPCRouter({
     });
 
     // Build tree structure
+    type CategoryWithCount = ItemCategory & { _count: { items: number } };
+    type CategoryWithChildren = CategoryWithCount & { children: CategoryWithChildren[] };
+
     const buildTree = (
-      categories: any[],
+      categories: CategoryWithCount[],
       parentId: string | null = null
-    ): any[] => {
+    ): CategoryWithChildren[] => {
       return categories
         .filter(cat => cat.parentId === parentId)
         .map(cat => ({

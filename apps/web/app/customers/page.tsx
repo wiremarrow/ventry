@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { Customer } from '@ventry/database';
 
 import { useRouter } from 'next/navigation';
 
@@ -40,7 +41,7 @@ export default function CustomersPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [editCustomer, setEditCustomer] = useState<any>(null);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   
   // Fetch customers with filtering
   const { data: customers, isLoading, refetch } = trpc.customers.list.useQuery({

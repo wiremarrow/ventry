@@ -18,7 +18,9 @@ export function ReceiptStatusBadge({ poStatus, hasDiscrepancy }: ReceiptStatusBa
   }
 
   // Otherwise show PO status
-  const statusConfig: Record<string, { variant: any; icon: any; label: string; className?: string }> = {
+  type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
+  type IconComponent = typeof Clock;
+  const statusConfig: Record<string, { variant: BadgeVariant; icon: IconComponent; label: string; className?: string }> = {
     APPROVED: { 
       variant: 'secondary' as const, 
       icon: Clock, 

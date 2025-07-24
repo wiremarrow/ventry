@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress } from '@ventry/ui';
 import { Plus, Search, MapPin, Thermometer, MoreHorizontal, Edit } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
+import type { Location } from '@ventry/database';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { LocationDialog } from '@/components/locations/location-dialog';
@@ -49,7 +50,9 @@ export default function LocationsPage() {
     setIsDialogOpen(true);
   };
 
-  const formatLocationHierarchy = (location: any) => {
+  type LocationWithCount = Location & { _count?: { inventory: number } };
+  
+  const formatLocationHierarchy = (location: LocationWithCount) => {
     const parts = [];
     if (location.zone) parts.push(`Zone ${location.zone}`);
     if (location.aisle) parts.push(`Aisle ${location.aisle}`);
@@ -58,7 +61,7 @@ export default function LocationsPage() {
     return parts.join(' / ') || '-';
   };
 
-  const calculateUtilization = (location: any) => {
+  const calculateUtilization = (location: LocationWithCount) => {
     if (!location.maxCapacity || location.maxCapacity === 0) return 0;
     const currentItems = location._count?.inventory || 0;
     return (currentItems / location.maxCapacity) * 100;

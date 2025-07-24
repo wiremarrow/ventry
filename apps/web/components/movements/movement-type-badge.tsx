@@ -9,7 +9,9 @@ interface MovementTypeBadgeProps {
 }
 
 export function MovementTypeBadge({ type, showIcon = true }: MovementTypeBadgeProps) {
-  const config: Record<MovementType, { variant: any; icon: any; label: string; className?: string }> = {
+  type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
+  type IconComponent = typeof TrendingUp | null;
+  const config: Record<MovementType, { variant: BadgeVariant; icon: IconComponent; label: string; className?: string }> = {
     INBOUND: { 
       variant: 'default', 
       icon: TrendingUp, 

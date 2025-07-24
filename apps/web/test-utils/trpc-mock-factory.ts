@@ -17,10 +17,10 @@ export interface MockTRPCUtils {
 }
 
 // Default query mock that can be customized
-export const createQueryMock = (data?: any, options?: Partial<{
+export const createQueryMock = <T = unknown>(data?: T, options?: Partial<{
   isLoading: boolean;
   isError: boolean;
-  error: any;
+  error: Error | null;
   refetch: ReturnType<typeof vi.fn>;
 }>) => {
   return vi.fn(() => ({
@@ -37,10 +37,10 @@ export const createQueryMock = (data?: any, options?: Partial<{
 };
 
 // Helper to create query result with minimal typing
-export const createQueryResult = (data?: any, options?: Partial<{
+export const createQueryResult = <T = unknown>(data?: T, options?: Partial<{
   isLoading: boolean;
   isError: boolean;
-  error: any;
+  error: Error | null;
 }>) => ({
   data,
   isLoading: options?.isLoading ?? false,
@@ -64,28 +64,28 @@ export const createQueryResult = (data?: any, options?: Partial<{
   failureReason: options?.error ?? null,
   fetchStatus: 'idle' as const,
   status: options?.isLoading ? 'loading' : options?.isError ? 'error' : 'success' as const,
-  trpc: {} as any,
-} as any);
+  trpc: {},
+});
 
 // Default mutation mock that can be customized
 export const createMutationMock = (options?: {
   onSuccess?: () => void;
-  onError?: (error: any) => void;
+  onError?: (error: Error) => void;
   isPending?: boolean;
 }) => {
-  return vi.fn((mutationOptions?: any) => {
+  return vi.fn((mutationOptions?: { onSuccess?: () => void; onError?: (error: Error) => void }) => {
     // Store callbacks if provided
     const onSuccess = mutationOptions?.onSuccess || options?.onSuccess;
     const onError = mutationOptions?.onError || options?.onError;
     
     return {
-      mutate: vi.fn((_variables?: any) => {
+      mutate: vi.fn((_variables?: unknown) => {
         // Simulate async behavior
         if (onSuccess) {
           setTimeout(() => onSuccess(), 0);
         }
       }),
-      mutateAsync: vi.fn(async (variables?: any) => {
+      mutateAsync: vi.fn(async (variables?: unknown) => {
         // Simulate async behavior
         if (onSuccess) {
           return Promise.resolve(variables);
@@ -204,7 +204,7 @@ export const createUseUtilsMock = (customUtils?: Partial<MockTRPCUtils>): MockTR
 };
 
 // Main factory function to create a complete tRPC mock
-export const createTRPCMock = (customRouters?: Record<string, any>) => {
+export const createTRPCMock = (customRouters?: Record<string, unknown>) => {
   const mockUtils = createUseUtilsMock();
   
   const defaultMock = {
@@ -223,8 +223,8 @@ export const createTRPCMock = (customRouters?: Record<string, any>) => {
 };
 
 // Helper to create a complete router mock
-export const createRouterMock = (methods: Record<string, 'query' | 'mutation'>, customImplementations?: Record<string, any>) => {
-  const router: Record<string, any> = {};
+export const createRouterMock = (methods: Record<string, 'query' | 'mutation'>, customImplementations?: Record<string, unknown>) => {
+  const router: Record<string, unknown> = {};
   
   Object.entries(methods).forEach(([method, type]) => {
     if (type === 'query') {

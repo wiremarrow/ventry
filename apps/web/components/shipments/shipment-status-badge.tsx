@@ -7,7 +7,9 @@ interface ShipmentStatusBadgeProps {
 }
 
 export function ShipmentStatusBadge({ status, showIcon = true }: ShipmentStatusBadgeProps) {
-  const statusConfig: Record<string, { variant: any; icon: any; label: string; className?: string }> = {
+  type BadgeVariant = 'default' | 'secondary' | 'destructive' | 'outline';
+  type IconComponent = typeof Clock;
+  const statusConfig: Record<string, { variant: BadgeVariant; icon: IconComponent; label: string; className?: string }> = {
     PENDING: { 
       variant: 'secondary' as const, 
       icon: Clock, 

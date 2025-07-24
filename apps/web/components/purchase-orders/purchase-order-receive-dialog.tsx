@@ -55,7 +55,19 @@ interface ReceiveItem {
 interface PurchaseOrderReceiveDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  purchaseOrder: any; // Type from tRPC query
+  purchaseOrder: {
+    id: string;
+    items: Array<{
+      id: string;
+      itemId: string;
+      qtyOrdered: number;
+      qtyReceived: number;
+      item: {
+        name: string;
+        sku: string;
+      };
+    }>;
+  };
 }
 
 export function PurchaseOrderReceiveDialog({
@@ -66,7 +78,7 @@ export function PurchaseOrderReceiveDialog({
   const [receivedDate, setReceivedDate] = useState<Date>(new Date());
   const [createReceipt, setCreateReceipt] = useState(true);
   const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>(() =>
-    purchaseOrder.items.map((item: any) => ({
+    purchaseOrder.items.map((item) => ({
       poItemId: item.id,
       itemId: item.itemId,
       itemName: item.item.name,
@@ -110,7 +122,7 @@ export function PurchaseOrderReceiveDialog({
     },
   });
 
-  const handleUpdateItem = (index: number, field: keyof ReceiveItem, value: any) => {
+  const handleUpdateItem = (index: number, field: keyof ReceiveItem, value: string | number | Date | string[] | undefined) => {
     const updated = [...receiveItems];
     updated[index] = { ...updated[index], [field]: value };
     setReceiveItems(updated);

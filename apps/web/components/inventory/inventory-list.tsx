@@ -18,7 +18,8 @@ interface InventoryListProps {
 
 export function InventoryList({ warehouseId, searchTerm, showLowStock }: InventoryListProps) {
   const [page, setPage] = useState(1);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  type InventoryItem = NonNullable<NonNullable<typeof data>['inventory']>[0];
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [adjustmentDialogOpen, setAdjustmentDialogOpen] = useState(false);
   const limit = 20;
 

@@ -139,10 +139,11 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
     if (!currentCategory) return categoriesData.categories;
 
     // Get all descendant IDs
-    const getDescendantIds = (cat: any): string[] => {
+    type CategoryWithChildren = { id: string; children?: CategoryWithChildren[] };
+    const getDescendantIds = (cat: CategoryWithChildren): string[] => {
       const ids = [cat.id];
       if (cat.children) {
-        cat.children.forEach((child: any) => {
+        cat.children.forEach((child) => {
           ids.push(...getDescendantIds(child));
         });
       }

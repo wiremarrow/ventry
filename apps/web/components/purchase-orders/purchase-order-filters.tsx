@@ -58,7 +58,7 @@ export function PurchaseOrderFilters() {
     if (value === 'all') {
       setFilters({ status: undefined });
     } else {
-      setFilters({ status: value as any });
+      setFilters({ status: value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | 'REJECTED' });
     }
   };
 

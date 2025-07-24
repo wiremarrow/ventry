@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
  * 2. tRPC client can reach backend
  */
 export async function GET() {
-  const services: Record<string, any> = {
+  const services: Record<string, string> = {
     frontend: 'healthy',
   };
 

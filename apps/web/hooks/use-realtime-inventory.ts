@@ -53,7 +53,7 @@ export function useRealtimeInventory(locationId?: string) {
 
   return {
     inventory,
-    isSubscribed: channel?.state === ('subscribed' as any),
+    isSubscribed: channel?.state === 'subscribed',
   };
 }
 
