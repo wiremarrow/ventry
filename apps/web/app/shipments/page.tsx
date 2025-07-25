@@ -1,16 +1,28 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, Input, Button, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  Package,
-  XCircle,
-  Send
-} from 'lucide-react';
+import {
+  Card,
+  Input,
+  Button,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import { Plus, Search, MoreHorizontal, Eye, Package, XCircle, Send } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/utils';
@@ -40,7 +52,7 @@ export default function ShipmentsPage() {
   // Fetch shipments with filtering
   const { data, isLoading, refetch } = trpc.shipments.list.useQuery({
     search: searchTerm || undefined,
-    status: statusFilter === 'all' ? undefined : statusFilter as any,
+    status: statusFilter === 'all' ? undefined : (statusFilter as any),
     dateFrom,
     dateTo,
     limit: 100,
@@ -84,9 +96,9 @@ export default function ShipmentsPage() {
 
   const handleShip = (shipmentId: string) => {
     const trackingNumber = prompt('Enter tracking number (optional):');
-    shipMutation.mutate({ 
-      id: shipmentId, 
-      trackingNumber: trackingNumber || undefined 
+    shipMutation.mutate({
+      id: shipmentId,
+      trackingNumber: trackingNumber || undefined,
     });
   };
 
@@ -117,9 +129,7 @@ export default function ShipmentsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Shipments</h1>
-              <p className="text-muted-foreground">
-                Manage order shipments and track deliveries
-              </p>
+              <p className="text-muted-foreground">Manage order shipments and track deliveries</p>
             </div>
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -139,9 +149,7 @@ export default function ShipmentsPage() {
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-2xl font-bold">{stats.pending}</p>
-                {stats.pending > 0 && (
-                  <p className="text-xs text-orange-600">Ready to ship</p>
-                )}
+                {stats.pending > 0 && <p className="text-xs text-orange-600">Ready to ship</p>}
               </div>
             </Card>
             <Card className="p-6">
@@ -184,8 +192,8 @@ export default function ShipmentsPage() {
                   <SelectItem value="RETURNED">Returned</SelectItem>
                 </SelectContent>
               </Select>
-              <Select 
-                value={`${dateRange.from}`} 
+              <Select
+                value={`${dateRange.from}`}
                 onValueChange={(value) => setDateRange({ from: parseInt(value), to: 0 })}
               >
                 <SelectTrigger className="w-40">
@@ -234,9 +242,7 @@ export default function ShipmentsPage() {
                 ) : (
                   data?.shipments?.map((shipment) => (
                     <TableRow key={shipment.id}>
-                      <TableCell className="font-medium">
-                        {shipment.shipmentNumber}
-                      </TableCell>
+                      <TableCell className="font-medium">{shipment.shipmentNumber}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Package className="h-4 w-4 text-muted-foreground" />
@@ -244,7 +250,8 @@ export default function ShipmentsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {shipment.order?.customer?.firstName || ''} {shipment.order?.customer?.lastName || ''}
+                        {shipment.order?.customer?.firstName || ''}{' '}
+                        {shipment.order?.customer?.lastName || ''}
                       </TableCell>
                       <TableCell>
                         {shipment.shipDate ? formatDate(shipment.shipDate) : '-'}
@@ -254,7 +261,9 @@ export default function ShipmentsPage() {
                           <div>
                             <p className="font-medium">{shipment.carrier.name}</p>
                             {shipment.carrierService && (
-                              <p className="text-sm text-muted-foreground">{shipment.carrierService}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {shipment.carrierService}
+                              </p>
                             )}
                           </div>
                         ) : (
@@ -281,16 +290,12 @@ export default function ShipmentsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => handleViewDetails(shipment.id)}
-                            >
+                            <DropdownMenuItem onClick={() => handleViewDetails(shipment.id)}>
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
                             {['PENDING', 'PACKED'].includes(shipment.status) && (
-                              <DropdownMenuItem
-                                onClick={() => handleShip(shipment.id)}
-                              >
+                              <DropdownMenuItem onClick={() => handleShip(shipment.id)}>
                                 <Send className="mr-2 h-4 w-4" />
                                 Mark as Shipped
                               </DropdownMenuItem>
@@ -316,7 +321,7 @@ export default function ShipmentsPage() {
         </div>
 
         {/* Dialogs */}
-        <CreateShipmentDialog 
+        <CreateShipmentDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           onSuccess={() => {

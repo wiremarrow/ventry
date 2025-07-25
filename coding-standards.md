@@ -58,19 +58,19 @@ import type { LocalType } from './types';
 
 ## File Naming Conventions
 
-| File Type | Pattern | Example |
-|-----------|---------|---------|
-| **Components** | kebab-case.tsx | `stock-adjustment-dialog.tsx` |
-| **Pages** | page.tsx | `app/inventory/page.tsx` |
-| **Layouts** | layout.tsx | `app/inventory/layout.tsx` |
-| **API Routes** | route.ts | `app/api/health/route.ts` |
-| **tRPC Routers** | camelCase.ts | `purchaseOrders.ts` |
-| **Unit Tests** | *.test.ts(x) | `order-list.test.tsx` |
-| **Integration Tests** | *.integration.test.ts | `auth.integration.test.ts` |
-| **E2E Tests** | *.spec.ts | `login.spec.ts` (in e2e dir) |
-| **Utilities** | camelCase.ts | `formatDate.ts` |
-| **Constants** | camelCase.ts | `constants.ts` |
-| **Types** | types.ts or camelCase.ts | `types.ts` or `orderTypes.ts` |
+| File Type             | Pattern                  | Example                       |
+| --------------------- | ------------------------ | ----------------------------- |
+| **Components**        | kebab-case.tsx           | `stock-adjustment-dialog.tsx` |
+| **Pages**             | page.tsx                 | `app/inventory/page.tsx`      |
+| **Layouts**           | layout.tsx               | `app/inventory/layout.tsx`    |
+| **API Routes**        | route.ts                 | `app/api/health/route.ts`     |
+| **tRPC Routers**      | camelCase.ts             | `purchaseOrders.ts`           |
+| **Unit Tests**        | \*.test.ts(x)            | `order-list.test.tsx`         |
+| **Integration Tests** | \*.integration.test.ts   | `auth.integration.test.ts`    |
+| **E2E Tests**         | \*.spec.ts               | `login.spec.ts` (in e2e dir)  |
+| **Utilities**         | camelCase.ts             | `formatDate.ts`               |
+| **Constants**         | camelCase.ts             | `constants.ts`                |
+| **Types**             | types.ts or camelCase.ts | `types.ts` or `orderTypes.ts` |
 
 ## TypeScript Patterns
 
@@ -142,10 +142,10 @@ export function ComponentName({ prop1, prop2 }: ComponentProps) {
   // Hooks first
   const router = useRouter();
   const [state, setState] = useState();
-  
+
   // tRPC queries
   const { data, isLoading } = trpc.items.list.useQuery();
-  
+
   // tRPC mutations
   const createMutation = trpc.items.create.useMutation({
     onSuccess: () => {
@@ -156,14 +156,14 @@ export function ComponentName({ prop1, prop2 }: ComponentProps) {
       toast.error(error.message);
     },
   });
-  
+
   // Event handlers
   const handleSubmit = () => { ... };
-  
+
   // Early returns
   if (isLoading) return <Skeleton />;
   if (!data) return null;
-  
+
   // Render
   return (
     <div>
@@ -197,22 +197,22 @@ export const itemsRouter = createTRPCRouter({
   list: organizationProcedure
     .input(itemFilterSchema)
     .query(async ({ ctx, input }) => {...}),
-    
+
   // Get by ID
   getById: organizationProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {...}),
-    
+
   // Create
   create: organizationProcedure
     .input(itemCreateSchema)
     .mutation(async ({ ctx, input }) => {...}),
-    
+
   // Update
   update: organizationProcedure
     .input(itemUpdateSchema)
     .mutation(async ({ ctx, input }) => {...}),
-    
+
   // Delete
   delete: organizationProcedure
     .input(z.object({ id: z.string() }))
@@ -278,16 +278,16 @@ throw new TRPCError({
 
 ## Naming Conventions
 
-| Type | Convention | Example |
-|------|------------|---------|
-| **Variables/Functions** | camelCase | `userId`, `calculateTotal()` |
-| **React Components** | PascalCase | `OrderList`, `StockDialog` |
-| **Constants** | UPPER_SNAKE_CASE | `MAX_RETRIES`, `API_TIMEOUT` |
-| **Types/Interfaces** | PascalCase | `Order`, `CustomerData` |
-| **Enums** | PascalCase | `OrderStatus` |
-| **Enum Values** | UPPER_SNAKE_CASE | `PENDING`, `COMPLETED` |
-| **Boolean Variables** | is/has/should prefix | `isLoading`, `hasError` |
-| **Event Handlers** | handle prefix | `handleClick`, `handleSubmit` |
+| Type                    | Convention           | Example                       |
+| ----------------------- | -------------------- | ----------------------------- |
+| **Variables/Functions** | camelCase            | `userId`, `calculateTotal()`  |
+| **React Components**    | PascalCase           | `OrderList`, `StockDialog`    |
+| **Constants**           | UPPER_SNAKE_CASE     | `MAX_RETRIES`, `API_TIMEOUT`  |
+| **Types/Interfaces**    | PascalCase           | `Order`, `CustomerData`       |
+| **Enums**               | PascalCase           | `OrderStatus`                 |
+| **Enum Values**         | UPPER_SNAKE_CASE     | `PENDING`, `COMPLETED`        |
+| **Boolean Variables**   | is/has/should prefix | `isLoading`, `hasError`       |
+| **Event Handlers**      | handle prefix        | `handleClick`, `handleSubmit` |
 
 ## Common UI Patterns
 

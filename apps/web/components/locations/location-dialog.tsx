@@ -4,12 +4,12 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
   Button,
   Input,
@@ -48,7 +48,7 @@ interface LocationDialogProps {
 
 export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: LocationDialogProps) {
   const utils = trpc.useUtils();
-  
+
   // Fetch location data if editing
   const { data: location } = trpc.warehouses.getLocation.useQuery(
     { locationId: locationId! },
@@ -185,14 +185,8 @@ export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: Lo
 
               <div className="space-y-2">
                 <Label htmlFor="code">Code *</Label>
-                <Input
-                  id="code"
-                  {...register('code')}
-                  placeholder="e.g., A1B2C3"
-                />
-                {errors.code && (
-                  <p className="text-sm text-destructive">{errors.code.message}</p>
-                )}
+                <Input id="code" {...register('code')} placeholder="e.g., A1B2C3" />
+                {errors.code && <p className="text-sm text-destructive">{errors.code.message}</p>}
               </div>
             </div>
 
@@ -209,38 +203,22 @@ export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: Lo
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="zone">Zone</Label>
-                <Input
-                  id="zone"
-                  {...register('zone')}
-                  placeholder="e.g., A, B, C"
-                />
+                <Input id="zone" {...register('zone')} placeholder="e.g., A, B, C" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="aisle">Aisle</Label>
-                <Input
-                  id="aisle"
-                  {...register('aisle')}
-                  placeholder="e.g., 1, 2, 3"
-                />
+                <Input id="aisle" {...register('aisle')} placeholder="e.g., 1, 2, 3" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="shelf">Shelf</Label>
-                <Input
-                  id="shelf"
-                  {...register('shelf')}
-                  placeholder="e.g., A, B, C"
-                />
+                <Input id="shelf" {...register('shelf')} placeholder="e.g., A, B, C" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="bin">Bin</Label>
-                <Input
-                  id="bin"
-                  {...register('bin')}
-                  placeholder="e.g., 1, 2, 3"
-                />
+                <Input id="bin" {...register('bin')} placeholder="e.g., 1, 2, 3" />
               </div>
             </div>
 
@@ -250,8 +228,8 @@ export function LocationDialog({ open, onOpenChange, locationId, onSuccess }: Lo
                 <Input
                   id="maxCapacity"
                   type="number"
-                  {...register('maxCapacity', { 
-                    setValueAs: (v) => v === '' ? null : parseInt(v, 10) 
+                  {...register('maxCapacity', {
+                    setValueAs: (v) => (v === '' ? null : parseInt(v, 10)),
                   })}
                   placeholder="Leave blank for unlimited"
                 />

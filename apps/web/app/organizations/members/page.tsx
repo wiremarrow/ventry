@@ -2,10 +2,39 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Input, Label, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { 
-  Users, 
-  UserPlus, 
+import {
+  Card,
+  Input,
+  Label,
+  Button,
+  Badge,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import {
+  Users,
+  UserPlus,
   MoreVertical,
   Mail,
   Shield,
@@ -13,7 +42,7 @@ import {
   Trash2,
   Edit,
   Copy,
-  CheckCircle
+  CheckCircle,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
@@ -37,7 +66,11 @@ export default function OrganizationMembersPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editRole, setEditRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'>('MEMBER');
 
-  const { data: members, isLoading, refetch } = trpc.organizations.getMembers.useQuery(
+  const {
+    data: members,
+    isLoading,
+    refetch,
+  } = trpc.organizations.getMembers.useQuery(
     { organizationId: currentOrganization?.organizationId || '' },
     { enabled: !!currentOrganization?.organizationId }
   );
@@ -125,7 +158,11 @@ export default function OrganizationMembersPage() {
   const handleRemoveMember = (member: NonNullable<typeof members>[number]) => {
     if (!currentOrganization?.organizationId) return;
 
-    if (confirm(`Are you sure you want to remove ${`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email} from the organization?`)) {
+    if (
+      confirm(
+        `Are you sure you want to remove ${`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email} from the organization?`
+      )
+    ) {
       removeMemberMutation.mutate({
         organizationId: currentOrganization.organizationId,
         userId: member.userId,
@@ -195,7 +232,12 @@ export default function OrganizationMembersPage() {
                   </div>
                   <div>
                     <Label htmlFor="role">Role</Label>
-                    <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')}>
+                    <Select
+                      value={inviteRole}
+                      onValueChange={(value) =>
+                        setInviteRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')
+                      }
+                    >
                       <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
@@ -214,8 +256,8 @@ export default function OrganizationMembersPage() {
                   <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleInvite} 
+                  <Button
+                    onClick={handleInvite}
                     disabled={!inviteEmail || inviteMutation.isPending}
                   >
                     Send Invitation
@@ -246,13 +288,24 @@ export default function OrganizationMembersPage() {
                         <Users className="h-5 w-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{`${member.user.firstName} ${member.user.lastName}`.trim() || member.user.email}</p>
+                        <p className="font-medium">
+                          {`${member.user.firstName} ${member.user.lastName}`.trim() ||
+                            member.user.email}
+                        </p>
                         <p className="text-sm text-muted-foreground">{member.user.email}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={roleLabels[member.role].color as 'destructive' | 'default' | 'secondary' | 'outline'}>
+                    <Badge
+                      variant={
+                        roleLabels[member.role].color as
+                          | 'destructive'
+                          | 'default'
+                          | 'secondary'
+                          | 'outline'
+                      }
+                    >
                       <Shield className="h-3 w-3 mr-1" />
                       {roleLabels[member.role].label}
                     </Badge>
@@ -279,9 +332,7 @@ export default function OrganizationMembersPage() {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {new Date(member.joinedAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell>{new Date(member.joinedAt).toLocaleDateString()}</TableCell>
                   {isOwnerOrAdmin && (
                     <TableCell>
                       <DropdownMenu>
@@ -329,13 +380,20 @@ export default function OrganizationMembersPage() {
             <DialogHeader>
               <DialogTitle>Change Member Role</DialogTitle>
               <DialogDescription>
-                Update the role for {selectedMember ? `${selectedMember.user.firstName} ${selectedMember.user.lastName}`.trim() || selectedMember.user.email : ''}
+                Update the role for{' '}
+                {selectedMember
+                  ? `${selectedMember.user.firstName} ${selectedMember.user.lastName}`.trim() ||
+                    selectedMember.user.email
+                  : ''}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="edit-role">New Role</Label>
-                <Select value={editRole} onValueChange={(value) => setEditRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')}>
+                <Select
+                  value={editRole}
+                  onValueChange={(value) => setEditRole(value as 'ADMIN' | 'MEMBER' | 'VIEWER')}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -351,10 +409,7 @@ export default function OrganizationMembersPage() {
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleUpdateRole} 
-                disabled={updateRoleMutation.isPending}
-              >
+              <Button onClick={handleUpdateRole} disabled={updateRoleMutation.isPending}>
                 Update Role
               </Button>
             </DialogFooter>
@@ -367,10 +422,18 @@ export default function OrganizationMembersPage() {
             <div className="space-y-2">
               <h3 className="font-medium">Role Permissions</h3>
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p><strong>Owner:</strong> Full access to all organization features and settings</p>
-                <p><strong>Admin:</strong> Can manage team members, settings, and all resources</p>
-                <p><strong>Member:</strong> Can create and manage inventory, orders, and reports</p>
-                <p><strong>Viewer:</strong> Read-only access to organization data</p>
+                <p>
+                  <strong>Owner:</strong> Full access to all organization features and settings
+                </p>
+                <p>
+                  <strong>Admin:</strong> Can manage team members, settings, and all resources
+                </p>
+                <p>
+                  <strong>Member:</strong> Can create and manage inventory, orders, and reports
+                </p>
+                <p>
+                  <strong>Viewer:</strong> Read-only access to organization data
+                </p>
               </div>
             </div>
           </div>

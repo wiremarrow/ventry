@@ -7,10 +7,7 @@ export async function POST(request: NextRequest) {
     const { organizationId } = body;
 
     if (!organizationId || typeof organizationId !== 'string') {
-      return NextResponse.json(
-        { error: 'Invalid organization ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid organization ID' }, { status: 400 });
     }
 
     // Set the active organization cookie
@@ -26,9 +23,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, organizationId });
   } catch (error) {
     console.error('Failed to switch organization:', error);
-    return NextResponse.json(
-      { error: 'Failed to switch organization' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to switch organization' }, { status: 500 });
   }
 }

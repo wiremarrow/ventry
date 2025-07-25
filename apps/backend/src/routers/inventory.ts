@@ -58,95 +58,130 @@ const cycleCountSchema = z.object({
 
 export const inventoryRouter = createTRPCRouter({
   // List inventory with advanced filtering
-  list: organizationProcedure
-    .input(inventoryFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
+  list: organizationProcedure.input(inventoryFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      warehouseId,
+      locationId,
+      itemId,
+      categoryId,
+      lotId,
+      lowStock,
+      expiringSoon,
+      daysUntilExpiration,
+      includeZeroQuantity,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
+
+    const where: Prisma.InventoryWhereInput = {};
+    const itemWhere: Prisma.ItemWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
+
+    // Search filter
+    if (search) {
+      itemWhere.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { sku: { contains: search, mode: 'insensitive' } },
+        { upc: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Location filters
+    if (locationId) {
+      where.locationId = locationId;
+    } else if (warehouseId) {
+      where.location = {
         warehouseId,
-        locationId,
-        itemId,
-        categoryId,
-        lotId,
-        lowStock,
-        expiringSoon,
-        daysUntilExpiration,
-        includeZeroQuantity,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
-
-      const where: Prisma.InventoryWhereInput = {};
-      const itemWhere: Prisma.ItemWhereInput = {
-        organizationId: ctx.user.organizationId,
       };
+    }
 
-      // Search filter
-      if (search) {
-        itemWhere.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { sku: { contains: search, mode: 'insensitive' } },
-          { upc: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+    // Item filters
+    if (itemId) {
+      where.itemId = itemId;
+    } else if (categoryId) {
+      itemWhere.categoryId = categoryId;
+    }
 
-      // Location filters
-      if (locationId) {
-        where.locationId = locationId;
-      } else if (warehouseId) {
-        where.location = {
-          warehouseId,
-        };
-      }
+    // Apply item where conditions
+    where.item = itemWhere;
 
-      // Item filters
-      if (itemId) {
-        where.itemId = itemId;
-      } else if (categoryId) {
-        itemWhere.categoryId = categoryId;
-      }
+    // Lot filter
+    if (lotId) {
+      where.lotId = lotId;
+    }
 
-      // Apply item where conditions
-      where.item = itemWhere;
+    // Quantity filters
+    // When filtering for low stock, we need to include zero quantity items
+    // since they are by definition below their reorder point
+    if (!includeZeroQuantity && !lowStock) {
+      where.qtyOnHand = { gt: 0 };
+    }
 
-      // Lot filter
-      if (lotId) {
-        where.lotId = lotId;
-      }
+    // Low stock filter - handled differently due to Prisma limitations
+    // We need to fetch all items and filter in memory when lowStock is true
 
-      // Quantity filters
-      // When filtering for low stock, we need to include zero quantity items
-      // since they are by definition below their reorder point
-      if (!includeZeroQuantity && !lowStock) {
-        where.qtyOnHand = { gt: 0 };
-      }
+    // Expiring soon filter
+    if (expiringSoon) {
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + daysUntilExpiration);
 
-      // Low stock filter - handled differently due to Prisma limitations
-      // We need to fetch all items and filter in memory when lowStock is true
+      where.lot = {
+        expirationDate: {
+          not: null,
+          lte: expirationDate,
+        },
+      };
+    }
 
-      // Expiring soon filter
-      if (expiringSoon) {
-        const expirationDate = new Date();
-        expirationDate.setDate(expirationDate.getDate() + daysUntilExpiration);
-        
-        where.lot = {
-          expirationDate: {
-            not: null,
-            lte: expirationDate,
+    // Execute queries - special handling for lowStock filter
+    let inventory;
+    let total;
+
+    if (lowStock) {
+      // When filtering by low stock, we need to fetch all items first
+      // because Prisma doesn't support field-to-field comparisons
+      const allInventory = await ctx.prisma.inventory.findMany({
+        where,
+        include: {
+          item: {
+            include: {
+              category: true,
+              unitOfMeasure: true,
+            },
           },
-        };
-      }
+          location: {
+            include: {
+              warehouse: true,
+            },
+          },
+          lot: true,
+        },
+        orderBy:
+          sortBy === 'item'
+            ? { item: { name: sortOrder } }
+            : sortBy === 'location'
+              ? { location: { code: sortOrder } }
+              : sortBy === 'quantity'
+                ? { qtyOnHand: sortOrder }
+                : { lastCountedAt: sortOrder },
+      });
 
-      // Execute queries - special handling for lowStock filter
-      let inventory;
-      let total;
-      
-      if (lowStock) {
-        // When filtering by low stock, we need to fetch all items first
-        // because Prisma doesn't support field-to-field comparisons
-        const allInventory = await ctx.prisma.inventory.findMany({
+      // Filter for low stock items
+      const lowStockInventory = allInventory.filter(
+        (inv) => inv.item.reorderPoint && inv.qtyOnHand <= inv.item.reorderPoint
+      );
+
+      // Apply pagination to filtered results
+      total = lowStockInventory.length;
+      inventory = lowStockInventory.slice((page - 1) * limit, page * limit);
+    } else {
+      // Normal pagination when not filtering by low stock
+      [inventory, total] = await Promise.all([
+        ctx.prisma.inventory.findMany({
           where,
           include: {
             item: {
@@ -162,85 +197,52 @@ export const inventoryRouter = createTRPCRouter({
             },
             lot: true,
           },
-          orderBy: sortBy === 'item' 
-            ? { item: { name: sortOrder } }
-            : sortBy === 'location'
-            ? { location: { code: sortOrder } }
-            : sortBy === 'quantity'
-            ? { qtyOnHand: sortOrder }
-            : { lastCountedAt: sortOrder },
-        });
-        
-        // Filter for low stock items
-        const lowStockInventory = allInventory.filter(inv => 
-          inv.item.reorderPoint && inv.qtyOnHand <= inv.item.reorderPoint
-        );
-        
-        // Apply pagination to filtered results
-        total = lowStockInventory.length;
-        inventory = lowStockInventory.slice((page - 1) * limit, page * limit);
-      } else {
-        // Normal pagination when not filtering by low stock
-        [inventory, total] = await Promise.all([
-          ctx.prisma.inventory.findMany({
-            where,
-            include: {
-              item: {
-                include: {
-                  category: true,
-                  unitOfMeasure: true,
-                },
-              },
-              location: {
-                include: {
-                  warehouse: true,
-                },
-              },
-              lot: true,
-            },
-            skip: (page - 1) * limit,
-            take: limit,
-            orderBy: sortBy === 'item' 
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy:
+            sortBy === 'item'
               ? { item: { name: sortOrder } }
               : sortBy === 'location'
-              ? { location: { code: sortOrder } }
-              : sortBy === 'quantity'
-              ? { qtyOnHand: sortOrder }
-              : { lastCountedAt: sortOrder },
-          }),
-          ctx.prisma.inventory.count({ where }),
-        ]);
-      }
+                ? { location: { code: sortOrder } }
+                : sortBy === 'quantity'
+                  ? { qtyOnHand: sortOrder }
+                  : { lastCountedAt: sortOrder },
+        }),
+        ctx.prisma.inventory.count({ where }),
+      ]);
+    }
 
-      // Calculate available quantities
-      const inventoryWithAvailable = inventory.map(inv => ({
-        ...inv,
-        qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
-        lowStock: inv.item.reorderPoint ? inv.qtyOnHand <= inv.item.reorderPoint : false,
-        expiring: inv.lot?.expirationDate ? 
-          inv.lot.expirationDate <= new Date(Date.now() + daysUntilExpiration * 24 * 60 * 60 * 1000) : 
-          false,
-      }));
+    // Calculate available quantities
+    const inventoryWithAvailable = inventory.map((inv) => ({
+      ...inv,
+      qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
+      lowStock: inv.item.reorderPoint ? inv.qtyOnHand <= inv.item.reorderPoint : false,
+      expiring: inv.lot?.expirationDate
+        ? inv.lot.expirationDate <= new Date(Date.now() + daysUntilExpiration * 24 * 60 * 60 * 1000)
+        : false,
+    }));
 
-      // Note: Low stock filtering is already applied during query execution above
+    // Note: Low stock filtering is already applied during query execution above
 
-      return {
-        inventory: inventoryWithAvailable,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
+    return {
+      inventory: inventoryWithAvailable,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get inventory by location
   getByLocation: organizationProcedure
-    .input(z.object({
-      locationId: z.string().cuid(),
-      includeZeroQuantity: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        locationId: z.string().cuid(),
+        includeZeroQuantity: z.boolean().default(false),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.InventoryWhereInput = {
         locationId: input.locationId,
@@ -273,31 +275,32 @@ export const inventoryRouter = createTRPCRouter({
             },
           },
         },
-        orderBy: [
-          { item: { category: { name: 'asc' } } },
-          { item: { name: 'asc' } },
-        ],
+        orderBy: [{ item: { category: { name: 'asc' } } }, { item: { name: 'asc' } }],
       });
 
       // Group by category for easier viewing
-      const groupedByCategory = inventory.reduce((acc, inv) => {
-        const categoryName = inv.item.category.name;
-        if (!acc[categoryName]) {
-          acc[categoryName] = [];
-        }
-        acc[categoryName].push({
-          ...inv,
-          qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
-        });
-        return acc;
-      }, {} as Record<string, Array<typeof inventory[0] & { qtyAvailable: number }>>);
+      const groupedByCategory = inventory.reduce(
+        (acc, inv) => {
+          const categoryName = inv.item.category.name;
+          if (!acc[categoryName]) {
+            acc[categoryName] = [];
+          }
+          acc[categoryName].push({
+            ...inv,
+            qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
+          });
+          return acc;
+        },
+        {} as Record<string, Array<(typeof inventory)[0] & { qtyAvailable: number }>>
+      );
 
       const summary = {
         totalItems: inventory.length,
         totalQuantity: inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0),
         totalReserved: inventory.reduce((sum, inv) => sum + inv.qtyReserved, 0),
-        totalValue: inventory.reduce((sum, inv) => 
-          sum + (inv.qtyOnHand * Number(inv.item.defaultCost || 0)), 0
+        totalValue: inventory.reduce(
+          (sum, inv) => sum + inv.qtyOnHand * Number(inv.item.defaultCost || 0),
+          0
         ),
       };
 
@@ -310,10 +313,12 @@ export const inventoryRouter = createTRPCRouter({
 
   // Get inventory by item
   getByItem: organizationProcedure
-    .input(z.object({
-      itemId: z.string().cuid(),
-      warehouseId: z.string().cuid().optional(),
-    }))
+    .input(
+      z.object({
+        itemId: z.string().cuid(),
+        warehouseId: z.string().cuid().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.InventoryWhereInput = {
         itemId: input.itemId,
@@ -339,34 +344,34 @@ export const inventoryRouter = createTRPCRouter({
           },
           lot: true,
         },
-        orderBy: [
-          { location: { warehouse: { name: 'asc' } } },
-          { location: { code: 'asc' } },
-        ],
+        orderBy: [{ location: { warehouse: { name: 'asc' } } }, { location: { code: 'asc' } }],
       });
 
       // Group by warehouse
-      const groupedByWarehouse = inventory.reduce((acc, inv) => {
-        const warehouseName = inv.location.warehouse.name;
-        if (!acc[warehouseName]) {
-          acc[warehouseName] = {
-            warehouseId: inv.location.warehouseId,
-            warehouseName,
-            locations: [],
-            totalQuantity: 0,
-            totalAvailable: 0,
-          };
-        }
-        
-        acc[warehouseName].locations.push({
-          ...inv,
-          qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
-        });
-        acc[warehouseName].totalQuantity += inv.qtyOnHand;
-        acc[warehouseName].totalAvailable += inv.qtyOnHand - inv.qtyReserved;
-        
-        return acc;
-      }, {} as Record<string, any>);
+      const groupedByWarehouse = inventory.reduce(
+        (acc, inv) => {
+          const warehouseName = inv.location.warehouse.name;
+          if (!acc[warehouseName]) {
+            acc[warehouseName] = {
+              warehouseId: inv.location.warehouseId,
+              warehouseName,
+              locations: [],
+              totalQuantity: 0,
+              totalAvailable: 0,
+            };
+          }
+
+          acc[warehouseName].locations.push({
+            ...inv,
+            qtyAvailable: inv.qtyOnHand - inv.qtyReserved,
+          });
+          acc[warehouseName].totalQuantity += inv.qtyOnHand;
+          acc[warehouseName].totalAvailable += inv.qtyOnHand - inv.qtyReserved;
+
+          return acc;
+        },
+        {} as Record<string, any>
+      );
 
       const summary = {
         totalLocations: inventory.length,
@@ -384,10 +389,12 @@ export const inventoryRouter = createTRPCRouter({
 
   // Get low stock items
   getLowStock: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().cuid().optional(),
-      includeBelowZero: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().cuid().optional(),
+        includeBelowZero: z.boolean().default(true),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // First, get all items with reorder points
       const itemsWithReorderPoints = await ctx.prisma.item.findMany({
@@ -476,8 +483,8 @@ export const inventoryRouter = createTRPCRouter({
         items: lowStockItems,
         summary: {
           total: lowStockItems.length,
-          critical: lowStockItems.filter(i => i.stock.available <= 0).length,
-          belowReorderPoint: lowStockItems.filter(i => i.stock.available > 0).length,
+          critical: lowStockItems.filter((i) => i.stock.available <= 0).length,
+          belowReorderPoint: lowStockItems.filter((i) => i.stock.available > 0).length,
           totalShortfall: lowStockItems.reduce((sum, i) => sum + i.stock.shortfall, 0),
         },
       };
@@ -485,10 +492,12 @@ export const inventoryRouter = createTRPCRouter({
 
   // Get expiring items
   getExpiring: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().cuid().optional(),
-      daysAhead: z.number().int().min(1).default(30),
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().cuid().optional(),
+        daysAhead: z.number().int().min(1).default(30),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + input.daysAhead);
@@ -525,16 +534,16 @@ export const inventoryRouter = createTRPCRouter({
           },
           lot: true,
         },
-        orderBy: [
-          { lot: { expirationDate: 'asc' } },
-          { qtyOnHand: 'desc' },
-        ],
+        orderBy: [{ lot: { expirationDate: 'asc' } }, { qtyOnHand: 'desc' }],
       });
 
       // Group by expiration urgency
       const today = new Date();
-      type InventoryWithValue = typeof inventory[0] & { daysUntilExpiration: number; value: number };
-      
+      type InventoryWithValue = (typeof inventory)[0] & {
+        daysUntilExpiration: number;
+        value: number;
+      };
+
       const grouped = {
         expired: [] as InventoryWithValue[],
         expiringThisWeek: [] as InventoryWithValue[],
@@ -625,9 +634,10 @@ export const inventoryRouter = createTRPCRouter({
 
       // Calculate new quantity
       const oldQty = inventory.qtyOnHand;
-      const newQty = input.adjustmentType === 'COUNT' 
-        ? input.qty // Absolute count
-        : oldQty + input.qty; // Relative adjustment
+      const newQty =
+        input.adjustmentType === 'COUNT'
+          ? input.qty // Absolute count
+          : oldQty + input.qty; // Relative adjustment
 
       if (newQty < 0) {
         throw new TRPCError({
@@ -678,7 +688,7 @@ export const inventoryRouter = createTRPCRouter({
             userId: ctx.user.id,
             organizationId: ctx.user.organizationId!,
             beforeData: { qtyOnHand: oldQty },
-            afterData: { 
+            afterData: {
               qtyOnHand: newQty,
               adjustmentType: input.adjustmentType,
               reason: input.reason,
@@ -745,7 +755,7 @@ export const inventoryRouter = createTRPCRouter({
             userId: ctx.user.id,
             organizationId: ctx.user.organizationId!,
             beforeData: { qtyReserved: inventory.qtyReserved },
-            afterData: { 
+            afterData: {
               qtyReserved: updated.qtyReserved,
               orderId: input.orderId,
               notes: input.notes,
@@ -767,11 +777,13 @@ export const inventoryRouter = createTRPCRouter({
 
   // Release reservation
   release: organizationProcedure
-    .input(z.object({
-      inventoryId: z.string().cuid(),
-      qty: z.number().int().min(1),
-      reason: z.string(),
-    }))
+    .input(
+      z.object({
+        inventoryId: z.string().cuid(),
+        qty: z.number().int().min(1),
+        reason: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get current inventory
       const inventory = await ctx.prisma.inventory.findUnique({
@@ -810,7 +822,7 @@ export const inventoryRouter = createTRPCRouter({
             userId: ctx.user.id,
             organizationId: ctx.user.organizationId!,
             beforeData: { qtyReserved: inventory.qtyReserved },
-            afterData: { 
+            afterData: {
               qtyReserved: updated.qtyReserved,
               reason: input.reason,
             },
@@ -1046,7 +1058,7 @@ export const inventoryRouter = createTRPCRouter({
 
         // Determine what to count
         let inventoryToCount;
-        
+
         if (input.locationIds) {
           // Count specific locations
           inventoryToCount = await tx.inventory.findMany({
@@ -1123,11 +1135,13 @@ export const inventoryRouter = createTRPCRouter({
 
   // Get inventory value report
   getValueReport: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().cuid().optional(),
-      categoryId: z.string().cuid().optional(),
-      groupBy: z.enum(['category', 'warehouse', 'item']).default('category'),
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().cuid().optional(),
+        categoryId: z.string().cuid().optional(),
+        groupBy: z.enum(['category', 'warehouse', 'item']).default('category'),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.InventoryWhereInput = {
         qtyOnHand: { gt: 0 },
@@ -1164,116 +1178,125 @@ export const inventoryRouter = createTRPCRouter({
       });
 
       // Calculate values
-      const inventoryWithValue = inventory.map(inv => ({
+      const inventoryWithValue = inventory.map((inv) => ({
         ...inv,
         unitCost: Number(inv.lot?.unitCost || inv.item.defaultCost || 0),
         totalValue: inv.qtyOnHand * Number(inv.lot?.unitCost || inv.item.defaultCost || 0),
         reservedValue: inv.qtyReserved * Number(inv.lot?.unitCost || inv.item.defaultCost || 0),
-        availableValue: (inv.qtyOnHand - inv.qtyReserved) * Number(inv.lot?.unitCost || inv.item.defaultCost || 0),
+        availableValue:
+          (inv.qtyOnHand - inv.qtyReserved) *
+          Number(inv.lot?.unitCost || inv.item.defaultCost || 0),
       }));
 
       // Group based on input
       let grouped: Record<string, any> = {};
 
       if (input.groupBy === 'category') {
-        grouped = inventoryWithValue.reduce((acc, inv) => {
-          const key = inv.item.category.name;
-          if (!acc[key]) {
-            acc[key] = {
-              categoryId: inv.item.categoryId,
-              categoryName: key,
-              itemCount: new Set(),
-              totalQuantity: 0,
-              totalValue: 0,
-              reservedValue: 0,
-              availableValue: 0,
-            };
-          }
-          
-          acc[key].itemCount.add(inv.itemId);
-          acc[key].totalQuantity += inv.qtyOnHand;
-          acc[key].totalValue += inv.totalValue;
-          acc[key].reservedValue += inv.reservedValue;
-          acc[key].availableValue += inv.availableValue;
-          
-          return acc;
-        }, {} as Record<string, any>);
+        grouped = inventoryWithValue.reduce(
+          (acc, inv) => {
+            const key = inv.item.category.name;
+            if (!acc[key]) {
+              acc[key] = {
+                categoryId: inv.item.categoryId,
+                categoryName: key,
+                itemCount: new Set(),
+                totalQuantity: 0,
+                totalValue: 0,
+                reservedValue: 0,
+                availableValue: 0,
+              };
+            }
+
+            acc[key].itemCount.add(inv.itemId);
+            acc[key].totalQuantity += inv.qtyOnHand;
+            acc[key].totalValue += inv.totalValue;
+            acc[key].reservedValue += inv.reservedValue;
+            acc[key].availableValue += inv.availableValue;
+
+            return acc;
+          },
+          {} as Record<string, any>
+        );
 
         // Convert Set to count
         Object.values(grouped).forEach((g: any) => {
           g.itemCount = g.itemCount.size;
         });
-
       } else if (input.groupBy === 'warehouse') {
-        grouped = inventoryWithValue.reduce((acc, inv) => {
-          const key = inv.location.warehouse.name;
-          if (!acc[key]) {
-            acc[key] = {
-              warehouseId: inv.location.warehouseId,
-              warehouseName: key,
-              locationCount: new Set(),
-              itemCount: new Set(),
-              totalQuantity: 0,
-              totalValue: 0,
-              reservedValue: 0,
-              availableValue: 0,
-            };
-          }
-          
-          acc[key].locationCount.add(inv.locationId);
-          acc[key].itemCount.add(inv.itemId);
-          acc[key].totalQuantity += inv.qtyOnHand;
-          acc[key].totalValue += inv.totalValue;
-          acc[key].reservedValue += inv.reservedValue;
-          acc[key].availableValue += inv.availableValue;
-          
-          return acc;
-        }, {} as Record<string, any>);
+        grouped = inventoryWithValue.reduce(
+          (acc, inv) => {
+            const key = inv.location.warehouse.name;
+            if (!acc[key]) {
+              acc[key] = {
+                warehouseId: inv.location.warehouseId,
+                warehouseName: key,
+                locationCount: new Set(),
+                itemCount: new Set(),
+                totalQuantity: 0,
+                totalValue: 0,
+                reservedValue: 0,
+                availableValue: 0,
+              };
+            }
+
+            acc[key].locationCount.add(inv.locationId);
+            acc[key].itemCount.add(inv.itemId);
+            acc[key].totalQuantity += inv.qtyOnHand;
+            acc[key].totalValue += inv.totalValue;
+            acc[key].reservedValue += inv.reservedValue;
+            acc[key].availableValue += inv.availableValue;
+
+            return acc;
+          },
+          {} as Record<string, any>
+        );
 
         // Convert Sets to counts
         Object.values(grouped).forEach((g: any) => {
           g.locationCount = g.locationCount.size;
           g.itemCount = g.itemCount.size;
         });
-
       } else {
         // Group by item
-        grouped = inventoryWithValue.reduce((acc, inv) => {
-          const key = inv.item.sku;
-          if (!acc[key]) {
-            acc[key] = {
-              itemId: inv.itemId,
-              sku: inv.item.sku,
-              name: inv.item.name,
-              category: inv.item.category.name,
-              locationCount: new Set(),
-              totalQuantity: 0,
-              totalReserved: 0,
-              totalAvailable: 0,
-              avgCost: 0,
-              totalValue: 0,
-              reservedValue: 0,
-              availableValue: 0,
-              locations: [],
-            };
-          }
-          
-          acc[key].locationCount.add(inv.locationId);
-          acc[key].totalQuantity += inv.qtyOnHand;
-          acc[key].totalReserved += inv.qtyReserved;
-          acc[key].totalAvailable += inv.qtyOnHand - inv.qtyReserved;
-          acc[key].totalValue += inv.totalValue;
-          acc[key].reservedValue += inv.reservedValue;
-          acc[key].availableValue += inv.availableValue;
-          acc[key].locations.push({
-            warehouse: inv.location.warehouse.name,
-            location: inv.location.code,
-            quantity: inv.qtyOnHand,
-            value: inv.totalValue,
-          });
-          
-          return acc;
-        }, {} as Record<string, any>);
+        grouped = inventoryWithValue.reduce(
+          (acc, inv) => {
+            const key = inv.item.sku;
+            if (!acc[key]) {
+              acc[key] = {
+                itemId: inv.itemId,
+                sku: inv.item.sku,
+                name: inv.item.name,
+                category: inv.item.category.name,
+                locationCount: new Set(),
+                totalQuantity: 0,
+                totalReserved: 0,
+                totalAvailable: 0,
+                avgCost: 0,
+                totalValue: 0,
+                reservedValue: 0,
+                availableValue: 0,
+                locations: [],
+              };
+            }
+
+            acc[key].locationCount.add(inv.locationId);
+            acc[key].totalQuantity += inv.qtyOnHand;
+            acc[key].totalReserved += inv.qtyReserved;
+            acc[key].totalAvailable += inv.qtyOnHand - inv.qtyReserved;
+            acc[key].totalValue += inv.totalValue;
+            acc[key].reservedValue += inv.reservedValue;
+            acc[key].availableValue += inv.availableValue;
+            acc[key].locations.push({
+              warehouse: inv.location.warehouse.name,
+              location: inv.location.code,
+              quantity: inv.qtyOnHand,
+              value: inv.totalValue,
+            });
+
+            return acc;
+          },
+          {} as Record<string, any>
+        );
 
         // Calculate average costs and convert Sets
         Object.values(grouped).forEach((g: any) => {
@@ -1284,8 +1307,8 @@ export const inventoryRouter = createTRPCRouter({
 
       // Calculate summary
       const summary = {
-        totalItems: new Set(inventory.map(i => i.itemId)).size,
-        totalLocations: new Set(inventory.map(i => i.locationId)).size,
+        totalItems: new Set(inventory.map((i) => i.itemId)).size,
+        totalLocations: new Set(inventory.map((i) => i.locationId)).size,
         totalQuantity: inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0),
         totalReserved: inventory.reduce((sum, inv) => sum + inv.qtyReserved, 0),
         totalValue: inventoryWithValue.reduce((sum, inv) => sum + inv.totalValue, 0),

@@ -20,7 +20,9 @@ describe('End-to-End RLS Integration', () => {
 
     // Clean up test data using admin connection (bypasses RLS)
     await adminPrisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
-    await adminPrisma.$executeRawUnsafe(`DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug LIKE 'rls-e2e-%')`);
+    await adminPrisma.$executeRawUnsafe(
+      `DELETE FROM organization_members WHERE organization_id IN (SELECT id FROM organizations WHERE slug LIKE 'rls-e2e-%')`
+    );
     await adminPrisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
 
@@ -43,7 +45,7 @@ describe('End-to-End RLS Integration', () => {
 
     // Create test users
     const hashedPassword = await bcrypt.hash('testpass123', 10);
-    
+
     const user1 = await adminPrisma.user.create({
       data: {
         email: 'rls-e2e-user1@example.com',
@@ -146,10 +148,14 @@ describe('End-to-End RLS Integration', () => {
     await adminPrisma.$executeRawUnsafe(`DELETE FROM items WHERE sku LIKE 'RLS-E2E-%'`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM item_categories WHERE name LIKE 'RLS E2E%'`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM units_of_measure WHERE code LIKE 'RLS-E2E-%'`);
-    await adminPrisma.$executeRawUnsafe(`DELETE FROM organization_members WHERE organization_id IN ($1, $2)`, org1Id, org2Id);
+    await adminPrisma.$executeRawUnsafe(
+      `DELETE FROM organization_members WHERE organization_id IN ($1, $2)`,
+      org1Id,
+      org2Id
+    );
     await adminPrisma.$executeRawUnsafe(`DELETE FROM organizations WHERE slug LIKE 'rls-e2e-%'`);
     await adminPrisma.$executeRawUnsafe(`DELETE FROM users WHERE email LIKE 'rls-e2e-%'`);
-    
+
     // Disconnect both connections
     await adminPrisma.$disconnect();
     await appPrisma.$disconnect();
@@ -157,26 +163,26 @@ describe('End-to-End RLS Integration', () => {
 
   it('should filter items based on user organization', async () => {
     // First, verify all items exist using admin connection (bypasses RLS)
-    const allItems = await adminPrisma.item.findMany({ 
+    const allItems = await adminPrisma.item.findMany({
       where: { sku: { startsWith: 'RLS-E2E' } },
-      orderBy: { sku: 'asc' } 
+      orderBy: { sku: 'asc' },
     });
     expect(allItems).toHaveLength(2);
-    
+
     // Now query with RLS context for org1
     const org1Context: RLSContext = {
       organizationId: org1Id,
       userId: user1Id,
       bypassRLS: false,
     };
-    
+
     const org1Result = await withRLS(appPrisma, org1Context, async (tx) => {
-      return await tx.item.findMany({ 
+      return await tx.item.findMany({
         where: { sku: { startsWith: 'RLS-E2E' } },
-        orderBy: { sku: 'asc' } 
+        orderBy: { sku: 'asc' },
       });
     });
-    
+
     expect(org1Result.data).toHaveLength(1);
     expect(org1Result.data[0]?.sku).toBe('RLS-E2E-ITEM-1');
     expect(org1Result.data[0]?.organizationId).toBe(org1Id);
@@ -189,14 +195,14 @@ describe('End-to-End RLS Integration', () => {
       userId: user2Id,
       bypassRLS: false,
     };
-    
+
     const org2Result = await withRLS(appPrisma, org2Context, async (tx) => {
-      return await tx.item.findMany({ 
+      return await tx.item.findMany({
         where: { sku: { startsWith: 'RLS-E2E' } },
-        orderBy: { sku: 'asc' } 
+        orderBy: { sku: 'asc' },
       });
     });
-    
+
     // User2 should only see org2's items
     expect(org2Result.data).toHaveLength(1);
     expect(org2Result.data[0]?.sku).toBe('RLS-E2E-ITEM-2');
@@ -208,17 +214,17 @@ describe('End-to-End RLS Integration', () => {
     const noContextResult = await appPrisma.item.findMany({
       where: { sku: { startsWith: 'RLS-E2E' } },
     });
-    
+
     // Should see no items without RLS context set
     expect(noContextResult).toHaveLength(0);
-    
+
     // Now test with RLS context
     const org1Context: RLSContext = {
       organizationId: org1Id,
       userId: user1Id,
       bypassRLS: false,
     };
-    
+
     await withRLS(appPrisma, org1Context, async (tx) => {
       // Verify context was set in the database
       const ctxCheck = await tx.$queryRaw<Array<{ org_id: string | null; user_id: string | null }>>`
@@ -226,7 +232,7 @@ describe('End-to-End RLS Integration', () => {
       `;
       expect(ctxCheck[0]?.org_id).toBe(org1Id);
       expect(ctxCheck[0]?.user_id).toBe(user1Id);
-      
+
       // Test the policy directly with a raw query
       const rawItems = await tx.$queryRaw<Array<{ sku: string; organization_id: string }>>`
         SELECT sku, organization_id 
@@ -234,7 +240,7 @@ describe('End-to-End RLS Integration', () => {
         WHERE sku LIKE 'RLS-E2E-%'
         ORDER BY sku
       `;
-      
+
       expect(rawItems).toHaveLength(1);
       expect(rawItems[0]?.sku).toBe('RLS-E2E-ITEM-1');
     });

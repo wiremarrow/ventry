@@ -16,7 +16,7 @@ describe('Warehouses Router Integration', () => {
     organizationId = testContext.organization.id;
     cleanup = testContext.cleanup;
   });
-  
+
   afterEach(async () => {
     await cleanup();
   });
@@ -90,7 +90,7 @@ describe('Warehouses Router Integration', () => {
       // This would require creating a second organization and user
       // For now, we verify basic organization isolation
       const warehouses = await caller.warehouses.list({});
-      warehouses.forEach(warehouse => {
+      warehouses.forEach((warehouse) => {
         expect(warehouse.organizationId).toBe(organizationId);
       });
     });
@@ -110,9 +110,9 @@ describe('Warehouses Router Integration', () => {
       });
 
       // Get warehouse
-      const result = await caller.warehouses.get({ 
-        id: warehouse.id, 
-        includeLocations: true 
+      const result = await caller.warehouses.get({
+        id: warehouse.id,
+        includeLocations: true,
       });
 
       expect(result).toMatchObject(warehouse);
@@ -122,9 +122,9 @@ describe('Warehouses Router Integration', () => {
 
     it('should throw error for non-existent warehouse', async () => {
       const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
-      await expect(
-        caller.warehouses.get({ id: nonExistentId })
-      ).rejects.toThrow('Warehouse not found');
+      await expect(caller.warehouses.get({ id: nonExistentId })).rejects.toThrow(
+        'Warehouse not found'
+      );
     });
   });
 
@@ -274,16 +274,14 @@ describe('Warehouses Router Integration', () => {
       expect(deletedWarehouse.id).toBe(warehouseId);
 
       // Verify warehouse is deleted
-      await expect(
-        caller.warehouses.get({ id: warehouseId })
-      ).rejects.toThrow('Warehouse not found');
+      await expect(caller.warehouses.get({ id: warehouseId })).rejects.toThrow(
+        'Warehouse not found'
+      );
     });
 
     it('should throw error for non-existent warehouse', async () => {
       const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
-      await expect(
-        caller.warehouses.delete({ id: nonExistentId })
-      ).rejects.toThrow();
+      await expect(caller.warehouses.delete({ id: nonExistentId })).rejects.toThrow();
     });
   });
 
@@ -335,9 +333,9 @@ describe('Warehouses Router Integration', () => {
 
     it('should throw error for non-existent warehouse', async () => {
       const nonExistentId = 'clh1234567890abcdefghijkl'; // Valid CUID format
-      await expect(
-        caller.warehouses.getStats({ warehouseId: nonExistentId })
-      ).rejects.toThrow('Warehouse not found');
+      await expect(caller.warehouses.getStats({ warehouseId: nonExistentId })).rejects.toThrow(
+        'Warehouse not found'
+      );
     });
   });
 

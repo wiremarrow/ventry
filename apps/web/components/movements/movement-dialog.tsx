@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
   Button,
   Input,
@@ -28,27 +28,40 @@ import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { MovementTypeBadge, type MovementType } from './movement-type-badge';
 
-const movementSchema = z.object({
-  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']),
-  itemId: z.string().min(1, 'Item is required'),
-  qty: z.number().int().positive('Quantity must be positive'),
-  fromLocationId: z.string().optional(),
-  toLocationId: z.string().optional(),
-  notes: z.string().optional(),
-}).refine((data) => {
-  if (data.movementType === 'INBOUND' && !data.toLocationId) {
-    return false;
-  }
-  if (data.movementType === 'OUTBOUND' && !data.fromLocationId) {
-    return false;
-  }
-  if (data.movementType === 'TRANSFER' && (!data.fromLocationId || !data.toLocationId)) {
-    return false;
-  }
-  return true;
-}, {
-  message: 'Location requirements not met for movement type',
-});
+const movementSchema = z
+  .object({
+    movementType: z.enum([
+      'INBOUND',
+      'OUTBOUND',
+      'TRANSFER',
+      'ADJUSTMENT',
+      'RETURN',
+      'DAMAGE',
+      'LOSS',
+    ]),
+    itemId: z.string().min(1, 'Item is required'),
+    qty: z.number().int().positive('Quantity must be positive'),
+    fromLocationId: z.string().optional(),
+    toLocationId: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.movementType === 'INBOUND' && !data.toLocationId) {
+        return false;
+      }
+      if (data.movementType === 'OUTBOUND' && !data.fromLocationId) {
+        return false;
+      }
+      if (data.movementType === 'TRANSFER' && (!data.fromLocationId || !data.toLocationId)) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Location requirements not met for movement type',
+    }
+  );
 
 type MovementFormData = z.infer<typeof movementSchema>;
 
@@ -62,7 +75,7 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
   const utils = trpc.useUtils();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [availableQty, setAvailableQty] = useState<number | null>(null);
-  
+
   const {
     register,
     handleSubmit,
@@ -165,9 +178,7 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>Create Stock Movement</DialogTitle>
-            <DialogDescription>
-              Record inventory movement between locations
-            </DialogDescription>
+            <DialogDescription>Record inventory movement between locations</DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
@@ -231,9 +242,7 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
             {/* Location Requirements Alert */}
             <Alert>
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {requirements.message}
-              </AlertDescription>
+              <AlertDescription>{requirements.message}</AlertDescription>
             </Alert>
 
             {/* Item Selection */}
@@ -243,7 +252,7 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
                 value={itemId}
                 onValueChange={(value) => {
                   setValue('itemId', value);
-                  const item = itemsData?.items.find(i => i.id === value);
+                  const item = itemsData?.items.find((i) => i.id === value);
                   setSelectedItem(item);
                 }}
               >
@@ -252,7 +261,9 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
                     {selectedItem && (
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4" />
-                        <span>{selectedItem.sku} - {selectedItem.name}</span>
+                        <span>
+                          {selectedItem.sku} - {selectedItem.name}
+                        </span>
                       </div>
                     )}
                   </SelectValue>
@@ -262,15 +273,15 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
                     <SelectItem key={item.id} value={item.id}>
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4" />
-                        <span>{item.sku} - {item.name}</span>
+                        <span>
+                          {item.sku} - {item.name}
+                        </span>
                       </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.itemId && (
-                <p className="text-sm text-destructive">{errors.itemId.message}</p>
-              )}
+              {errors.itemId && <p className="text-sm text-destructive">{errors.itemId.message}</p>}
             </div>
 
             {/* Quantity */}
@@ -279,8 +290,8 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
               <Input
                 id="qty"
                 type="number"
-                {...register('qty', { 
-                  setValueAs: (v) => v === '' ? 0 : parseInt(v, 10) 
+                {...register('qty', {
+                  setValueAs: (v) => (v === '' ? 0 : parseInt(v, 10)),
                 })}
                 min={1}
               />
@@ -289,18 +300,14 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
                   Available at source: {availableQty} units
                 </p>
               )}
-              {errors.qty && (
-                <p className="text-sm text-destructive">{errors.qty.message}</p>
-              )}
+              {errors.qty && <p className="text-sm text-destructive">{errors.qty.message}</p>}
             </div>
 
             {/* Location Selection */}
             <div className="grid grid-cols-2 gap-4">
               {/* From Location */}
               <div className="space-y-2">
-                <Label htmlFor="fromLocationId">
-                  From Location {requirements.from && '*'}
-                </Label>
+                <Label htmlFor="fromLocationId">From Location {requirements.from && '*'}</Label>
                 <Select
                   value={fromLocationId}
                   onValueChange={(value) => setValue('fromLocationId', value)}
@@ -321,9 +328,7 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
 
               {/* To Location */}
               <div className="space-y-2">
-                <Label htmlFor="toLocationId">
-                  To Location {requirements.to && '*'}
-                </Label>
+                <Label htmlFor="toLocationId">To Location {requirements.to && '*'}</Label>
                 <Select
                   value={watch('toLocationId')}
                   onValueChange={(value) => setValue('toLocationId', value)}
@@ -347,11 +352,11 @@ export function MovementDialog({ open, onOpenChange, onSuccess }: MovementDialog
             {movementType === 'TRANSFER' && fromLocationId && watch('toLocationId') && (
               <div className="flex items-center justify-center gap-2 p-4 bg-muted rounded-lg">
                 <span className="text-sm font-medium">
-                  {locationsData?.locations.find(l => l.id === fromLocationId)?.code}
+                  {locationsData?.locations.find((l) => l.id === fromLocationId)?.code}
                 </span>
                 <ArrowRight className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                  {locationsData?.locations.find(l => l.id === watch('toLocationId'))?.code}
+                  {locationsData?.locations.find((l) => l.id === watch('toLocationId'))?.code}
                 </span>
               </div>
             )}

@@ -2,14 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@ventry/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { Badge } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
@@ -150,7 +143,9 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                   <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No products found</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    {searchTerm ? 'Try adjusting your filters' : 'Start by adding your first product'}
+                    {searchTerm
+                      ? 'Try adjusting your filters'
+                      : 'Start by adding your first product'}
                   </p>
                 </TableCell>
               </TableRow>
@@ -182,9 +177,7 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                   <TableCell className="text-right">
                     {item.defaultPrice ? formatCurrency(Number(item.defaultPrice)) : '-'}
                   </TableCell>
-                  <TableCell className="text-right">
-                    {item.reorderPoint || '-'}
-                  </TableCell>
+                  <TableCell className="text-right">{item.reorderPoint || '-'}</TableCell>
                   <TableCell>
                     <Badge variant={item.isActive ? 'success' : 'secondary'}>
                       {item.isActive ? 'ACTIVE' : 'INACTIVE'}
@@ -200,24 +193,30 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setEditingProduct({
-                          ...item,
-                          defaultCost: item.defaultCost ? Number(item.defaultCost) : null,
-                          defaultPrice: item.defaultPrice ? Number(item.defaultPrice) : null,
-                          weightKg: item.weightKg ? Number(item.weightKg) : null,
-                          lengthCm: item.lengthCm ? Number(item.lengthCm) : null,
-                          widthCm: item.widthCm ? Number(item.widthCm) : null,
-                          heightCm: item.heightCm ? Number(item.heightCm) : null,
-                        })}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setEditingProduct({
+                              ...item,
+                              defaultCost: item.defaultCost ? Number(item.defaultCost) : null,
+                              defaultPrice: item.defaultPrice ? Number(item.defaultPrice) : null,
+                              weightKg: item.weightKg ? Number(item.weightKg) : null,
+                              lengthCm: item.lengthCm ? Number(item.lengthCm) : null,
+                              widthCm: item.widthCm ? Number(item.widthCm) : null,
+                              heightCm: item.heightCm ? Number(item.heightCm) : null,
+                            })
+                          }
+                        >
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => duplicateMutation.mutate({ 
-                            itemId: item.id, 
-                            newSku: `${item.sku}-COPY`,
-                            newName: `${item.name} (Copy)`
-                          })}
+                          onClick={() =>
+                            duplicateMutation.mutate({
+                              itemId: item.id,
+                              newSku: `${item.sku}-COPY`,
+                              newName: `${item.name} (Copy)`,
+                            })
+                          }
                         >
                           <Copy className="mr-2 h-4 w-4" />
                           Duplicate
@@ -253,8 +252,8 @@ export function ProductList({ searchTerm, categoryId, status }: ProductListProps
         {data && data.pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Showing {(page - 1) * limit + 1} to{' '}
-              {Math.min(page * limit, data.pagination.total)} of {data.pagination.total} products
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.pagination.total)} of{' '}
+              {data.pagination.total} products
             </p>
             <div className="flex gap-2">
               <Button

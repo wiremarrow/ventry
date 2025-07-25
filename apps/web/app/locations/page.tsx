@@ -1,7 +1,29 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, Progress } from '@ventry/ui';
+import {
+  Card,
+  Input,
+  Button,
+  Badge,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Progress,
+} from '@ventry/ui';
 import { Plus, Search, MapPin, Thermometer, MoreHorizontal, Edit } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import type { Location } from '@ventry/database';
@@ -20,24 +42,29 @@ export default function LocationsPage() {
   const { data: warehousesData } = trpc.warehouses.list.useQuery({});
 
   // Fetch locations from all warehouses
-  const { data: locationsData, isLoading, refetch } = trpc.warehouses.listAllLocations.useQuery({
+  const {
+    data: locationsData,
+    isLoading,
+    refetch,
+  } = trpc.warehouses.listAllLocations.useQuery({
     search: searchTerm || undefined,
     warehouseId: warehouseFilter === 'all' ? undefined : warehouseFilter,
   });
 
   // Filter locations by temp controlled status
-  const filteredLocations = locationsData?.locations?.filter(location => {
-    if (tempControlledFilter === 'yes') return location.isTempControlled;
-    if (tempControlledFilter === 'no') return !location.isTempControlled;
-    return true;
-  }) || [];
+  const filteredLocations =
+    locationsData?.locations?.filter((location) => {
+      if (tempControlledFilter === 'yes') return location.isTempControlled;
+      if (tempControlledFilter === 'no') return !location.isTempControlled;
+      return true;
+    }) || [];
 
   // Calculate stats
   const stats = {
     total: locationsData?.locations?.length || 0,
-    active: locationsData?.locations?.filter(l => l._count?.inventory > 0).length || 0,
+    active: locationsData?.locations?.filter((l) => l._count?.inventory > 0).length || 0,
     totalCapacity: locationsData?.locations?.reduce((sum, l) => sum + (l.maxCapacity || 0), 0) || 0,
-    tempControlled: locationsData?.locations?.filter(l => l.isTempControlled).length || 0,
+    tempControlled: locationsData?.locations?.filter((l) => l.isTempControlled).length || 0,
   };
 
   const handleEdit = (locationId: string) => {
@@ -51,7 +78,7 @@ export default function LocationsPage() {
   };
 
   type LocationWithCount = Location & { _count?: { inventory: number } };
-  
+
   const formatLocationHierarchy = (location: LocationWithCount) => {
     const parts = [];
     if (location.zone) parts.push(`Zone ${location.zone}`);
@@ -137,7 +164,10 @@ export default function LocationsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={tempControlledFilter} onValueChange={(value) => setTempControlledFilter(value as 'all' | 'yes' | 'no')}>
+              <Select
+                value={tempControlledFilter}
+                onValueChange={(value) => setTempControlledFilter(value as 'all' | 'yes' | 'no')}
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Temperature Control" />
                 </SelectTrigger>
@@ -178,8 +208,8 @@ export default function LocationsPage() {
                     <TableCell colSpan={7} className="text-center py-8">
                       <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-2" />
                       <p className="text-muted-foreground">
-                        {searchTerm || warehouseFilter !== 'all' || tempControlledFilter !== 'all' 
-                          ? 'No locations found matching your filters' 
+                        {searchTerm || warehouseFilter !== 'all' || tempControlledFilter !== 'all'
+                          ? 'No locations found matching your filters'
                           : 'No locations created yet'}
                       </p>
                     </TableCell>
@@ -195,7 +225,9 @@ export default function LocationsPage() {
                           <div>
                             <p className="font-medium">{formatLocationHierarchy(location)}</p>
                             {location.description && (
-                              <p className="text-sm text-muted-foreground">{location.description}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {location.description}
+                              </p>
                             )}
                           </div>
                         </TableCell>
@@ -215,7 +247,9 @@ export default function LocationsPage() {
                           {location.maxCapacity ? (
                             <div className="space-y-1">
                               <Progress value={utilization} className="h-2" />
-                              <p className="text-xs text-muted-foreground">{utilization.toFixed(0)}%</p>
+                              <p className="text-xs text-muted-foreground">
+                                {utilization.toFixed(0)}%
+                              </p>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">-</span>

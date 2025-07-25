@@ -7,23 +7,28 @@
 ---
 
 ## Phase 0: Critical Security Fixes (2-3 days)
+
 **Objective:** Fix critical vulnerabilities that could crash the service or expose security flaws.
 
 ### Task 0.1: Fix Cookie Unsigning Exception Handling
+
 **Priority:** CRITICAL  
 **Estimated Time:** 2 hours  
 **Files to Modify:**
+
 - `/apps/backend/src/trpc/context.ts`
 - `/apps/backend/src/lib/cookies.ts`
 
 #### Subtasks:
+
 1. **Create test file:** `/apps/backend/src/lib/__tests__/cookies.test.ts`
+
    ```typescript
    // Test cases to implement:
-   - 'should return undefined for malformed cookie without throwing'
-   - 'should log warning when cookie unsigning fails'
-   - 'should handle null/undefined cookies gracefully'
-   - 'should successfully unsign valid cookies'
+   -'should return undefined for malformed cookie without throwing' -
+     'should log warning when cookie unsigning fails' -
+     'should handle null/undefined cookies gracefully' -
+     'should successfully unsign valid cookies';
    ```
 
 2. **Implement safe cookie utilities in** `/apps/backend/src/lib/cookies.ts`:
@@ -42,21 +47,25 @@
    - Verify 401 response (not 500)
 
 ### Task 0.2: Implement JWT Error Differentiation
+
 **Priority:** HIGH  
 **Estimated Time:** 3 hours  
 **Files to Modify:**
+
 - `/apps/backend/src/auth/jwt.ts`
 - `/apps/backend/src/trpc/context.ts`
 
 #### Subtasks:
+
 1. **Create test file:** `/apps/backend/src/auth/__tests__/jwt.test.ts`
+
    ```typescript
    // Test cases to implement:
-   - 'should return EXPIRED error for expired tokens'
-   - 'should return INVALID_SIGNATURE error for tampered tokens'
-   - 'should return MALFORMED error for invalid format'
-   - 'should successfully verify valid tokens'
-   - 'should include original error details in result'
+   -'should return EXPIRED error for expired tokens' -
+     'should return INVALID_SIGNATURE error for tampered tokens' -
+     'should return MALFORMED error for invalid format' -
+     'should successfully verify valid tokens' -
+     'should include original error details in result';
    ```
 
 2. **Refactor JWT verification in** `/apps/backend/src/auth/jwt.ts`:
@@ -70,11 +79,12 @@
    - Log specific JWT errors with appropriate levels
 
 4. **Create integration test:** `/apps/backend/src/trpc/__tests__/auth-errors.integration.test.ts`
+
    ```typescript
    // Test the full flow:
-   - 'should return 401 with TOKEN_EXPIRED header for expired JWT'
-   - 'should return 401 with INVALID_TOKEN for tampered JWT'
-   - 'should handle malformed tokens gracefully'
+   -'should return 401 with TOKEN_EXPIRED header for expired JWT' -
+     'should return 401 with INVALID_TOKEN for tampered JWT' -
+     'should handle malformed tokens gracefully';
    ```
 
 5. **Validation:**
@@ -83,14 +93,18 @@
    - Check logs for detailed error information
 
 ### Task 0.3: Emergency Error Message Standardization
+
 **Priority:** MEDIUM  
 **Estimated Time:** 1 hour  
 **Files to Modify:**
+
 - `/apps/backend/src/lib/auth/constants.ts` (create new)
 - `/apps/backend/src/trpc/middleware.ts`
 
 #### Subtasks:
+
 1. **Create constants file** with standardized messages:
+
    ```typescript
    export const AUTH_ERRORS = {
      NO_AUTH: 'Authentication required',
@@ -112,25 +126,30 @@
 ---
 
 ## Phase 1: Foundation Improvements (Week 1)
+
 **Objective:** Build robust utilities and comprehensive test coverage for authentication.
 
 ### Task 1.1: Create Unified Token Extraction Utility
+
 **Priority:** HIGH  
 **Estimated Time:** 4 hours  
 **Files to Create/Modify:**
+
 - `/apps/backend/src/lib/auth/token-extractor.ts` (new)
 - `/apps/backend/src/lib/auth/__tests__/token-extractor.test.ts` (new)
 
 #### Subtasks:
+
 1. **Write comprehensive tests first:**
+
    ```typescript
    // Test scenarios:
-   - 'should prefer cookie over header'
-   - 'should handle missing cookies gracefully'
-   - 'should validate Bearer token format'
-   - 'should return error details for debugging'
-   - 'should track token source for metrics'
-   - 'should handle concurrent requests safely'
+   -'should prefer cookie over header' -
+     'should handle missing cookies gracefully' -
+     'should validate Bearer token format' -
+     'should return error details for debugging' -
+     'should track token source for metrics' -
+     'should handle concurrent requests safely';
    ```
 
 2. **Implement token extractor** with:
@@ -140,6 +159,7 @@
    - Detailed error information
 
 3. **Create type definitions:**
+
    ```typescript
    interface TokenExtractionResult {
      token?: string;
@@ -163,14 +183,18 @@
    - Performance test with 1000 concurrent requests
 
 ### Task 1.2: Implement Auth Error Handler
+
 **Priority:** MEDIUM  
 **Estimated Time:** 3 hours  
 **Files to Create:**
+
 - `/apps/backend/src/lib/auth/error-handler.ts`
 - `/apps/backend/src/lib/auth/__tests__/error-handler.test.ts`
 
 #### Subtasks:
+
 1. **Define error response schema:**
+
    ```typescript
    interface AuthErrorResponse {
      error: 'TOKEN_EXPIRED' | 'INVALID_TOKEN' | 'NO_AUTH' | 'AUTH_ERROR';
@@ -196,13 +220,16 @@
 4. **Create E2E tests** for error responses
 
 ### Task 1.3: Comprehensive Auth Test Suite
+
 **Priority:** HIGH  
 **Estimated Time:** 6 hours  
 **Files to Create:**
+
 - `/apps/backend/src/auth/__tests__/auth-flow.e2e.test.ts`
 - `/apps/backend/src/auth/__tests__/auth-edge-cases.test.ts`
 
 #### Subtasks:
+
 1. **Test complete auth flows:**
    - Login → Use API → Logout
    - Token expiration handling
@@ -223,17 +250,22 @@
 ---
 
 ## Phase 2: RLS Security Hardening (Week 2)
+
 **Objective:** Implement proper audit logging and type-safe RLS bypass handling.
 
 ### Task 2.1: Type-Safe RLS Bypass Reasons
+
 **Priority:** HIGH  
 **Estimated Time:** 3 hours  
 **Files to Modify:**
+
 - `/apps/backend/src/lib/rls/constants.ts`
 - `/apps/backend/src/lib/rls/types.ts`
 
 #### Subtasks:
+
 1. **Create bypass reason enum:**
+
    ```typescript
    export const RLS_BYPASS_REASONS = {
      PUBLIC_ENDPOINT: 'Public endpoint - no auth required',
@@ -249,15 +281,19 @@
 4. **Update all bypass usages** to use constants
 
 ### Task 2.2: Implement RLS Audit Logging
+
 **Priority:** HIGH  
 **Estimated Time:** 6 hours  
 **Files to Create/Modify:**
+
 - `/apps/backend/src/lib/rls/audit-logger.ts` (new)
 - `/apps/backend/src/lib/rls/__tests__/audit-logger.test.ts` (new)
 - Database migration for audit_logs table
 
 #### Subtasks:
+
 1. **Create audit log schema:**
+
    ```sql
    CREATE TABLE rls_audit_logs (
      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -291,11 +327,13 @@
    - Failed RLS operations
 
 ### Task 2.3: Minimize RLS Bypasses
+
 **Priority:** MEDIUM  
 **Estimated Time:** 8 hours  
 **Files to Modify:** Multiple router files
 
 #### Subtasks:
+
 1. **Audit current bypasses:**
    - List all locations using `basePrisma`
    - Categorize by necessity
@@ -307,6 +345,7 @@
    - Document why bypass is necessary
 
 3. **Create system Prisma client:**
+
    ```typescript
    // For true system operations only
    export const systemPrisma = new PrismaClient({
@@ -323,17 +362,22 @@
 ---
 
 ## Phase 3: Middleware Refactoring (Week 3)
+
 **Objective:** Streamline middleware chain and remove redundancies.
 
 ### Task 3.1: Implement Middleware Chaining
+
 **Priority:** MEDIUM  
 **Estimated Time:** 4 hours  
 **Files to Modify:**
+
 - `/apps/backend/src/trpc/middleware.ts`
 - `/apps/backend/src/trpc/procedures.ts`
 
 #### Subtasks:
+
 1. **Create middleware composition utilities:**
+
    ```typescript
    // Enable elegant chaining
    const requiresOrg = pipe(isAuthed, hasOrganization);
@@ -353,13 +397,16 @@
    - Add middleware timing logs
 
 ### Task 3.2: Create Middleware Test Suite
+
 **Priority:** HIGH  
 **Estimated Time:** 4 hours  
 **Files to Create:**
+
 - `/apps/backend/src/trpc/__tests__/middleware.test.ts`
 - `/apps/backend/src/trpc/__tests__/procedures.test.ts`
 
 #### Subtasks:
+
 1. **Unit tests for each middleware:**
    - Auth validation
    - Organization checks
@@ -379,15 +426,19 @@
 ---
 
 ## Phase 4: Advanced Security Features (Week 4)
+
 **Objective:** Implement rate limiting, monitoring, and advanced security features.
 
 ### Task 4.1: Implement Rate Limiting
+
 **Priority:** MEDIUM  
 **Estimated Time:** 6 hours  
 **Dependencies:** `@fastify/rate-limit`
 
 #### Subtasks:
+
 1. **Design rate limit strategy:**
+
    ```typescript
    // Different limits for:
    - Authentication attempts (strict)
@@ -411,10 +462,12 @@
    - Auto-block repeat offenders
 
 ### Task 4.2: Security Monitoring Dashboard
+
 **Priority:** LOW  
-**Estimated Time:** 8 hours  
+**Estimated Time:** 8 hours
 
 #### Subtasks:
+
 1. **Create security metrics:**
    - Failed auth attempts
    - RLS bypasses
@@ -422,12 +475,13 @@
    - Token usage patterns
 
 2. **Implement Prometheus metrics:**
+
    ```typescript
    // Key metrics:
-   auth_attempts_total
-   auth_failures_total
-   rls_bypasses_total
-   jwt_errors_by_type
+   auth_attempts_total;
+   auth_failures_total;
+   rls_bypasses_total;
+   jwt_errors_by_type;
    ```
 
 3. **Create Grafana dashboards:**
@@ -441,10 +495,12 @@
    - Performance degradation
 
 ### Task 4.3: Security Hardening
+
 **Priority:** MEDIUM  
-**Estimated Time:** 4 hours  
+**Estimated Time:** 4 hours
 
 #### Subtasks:
+
 1. **Add security headers:**
    - Strict-Transport-Security
    - X-Frame-Options
@@ -466,18 +522,21 @@
 ## Testing Strategy
 
 ### Unit Tests (Per Feature)
+
 - Write tests BEFORE implementation
 - Aim for 100% coverage of auth/RLS code
 - Mock external dependencies
 - Test error conditions extensively
 
 ### Integration Tests (Per Phase)
+
 - Test complete flows
 - Use real database (test instance)
 - Verify security boundaries
 - Performance benchmarks
 
 ### E2E Tests (End of Each Phase)
+
 - Full user journeys
 - Cross-browser testing
 - Load testing
@@ -488,18 +547,21 @@
 ## Validation Checkpoints
 
 ### After Each Task:
+
 1. All tests passing
 2. No TypeScript errors
 3. ESLint compliance
 4. Performance benchmarks met
 
 ### After Each Phase:
+
 1. Security scan (OWASP ZAP)
 2. Load test (k6)
 3. Code review
 4. Documentation update
 
 ### Before Production:
+
 1. Penetration testing
 2. Security audit
 3. Performance profiling
@@ -510,12 +572,14 @@
 ## Rollback Strategies
 
 ### For Each Change:
+
 1. Feature flags for gradual rollout
 2. Database migrations with down scripts
 3. Git tags for each stable version
 4. Automated rollback scripts
 
 ### Emergency Procedures:
+
 1. Revert to last known good state
 2. Clear Redis cache
 3. Restart services
@@ -526,18 +590,21 @@
 ## Success Metrics
 
 ### Security Metrics:
+
 - 0 unhandled exceptions in auth flow
 - 100% RLS bypass operations audited
 - < 0.1% auth failure rate (excluding invalid credentials)
 - < 10ms auth check latency (p99)
 
 ### Code Quality Metrics:
+
 - 95%+ test coverage for auth/RLS
 - 0 any types in auth code
 - All errors properly typed
 - Consistent error messages
 
 ### Operational Metrics:
+
 - 99.99% auth service uptime
 - < 1s detection of security issues
 - Complete audit trail

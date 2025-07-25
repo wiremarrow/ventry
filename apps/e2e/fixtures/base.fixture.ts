@@ -1,14 +1,10 @@
 import { test as base, Page } from '@playwright/test';
-import { 
-  createTestUser, 
-  TestUserData, 
-  clearAuthState,
-} from '../utils/test-helpers';
+import { createTestUser, TestUserData, clearAuthState } from '../utils/test-helpers';
 import { cleanupTestDataForUser } from '../utils/db-cleanup';
 
 /**
  * Custom test fixtures for E2E tests
- * 
+ *
  * Provides authenticated pages and automatic cleanup for test isolation.
  */
 
@@ -21,12 +17,12 @@ export interface TestFixtures {
   adminPage: Page;
   managerPage: Page;
   userPage: Page;
-  
+
   // Test users
   testAdmin: TestUser;
   testManager: TestUser;
   testUser: TestUser;
-  
+
   // Unauthenticated page with cleanup
   cleanPage: Page;
 }
@@ -151,12 +147,12 @@ export const test = base.extend<TestFixtures>({
   cleanPage: async ({ page }, use) => {
     // Navigate to a page first to ensure DOM is available
     await page.goto('/login');
-    
+
     // Clear authentication state before test
     await clearAuthState(page);
-    
+
     await use(page);
-    
+
     // Clear authentication state after test
     await clearAuthState(page);
   },
@@ -164,7 +160,7 @@ export const test = base.extend<TestFixtures>({
 
 // Helper to create authenticated context without fixture
 export async function createAuthenticatedPage(
-  browser: any, 
+  browser: any,
   role: 'ADMIN' | 'MANAGER' | 'USER' = 'USER'
 ): Promise<{ page: Page; user: TestUser; cleanup: () => Promise<void> }> {
   const context = await browser.newContext();

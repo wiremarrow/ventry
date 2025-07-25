@@ -44,7 +44,7 @@ This document contains essential context for continuing the TypeScript migration
    - ✅ items.ts (5 → 0 errors) - COMPLETED
    - ✅ categories.ts (4 → 0 errors) - COMPLETED
    - ✅ organizations.ts (1 → 0 errors) - COMPLETED
-   
+
    **All TypeScript errors resolved! ✅**
    **Test files also fixed! ✅**
 
@@ -65,7 +65,8 @@ src/trpc/
 └── context.ts      # Context creation (unchanged)
 ```
 
-**Why**: 
+**Why**:
+
 - Avoids circular dependencies between trpc.ts and middleware.ts
 - Follows separation of concerns
 - Improves testability
@@ -82,7 +83,8 @@ qty_ordered          → qtyOrdered     → order.qtyOrdered
 created_at           → createdAt      → item.createdAt
 ```
 
-**Why**: 
+**Why**:
+
 - Prisma acts as translation layer with `@@map` directives
 - All existing code uses camelCase
 - Changing would require massive refactoring
@@ -98,7 +100,7 @@ const items = await ctx.prisma.item.findMany();
 
 // ✅ CORRECT
 const items = await ctx.prisma.item.findMany({
-  where: { organizationId: ctx.user.organizationId }
+  where: { organizationId: ctx.user.organizationId },
 });
 ```
 
@@ -125,6 +127,7 @@ export const router = createTRPCRouter({
 **Error**: `Cannot find name 'createTRPCRouter'` or `Cannot find name 'organizationProcedure'`
 
 **Solution**:
+
 ```typescript
 // ❌ WRONG
 import { protectedProcedure, router } from '../trpc.js';
@@ -138,19 +141,25 @@ import { organizationProcedure, createTRPCRouter } from '../trpc/trpc.js';
 **Error**: Data leaking across organizations
 
 **Solution**: Add organizationId to ALL queries
+
 ```typescript
 // For direct models with organizationId
-where: { organizationId: ctx.user.organizationId }
+where: {
+  organizationId: ctx.user.organizationId;
+}
 
 // For related models (e.g., Inventory through Item)
 where: {
-  item: { organizationId: ctx.user.organizationId }
+  item: {
+    organizationId: ctx.user.organizationId;
+  }
 }
 ```
 
 ### Pattern 3: Non-Existent Fields
 
 **Common Missing Fields**:
+
 - Order: warehouseId, orderType, priority, expectedDate
 - OrderItem: qtyBackordered
 - Supplier: isActive
@@ -160,7 +169,8 @@ where: {
 - Inventory: quantityAvailable, quantityAllocated (calculate from qtyOnHand - qtyReserved)
 - Various models: activity, approval, allocation references
 
-**Solution**: 
+**Solution**:
+
 1. Remove the field reference
 2. Add TODO comment if functionality needed
 3. Use alternative fields if available (e.g., requestedShipDate instead of expectedDate)
@@ -170,6 +180,7 @@ where: {
 **Error**: `Object is possibly 'null'` or arithmetic on Decimal
 
 **Solution**:
+
 ```typescript
 // ❌ WRONG
 const total = item.price * quantity;
@@ -181,6 +192,7 @@ const total = Number(item.price) * quantity;
 ### Pattern 5: Status Enum Changes
 
 **Old → New Status Mappings**:
+
 - OrderStatus: SHIPPING → PICKING, PACKED, SHIPPED
 - ReturnStatus: CANCELLED → REJECTED, COMPLETED → REFUNDED, SHIPPED → RECEIVED
 - MovementType: RECEIPT → INBOUND, SHIPMENT → OUTBOUND
@@ -189,6 +201,7 @@ const total = Number(item.price) * quantity;
 ### Pattern 6: Relationship and Include Fixes
 
 **Common Issues**:
+
 - ReceiptItem doesn't have purchaseOrderItem relation
 - Return doesn't have receipt or activities relations
 - Inventory doesn't have direct expirationDate (through lot)
@@ -199,6 +212,7 @@ const total = Number(item.price) * quantity;
 ### Pattern 7: Complex Type Issues
 
 **TypeScript Strict Mode Challenges**:
+
 - Nested field filters require careful type construction
 - Variable name conflicts in large files (e.g., itemIds redeclared)
 - Aggregation functions need explicit type annotations
@@ -206,6 +220,7 @@ const total = Number(item.price) * quantity;
 - Enum indexing requires Record<string, number> type
 
 **Solutions**:
+
 ```typescript
 // For nested filters that might conflict
 if (categoryIds?.length || !includeInactive) {
@@ -228,13 +243,16 @@ const results = await (model as any).findMany(queryOptions);
 ## 📝 Router-Specific Notes
 
 ### inventory.ts (COMPLETED)
+
 - All procedures use organizationProcedure
 - Inventory scoped through item.organizationId
 - Low stock filter handled in post-processing
 - CycleCount model simplified (no warehouseId, uses locationId)
 
 ### orders.ts (COMPLETED)
+
 **Issues Fixed**:
+
 - Missing fields: warehouseId, orderType, priority
 - No allocations model (removed allocation procedures)
 - Status enum values (removed DRAFT, ALLOCATED)
@@ -244,13 +262,16 @@ const results = await (model as any).findMany(queryOptions);
 - Export procedure type issues with conditional includes
 
 **Key Changes**:
+
 - Removed allocateInventory and releaseInventory procedures
 - Updated status enum to match schema (PENDING, CONFIRMED, etc.)
 - Added shippedFromLocationId to shipment schema
 - Fixed all TypeScript type issues
 
 ### receipts.ts (COMPLETED)
+
 **Issues Fixed**:
+
 - Import statements (protectedProcedure → organizationProcedure)
 - Added organizationId scoping through PurchaseOrder
 - Removed non-existent status field
@@ -258,7 +279,9 @@ const results = await (model as any).findMany(queryOptions);
 - Removed non-existent models (receiptActivity, receiptSerialNumber)
 
 ### returns.ts (NEARLY COMPLETED - 1 error)
+
 **Issues Fixed**:
+
 - Removed non-existent receipt and activities relationships
 - Fixed status enum values (SHIPPED→RECEIVED, COMPLETED→REFUNDED)
 - Removed type field checks (only customer returns supported)
@@ -267,10 +290,13 @@ const results = await (model as any).findMany(queryOptions);
 - Fixed Inventory field names (quantityOnHand→qtyOnHand)
 
 **Remaining**:
+
 - 1 Prisma createMany type inference error
 
 ### reports.ts (COMPLETED - 219 → 0 errors)
+
 **Issues Fixed**:
+
 - All imports and procedure types (protectedProcedure → organizationProcedure)
 - organizationId scoping added to all queries with proper type handling
 - Field names: quantityOnHand→qtyOnHand, quantity→qty, quantityAvailable calculated
@@ -291,7 +317,9 @@ const results = await (model as any).findMany(queryOptions);
 - Handled complex aggregations with proper typing
 
 ### stockMovements.ts (COMPLETED - 39 → 0 errors)
+
 **Issues Fixed**:
+
 - Import statements (protectedProcedure → organizationProcedure, router → createTRPCRouter)
 - Added organizationId scoping through item relationship
 - Fixed field names (referenceType/Id → refType/refId throughout)
@@ -302,7 +330,9 @@ const results = await (model as any).findMany(queryOptions);
 - Fixed Decimal arithmetic with Number() conversions
 
 ### customers.ts (COMPLETED - 39 → 0 errors)
+
 **Issues Fixed**:
+
 - Fixed Prisma import from type-only to regular import
 - Added organizationId scoping to all queries
 - Fixed unique constraint issues (findUnique → findFirst with compound where)
@@ -315,7 +345,9 @@ const results = await (model as any).findMany(queryOptions);
 - Fixed AuditAction enum (EXPORT → CREATE)
 
 ### suppliers.ts (COMPLETED - 28 → 0 errors)
+
 **Issues Fixed**:
+
 - Fixed import (already had createTRPCRouter)
 - Added organizationId scoping to all queries
 - Removed isActive field references (field doesn't exist)
@@ -331,6 +363,7 @@ const results = await (model as any).findMany(queryOptions);
 ## ✅ Systematic Fix Process
 
 1. **Fix Imports**
+
    ```bash
    # Replace all occurrences
    sed -i '' 's/protectedProcedure/organizationProcedure/g' <file>
@@ -376,11 +409,13 @@ const results = await (model as any).findMany(queryOptions);
 ## 📊 Progress Tracking
 
 ### Check Total Errors
+
 ```bash
 pnpm --filter @ventry/backend build 2>&1 | grep -E "error TS[0-9]+" | wc -l
 ```
 
 ### Recent Progress
+
 - **Session Start**: 619 errors
 - **After Initial Fixes**: ~494 errors
 - **Previous Status**: 302 errors
@@ -395,11 +430,13 @@ pnpm --filter @ventry/backend build 2>&1 | grep -E "error TS[0-9]+" | wc -l
 - **Routers Fixed**: receipts.ts (105→0), returns.ts (88→0), reports.ts (219→0), stockMovements.ts (39→0), customers.ts (39→0), suppliers.ts (28→0), products.ts (9→0), items.ts (5→0), categories.ts (4→0), organizations.ts (1→0)
 
 ### Check Specific Router
+
 ```bash
 pnpm --filter @ventry/backend build 2>&1 | grep -E "src/routers/<filename>\.ts.*error TS" | wc -l
 ```
 
 ### List All Router Errors
+
 ```bash
 pnpm --filter @ventry/backend build 2>&1 | grep -E "^src/routers/.*error TS" | cut -d: -f1 | sort | uniq -c | sort -nr
 ```
@@ -442,16 +479,19 @@ pnpm --filter @ventry/backend build 2>&1 | grep -E "^src/routers/.*error TS" | c
 After all routers are fixed:
 
 1. **Build should succeed**:
+
    ```bash
    pnpm --filter @ventry/backend build
    ```
 
 2. **Type checking should pass**:
+
    ```bash
    pnpm typecheck
    ```
 
 3. **Linting should pass**:
+
    ```bash
    pnpm lint
    ```

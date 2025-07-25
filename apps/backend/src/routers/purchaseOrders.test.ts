@@ -70,8 +70,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       PurchaseOrderWhereInput: {},
@@ -186,14 +186,14 @@ describe('Purchase Orders Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and WAREHOUSE role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -201,8 +201,8 @@ describe('Purchase Orders Router', () => {
       organizationRole: 'ADMIN',
       role: 'WAREHOUSE', // Can manage purchase orders
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -344,7 +344,7 @@ describe('Purchase Orders Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -408,9 +408,9 @@ describe('Purchase Orders Router', () => {
     it('should throw NOT_FOUND when purchase order does not exist', async () => {
       mockPrisma.purchaseOrder.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.purchaseOrders.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Purchase order not found');
+      await expect(caller.purchaseOrders.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Purchase order not found'
+      );
     });
   });
 
@@ -493,7 +493,7 @@ describe('Purchase Orders Router', () => {
     });
 
     it('should require WAREHOUSE, MANAGER or ADMIN role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -602,9 +602,9 @@ describe('Purchase Orders Router', () => {
 
       mockPrisma.purchaseOrder.findFirst.mockResolvedValue(approvedPO);
 
-      await expect(
-        caller.purchaseOrders.submit({ id: testId('po1') })
-      ).rejects.toThrow('Only draft purchase orders can be submitted');
+      await expect(caller.purchaseOrders.submit({ id: testId('po1') })).rejects.toThrow(
+        'Only draft purchase orders can be submitted'
+      );
     });
 
     it('should prevent submitting PO without items', async () => {
@@ -617,16 +617,16 @@ describe('Purchase Orders Router', () => {
 
       mockPrisma.purchaseOrder.findFirst.mockResolvedValue(emptyPO);
 
-      await expect(
-        caller.purchaseOrders.submit({ id: testId('po1') })
-      ).rejects.toThrow('Cannot submit purchase order without items');
+      await expect(caller.purchaseOrders.submit({ id: testId('po1') })).rejects.toThrow(
+        'Cannot submit purchase order without items'
+      );
     });
   });
 
   describe('approve', () => {
     it('should approve a submitted purchase order', async () => {
       // Create caller with MANAGER role for approval
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -668,7 +668,7 @@ describe('Purchase Orders Router', () => {
 
     it('should prevent approving non-submitted orders', async () => {
       // Create caller with MANAGER role
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -691,7 +691,7 @@ describe('Purchase Orders Router', () => {
   describe('reject', () => {
     it('should reject a submitted purchase order', async () => {
       // Create caller with MANAGER role
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -725,7 +725,7 @@ describe('Purchase Orders Router', () => {
 
     it('should require a reason for rejection', async () => {
       // Create caller with MANAGER role
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -781,7 +781,7 @@ describe('Purchase Orders Router', () => {
       mockPrisma.purchaseOrder.findFirst.mockResolvedValue(receivedPO);
 
       await expect(
-        caller.purchaseOrders.cancel({ 
+        caller.purchaseOrders.cancel({
           id: testId('po1'),
           reason: 'Try to cancel',
         })

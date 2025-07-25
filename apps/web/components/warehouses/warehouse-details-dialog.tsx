@@ -1,21 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@ventry/ui';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@ventry/ui';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@ventry/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Badge } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
@@ -50,10 +37,10 @@ interface WarehouseDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function WarehouseDetailsDialog({ 
-  warehouseId, 
-  open, 
-  onOpenChange 
+export function WarehouseDetailsDialog({
+  warehouseId,
+  open,
+  onOpenChange,
 }: WarehouseDetailsDialogProps) {
   const [activeTab, setActiveTab] = useState('overview');
   const [createLocationOpen, setCreateLocationOpen] = useState(false);
@@ -66,7 +53,7 @@ export function WarehouseDetailsDialog({
     bin?: string | null;
     description?: string | null;
     maxCapacity?: number | null;
-    isTempControlled?: boolean;
+    isTempControlled: boolean;
     _count?: { inventory: number };
   };
   const [editingLocation, setEditingLocation] = useState<LocationType | null>(null);
@@ -99,7 +86,7 @@ export function WarehouseDetailsDialog({
 
   if (!warehouseId) return null;
 
-  const formatCapacity = (capacity: number | null) => {
+  const formatCapacity = (capacity: number | null | undefined) => {
     if (!capacity) return 'Unlimited';
     return capacity.toLocaleString();
   };
@@ -126,13 +113,25 @@ export function WarehouseDetailsDialog({
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-medium mb-2">Warehouse Information</h3>
           <div className="space-y-2 text-sm">
-            <div><strong>Code:</strong> {warehouse?.code}</div>
-            <div><strong>Name:</strong> {warehouse?.name}</div>
-            <div><strong>Address:</strong> {warehouse?.line1}</div>
+            <div>
+              <strong>Code:</strong> {warehouse?.code}
+            </div>
+            <div>
+              <strong>Name:</strong> {warehouse?.name}
+            </div>
+            <div>
+              <strong>Address:</strong> {warehouse?.line1}
+            </div>
             {warehouse?.line2 && <div>{warehouse.line2}</div>}
-            <div>{warehouse?.city}, {warehouse?.state} {warehouse?.postalCode}</div>
+            <div>
+              {warehouse?.city}, {warehouse?.state} {warehouse?.postalCode}
+            </div>
             <div>{warehouse?.country}</div>
-            {warehouse?.phone && <div><strong>Phone:</strong> {warehouse.phone}</div>}
+            {warehouse?.phone && (
+              <div>
+                <strong>Phone:</strong> {warehouse.phone}
+              </div>
+            )}
           </div>
         </div>
 
@@ -140,9 +139,7 @@ export function WarehouseDetailsDialog({
           <h3 className="font-medium mb-2">Quick Stats</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats?.locations?.total || 0}
-              </div>
+              <div className="text-2xl font-bold text-blue-600">{stats?.locations?.total || 0}</div>
               <div className="text-sm text-gray-600">Locations</div>
             </div>
             <div>
@@ -173,9 +170,7 @@ export function WarehouseDetailsDialog({
           <Activity className="h-4 w-4" />
           Recent Activity
         </h3>
-        <p className="text-sm text-gray-600">
-          View detailed activity in the Analytics tab
-        </p>
+        <p className="text-sm text-gray-600">View detailed activity in the Analytics tab</p>
       </div>
     </div>
   );
@@ -198,7 +193,7 @@ export function WarehouseDetailsDialog({
                 <MapPin className="h-4 w-4" />
                 {zone} ({locations.length} locations)
               </h4>
-              
+
               <div className="bg-white rounded-lg border">
                 <Table>
                   <TableHeader>
@@ -216,18 +211,17 @@ export function WarehouseDetailsDialog({
                   <TableBody>
                     {locations.map((location) => {
                       const inventoryCount = location._count?.inventory || 0;
-                      const utilization = location.maxCapacity && inventoryCount > 0
-                        ? Math.round((inventoryCount / location.maxCapacity) * 100)
-                        : 0;
+                      const utilization =
+                        location.maxCapacity && inventoryCount > 0
+                          ? Math.round((inventoryCount / location.maxCapacity) * 100)
+                          : 0;
 
                       return (
                         <TableRow key={location.id}>
                           <TableCell>
                             <code className="text-sm">{location.code}</code>
                           </TableCell>
-                          <TableCell>
-                            {location.description || '-'}
-                          </TableCell>
+                          <TableCell>{location.description || '-'}</TableCell>
                           <TableCell>
                             <div className="text-sm">
                               {[location.aisle, location.shelf, location.bin]
@@ -238,12 +232,12 @@ export function WarehouseDetailsDialog({
                           <TableCell className="text-right">
                             {formatCapacity(location.maxCapacity)}
                           </TableCell>
-                          <TableCell className="text-right">
-                            {inventoryCount}
-                          </TableCell>
+                          <TableCell className="text-right">{inventoryCount}</TableCell>
                           <TableCell className="text-right">
                             {location.maxCapacity ? (
-                              <span className={`text-sm font-medium px-2 py-1 rounded ${getUtilizationColor(utilization)}`}>
+                              <span
+                                className={`text-sm font-medium px-2 py-1 rounded ${getUtilizationColor(utilization)}`}
+                              >
                                 {utilization}%
                               </span>
                             ) : (
@@ -351,7 +345,9 @@ export function WarehouseDetailsDialog({
                 <div className="text-sm text-gray-600">Available</div>
               </div>
               <div>
-                <div className="text-lg font-semibold">${stats.inventory.totalValue.toFixed(2)}</div>
+                <div className="text-lg font-semibold">
+                  ${stats.inventory.totalValue.toFixed(2)}
+                </div>
                 <div className="text-sm text-gray-600">Total Value</div>
               </div>
             </div>
@@ -361,7 +357,9 @@ export function WarehouseDetailsDialog({
         <div className="text-center py-8">
           <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-900 font-medium">No analytics available</p>
-          <p className="text-gray-600 text-sm mt-1">Statistics will appear once you have inventory data</p>
+          <p className="text-gray-600 text-sm mt-1">
+            Statistics will appear once you have inventory data
+          </p>
         </div>
       )}
     </div>

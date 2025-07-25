@@ -13,18 +13,13 @@ function AllTheProviders({ children }: { children: React.ReactNode }) {
   return (
     <TRPCMockProvider>
       <AuthProvider>
-        <OrganizationProvider>
-          {children}
-        </OrganizationProvider>
+        <OrganizationProvider>{children}</OrganizationProvider>
       </AuthProvider>
     </TRPCMockProvider>
   );
 }
 
-export function render(
-  ui: React.ReactElement,
-  options?: CustomRenderOptions
-) {
+export function render(ui: React.ReactElement, options?: CustomRenderOptions) {
   return rtlRender(ui, { wrapper: AllTheProviders, ...options });
 }
 

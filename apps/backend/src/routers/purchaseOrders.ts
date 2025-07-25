@@ -13,13 +13,17 @@ const purchaseOrderCreateSchema = z.object({
   paymentTerms: z.string().optional(),
   shippingTerms: z.string().optional(),
   notes: z.string().optional(),
-  items: z.array(z.object({
-    itemId: z.string().cuid(),
-    qtyOrdered: z.number().int().positive(),
-    unitCost: z.number().min(0),
-    taxRate: z.number().min(0).max(100).default(0),
-    notes: z.string().optional(),
-  })).min(1),
+  items: z
+    .array(
+      z.object({
+        itemId: z.string().cuid(),
+        qtyOrdered: z.number().int().positive(),
+        unitCost: z.number().min(0),
+        taxRate: z.number().min(0).max(100).default(0),
+        notes: z.string().optional(),
+      })
+    )
+    .min(1),
 });
 
 const purchaseOrderUpdateSchema = z.object({
@@ -66,149 +70,156 @@ const approvalSchema = z.object({
 const receiveItemsSchema = z.object({
   poId: z.string().cuid(),
   receivedDate: z.date().default(() => new Date()),
-  items: z.array(z.object({
-    poItemId: z.string().cuid(),
-    qtyReceived: z.number().int().min(0),
-    qtyRejected: z.number().int().min(0).default(0),
-    locationId: z.string().cuid(),
-    lotNumber: z.string().optional(),
-    expirationDate: z.date().optional(),
-    serialNumbers: z.array(z.string()).optional(),
-    notes: z.string().optional(),
-  })).min(1),
+  items: z
+    .array(
+      z.object({
+        poItemId: z.string().cuid(),
+        qtyReceived: z.number().int().min(0),
+        qtyRejected: z.number().int().min(0).default(0),
+        locationId: z.string().cuid(),
+        lotNumber: z.string().optional(),
+        expirationDate: z.date().optional(),
+        serialNumbers: z.array(z.string()).optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .min(1),
   createReceipt: z.boolean().default(true),
 });
 
 export const purchaseOrdersRouter = createTRPCRouter({
   // List purchase orders with filtering
-  list: organizationProcedure
-    .input(purchaseOrderFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        supplierId,
-        status,
-        dateFrom,
-        dateTo,
-        isOverdue,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
+  list: organizationProcedure.input(purchaseOrderFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      supplierId,
+      status,
+      dateFrom,
+      dateTo,
+      isOverdue,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
 
-      const where: Prisma.PurchaseOrderWhereInput = {
-        organizationId: ctx.user.organizationId,
-      };
+    const where: Prisma.PurchaseOrderWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { poNumber: { contains: search, mode: 'insensitive' } },
-          { supplier: { name: { contains: search, mode: 'insensitive' } } },
-          { notes: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+    // Search filter
+    if (search) {
+      where.OR = [
+        { poNumber: { contains: search, mode: 'insensitive' } },
+        { supplier: { name: { contains: search, mode: 'insensitive' } } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
-      // Supplier filter
-      if (supplierId) {
-        where.supplierId = supplierId;
-      }
+    // Supplier filter
+    if (supplierId) {
+      where.supplierId = supplierId;
+    }
 
-      // Warehouse filter - removed as PO doesn't have warehouseId
-      // hasDiscrepancies filter - removed as Receipt doesn't have hasDiscrepancies field
+    // Warehouse filter - removed as PO doesn't have warehouseId
+    // hasDiscrepancies filter - removed as Receipt doesn't have hasDiscrepancies field
 
-      // Status filter
-      if (status) {
-        where.status = status;
-      }
+    // Status filter
+    if (status) {
+      where.status = status;
+    }
 
-      // Date filters
-      if (dateFrom || dateTo) {
-        where.orderDate = {};
-        if (dateFrom) where.orderDate.gte = dateFrom;
-        if (dateTo) where.orderDate.lte = dateTo;
-      }
+    // Date filters
+    if (dateFrom || dateTo) {
+      where.orderDate = {};
+      if (dateFrom) where.orderDate.gte = dateFrom;
+      if (dateTo) where.orderDate.lte = dateTo;
+    }
 
-      // Overdue filter
-      if (isOverdue) {
-        where.AND = [
-          { expectedDate: { lt: new Date() } },
-          { status: { in: ['SUBMITTED', 'APPROVED'] } },
-        ];
-      }
+    // Overdue filter
+    if (isOverdue) {
+      where.AND = [
+        { expectedDate: { lt: new Date() } },
+        { status: { in: ['SUBMITTED', 'APPROVED'] } },
+      ];
+    }
 
-      // Has discrepancies filter - removed as Receipt doesn't have hasDiscrepancies field
+    // Has discrepancies filter - removed as Receipt doesn't have hasDiscrepancies field
 
-      // Execute queries
-      const [purchaseOrders, total] = await Promise.all([
-        ctx.prisma.purchaseOrder.findMany({
-          where,
-          include: {
-            supplier: {
-              select: {
-                id: true,
-                name: true,
-                supplierCode: true,
-              },
-            },
-            _count: {
-              select: {
-                items: true,
-                receipts: true,
-              },
-            },
-            items: {
-              select: {
-                id: true,
-                qtyOrdered: true,
-                qtyReceived: true,
-                totalCost: true,
-              },
+    // Execute queries
+    const [purchaseOrders, total] = await Promise.all([
+      ctx.prisma.purchaseOrder.findMany({
+        where,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              name: true,
+              supplierCode: true,
             },
           },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: sortBy === 'supplier'
+          _count: {
+            select: {
+              items: true,
+              receipts: true,
+            },
+          },
+          items: {
+            select: {
+              id: true,
+              qtyOrdered: true,
+              qtyReceived: true,
+              totalCost: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy:
+          sortBy === 'supplier'
             ? { supplier: { name: sortOrder } }
             : sortBy === 'total'
-            ? { total: sortOrder }
-            : { [sortBy]: sortOrder },
-        }),
-        ctx.prisma.purchaseOrder.count({ where }),
-      ]);
+              ? { total: sortOrder }
+              : { [sortBy]: sortOrder },
+      }),
+      ctx.prisma.purchaseOrder.count({ where }),
+    ]);
 
-      // Calculate additional metrics
-      const ordersWithMetrics = purchaseOrders.map(po => ({
-        ...po,
-        itemCount: po._count.items,
-        receiptCount: po._count.receipts,
-        total: po.items.reduce((sum: number, item: any) => sum + Number(item.totalCost || 0), 0),
-        receivedPercentage: po.items.length > 0
+    // Calculate additional metrics
+    const ordersWithMetrics = purchaseOrders.map((po) => ({
+      ...po,
+      itemCount: po._count.items,
+      receiptCount: po._count.receipts,
+      total: po.items.reduce((sum: number, item: any) => sum + Number(item.totalCost || 0), 0),
+      receivedPercentage:
+        po.items.length > 0
           ? (po.items.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) /
-             po.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0)) * 100
+              po.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0)) *
+            100
           : 0,
-        isOverdue: po.expectedDate && po.expectedDate < new Date() && 
-                   ['SUBMITTED', 'APPROVED'].includes(po.status),
-      }));
+      isOverdue:
+        po.expectedDate &&
+        po.expectedDate < new Date() &&
+        ['SUBMITTED', 'APPROVED'].includes(po.status),
+    }));
 
-      return {
-        purchaseOrders: ordersWithMetrics,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
+    return {
+      purchaseOrders: ordersWithMetrics,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get single purchase order with full details
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
@@ -253,13 +264,24 @@ export const purchaseOrdersRouter = createTRPCRouter({
       // Calculate metrics
       const metrics = {
         itemCount: purchaseOrder.items.length,
-        totalQuantity: purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0),
-        receivedQuantity: purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyReceived, 0),
-        pendingQuantity: purchaseOrder.items.reduce((sum: number, item: any) => sum + (item.qtyOrdered - item.qtyReceived), 0),
-        receivedPercentage: purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0) > 0
-          ? (purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) /
-             purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0)) * 100
-          : 0,
+        totalQuantity: purchaseOrder.items.reduce(
+          (sum: number, item: any) => sum + item.qtyOrdered,
+          0
+        ),
+        receivedQuantity: purchaseOrder.items.reduce(
+          (sum: number, item: any) => sum + item.qtyReceived,
+          0
+        ),
+        pendingQuantity: purchaseOrder.items.reduce(
+          (sum: number, item: any) => sum + (item.qtyOrdered - item.qtyReceived),
+          0
+        ),
+        receivedPercentage:
+          purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0) > 0
+            ? (purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) /
+                purchaseOrder.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0)) *
+              100
+            : 0,
         discrepancies: 0, // hasDiscrepancies field doesn't exist in Receipt model
       };
 
@@ -285,7 +307,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
       // Validate supplier
       const supplier = await ctx.prisma.supplier.findFirst({
-        where: { 
+        where: {
           id: orderData.supplierId,
           organizationId: ctx.user.organizationId,
         },
@@ -309,14 +331,14 @@ export const purchaseOrdersRouter = createTRPCRouter({
             },
           },
         });
-        
+
         const poNumber = `PO-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(poCount + 1).padStart(5, '0')}`;
 
         // Calculate totals
         let subtotal = 0;
         let totalTax = 0;
 
-        const itemsWithTotals = items.map(item => {
+        const itemsWithTotals = items.map((item) => {
           const lineTotal = item.qtyOrdered * item.unitCost;
           const taxAmount = lineTotal * (item.taxRate / 100);
           const totalCost = lineTotal + taxAmount;
@@ -394,7 +416,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
       // Get current PO
       const currentPO = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -456,15 +478,17 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
   // Submit PO for approval
   submit: organizationProcedure
-    .input(z.object({ 
-      id: z.string().cuid(),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, notes } = input;
 
       const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -498,7 +522,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
       const result = await ctx.prisma.$transaction(async (tx) => {
         const updated = await tx.purchaseOrder.update({
           where: { id },
-          data: { 
+          data: {
             status: 'SUBMITTED',
           },
         });
@@ -525,88 +549,88 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Approve or reject PO
-  approve: organizationProcedure
-    .input(approvalSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { poId, action, reason, notes } = input;
+  approve: organizationProcedure.input(approvalSchema).mutation(async ({ ctx, input }) => {
+    const { poId, action, reason, notes } = input;
 
-      // Check permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators and managers can approve purchase orders',
-        });
-      }
+    // Check permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators and managers can approve purchase orders',
+      });
+    }
 
-      const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
-          id: poId,
-          organizationId: ctx.user.organizationId,
+    const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
+      where: {
+        id: poId,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!purchaseOrder) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Purchase order not found',
+      });
+    }
+
+    if (purchaseOrder.status !== 'SUBMITTED') {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Only submitted purchase orders can be approved or rejected',
+      });
+    }
+
+    // Process approval/rejection
+    const result = await ctx.prisma.$transaction(async (tx) => {
+      const newStatus = action === 'APPROVE' ? 'APPROVED' : 'DRAFT'; // 'REJECTED' not in POStatus enum
+
+      const updated = await tx.purchaseOrder.update({
+        where: { id: poId },
+        data: {
+          status: newStatus,
+          ...(action === 'APPROVE' && { approvedById: ctx.user.id }),
         },
       });
 
-      if (!purchaseOrder) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Purchase order not found',
-        });
-      }
+      // Approval record removed - purchaseOrderApproval model doesn't exist
 
-      if (purchaseOrder.status !== 'SUBMITTED') {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message: 'Only submitted purchase orders can be approved or rejected',
-        });
-      }
+      // Activity log removed - purchaseOrderActivity model doesn't exist
 
-      // Process approval/rejection
-      const result = await ctx.prisma.$transaction(async (tx) => {
-        const newStatus = action === 'APPROVE' ? 'APPROVED' : 'DRAFT'; // 'REJECTED' not in POStatus enum
-
-        const updated = await tx.purchaseOrder.update({
-          where: { id: poId },
-          data: { 
-            status: newStatus,
-            ...(action === 'APPROVE' && { approvedById: ctx.user.id }),
-          },
-        });
-
-        // Approval record removed - purchaseOrderApproval model doesn't exist
-
-        // Activity log removed - purchaseOrderActivity model doesn't exist
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'purchase_orders',
-            recordPk: poId,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: { status: 'SUBMITTED' },
-            afterData: { status: newStatus },
-          },
-        });
-
-        return updated;
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'purchase_orders',
+          recordPk: poId,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: { status: 'SUBMITTED' },
+          afterData: { status: newStatus },
+        },
       });
 
-      return result;
-    }),
+      return updated;
+    });
+
+    return result;
+  }),
 
   // Reject PO
   reject: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      reason: z.string().min(1),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        reason: z.string().min(1),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, reason, notes } = input;
 
       // Directly implement rejection logic
       const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -652,16 +676,18 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
   // Cancel PO
   cancel: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      reason: z.string().min(1),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        reason: z.string().min(1),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, reason, notes } = input;
 
       const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -685,7 +711,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
       }
 
       // Check if any items received
-      const hasReceivedItems = purchaseOrder.items.some(item => item.qtyReceived > 0);
+      const hasReceivedItems = purchaseOrder.items.some((item) => item.qtyReceived > 0);
       if (hasReceivedItems) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
@@ -697,7 +723,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
       const result = await ctx.prisma.$transaction(async (tx) => {
         const updated = await tx.purchaseOrder.update({
           where: { id },
-          data: { 
+          data: {
             status: 'CANCELLED',
           },
         });
@@ -724,256 +750,254 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Receive items
-  receive: organizationProcedure
-    .input(receiveItemsSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { poId, receivedDate, items, createReceipt } = input;
+  receive: organizationProcedure.input(receiveItemsSchema).mutation(async ({ ctx, input }) => {
+    const { poId, receivedDate, items, createReceipt } = input;
 
-      const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
-          id: poId,
-          organizationId: ctx.user.organizationId,
-        },
-        include: {
-          items: true,
-        },
+    const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
+      where: {
+        id: poId,
+        organizationId: ctx.user.organizationId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!purchaseOrder) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Purchase order not found',
       });
+    }
 
-      if (!purchaseOrder) {
+    if (purchaseOrder.status !== 'APPROVED') {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Only approved purchase orders can be received',
+      });
+    }
+
+    // Validate items
+    for (const receiveItem of items) {
+      const poItem = purchaseOrder.items.find((item) => item.id === receiveItem.poItemId);
+
+      if (!poItem) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Purchase order not found',
+          message: 'Purchase order item not found',
         });
       }
 
-      if (purchaseOrder.status !== 'APPROVED') {
+      const remainingToReceive = poItem.qtyOrdered - poItem.qtyReceived;
+      if (receiveItem.qtyReceived > remainingToReceive) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
-          message: 'Only approved purchase orders can be received',
+          message: `Cannot receive ${receiveItem.qtyReceived} units. Only ${remainingToReceive} remaining.`,
+        });
+      }
+    }
+
+    // Process receipt in transaction
+    const result = await ctx.prisma.$transaction(async (tx) => {
+      let receipt = null;
+      let hasDiscrepancies = false;
+
+      // Create receipt if requested
+      if (createReceipt) {
+        // Generate receipt number
+        const receiptCount = await tx.receipt.count({
+          where: {
+            receivedDate: {
+              gte: new Date(new Date().getFullYear(), 0, 1),
+            },
+          },
+        });
+
+        const receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCount + 1).padStart(6, '0')}`;
+
+        receipt = await tx.receipt.create({
+          data: {
+            poId,
+            // receiptNumber doesn't exist in Receipt model
+            reference: receiptNumber,
+            receivedDate,
+            receivedById: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
+            // status doesn't exist in Receipt model
+          },
         });
       }
 
-      // Validate items
+      // Process each item
       for (const receiveItem of items) {
-        const poItem = purchaseOrder.items.find(item => item.id === receiveItem.poItemId);
-        
-        if (!poItem) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Purchase order item not found',
-          });
+        const poItem = purchaseOrder.items.find((item) => item.id === receiveItem.poItemId);
+        if (!poItem) continue;
+
+        // Check for discrepancies
+        if (receiveItem.qtyReceived !== poItem.qtyOrdered || receiveItem.qtyRejected > 0) {
+          hasDiscrepancies = true;
         }
 
-        const remainingToReceive = poItem.qtyOrdered - poItem.qtyReceived;
-        if (receiveItem.qtyReceived > remainingToReceive) {
-          throw new TRPCError({
-            code: 'PRECONDITION_FAILED',
-            message: `Cannot receive ${receiveItem.qtyReceived} units. Only ${remainingToReceive} remaining.`,
-          });
-        }
-      }
-
-      // Process receipt in transaction
-      const result = await ctx.prisma.$transaction(async (tx) => {
-        let receipt = null;
-        let hasDiscrepancies = false;
-
-        // Create receipt if requested
-        if (createReceipt) {
-          // Generate receipt number
-          const receiptCount = await tx.receipt.count({
-            where: {
-              receivedDate: {
-                gte: new Date(new Date().getFullYear(), 0, 1),
-              },
-            },
-          });
-
-          const receiptNumber = `REC-${new Date().getFullYear()}-${String(receiptCount + 1).padStart(6, '0')}`;
-
-          receipt = await tx.receipt.create({
+        // Create lot if lot number provided
+        let lotId = null;
+        if (receiveItem.lotNumber) {
+          const lot = await tx.lot.create({
             data: {
-              poId,
-              // receiptNumber doesn't exist in Receipt model
-              reference: receiptNumber,
+              lotNumber: receiveItem.lotNumber,
+              itemId: poItem.itemId,
+              supplierId: purchaseOrder.supplierId,
               receivedDate,
-              receivedById: ctx.user.id,
+              expirationDate: receiveItem.expirationDate,
+              qtyInitial: receiveItem.qtyReceived,
+              qtyOnHand: receiveItem.qtyReceived,
+              unitCost: poItem.unitCost,
               organizationId: ctx.user.organizationId!,
-              // status doesn't exist in Receipt model
             },
           });
+          lotId = lot.id;
         }
 
-        // Process each item
-        for (const receiveItem of items) {
-          const poItem = purchaseOrder.items.find(item => item.id === receiveItem.poItemId);
-          if (!poItem) continue;
+        // Update or create inventory
+        const existingInventory = await tx.inventory.findFirst({
+          where: {
+            itemId: poItem.itemId,
+            locationId: receiveItem.locationId,
+            lotId,
+          },
+        });
 
-          // Check for discrepancies
-          if (receiveItem.qtyReceived !== poItem.qtyOrdered || receiveItem.qtyRejected > 0) {
-            hasDiscrepancies = true;
-          }
-
-          // Create lot if lot number provided
-          let lotId = null;
-          if (receiveItem.lotNumber) {
-            const lot = await tx.lot.create({
-              data: {
-                lotNumber: receiveItem.lotNumber,
-                itemId: poItem.itemId,
-                supplierId: purchaseOrder.supplierId,
-                receivedDate,
-                expirationDate: receiveItem.expirationDate,
-                qtyInitial: receiveItem.qtyReceived,
-                qtyOnHand: receiveItem.qtyReceived,
-                unitCost: poItem.unitCost,
-                organizationId: ctx.user.organizationId!,
-              },
-            });
-            lotId = lot.id;
-          }
-
-          // Update or create inventory
-          const existingInventory = await tx.inventory.findFirst({
-            where: {
-              itemId: poItem.itemId,
-              locationId: receiveItem.locationId,
-              lotId,
-            },
-          });
-
-          if (existingInventory) {
-            await tx.inventory.update({
-              where: { id: existingInventory.id },
-              data: {
-                qtyOnHand: {
-                  increment: receiveItem.qtyReceived,
-                },
-              },
-            });
-          } else {
-            await tx.inventory.create({
-              data: {
-                itemId: poItem.itemId,
-                locationId: receiveItem.locationId,
-                lotId,
-                qtyOnHand: receiveItem.qtyReceived,
-                qtyReserved: 0,
-                qtyInTransit: 0,
-                organizationId: ctx.user.organizationId!,
-              },
-            });
-          }
-
-          // Create stock movement
-          await tx.stockMovement.create({
+        if (existingInventory) {
+          await tx.inventory.update({
+            where: { id: existingInventory.id },
             data: {
-              itemId: poItem.itemId,
-              toLocationId: receiveItem.locationId,
-              qty: receiveItem.qtyReceived,
-              movementType: 'INBOUND',
-              refType: 'PO',
-              organizationId: ctx.user.organizationId!,
-              refId: poId,
-              movedById: ctx.user.id,
-              movedAt: receivedDate,
-              notes: `Received from PO ${purchaseOrder.poNumber}`,
-              lotId,
-            },
-          });
-
-          // Update PO item
-          await tx.purchaseOrderItem.update({
-            where: { id: receiveItem.poItemId },
-            data: {
-              qtyReceived: {
+              qtyOnHand: {
                 increment: receiveItem.qtyReceived,
               },
             },
           });
-
-          // Create receipt item if receipt exists
-          if (receipt) {
-            await tx.receiptItem.create({
-              data: {
-                receiptId: receipt.id,
-                itemId: poItem!.itemId,
-                qtyReceived: receiveItem.qtyReceived,
-                // qtyRejected doesn't exist in ReceiptItem
-                unitCost: poItem!.unitCost,
-                lotId,
-                locationId: receiveItem.locationId,
-                serialNumber: receiveItem.serialNumbers?.[0], // Take first serial number if available
-                expirationDate: receiveItem.expirationDate,
-                organizationId: ctx.user.organizationId!,
-              },
-            });
-          }
-
-          // Handle serial numbers if provided
-          if (receiveItem.serialNumbers && receiveItem.serialNumbers.length > 0) {
-            for (const serialNumber of receiveItem.serialNumbers) {
-              await tx.serialNumber.create({
-                data: {
-                  serialNumber,
-                  itemId: poItem.itemId,
-                  locationId: receiveItem.locationId,
-                  lotId,
-                  status: 'AVAILABLE',
-                  organizationId: ctx.user.organizationId!,
-                  // receivedDate doesn't exist in SerialNumber
-                },
-              });
-            }
-          }
-        }
-
-        // hasDiscrepancies field doesn't exist in Receipt model
-
-        // Check if PO is fully received
-        const updatedPO = await tx.purchaseOrder.findUnique({
-          where: { id: poId },
-          include: { items: true },
-        });
-
-        const fullyReceived = updatedPO?.items.every(
-          item => item.qtyReceived >= item.qtyOrdered
-        );
-
-        if (fullyReceived) {
-          await tx.purchaseOrder.update({
-            where: { id: poId },
-            data: { 
-              status: 'RECEIVED',
+        } else {
+          await tx.inventory.create({
+            data: {
+              itemId: poItem.itemId,
+              locationId: receiveItem.locationId,
+              lotId,
+              qtyOnHand: receiveItem.qtyReceived,
+              qtyReserved: 0,
+              qtyInTransit: 0,
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
 
-        // Activity log removed - purchaseOrderActivity model doesn't exist
+        // Create stock movement
+        await tx.stockMovement.create({
+          data: {
+            itemId: poItem.itemId,
+            toLocationId: receiveItem.locationId,
+            qty: receiveItem.qtyReceived,
+            movementType: 'INBOUND',
+            refType: 'PO',
+            organizationId: ctx.user.organizationId!,
+            refId: poId,
+            movedById: ctx.user.id,
+            movedAt: receivedDate,
+            notes: `Received from PO ${purchaseOrder.poNumber}`,
+            lotId,
+          },
+        });
 
-        return {
-          receipt,
-          itemsReceived: items.length,
-          hasDiscrepancies,
-          fullyReceived,
-        };
+        // Update PO item
+        await tx.purchaseOrderItem.update({
+          where: { id: receiveItem.poItemId },
+          data: {
+            qtyReceived: {
+              increment: receiveItem.qtyReceived,
+            },
+          },
+        });
+
+        // Create receipt item if receipt exists
+        if (receipt) {
+          await tx.receiptItem.create({
+            data: {
+              receiptId: receipt.id,
+              itemId: poItem!.itemId,
+              qtyReceived: receiveItem.qtyReceived,
+              // qtyRejected doesn't exist in ReceiptItem
+              unitCost: poItem!.unitCost,
+              lotId,
+              locationId: receiveItem.locationId,
+              serialNumber: receiveItem.serialNumbers?.[0], // Take first serial number if available
+              expirationDate: receiveItem.expirationDate,
+              organizationId: ctx.user.organizationId!,
+            },
+          });
+        }
+
+        // Handle serial numbers if provided
+        if (receiveItem.serialNumbers && receiveItem.serialNumbers.length > 0) {
+          for (const serialNumber of receiveItem.serialNumbers) {
+            await tx.serialNumber.create({
+              data: {
+                serialNumber,
+                itemId: poItem.itemId,
+                locationId: receiveItem.locationId,
+                lotId,
+                status: 'AVAILABLE',
+                organizationId: ctx.user.organizationId!,
+                // receivedDate doesn't exist in SerialNumber
+              },
+            });
+          }
+        }
+      }
+
+      // hasDiscrepancies field doesn't exist in Receipt model
+
+      // Check if PO is fully received
+      const updatedPO = await tx.purchaseOrder.findUnique({
+        where: { id: poId },
+        include: { items: true },
       });
 
-      return result;
-    }),
+      const fullyReceived = updatedPO?.items.every((item) => item.qtyReceived >= item.qtyOrdered);
+
+      if (fullyReceived) {
+        await tx.purchaseOrder.update({
+          where: { id: poId },
+          data: {
+            status: 'RECEIVED',
+          },
+        });
+      }
+
+      // Activity log removed - purchaseOrderActivity model doesn't exist
+
+      return {
+        receipt,
+        itemsReceived: items.length,
+        hasDiscrepancies,
+        fullyReceived,
+      };
+    });
+
+    return result;
+  }),
 
   // Duplicate PO
   duplicate: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      includeItems: z.boolean().default(true),
-      updateExpectedDate: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        includeItems: z.boolean().default(true),
+        updateExpectedDate: z.boolean().default(true),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, includeItems, updateExpectedDate } = input;
 
       const sourcePO = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -998,7 +1022,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             },
           },
         });
-        
+
         const poNumber = `PO-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(poCount + 1).padStart(5, '0')}`;
 
         // Create new PO
@@ -1008,7 +1032,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
             poNumber,
             supplierId: sourcePO.supplierId,
             orderDate: new Date(),
-            expectedDate: updateExpectedDate 
+            expectedDate: updateExpectedDate
               ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
               : sourcePO.expectedDate,
             status: 'DRAFT',
@@ -1041,7 +1065,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
         }
 
         // Activity log removed - purchaseOrderActivity model doesn't exist
-        
+
         await tx.auditLog.create({
           data: {
             tableName: 'purchase_orders',
@@ -1062,111 +1086,113 @@ export const purchaseOrdersRouter = createTRPCRouter({
   // PO items sub-router
   items: createTRPCRouter({
     // Add item to PO
-    add: organizationProcedure
-      .input(purchaseOrderItemSchema)
-      .mutation(async ({ ctx, input }) => {
-        const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-          where: { 
-            id: input.poId,
-            organizationId: ctx.user.organizationId,
-          },
+    add: organizationProcedure.input(purchaseOrderItemSchema).mutation(async ({ ctx, input }) => {
+      const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
+        where: {
+          id: input.poId,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (!purchaseOrder) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Purchase order not found',
         });
+      }
 
-        if (!purchaseOrder) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Purchase order not found',
-          });
-        }
-
-        if (!['DRAFT', 'SUBMITTED'].includes(purchaseOrder.status)) {
-          throw new TRPCError({
-            code: 'PRECONDITION_FAILED',
-            message: `Cannot add items to purchase order in ${purchaseOrder.status} status`,
-          });
-        }
-
-        // Check if item already exists
-        const existingItem = await ctx.prisma.purchaseOrderItem.findFirst({
-          where: {
-            poId: input.poId,
-            itemId: input.itemId,
-          },
+      if (!['DRAFT', 'SUBMITTED'].includes(purchaseOrder.status)) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: `Cannot add items to purchase order in ${purchaseOrder.status} status`,
         });
+      }
 
-        if (existingItem) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Item already exists in purchase order. Use update instead.',
-          });
-        }
+      // Check if item already exists
+      const existingItem = await ctx.prisma.purchaseOrderItem.findFirst({
+        where: {
+          poId: input.poId,
+          itemId: input.itemId,
+        },
+      });
 
-        // Add item and recalculate totals
-        const result = await ctx.prisma.$transaction(async (tx) => {
-          // Calculate item totals
-          const lineTotal = input.qtyOrdered * input.unitCost;
-          const taxAmount = lineTotal * (input.taxRate / 100);
-          const totalCost = lineTotal + taxAmount;
+      if (existingItem) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'Item already exists in purchase order. Use update instead.',
+        });
+      }
 
-          // Create PO item
-          const newItem = await tx.purchaseOrderItem.create({
-            data: {
-              ...input,
-              qtyReceived: 0,
-              totalCost,
-              organizationId: ctx.user.organizationId!,
-            },
-            include: {
-              item: {
-                include: {
-                  category: true,
-                  unitOfMeasure: true,
-                },
+      // Add item and recalculate totals
+      const result = await ctx.prisma.$transaction(async (tx) => {
+        // Calculate item totals
+        const lineTotal = input.qtyOrdered * input.unitCost;
+        const taxAmount = lineTotal * (input.taxRate / 100);
+        const totalCost = lineTotal + taxAmount;
+
+        // Create PO item
+        const newItem = await tx.purchaseOrderItem.create({
+          data: {
+            ...input,
+            qtyReceived: 0,
+            totalCost,
+            organizationId: ctx.user.organizationId!,
+          },
+          include: {
+            item: {
+              include: {
+                category: true,
+                unitOfMeasure: true,
               },
             },
-          });
-
-          // Update PO totals
-          await tx.purchaseOrder.update({
-            where: { id: input.poId },
-            data: {
-              subtotal: { increment: lineTotal },
-              tax: { increment: taxAmount },
-              total: { increment: totalCost },
-            },
-          });
-
-          // Activity log removed - purchaseOrderActivity model doesn't exist
-
-          return newItem;
+          },
         });
 
-        return result;
-      }),
+        // Update PO totals
+        await tx.purchaseOrder.update({
+          where: { id: input.poId },
+          data: {
+            subtotal: { increment: lineTotal },
+            tax: { increment: taxAmount },
+            total: { increment: totalCost },
+          },
+        });
+
+        // Activity log removed - purchaseOrderActivity model doesn't exist
+
+        return newItem;
+      });
+
+      return result;
+    }),
 
     // Update PO item
     update: organizationProcedure
-      .input(z.object({
-        id: z.string().cuid(),
-        qtyOrdered: z.number().int().positive().optional(),
-        unitCost: z.number().min(0).optional(),
-        taxRate: z.number().min(0).max(100).optional(),
-        notes: z.string().optional().nullable(),
-      }))
+      .input(
+        z.object({
+          id: z.string().cuid(),
+          qtyOrdered: z.number().int().positive().optional(),
+          unitCost: z.number().min(0).optional(),
+          taxRate: z.number().min(0).max(100).optional(),
+          notes: z.string().optional().nullable(),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
 
         const currentItem = await ctx.prisma.purchaseOrderItem.findUnique({
           where: { id },
         });
-        
+
         // Get the PO separately
-        const po = currentItem ? await ctx.prisma.purchaseOrder.findFirst({
-          where: { 
-            id: currentItem.poId,
-            organizationId: ctx.user.organizationId,
-          },
-        }) : null;
+        const po = currentItem
+          ? await ctx.prisma.purchaseOrder.findFirst({
+              where: {
+                id: currentItem.poId,
+                organizationId: ctx.user.organizationId,
+              },
+            })
+          : null;
 
         if (!currentItem) {
           throw new TRPCError({
@@ -1214,7 +1240,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
           const oldTotalCost = Number(currentItem.totalCost);
           const oldLineTotal = Number(currentItem.qtyOrdered) * Number(currentItem.unitCost);
           const oldTaxAmount = oldLineTotal * (Number(currentItem.taxRate) / 100);
-          
+
           await tx.purchaseOrder.update({
             where: { id: currentItem.poId },
             data: {
@@ -1245,14 +1271,16 @@ export const purchaseOrdersRouter = createTRPCRouter({
         const item = await ctx.prisma.purchaseOrderItem.findUnique({
           where: { id: input.id },
         });
-        
+
         // Get the PO separately
-        const po = item ? await ctx.prisma.purchaseOrder.findFirst({
-          where: { 
-            id: item.poId,
-            organizationId: ctx.user.organizationId,
-          },
-        }) : null;
+        const po = item
+          ? await ctx.prisma.purchaseOrder.findFirst({
+              where: {
+                id: item.poId,
+                organizationId: ctx.user.organizationId,
+              },
+            })
+          : null;
 
         if (!item) {
           throw new TRPCError({
@@ -1286,7 +1314,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
           const lineTotal = Number(item.qtyOrdered) * Number(item.unitCost);
           const taxAmount = lineTotal * (Number(item.taxRate) / 100);
           const totalCost = Number(item.totalCost);
-          
+
           await tx.purchaseOrder.update({
             where: { id: item.poId },
             data: {
@@ -1307,11 +1335,13 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
   // Get PO performance metrics
   getPerformance: organizationProcedure
-    .input(z.object({
-      supplierId: z.string().cuid().optional(),
-      dateFrom: z.date(),
-      dateTo: z.date(),
-    }))
+    .input(
+      z.object({
+        supplierId: z.string().cuid().optional(),
+        dateFrom: z.date(),
+        dateTo: z.date(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { supplierId, dateFrom, dateTo } = input;
 
@@ -1339,9 +1369,11 @@ export const purchaseOrdersRouter = createTRPCRouter({
         summary: {
           totalOrders: purchaseOrders.length,
           totalValue: purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0),
-          avgOrderValue: purchaseOrders.length > 0
-            ? purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0) / purchaseOrders.length
-            : 0,
+          avgOrderValue:
+            purchaseOrders.length > 0
+              ? purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0) /
+                purchaseOrders.length
+              : 0,
         },
         delivery: {
           onTime: 0,
@@ -1355,8 +1387,8 @@ export const purchaseOrdersRouter = createTRPCRouter({
           discrepancyRate: 0,
         },
         status: {
-          approved: purchaseOrders.filter(po => po.status === 'APPROVED').length,
-          received: purchaseOrders.filter(po => po.status === 'RECEIVED').length,
+          approved: purchaseOrders.filter((po) => po.status === 'APPROVED').length,
+          received: purchaseOrders.filter((po) => po.status === 'RECEIVED').length,
         },
       };
 
@@ -1395,13 +1427,13 @@ export const purchaseOrdersRouter = createTRPCRouter({
       }
 
       if (purchaseOrders.length > 0) {
-        metrics.quality.discrepancyRate = 
+        metrics.quality.discrepancyRate =
           (metrics.quality.ordersWithDiscrepancies / purchaseOrders.length) * 100;
       }
 
       // Get top items ordered
       const itemStats = new Map();
-      
+
       for (const po of purchaseOrders) {
         for (const item of po.items) {
           const key = item.itemId;
@@ -1457,33 +1489,37 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
   // Export POs
   export: organizationProcedure
-    .input(z.object({
-      filters: purchaseOrderFilterSchema,
-      format: z.enum(['csv', 'excel']).default('csv'),
-      includeItems: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        filters: purchaseOrderFilterSchema,
+        format: z.enum(['csv', 'excel']).default('csv'),
+        includeItems: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const where = {
         ...input.filters,
         organizationId: ctx.user.organizationId,
       };
-      
+
       const purchaseOrders = await ctx.prisma.purchaseOrder.findMany({
         where: where as any,
         include: {
           supplier: true,
-          items: input.includeItems ? {
-            include: {
-              item: true,
-            },
-          } : false,
+          items: input.includeItems
+            ? {
+                include: {
+                  item: true,
+                },
+              }
+            : false,
         },
         orderBy: { orderDate: 'desc' },
       });
 
       // Prepare export data
       const exportData = [];
-      
+
       for (const po of purchaseOrders) {
         const baseData = {
           poNumber: po.poNumber,

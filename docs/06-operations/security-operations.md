@@ -28,15 +28,15 @@ export class ThreatDetector extends EventEmitter {
     failedLogins: 5,
     requestRate: 100,
     suspiciousPatterns: [
-      /(\.\.|\/\/|\\\\)/,  // Path traversal
-      /(union|select|insert|update|delete|drop)/i,  // SQL injection
-      /(<script|javascript:|onerror)/i,  // XSS attempts
+      /(\.\.|\/\/|\\\\)/, // Path traversal
+      /(union|select|insert|update|delete|drop)/i, // SQL injection
+      /(<script|javascript:|onerror)/i, // XSS attempts
     ],
   };
-  
+
   async detectThreats(event: SecurityEvent) {
     const threats = [];
-    
+
     // Check failed login attempts
     if (event.type === 'login_failed') {
       const attempts = await this.getRecentFailedAttempts(event.ip);
@@ -49,7 +49,7 @@ export class ThreatDetector extends EventEmitter {
         });
       }
     }
-    
+
     // Check request patterns
     if (event.type === 'http_request') {
       // Rate limiting check
@@ -62,7 +62,7 @@ export class ThreatDetector extends EventEmitter {
           details: `${rate} requests/minute`,
         });
       }
-      
+
       // Pattern matching
       for (const pattern of this.thresholds.suspiciousPatterns) {
         if (pattern.test(event.path) || pattern.test(event.body)) {
@@ -76,16 +76,16 @@ export class ThreatDetector extends EventEmitter {
         }
       }
     }
-    
+
     // Emit threats
     for (const threat of threats) {
       this.emit('threat_detected', threat);
       await this.logThreat(threat);
     }
-    
+
     return threats;
   }
-  
+
   private async logThreat(threat: Threat) {
     await prisma.securityLog.create({
       data: {
@@ -96,7 +96,7 @@ export class ThreatDetector extends EventEmitter {
         timestamp: new Date(),
       },
     });
-    
+
     // Alert security team for high severity
     if (threat.severity === 'high') {
       await this.alertSecurityTeam(threat);
@@ -123,21 +123,21 @@ filebeat.inputs:
           when:
             regexp:
               message: '.*healthcheck.*'
-              
+
   - type: syslog
     protocol.udp:
-      host: "0.0.0.0:514"
+      host: '0.0.0.0:514'
     processors:
       - add_fields:
           fields:
             log_type: syslog
-            
+
 output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
+  hosts: ['elasticsearch:9200']
   indices:
-    - index: "security-%{+yyyy.MM.dd}"
+    - index: 'security-%{+yyyy.MM.dd}'
       when.contains:
-        tags: "security"
+        tags: 'security'
 ```
 
 ### 3. Intrusion Detection System (IDS)
@@ -171,11 +171,11 @@ export class IntrusionDetectionSystem {
       severity: 'critical',
     },
   ];
-  
+
   async inspect(request: SecurityRequest) {
     const violations = [];
     const content = `${request.path} ${request.query} ${request.body}`;
-    
+
     for (const rule of this.rules) {
       if (rule.pattern.test(content)) {
         violations.push({
@@ -184,21 +184,21 @@ export class IntrusionDetectionSystem {
           action: rule.action,
           matched: content.match(rule.pattern)?.[0],
         });
-        
+
         // Take action
         if (rule.action === 'block') {
           await this.blockRequest(request, rule);
         }
       }
     }
-    
+
     if (violations.length > 0) {
       await this.logViolations(request, violations);
-      
+
       // Block the request
       throw new SecurityViolationError('Request blocked by IDS', violations);
     }
-    
+
     return { safe: true };
   }
 }
@@ -208,18 +208,20 @@ export class IntrusionDetectionSystem {
 
 ### 1. Incident Response Plan
 
-```markdown
+````markdown
 # Incident Response Runbook
 
 ## 1. Detection & Analysis (0-15 minutes)
 
 ### Initial Assessment
+
 - [ ] Verify the incident is real (not false positive)
 - [ ] Determine incident severity (Critical/High/Medium/Low)
 - [ ] Identify affected systems
 - [ ] Estimate impact scope
 
 ### Severity Classification
+
 - **Critical**: Data breach, system compromise, ransomware
 - **High**: Service outage, authentication bypass, DDoS
 - **Medium**: Suspicious activity, policy violations
@@ -228,6 +230,7 @@ export class IntrusionDetectionSystem {
 ## 2. Containment (15-30 minutes)
 
 ### Immediate Actions
+
 ```bash
 # Block malicious IP
 iptables -A INPUT -s <malicious_ip> -j DROP
@@ -238,8 +241,10 @@ psql -c "UPDATE users SET password_hash = NULL WHERE id = '<user_id>';"
 # Isolate affected systems
 docker stop <affected_container>
 ```
+````
 
 ### Short-term Containment
+
 - [ ] Isolate affected systems
 - [ ] Block malicious IPs/domains
 - [ ] Disable compromised accounts
@@ -248,6 +253,7 @@ docker stop <affected_container>
 ## 3. Eradication (30-60 minutes)
 
 ### Remove Threat
+
 - [ ] Identify root cause
 - [ ] Remove malicious code/files
 - [ ] Close vulnerabilities
@@ -256,6 +262,7 @@ docker stop <affected_container>
 ## 4. Recovery (1-4 hours)
 
 ### System Restoration
+
 - [ ] Restore from clean backups
 - [ ] Rebuild compromised systems
 - [ ] Verify system integrity
@@ -264,11 +271,13 @@ docker stop <affected_container>
 ## 5. Post-Incident (Next 48 hours)
 
 ### Lessons Learned
+
 - [ ] Document timeline
 - [ ] Identify improvements
 - [ ] Update procedures
 - [ ] Share findings
-```
+
+````
 
 ### 2. Automated Incident Response
 
@@ -277,69 +286,69 @@ docker stop <affected_container>
 export class IncidentResponseAutomation {
   async handleIncident(incident: SecurityIncident) {
     logger.security('Incident detected', incident);
-    
+
     // Create incident ticket
     const ticket = await this.createIncidentTicket(incident);
-    
+
     // Execute automated responses based on type
     switch (incident.type) {
       case 'brute_force':
         await this.handleBruteForce(incident);
         break;
-        
+
       case 'data_breach':
         await this.handleDataBreach(incident);
         break;
-        
+
       case 'malware':
         await this.handleMalware(incident);
         break;
-        
+
       case 'ddos':
         await this.handleDDoS(incident);
         break;
     }
-    
+
     // Notify security team
     await this.notifySecurityTeam(incident, ticket);
-    
+
     // Start evidence collection
     await this.collectEvidence(incident);
   }
-  
+
   private async handleBruteForce(incident: SecurityIncident) {
     const { sourceIp, targetUser } = incident.details;
-    
+
     // Block IP immediately
     await this.blockIP(sourceIp, 24 * 60 * 60); // 24 hours
-    
+
     // Lock affected account
     if (targetUser) {
       await prisma.user.update({
         where: { id: targetUser },
-        data: { 
+        data: {
           accountLocked: true,
           lockReason: 'Brute force attack detected',
         },
       });
     }
-    
+
     // Enable additional monitoring
     await this.enableEnhancedMonitoring(sourceIp);
   }
-  
+
   private async collectEvidence(incident: SecurityIncident) {
     const evidenceDir = `/forensics/${incident.id}`;
-    
+
     // Collect logs
     await exec(`mkdir -p ${evidenceDir}/logs`);
     await exec(`cp /var/log/nginx/access.log ${evidenceDir}/logs/`);
     await exec(`journalctl --since "1 hour ago" > ${evidenceDir}/logs/system.log`);
-    
+
     // Capture network state
     await exec(`netstat -an > ${evidenceDir}/network_connections.txt`);
     await exec(`iptables -L -n > ${evidenceDir}/firewall_rules.txt`);
-    
+
     // Database audit logs
     const auditLogs = await prisma.auditLog.findMany({
       where: {
@@ -348,20 +357,20 @@ export class IncidentResponseAutomation {
         },
       },
     });
-    
+
     await fs.writeFile(
       `${evidenceDir}/audit_logs.json`,
       JSON.stringify(auditLogs, null, 2)
     );
-    
+
     // Create evidence package
     await exec(`tar -czf ${evidenceDir}.tar.gz ${evidenceDir}`);
-    
+
     // Upload to secure storage
     await this.uploadToSecureStorage(`${evidenceDir}.tar.gz`);
   }
 }
-```
+````
 
 ### 3. Security Orchestration, Automation and Response (SOAR)
 
@@ -380,7 +389,7 @@ export class SecurityPlaybooks {
         'log_incident',
       ],
     },
-    
+
     data_exfiltration: {
       name: 'Data Exfiltration Prevention',
       triggers: ['large_download', 'unusual_access_pattern', 'bulk_export'],
@@ -393,16 +402,14 @@ export class SecurityPlaybooks {
       ],
     },
   };
-  
+
   async executePlaybook(trigger: string, context: any) {
-    const playbook = Object.values(this.playbooks).find(p => 
-      p.triggers.includes(trigger)
-    );
-    
+    const playbook = Object.values(this.playbooks).find((p) => p.triggers.includes(trigger));
+
     if (!playbook) return;
-    
+
     logger.security(`Executing playbook: ${playbook.name}`, { trigger, context });
-    
+
     for (const action of playbook.actions) {
       try {
         await this.executeAction(action, context);
@@ -427,19 +434,19 @@ export class PrivilegedAccessManager {
     if (!validation.valid) {
       throw new Error(`Invalid access request: ${validation.reason}`);
     }
-    
+
     // Check if user has permissions
     const hasPermission = await this.checkPermissions(
       request.userId,
       request.resource,
       request.action
     );
-    
+
     if (!hasPermission) {
       await this.logDeniedAccess(request);
       throw new Error('Access denied');
     }
-    
+
     // Generate time-limited credentials
     const credentials = await this.generateTemporaryCredentials({
       userId: request.userId,
@@ -447,26 +454,29 @@ export class PrivilegedAccessManager {
       expiresIn: request.duration || 3600, // 1 hour default
       permissions: request.permissions,
     });
-    
+
     // Log access grant
     await this.logAccessGrant(request, credentials);
-    
+
     // Set up monitoring
     await this.monitorPrivilegedSession(credentials.sessionId);
-    
+
     return credentials;
   }
-  
+
   private async generateTemporaryCredentials(params: any) {
     const sessionId = crypto.randomUUID();
-    const token = jwt.sign({
-      sessionId,
-      userId: params.userId,
-      resource: params.resource,
-      permissions: params.permissions,
-      exp: Math.floor(Date.now() / 1000) + params.expiresIn,
-    }, process.env.PAM_SECRET);
-    
+    const token = jwt.sign(
+      {
+        sessionId,
+        userId: params.userId,
+        resource: params.resource,
+        permissions: params.permissions,
+        exp: Math.floor(Date.now() / 1000) + params.expiresIn,
+      },
+      process.env.PAM_SECRET
+    );
+
     // Store session
     await redis.setex(
       `pam:session:${sessionId}`,
@@ -477,7 +487,7 @@ export class PrivilegedAccessManager {
         activities: [],
       })
     );
-    
+
     return { sessionId, token, expiresAt: new Date(Date.now() + params.expiresIn * 1000) };
   }
 }
@@ -494,19 +504,15 @@ export class MFAService {
   async setupMFA(userId: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
-    
+
     // Generate secret
     const secret = authenticator.generateSecret();
-    
+
     // Generate QR code
-    const otpauth = authenticator.keyuri(
-      user.email,
-      'Ventry',
-      secret
-    );
-    
+    const otpauth = authenticator.keyuri(user.email, 'Ventry', secret);
+
     const qrCode = await QRCode.toDataURL(otpauth);
-    
+
     // Store secret (encrypted)
     await prisma.user.update({
       where: { id: userId },
@@ -515,17 +521,17 @@ export class MFAService {
         mfaEnabled: false, // Enable after verification
       },
     });
-    
+
     return { qrCode, secret };
   }
-  
+
   async verifyMFA(userId: string, token: string) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user?.mfaSecret) throw new Error('MFA not set up');
-    
+
     const secret = await this.decryptSecret(user.mfaSecret);
     const isValid = authenticator.verify({ token, secret });
-    
+
     if (isValid && !user.mfaEnabled) {
       // First successful verification, enable MFA
       await prisma.user.update({
@@ -533,31 +539,27 @@ export class MFAService {
         data: { mfaEnabled: true },
       });
     }
-    
+
     // Log MFA event
     await this.logMFAEvent(userId, isValid ? 'success' : 'failure');
-    
+
     return isValid;
   }
-  
+
   async generateBackupCodes(userId: string) {
-    const codes = Array.from({ length: 10 }, () => 
-      crypto.randomBytes(4).toString('hex')
-    );
-    
+    const codes = Array.from({ length: 10 }, () => crypto.randomBytes(4).toString('hex'));
+
     // Store hashed codes
-    const hashedCodes = await Promise.all(
-      codes.map(code => bcrypt.hash(code, 10))
-    );
-    
+    const hashedCodes = await Promise.all(codes.map((code) => bcrypt.hash(code, 10)));
+
     await prisma.backupCode.createMany({
-      data: hashedCodes.map(hash => ({
+      data: hashedCodes.map((hash) => ({
         userId,
         code: hash,
         used: false,
       })),
     });
-    
+
     return codes;
   }
 }
@@ -588,7 +590,7 @@ export class ComplianceMonitor {
       changeControl: true,
     },
   };
-  
+
   async auditCompliance() {
     const results = {
       gdpr: await this.auditGDPR(),
@@ -596,10 +598,10 @@ export class ComplianceMonitor {
       sox: await this.auditSOX(),
       timestamp: new Date(),
     };
-    
+
     // Generate compliance report
     const report = await this.generateComplianceReport(results);
-    
+
     // Store audit results
     await prisma.complianceAudit.create({
       data: {
@@ -608,10 +610,10 @@ export class ComplianceMonitor {
         issues: this.extractIssues(results),
       },
     });
-    
+
     return results;
   }
-  
+
   private async auditGDPR() {
     const checks = {
       dataRetention: await this.checkDataRetention(),
@@ -620,13 +622,13 @@ export class ComplianceMonitor {
       accessControls: await this.checkAccessControls(),
       dataSubjectRights: await this.checkDataSubjectRights(),
     };
-    
+
     return {
-      compliant: Object.values(checks).every(c => c.passed),
+      compliant: Object.values(checks).every((c) => c.passed),
       checks,
     };
   }
-  
+
   private async checkDataRetention() {
     // Check for data older than retention period
     const oldData = await prisma.$queryRaw`
@@ -634,7 +636,7 @@ export class ComplianceMonitor {
       FROM audit_logs
       WHERE created_at < NOW() - INTERVAL '2 years'
     `;
-    
+
     return {
       passed: oldData[0].count === 0,
       details: `Found ${oldData[0].count} records exceeding retention period`,
@@ -655,50 +657,50 @@ export class SecurityAuditLogger {
       serverIp: await this.getServerIp(),
       environment: process.env.NODE_ENV,
       sessionId: event.context?.sessionId,
-      
+
       // Hash sensitive data
       userEmail: event.userEmail ? await this.hashPII(event.userEmail) : null,
-      
+
       // Add context
       geoLocation: await this.getGeoLocation(event.clientIp),
       userAgent: this.parseUserAgent(event.userAgent),
-      
+
       // Risk scoring
       riskScore: await this.calculateRiskScore(event),
     };
-    
+
     // Store in database
     await prisma.securityAuditLog.create({
       data: enrichedEvent,
     });
-    
+
     // Send to SIEM
     await this.sendToSIEM(enrichedEvent);
-    
+
     // Check if event requires immediate action
     if (enrichedEvent.riskScore > 80) {
       await this.triggerHighRiskAlert(enrichedEvent);
     }
   }
-  
+
   private async calculateRiskScore(event: SecurityEvent): Promise<number> {
     let score = 0;
-    
+
     // Failed authentication
     if (event.type === 'auth_failed') score += 20;
-    
+
     // Suspicious location
     const location = await this.getGeoLocation(event.clientIp);
     if (location.riskCountry) score += 30;
-    
+
     // Time-based anomaly
     const hour = new Date().getHours();
     if (hour < 6 || hour > 22) score += 10;
-    
+
     // Previous incidents from IP
     const previousIncidents = await this.getPreviousIncidents(event.clientIp);
     score += Math.min(previousIncidents * 10, 40);
-    
+
     return Math.min(score, 100);
   }
 }
@@ -724,26 +726,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Run Snyk scan
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-          
+
       - name: Run npm audit
         run: |
           npm audit --production
           pnpm audit --production
-          
+
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
         with:
           project: 'ventry'
           path: '.'
           format: 'HTML'
-          
+
       - name: Upload results
         uses: actions/upload-artifact@v3
         with:
@@ -777,25 +779,21 @@ RUN jq '.Results[].Vulnerabilities[] | select(.Severity == "CRITICAL")' \
 // src/security/metrics.ts
 export class SecurityMetrics {
   async getSecurityKPIs() {
-    const [
-      incidentMetrics,
-      vulnerabilityMetrics,
-      complianceMetrics,
-      accessMetrics,
-    ] = await Promise.all([
-      this.getIncidentMetrics(),
-      this.getVulnerabilityMetrics(),
-      this.getComplianceMetrics(),
-      this.getAccessMetrics(),
-    ]);
-    
+    const [incidentMetrics, vulnerabilityMetrics, complianceMetrics, accessMetrics] =
+      await Promise.all([
+        this.getIncidentMetrics(),
+        this.getVulnerabilityMetrics(),
+        this.getComplianceMetrics(),
+        this.getAccessMetrics(),
+      ]);
+
     return {
       // Mean Time to Detect (MTTD)
       mttd: incidentMetrics.averageDetectionTime,
-      
+
       // Mean Time to Respond (MTTR)
       mttr: incidentMetrics.averageResponseTime,
-      
+
       // Security incidents
       incidents: {
         total: incidentMetrics.total,
@@ -803,7 +801,7 @@ export class SecurityMetrics {
         resolved: incidentMetrics.resolved,
         trend: incidentMetrics.trend,
       },
-      
+
       // Vulnerabilities
       vulnerabilities: {
         critical: vulnerabilityMetrics.critical,
@@ -811,7 +809,7 @@ export class SecurityMetrics {
         patched: vulnerabilityMetrics.patched,
         avgPatchTime: vulnerabilityMetrics.avgPatchTime,
       },
-      
+
       // Compliance
       compliance: {
         score: complianceMetrics.overallScore,
@@ -819,7 +817,7 @@ export class SecurityMetrics {
         pci: complianceMetrics.pci,
         sox: complianceMetrics.sox,
       },
-      
+
       // Access control
       access: {
         failedLogins: accessMetrics.failedLogins,
@@ -841,24 +839,24 @@ export async function generateSecurityReport() {
       start: startOfMonth(new Date()),
       end: endOfMonth(new Date()),
     },
-    
+
     executive_summary: await generateExecutiveSummary(),
-    
+
     incidents: await getIncidentReport(),
-    
+
     vulnerabilities: await getVulnerabilityReport(),
-    
+
     compliance: await getComplianceReport(),
-    
+
     recommendations: await generateRecommendations(),
   };
-  
+
   // Generate PDF
   const pdf = await generatePDF(report);
-  
+
   // Send to stakeholders
   await sendSecurityReport(pdf, ['security@ventry.com', 'cto@ventry.com']);
-  
+
   return report;
 }
 ```
@@ -866,6 +864,7 @@ export async function generateSecurityReport() {
 ## Security Operations Checklist
 
 ### Daily Tasks
+
 - [ ] Review security alerts and logs
 - [ ] Check failed login attempts
 - [ ] Monitor vulnerability feeds
@@ -873,6 +872,7 @@ export async function generateSecurityReport() {
 - [ ] Review access logs
 
 ### Weekly Tasks
+
 - [ ] Run vulnerability scans
 - [ ] Review user permissions
 - [ ] Update security rules
@@ -880,6 +880,7 @@ export async function generateSecurityReport() {
 - [ ] Security metrics review
 
 ### Monthly Tasks
+
 - [ ] Security awareness training
 - [ ] Penetration testing
 - [ ] Compliance audit
@@ -887,6 +888,7 @@ export async function generateSecurityReport() {
 - [ ] Review and update playbooks
 
 ### Quarterly Tasks
+
 - [ ] Full security assessment
 - [ ] Disaster recovery drill
 - [ ] Third-party security review

@@ -66,8 +66,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       ReceiptWhereInput: {},
@@ -168,14 +168,14 @@ describe('Receipts Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and WAREHOUSE role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -183,8 +183,8 @@ describe('Receipts Router', () => {
       organizationRole: 'ADMIN',
       role: 'WAREHOUSE', // Can manage receipts
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -311,7 +311,7 @@ describe('Receipts Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -379,9 +379,9 @@ describe('Receipts Router', () => {
     it('should throw NOT_FOUND when receipt does not exist', async () => {
       mockPrisma.receipt.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.receipts.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Receipt not found');
+      await expect(caller.receipts.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Receipt not found'
+      );
     });
   });
 
@@ -482,7 +482,7 @@ describe('Receipts Router', () => {
     });
 
     it('should require WAREHOUSE, MANAGER or ADMIN role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -495,7 +495,7 @@ describe('Receipts Router', () => {
             {
               poItemId: testId('poi1'),
               qtyReceived: 10,
-              qtyRejected: 0,  
+              qtyRejected: 0,
               locationId: testId('loc1'),
             },
           ],
@@ -646,12 +646,14 @@ describe('Receipts Router', () => {
           rejectionReason: 'Damaged',
         });
         const result = await fn(mockPrisma);
-        return [{
-          ...mockItems[0],
-          qtyReceived: 90,
-          qtyRejected: 10,
-          rejectionReason: 'Damaged',
-        }];
+        return [
+          {
+            ...mockItems[0],
+            qtyReceived: 90,
+            qtyRejected: 10,
+            rejectionReason: 'Damaged',
+          },
+        ];
       });
 
       const result = await caller.receipts.updateItems({
@@ -719,11 +721,13 @@ describe('Receipts Router', () => {
           qtyReceived: 60,
         });
         const result = await fn(mockPrisma);
-        return [{
-          ...mockItems[0],
-          qtyReceived: 60,
-          qtyRejected: 0,
-        }];
+        return [
+          {
+            ...mockItems[0],
+            qtyReceived: 60,
+            qtyRejected: 0,
+          },
+        ];
       });
 
       const result = await caller.receipts.updateItems({
@@ -744,7 +748,7 @@ describe('Receipts Router', () => {
   describe('complete', () => {
     it('should complete a receipt', async () => {
       // Create caller with MANAGER role for complete
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -798,12 +802,12 @@ describe('Receipts Router', () => {
           status: 'PARTIAL',
         },
       };
-      
+
       mockPrisma.receipt.findFirst.mockResolvedValue(mockReceipt);
-      
-      await expect(
-        caller.receipts.complete({ id: testId('rec1') })
-      ).rejects.toThrow('Cannot complete receipt without items');
+
+      await expect(caller.receipts.complete({ id: testId('rec1') })).rejects.toThrow(
+        'Cannot complete receipt without items'
+      );
     });
   });
 

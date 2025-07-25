@@ -4,7 +4,17 @@ import { useState } from 'react';
 
 import { AlertTriangle, ChevronLeft, ChevronRight, Package } from 'lucide-react';
 
-import { Badge, Button, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
+import {
+  Badge,
+  Button,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ventry/ui';
 
 import { trpc } from '@/lib/trpc';
 
@@ -46,7 +56,8 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
 
   const getStockStatus = (available: number, reorderPoint: number | null) => {
     if (available === 0) return { label: 'Out of Stock', variant: 'destructive' as const };
-    if (reorderPoint && available <= reorderPoint) return { label: 'Low Stock', variant: 'warning' as const };
+    if (reorderPoint && available <= reorderPoint)
+      return { label: 'Low Stock', variant: 'warning' as const };
     return { label: 'In Stock', variant: 'success' as const };
   };
 
@@ -112,15 +123,9 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
                         <p className="text-gray-600">{inv.location.code}</p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {inv.qtyOnHand}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {inv.qtyAvailable}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {inv.qtyReserved}
-                    </TableCell>
+                    <TableCell className="text-right font-medium">{inv.qtyOnHand}</TableCell>
+                    <TableCell className="text-right font-medium">{inv.qtyAvailable}</TableCell>
+                    <TableCell className="text-right font-medium">{inv.qtyReserved}</TableCell>
                     <TableCell>
                       <Badge variant={status.variant}>{status.label}</Badge>
                     </TableCell>
@@ -147,8 +152,8 @@ export function InventoryList({ warehouseId, searchTerm, showLowStock }: Invento
         {data && data.pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Showing {(page - 1) * limit + 1} to{' '}
-              {Math.min(page * limit, data.pagination.total)} of {data.pagination.total} items
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.pagination.total)} of{' '}
+              {data.pagination.total} items
             </p>
             <div className="flex gap-2">
               <Button

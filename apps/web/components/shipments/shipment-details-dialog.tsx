@@ -1,10 +1,10 @@
 'use client';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   Skeleton,
   Table,
@@ -17,16 +17,7 @@ import {
   AlertDescription,
   Button,
 } from '@ventry/ui';
-import { 
-  Truck, 
-  Calendar, 
-  User, 
-  MapPin,
-  DollarSign,
-  Hash,
-  FileText,
-  Send
-} from 'lucide-react';
+import { Truck, Calendar, User, MapPin, DollarSign, Hash, FileText, Send } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils';
@@ -38,13 +29,13 @@ interface ShipmentDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ShipmentDetailsDialog({ 
-  shipmentId, 
-  open, 
-  onOpenChange 
+export function ShipmentDetailsDialog({
+  shipmentId,
+  open,
+  onOpenChange,
 }: ShipmentDetailsDialogProps) {
   const utils = trpc.useUtils();
-  
+
   // Fetch shipment details
   const { data: shipment, isLoading } = trpc.shipments.get.useQuery(
     { id: shipmentId },
@@ -74,11 +65,11 @@ export function ShipmentDetailsDialog({
     const trackingNumber = prompt('Enter tracking number (optional):');
     const shippingCostStr = prompt('Enter shipping cost (optional):');
     const shippingCost = shippingCostStr ? parseFloat(shippingCostStr) : undefined;
-    
-    shipMutation.mutate({ 
-      id: shipmentId, 
+
+    shipMutation.mutate({
+      id: shipmentId,
       trackingNumber: trackingNumber || undefined,
-      shippingCost: shippingCost || undefined
+      shippingCost: shippingCost || undefined,
     });
   };
 
@@ -91,9 +82,7 @@ export function ShipmentDetailsDialog({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Shipment Details</DialogTitle>
-          <DialogDescription>
-            View shipment information and tracking details
-          </DialogDescription>
+          <DialogDescription>View shipment information and tracking details</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -123,8 +112,14 @@ export function ShipmentDetailsDialog({
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Customer</p>
-                  <p className="font-medium">{shipment.order.customer.companyName || shipment.order.customer.email || 'Unknown'}</p>
-                  <p className="text-sm text-muted-foreground">Order #{shipment.order.orderNumber}</p>
+                  <p className="font-medium">
+                    {shipment.order.customer.companyName ||
+                      shipment.order.customer.email ||
+                      'Unknown'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Order #{shipment.order.orderNumber}
+                  </p>
                 </div>
               </div>
               <div className="space-y-4">
@@ -239,25 +234,15 @@ export function ShipmentDetailsDialog({
                   <TableBody>
                     {shipment.items.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-medium">
-                          {item.item.name}
-                        </TableCell>
+                        <TableCell className="font-medium">{item.item.name}</TableCell>
                         <TableCell>{item.item.sku}</TableCell>
-                        <TableCell>
-                          {item.item.category?.name || '-'}
-                        </TableCell>
+                        <TableCell>{item.item.category?.name || '-'}</TableCell>
                         <TableCell className="text-right">
                           {item.orderItem?.qtyOrdered || '-'}
                         </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.qtyShipped}
-                        </TableCell>
-                        <TableCell>
-                          {item.lot?.lotNumber || '-'}
-                        </TableCell>
-                        <TableCell>
-                          {item.serialNumber?.serialNumber || '-'}
-                        </TableCell>
+                        <TableCell className="text-right font-medium">{item.qtyShipped}</TableCell>
+                        <TableCell>{item.lot?.lotNumber || '-'}</TableCell>
+                        <TableCell>{item.serialNumber?.serialNumber || '-'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

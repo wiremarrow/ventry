@@ -14,10 +14,10 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 export default function SuppliersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  
+
   // Fetch supplier stats
   const { data: statsData } = trpc.suppliers.getStats.useQuery();
-  
+
   // Calculate stats
   const totalSuppliers = statsData?.total || 0;
   const activeSuppliers = statsData?.active || 0;

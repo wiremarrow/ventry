@@ -5,7 +5,7 @@ import { seedTestInventory } from './seed-inventory.js';
 
 /**
  * E2E Test Helpers
- * 
+ *
  * Provides utilities for creating and managing test data in E2E tests.
  * All test emails use the `.e2e.test` suffix for easy identification and cleanup.
  */
@@ -33,7 +33,9 @@ export interface TestUserData {
   seedInventory?: boolean;
 }
 
-export async function createTestUser(overrides: Partial<TestUserData> = {}): Promise<TestUserData & { id: string }> {
+export async function createTestUser(
+  overrides: Partial<TestUserData> = {}
+): Promise<TestUserData & { id: string }> {
   const testId = generateTestId();
   const userData: TestUserData = {
     email: generateTestEmail('user'),
@@ -88,7 +90,7 @@ export async function createTestUser(overrides: Partial<TestUserData> = {}): Pro
 // Create test users with different roles
 export async function createTestUsers() {
   const testId = generateTestId();
-  
+
   const admin = await createTestUser({
     email: generateTestEmail('admin'),
     username: `admin-${testId}`,
@@ -119,7 +121,7 @@ export async function createTestUsers() {
 // Create test organization with owner
 export async function createTestOrganization(ownerData?: Partial<TestUserData>) {
   const testId = generateTestId();
-  
+
   // Create owner user
   const owner = await createTestUser({
     email: generateTestEmail('owner'),
@@ -153,7 +155,7 @@ export async function createTestOrganization(ownerData?: Partial<TestUserData>) 
 // Create user with multiple organization memberships
 export async function createMultiOrgTestUser(orgCount: number = 2) {
   const testId = generateTestId();
-  
+
   // Create user
   const user = await createTestUser({
     email: generateTestEmail('multiorg'),
@@ -207,7 +209,7 @@ export async function addUserToOrganization(
 // Test product creation
 export async function createTestProduct(overrides: Record<string, any> = {}): Promise<any> {
   const testId = generateTestId();
-  
+
   const organization = await prisma.organization.findFirst();
   if (!organization) {
     throw new Error('No organization found for testing');
@@ -215,12 +217,12 @@ export async function createTestProduct(overrides: Record<string, any> = {}): Pr
 
   // Ensure we have a test category
   let category = await prisma.itemCategory.findFirst({
-    where: { 
+    where: {
       organizationId: organization.id,
-      name: 'E2E Test Category' 
+      name: 'E2E Test Category',
     },
   });
-  
+
   if (!category) {
     category = await prisma.itemCategory.create({
       data: {
@@ -255,7 +257,7 @@ export async function createTestProduct(overrides: Record<string, any> = {}): Pr
       categoryId: category.id,
       uomId: uom.id,
       defaultPrice: 99.99,
-      defaultCost: 50.00,
+      defaultCost: 50.0,
       organizationId: organization.id,
       ...overrides,
     },
@@ -265,7 +267,11 @@ export async function createTestProduct(overrides: Record<string, any> = {}): Pr
 }
 
 // Test inventory creation
-export async function createTestInventory(itemId: string, locationId: string, quantity: number = 100) {
+export async function createTestInventory(
+  itemId: string,
+  locationId: string,
+  quantity: number = 100
+) {
   const organization = await prisma.organization.findFirst();
   if (!organization) {
     throw new Error('No organization found for testing');
@@ -295,7 +301,7 @@ export async function getTestLocation() {
   let warehouse = await prisma.warehouse.findFirst({
     where: { organizationId: organization.id },
   });
-  
+
   if (!warehouse) {
     warehouse = await prisma.warehouse.create({
       data: {
@@ -314,7 +320,7 @@ export async function getTestLocation() {
   let location = await prisma.location.findFirst({
     where: { code: 'E2E-LOC' },
   });
-  
+
   if (!location) {
     location = await prisma.location.create({
       data: {
@@ -333,15 +339,15 @@ export async function getTestLocation() {
 // Authentication token is automatically set as httpOnly cookie by backend
 export async function loginUser(email: string, password: string): Promise<boolean> {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060';
-  
+
   const response = await fetch(`${baseUrl}/trpc/auth.login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     credentials: 'include', // Important for receiving cookies
-    body: JSON.stringify({ 
-      json: { email, password }
+    body: JSON.stringify({
+      json: { email, password },
     }),
   });
 
@@ -349,7 +355,7 @@ export async function loginUser(email: string, password: string): Promise<boolea
     throw new Error(`Login failed: ${response.statusText}`);
   }
 
-  const data = await response.json() as { result: { data: { json: { success: boolean } } } };
+  const data = (await response.json()) as { result: { data: { json: { success: boolean } } } };
   return data.result.data.json.success;
 }
 
@@ -357,49 +363,54 @@ export async function loginUser(email: string, password: string): Promise<boolea
 export async function loginWithPage(page: any, email: string, password: string) {
   // Navigate to login page
   await navigateWithRetry(page, '/login');
-  
+
   // Wait for network to settle (ensures JavaScript is loaded)
   await page.waitForLoadState('networkidle');
-  
+
   // Get form elements using locators
   const emailInput = page.locator('input[type="email"]');
   const passwordInput = page.locator('input[type="password"]');
   const signInButton = page.locator('button:has-text("Sign In")');
-  
+
   // Ensure form elements are visible and enabled
   await expect(emailInput).toBeVisible();
   await expect(passwordInput).toBeVisible();
   await expect(signInButton).toBeVisible();
-  
+
   // Fill form fields
   await emailInput.fill(email);
   await passwordInput.fill(password);
-  
+
   // Try to submit the form - use keyboard as it's more reliable
   await passwordInput.press('Enter');
-  
+
   // Wait for navigation with retry logic
   try {
     await page.waitForURL(/.*dashboard/, { timeout: 10000 });
   } catch (error) {
     // If navigation fails, try clicking the button as fallback
     await signInButton.click();
-    
+
     try {
       await page.waitForURL(/.*dashboard/, { timeout: 5000 });
     } catch (retryError) {
       // If still fails, check what's on the page
       const pageUrl = page.url();
-      
+
       // Check for any error messages
-      const errorText = await page.locator('[role="alert"], .error, .text-red-500, .text-destructive').textContent().catch(() => null);
-      
+      const errorText = await page
+        .locator('[role="alert"], .error, .text-red-500, .text-destructive')
+        .textContent()
+        .catch(() => null);
+
       // Check if form was submitted as GET (hydration issue)
       if (pageUrl.includes('email=') && pageUrl.includes('password=')) {
         throw new Error('Form submitted as GET - React hydration issue detected. URL: ' + pageUrl);
       }
-      
-      throw new Error(`Login failed. Still on: ${pageUrl}. Error: ${errorText || 'No error message found'}`);
+
+      throw new Error(
+        `Login failed. Still on: ${pageUrl}. Error: ${errorText || 'No error message found'}`
+      );
     }
   }
 }
@@ -418,33 +429,35 @@ export async function waitForElement(page: any, selector: string, options: any =
 // Navigate with retry for connection errors
 export async function navigateWithRetry(page: any, url: string, maxRetries: number = 3) {
   let lastError: Error | undefined;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      await page.goto(url, { 
+      await page.goto(url, {
         waitUntil: 'domcontentloaded',
-        timeout: 30000 
+        timeout: 30000,
       });
       return; // Success
     } catch (error: any) {
       lastError = error;
-      
+
       // Only retry on connection errors
-      if (error.message?.includes('ERR_SOCKET_NOT_CONNECTED') || 
-          error.message?.includes('ERR_CONNECTION_REFUSED') ||
-          error.message?.includes('ERR_CONNECTION_RESET')) {
+      if (
+        error.message?.includes('ERR_SOCKET_NOT_CONNECTED') ||
+        error.message?.includes('ERR_CONNECTION_REFUSED') ||
+        error.message?.includes('ERR_CONNECTION_RESET')
+      ) {
         if (attempt < maxRetries) {
           // Wait before retry with exponential backoff
           await page.waitForTimeout(1000 * attempt);
           continue;
         }
       }
-      
+
       // For other errors or final attempt, throw immediately
       throw error;
     }
   }
-  
+
   // If we get here, all retries failed
   throw lastError || new Error('Navigation failed after retries');
 }
@@ -460,7 +473,7 @@ export async function clearAuthState(page: any) {
 export async function clearBrowserStorage(page: any) {
   // Clear auth state first
   await clearAuthState(page);
-  
+
   // Clear browser storage for test isolation (non-auth data)
   // Safely handle localStorage access
   try {
@@ -494,10 +507,10 @@ export async function screenshotOnFailure(page: any, testName: string) {
 export async function switchOrganization(page: any, organizationId: string) {
   // Click on organization switcher
   await page.click('[data-testid="org-switcher"]');
-  
+
   // Click on the organization option
   await page.click(`[data-org-id="${organizationId}"]`);
-  
+
   // Wait for page to reload/update
   await page.waitForLoadState('networkidle');
 }
@@ -510,7 +523,7 @@ export async function verifyOrganizationIsolation(
 ) {
   // Should see expected org name
   await expect(page.locator('text=' + expectedOrgName)).toBeVisible();
-  
+
   // Should NOT see other org name
   await expect(page.locator('text=' + unexpectedOrgName)).not.toBeVisible();
 }
@@ -545,7 +558,7 @@ export async function createOrgTestData(organizationId: string) {
       categoryId: category.id,
       uomId: unitOfMeasure.id,
       organizationId,
-      defaultCost: 50.00,
+      defaultCost: 50.0,
       defaultPrice: 99.99,
       isActive: true,
       reorderPoint: 10,

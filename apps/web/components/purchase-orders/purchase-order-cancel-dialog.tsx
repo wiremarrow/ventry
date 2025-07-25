@@ -43,7 +43,7 @@ export function PurchaseOrderCancelDialog({
   purchaseOrderId,
 }: PurchaseOrderCancelDialogProps) {
   const utils = trpc.useUtils();
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -92,10 +92,7 @@ export function PurchaseOrderCancelDialog({
                 <FormItem>
                   <FormLabel>Cancellation Reason</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Provide a reason for cancellation..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Provide a reason for cancellation..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,10 +106,7 @@ export function PurchaseOrderCancelDialog({
                 <FormItem>
                   <FormLabel>Additional Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Add any additional notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Add any additional notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -120,18 +114,10 @@ export function PurchaseOrderCancelDialog({
             />
 
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Keep Order
               </Button>
-              <Button
-                type="submit"
-                disabled={cancelMutation.isPending}
-                variant="destructive"
-              >
+              <Button type="submit" disabled={cancelMutation.isPending} variant="destructive">
                 <Ban className="mr-2 h-4 w-4" />
                 {cancelMutation.isPending ? 'Cancelling...' : 'Cancel Order'}
               </Button>

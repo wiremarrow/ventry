@@ -73,8 +73,8 @@ describe('EditProductDialog', () => {
     categoryId: '1',
     uomId: '1',
     defaultSupplierId: '1',
-    defaultCost: 50.00,
-    defaultPrice: 100.00,
+    defaultCost: 50.0,
+    defaultPrice: 100.0,
     weightKg: 2.5,
     lengthCm: 30,
     widthCm: 20,
@@ -92,7 +92,7 @@ describe('EditProductDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     vi.mocked(trpc.itemCategories.list.useQuery).mockReturnValue({
       data: mockCategories,
       isLoading: false,
@@ -122,7 +122,9 @@ describe('EditProductDialog', () => {
     render(<EditProductDialog {...defaultProps} />);
 
     expect(screen.getByText('Edit Product')).toBeInTheDocument();
-    expect(screen.getByText('Update product information in your inventory catalog')).toBeInTheDocument();
+    expect(
+      screen.getByText('Update product information in your inventory catalog')
+    ).toBeInTheDocument();
   });
 
   it('does not render when closed', () => {
@@ -144,7 +146,7 @@ describe('EditProductDialog', () => {
     expect(screen.getByDisplayValue('PROD-001')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test Product')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Test description')).toBeInTheDocument();
-    
+
     // Check numeric inputs (some values appear multiple times)
     expect(screen.getByDisplayValue('50')).toBeInTheDocument(); // defaultCost
     expect(screen.getByDisplayValue('100')).toBeInTheDocument(); // defaultPrice
@@ -152,7 +154,7 @@ describe('EditProductDialog', () => {
     expect(screen.getByDisplayValue('30')).toBeInTheDocument(); // lengthCm
     expect(screen.getByDisplayValue('15')).toBeInTheDocument(); // heightCm
     expect(screen.getByDisplayValue('10')).toBeInTheDocument(); // reorderPoint
-    
+
     // Check that there are inputs with value 20 (widthCm and reorderQty)
     const twentyInputs = screen.getAllByDisplayValue('20');
     expect(twentyInputs).toHaveLength(2);
@@ -344,7 +346,7 @@ describe('EditProductDialog', () => {
   it('handles mutation success', async () => {
     const mockInvalidate = vi.fn();
     const mockGetInvalidate = vi.fn();
-    
+
     vi.mocked(trpc.useUtils).mockReturnValue({
       items: {
         list: {

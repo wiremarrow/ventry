@@ -22,14 +22,13 @@ async function countAll() {
       suppliers: await prisma.supplier.count(),
       customers: await prisma.customer.count(),
       orders: await prisma.order.count(),
-      movements: await prisma.stockMovement.count()
+      movements: await prisma.stockMovement.count(),
     };
-    
+
     console.log('Database counts:');
     Object.entries(counts).forEach(([table, count]) => {
       console.log(`  ${table}: ${count}`);
     });
-    
   } catch (error) {
     console.error('Error:', error);
   } finally {

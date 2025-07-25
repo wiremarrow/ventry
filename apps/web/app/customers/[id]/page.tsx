@@ -1,17 +1,23 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { Card, Button, Badge, Skeleton, Tabs, TabsContent, TabsList, TabsTrigger, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
-import { 
-  ArrowLeft, 
-  Mail, 
-  Phone, 
-  Globe, 
-  DollarSign,
-  Calendar,
-  Edit,
-  FileText
-} from 'lucide-react';
+import {
+  Card,
+  Button,
+  Badge,
+  Skeleton,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ventry/ui';
+import { ArrowLeft, Mail, Phone, Globe, DollarSign, Calendar, Edit, FileText } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -43,11 +49,7 @@ export default function CustomerDetailPage() {
       <ProtectedRoute>
         <div className="text-center py-12">
           <p className="text-muted-foreground">Customer not found</p>
-          <Button 
-            variant="link" 
-            onClick={() => router.push('/customers')}
-            className="mt-4"
-          >
+          <Button variant="link" onClick={() => router.push('/customers')} className="mt-4">
             Back to Customers
           </Button>
         </div>
@@ -55,8 +57,9 @@ export default function CustomerDetailPage() {
     );
   }
 
-  const totalSpent = customer.orders.reduce((sum, order) => 
-    sum + parseFloat(order.grandTotal.toString()), 0
+  const totalSpent = customer.orders.reduce(
+    (sum, order) => sum + parseFloat(order.grandTotal.toString()),
+    0
   );
 
   const averageOrderValue = totalSpent / (customer.orders.length || 1);
@@ -67,11 +70,7 @@ export default function CustomerDetailPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/customers')}
-            >
+            <Button variant="ghost" size="sm" onClick={() => router.push('/customers')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -114,9 +113,9 @@ export default function CustomerDetailPage() {
                 {customer.website && (
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a 
-                      href={customer.website} 
-                      target="_blank" 
+                    <a
+                      href={customer.website}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm hover:underline"
                     >
@@ -224,9 +223,7 @@ export default function CustomerDetailPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {address.isDefault && (
-                            <Badge variant="default">Default</Badge>
-                          )}
+                          {address.isDefault && <Badge variant="default">Default</Badge>}
                         </TableCell>
                       </TableRow>
                     ))
@@ -259,24 +256,27 @@ export default function CustomerDetailPage() {
                   ) : (
                     customer.orders.map((order) => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium">
-                          {order.orderNumber}
-                        </TableCell>
+                        <TableCell className="font-medium">{order.orderNumber}</TableCell>
                         <TableCell>{formatDate(order.orderDate)}</TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             variant={
-                              order.status === 'DELIVERED' ? 'default' :
-                              order.status === 'SHIPPED' ? 'secondary' :
-                              order.status === 'CANCELLED' ? 'destructive' :
-                              'outline'
+                              order.status === 'DELIVERED'
+                                ? 'default'
+                                : order.status === 'SHIPPED'
+                                  ? 'secondary'
+                                  : order.status === 'CANCELLED'
+                                    ? 'destructive'
+                                    : 'outline'
                             }
                           >
                             {order.status}
                           </Badge>
                         </TableCell>
                         <TableCell>-</TableCell>
-                        <TableCell>{formatCurrency(parseFloat(order.grandTotal.toString()))}</TableCell>
+                        <TableCell>
+                          {formatCurrency(parseFloat(order.grandTotal.toString()))}
+                        </TableCell>
                         <TableCell>
                           <Button
                             variant="ghost"
@@ -316,16 +316,16 @@ export default function CustomerDetailPage() {
                   ) : (
                     customer.returns.map((return_) => (
                       <TableRow key={return_.id}>
-                        <TableCell className="font-medium">
-                          {return_.returnNumber}
-                        </TableCell>
+                        <TableCell className="font-medium">{return_.returnNumber}</TableCell>
                         <TableCell>{formatDate(return_.returnDate)}</TableCell>
                         <TableCell>
-                          <Badge 
+                          <Badge
                             variant={
-                              return_.status === 'REFUNDED' ? 'default' :
-                              return_.status === 'REJECTED' ? 'destructive' :
-                              'outline'
+                              return_.status === 'REFUNDED'
+                                ? 'default'
+                                : return_.status === 'REJECTED'
+                                  ? 'destructive'
+                                  : 'outline'
                             }
                           >
                             {return_.status}

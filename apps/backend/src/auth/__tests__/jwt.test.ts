@@ -25,7 +25,7 @@ import { env } from '../../config/env.js';
 describe('JWT Utilities', () => {
   const mockSecret = 'test-secret-key';
   const mockExpiresIn = '7d';
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -38,18 +38,14 @@ describe('JWT Utilities', () => {
         role: 'USER',
         organizationId: 'org-456',
       };
-      
+
       const mockToken = 'signed.jwt.token';
       vi.mocked(jwt.sign).mockReturnValue(mockToken as any);
 
       const result = signJWT(payload);
 
       expect(result).toBe(mockToken);
-      expect(jwt.sign).toHaveBeenCalledWith(
-        payload,
-        mockSecret,
-        { expiresIn: mockExpiresIn }
-      );
+      expect(jwt.sign).toHaveBeenCalledWith(payload, mockSecret, { expiresIn: mockExpiresIn });
     });
 
     it('should sign a JWT without organizationId', () => {
@@ -58,18 +54,14 @@ describe('JWT Utilities', () => {
         email: 'test@example.com',
         role: 'ADMIN',
       };
-      
+
       const mockToken = 'signed.jwt.token';
       vi.mocked(jwt.sign).mockReturnValue(mockToken as any);
 
       const result = signJWT(payload);
 
       expect(result).toBe(mockToken);
-      expect(jwt.sign).toHaveBeenCalledWith(
-        payload,
-        mockSecret,
-        { expiresIn: mockExpiresIn }
-      );
+      expect(jwt.sign).toHaveBeenCalledWith(payload, mockSecret, { expiresIn: mockExpiresIn });
     });
   });
 
@@ -81,7 +73,7 @@ describe('JWT Utilities', () => {
         role: 'USER',
         organizationId: 'org-456',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(mockPayload as any);
 
       const result = verifyJwt('valid.jwt.token');
@@ -100,7 +92,7 @@ describe('JWT Utilities', () => {
         role: 'ADMIN',
         organizationId: 'org-999',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(mockPayload as any);
 
       const result = verifyJwt('valid.jwt.token');
@@ -117,7 +109,7 @@ describe('JWT Utilities', () => {
         email: 'user@example.com',
         role: 'USER',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(mockPayload as any);
 
       const result = verifyJwt('valid.jwt.token');
@@ -134,7 +126,7 @@ describe('JWT Utilities', () => {
       });
 
       expect(() => verifyJwt('expired.jwt.token')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('expired.jwt.token');
       } catch (error: any) {
@@ -151,7 +143,7 @@ describe('JWT Utilities', () => {
       });
 
       expect(() => verifyJwt('tampered.jwt.token')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('tampered.jwt.token');
       } catch (error: any) {
@@ -168,7 +160,7 @@ describe('JWT Utilities', () => {
       });
 
       expect(() => verifyJwt('malformed.jwt.token')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('malformed.jwt.token');
       } catch (error: any) {
@@ -185,7 +177,7 @@ describe('JWT Utilities', () => {
       });
 
       expect(() => verifyJwt('not-active.jwt.token')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('not-active.jwt.token');
       } catch (error: any) {
@@ -201,7 +193,7 @@ describe('JWT Utilities', () => {
       });
 
       expect(() => verifyJwt('invalid.jwt.token')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('invalid.jwt.token');
       } catch (error: any) {
@@ -213,7 +205,7 @@ describe('JWT Utilities', () => {
 
     it('should throw NO_TOKEN error for empty token', () => {
       expect(() => verifyJwt('')).toThrow(AuthError);
-      
+
       try {
         verifyJwt('');
       } catch (error: any) {
@@ -234,10 +226,11 @@ describe('JWT Utilities', () => {
         email: 'test@example.com',
         role: 'USER',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(mockPayload as any);
 
-      const specialToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
+      const specialToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U';
       const result = verifyJwt(specialToken);
 
       expect(result).toEqual({
@@ -250,7 +243,7 @@ describe('JWT Utilities', () => {
         email: 'test@example.com',
         role: 'USER',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(invalidPayload as any);
 
       expect(() => verifyJwt('invalid.jwt.token')).toThrow(AuthError);
@@ -265,7 +258,7 @@ describe('JWT Utilities', () => {
         role: 'USER',
         organizationId: 'org-456',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(mockPayload as any);
 
       const result = verifyJWT('valid.jwt.token');
@@ -291,7 +284,7 @@ describe('JWT Utilities', () => {
         email: 'test@example.com',
         role: 'USER',
       };
-      
+
       vi.mocked(jwt.verify).mockReturnValue(longPayload as any);
 
       const result = verifyJwt('long.jwt.token');
@@ -305,14 +298,14 @@ describe('JWT Utilities', () => {
         email: 'user1@example.com',
         role: 'USER',
       };
-      
+
       const payload2: JWTPayload = {
         userId: 'user-2',
         email: 'user2@example.com',
         role: 'ADMIN',
         organizationId: 'org-2',
       };
-      
+
       vi.mocked(jwt.verify)
         .mockReturnValueOnce(payload1 as any)
         .mockReturnValueOnce(payload2 as any);

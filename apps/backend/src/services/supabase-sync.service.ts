@@ -20,21 +20,19 @@ export class SupabaseSyncService {
 
     if (!user || !this.supabase) return;
 
-    const { error } = await this.supabase
-      .from('users')
-      .upsert({
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        first_name: user.firstName,
-        last_name: user.lastName,
-        role: user.role,
-        is_active: user.isActive,
-        created_at: user.createdAt.toISOString(),
-        updated_at: user.updatedAt.toISOString(),
-        last_login_at: user.lastLoginAt?.toISOString() || null,
-        organization_id: null, // Will be set during full migration
-      });
+    const { error } = await this.supabase.from('users').upsert({
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      role: user.role,
+      is_active: user.isActive,
+      created_at: user.createdAt.toISOString(),
+      updated_at: user.updatedAt.toISOString(),
+      last_login_at: user.lastLoginAt?.toISOString() || null,
+      organization_id: null, // Will be set during full migration
+    });
 
     if (error) {
       console.error('Failed to sync user to Supabase:', error);
@@ -108,22 +106,20 @@ export class SupabaseSyncService {
     }
 
     // Sync item as item
-    const { error: itemError } = await this.supabase
-      .from('items')
-      .upsert({
-        id: item.id,
-        sku: item.sku,
-        name: item.name,
-        description: item.description,
-        category_id: categoryId,
-        uom_id: uomId,
-        default_cost: item.defaultCost || null,
-        default_price: item.defaultPrice || null,
-        is_active: item.isActive,
-        organization_id: await this.getDefaultOrganizationId(),
-        created_at: item.createdAt.toISOString(),
-        updated_at: item.updatedAt.toISOString(),
-      });
+    const { error: itemError } = await this.supabase.from('items').upsert({
+      id: item.id,
+      sku: item.sku,
+      name: item.name,
+      description: item.description,
+      category_id: categoryId,
+      uom_id: uomId,
+      default_cost: item.defaultCost || null,
+      default_price: item.defaultPrice || null,
+      is_active: item.isActive,
+      organization_id: await this.getDefaultOrganizationId(),
+      created_at: item.createdAt.toISOString(),
+      updated_at: item.updatedAt.toISOString(),
+    });
 
     if (itemError) {
       console.error('Failed to sync item to Supabase:', itemError);
@@ -152,17 +148,15 @@ export class SupabaseSyncService {
     // Ensure location exists
     const locationId = await this.ensureLocation(inventory.location);
 
-    const { error } = await this.supabase
-      .from('inventory')
-      .upsert({
-        item_id: inventory.itemId,
-        location_id: locationId,
-        qty_on_hand: inventory.qtyOnHand,
-        qty_reserved: 0,
-        qty_in_transit: 0,
-        organization_id: await this.getDefaultOrganizationId(),
-        updated_at: inventory.updatedAt.toISOString(),
-      });
+    const { error } = await this.supabase.from('inventory').upsert({
+      item_id: inventory.itemId,
+      location_id: locationId,
+      qty_on_hand: inventory.qtyOnHand,
+      qty_reserved: 0,
+      qty_in_transit: 0,
+      organization_id: await this.getDefaultOrganizationId(),
+      updated_at: inventory.updatedAt.toISOString(),
+    });
 
     if (error) {
       console.error('Failed to sync inventory to Supabase:', error);

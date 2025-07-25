@@ -4,7 +4,7 @@ import { prisma } from '@ventry/database';
 
 /**
  * Global setup for E2E tests
- * 
+ *
  * Runs once before all tests to ensure:
  * 1. Database connection is working
  * 2. Seed data exists
@@ -43,12 +43,11 @@ async function globalSetup(config: FullConfig) {
     console.log('\n✅ E2E Global Setup Complete!\n');
 
     // Store config for use in tests if needed
-    process.env.E2E_BASE_URL = (config.projects?.[0]?.use?.baseURL) || 'http://localhost:6061';
+    process.env.E2E_BASE_URL = config.projects?.[0]?.use?.baseURL || 'http://localhost:6061';
     process.env.E2E_SETUP_COMPLETE = 'true';
-
   } catch (error) {
     console.error('\n❌ E2E Global Setup Failed:', error);
-    
+
     // Provide helpful error messages
     if (error instanceof Error) {
       if (error.message.includes('P1001') || error.message.includes('ECONNREFUSED')) {
@@ -60,7 +59,7 @@ async function globalSetup(config: FullConfig) {
         console.error('Please run: pnpm db:seed');
       }
     }
-    
+
     throw error;
   } finally {
     await prisma.$disconnect();

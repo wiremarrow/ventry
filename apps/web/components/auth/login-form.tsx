@@ -6,7 +6,16 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button, Input, Label, Card, CardHeader, CardTitle, CardContent, CardFooter } from '@ventry/ui';
+import {
+  Button,
+  Input,
+  Label,
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
 import { trpc } from '@/lib/trpc';
 import * as Sentry from '@sentry/nextjs';
@@ -24,7 +33,6 @@ export function LoginForm() {
   const queryClient = useQueryClient();
   const login = useAuthStore((state) => state.login);
 
-
   const {
     register,
     handleSubmit,
@@ -34,11 +42,10 @@ export function LoginForm() {
     mode: 'onChange', // Show errors as user types
   });
 
-
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       const { user } = data;
-      
+
       // Set Sentry user context
       Sentry.setUser({
         id: user.id,
@@ -48,17 +55,17 @@ export function LoginForm() {
 
       // Login with user info only - tokens handled by httpOnly cookies
       login(user);
-      
+
       // Invalidate auth.me query to refetch with new authentication
       queryClient.invalidateQueries({ queryKey: [['auth', 'me']] });
-      
+
       // Add success breadcrumb
       Sentry.addBreadcrumb({
         category: 'auth',
         message: 'Login successful',
         level: 'info',
       });
-      
+
       // Navigate to dashboard
       router.push('/dashboard');
     },
@@ -106,9 +113,7 @@ export function LoginForm() {
               {...register('email')}
               disabled={loginMutation.isPending}
             />
-            {errors.email && (
-              <p className="text-sm text-red-600">{errors.email.message}</p>
-            )}
+            {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
           </div>
 
           <div className="space-y-2">
@@ -120,22 +125,12 @@ export function LoginForm() {
               {...register('password')}
               disabled={loginMutation.isPending}
             />
-            {errors.password && (
-              <p className="text-sm text-red-600">{errors.password.message}</p>
-            )}
+            {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
           </div>
 
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
-              {error}
-            </div>
-          )}
+          {error && <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">{error}</div>}
 
-          <Button 
-            type="submit" 
-            className="w-full" 
-            disabled={loginMutation.isPending}
-          >
+          <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
             {loginMutation.isPending ? 'Signing in...' : 'Sign In'}
           </Button>
         </form>

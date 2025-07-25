@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   Form,
   FormControl,
@@ -62,14 +62,10 @@ interface CreateShipmentDialogProps {
   onSuccess?: () => void;
 }
 
-export function CreateShipmentDialog({ 
-  open, 
-  onOpenChange,
-  onSuccess 
-}: CreateShipmentDialogProps) {
+export function CreateShipmentDialog({ open, onOpenChange, onSuccess }: CreateShipmentDialogProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
-  
+
   const form = useForm<CreateShipmentFormData>({
     resolver: zodResolver(createShipmentSchema),
     defaultValues: {
@@ -127,7 +123,7 @@ export function CreateShipmentDialog({
   // Update form items when order is selected
   useEffect(() => {
     if (selectedOrder) {
-      const items = selectedOrder.items.map(item => ({
+      const items = selectedOrder.items.map((item) => ({
         orderItemId: item.id,
         itemId: item.itemId,
         qtyShipped: item.qtyOrdered - item.qtyShipped,
@@ -138,8 +134,8 @@ export function CreateShipmentDialog({
 
   const onSubmit = (data: CreateShipmentFormData) => {
     // Filter out items with 0 quantity
-    const itemsToShip = data.items.filter(item => item.qtyShipped > 0);
-    
+    const itemsToShip = data.items.filter((item) => item.qtyShipped > 0);
+
     if (itemsToShip.length === 0) {
       toast({
         title: 'Error',
@@ -166,18 +162,16 @@ export function CreateShipmentDialog({
     form.setValue('items', items);
   };
 
-  const availableOrders = orders?.orders?.filter(
-    order => ['CONFIRMED', 'PICKING', 'PACKED'].includes(order.status)
-  ) || [];
+  const availableOrders =
+    orders?.orders?.filter((order) => ['CONFIRMED', 'PICKING', 'PACKED'].includes(order.status)) ||
+    [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Shipment</DialogTitle>
-          <DialogDescription>
-            Ship items from a confirmed order
-          </DialogDescription>
+          <DialogDescription>Ship items from a confirmed order</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -189,8 +183,8 @@ export function CreateShipmentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Order</FormLabel>
-                  <Select 
-                    value={field.value} 
+                  <Select
+                    value={field.value}
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedOrderId(value);
@@ -218,7 +212,9 @@ export function CreateShipmentDialog({
                                 <Package className="h-4 w-4 text-muted-foreground" />
                                 <span>{order.orderNumber}</span>
                                 <span className="text-muted-foreground">-</span>
-                                <span>{order.customer.companyName || order.customer.email || 'Unknown'}</span>
+                                <span>
+                                  {order.customer.companyName || order.customer.email || 'Unknown'}
+                                </span>
                               </div>
                               <Badge>{order.status}</Badge>
                             </div>
@@ -227,9 +223,7 @@ export function CreateShipmentDialog({
                       )}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Select a confirmed order that is ready to ship
-                  </FormDescription>
+                  <FormDescription>Select a confirmed order that is ready to ship</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -242,8 +236,8 @@ export function CreateShipmentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ship From Location</FormLabel>
-                  <Select 
-                    value={field.value} 
+                  <Select
+                    value={field.value}
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedLocationId(value);
@@ -264,7 +258,7 @@ export function CreateShipmentDialog({
                           No warehouses available
                         </div>
                       ) : (
-                        warehousesData.map(warehouse => (
+                        warehousesData.map((warehouse) => (
                           <SelectItem key={warehouse.id} value={warehouse.id}>
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -275,9 +269,7 @@ export function CreateShipmentDialog({
                       )}
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Select the warehouse location to ship from
-                  </FormDescription>
+                  <FormDescription>Select the warehouse location to ship from</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -291,10 +283,7 @@ export function CreateShipmentDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Carrier (Optional)</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select carrier" />
@@ -342,9 +331,7 @@ export function CreateShipmentDialog({
                       <Input {...field} className="pl-10" placeholder="Enter tracking number" />
                     </div>
                   </FormControl>
-                  <FormDescription>
-                    You can add this later when marking as shipped
-                  </FormDescription>
+                  <FormDescription>You can add this later when marking as shipped</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -356,7 +343,11 @@ export function CreateShipmentDialog({
                 <div className="rounded-lg border p-4 space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{selectedOrder.customer.companyName || selectedOrder.customer.email || 'Unknown'}</p>
+                      <p className="font-medium">
+                        {selectedOrder.customer.companyName ||
+                          selectedOrder.customer.email ||
+                          'Unknown'}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         Order #{selectedOrder.orderNumber}
                       </p>
@@ -387,12 +378,10 @@ export function CreateShipmentDialog({
                         {selectedOrder.items.map((orderItem, index) => {
                           const remaining = orderItem.qtyOrdered - orderItem.qtyShipped;
                           const formItem = form.watch(`items.${index}`);
-                          
+
                           return (
                             <TableRow key={orderItem.id}>
-                              <TableCell className="font-medium">
-                                {orderItem.item.name}
-                              </TableCell>
+                              <TableCell className="font-medium">{orderItem.item.name}</TableCell>
                               <TableCell>{orderItem.item.sku}</TableCell>
                               <TableCell className="text-right">{orderItem.qtyOrdered}</TableCell>
                               <TableCell className="text-right">
@@ -408,7 +397,9 @@ export function CreateShipmentDialog({
                                   min="0"
                                   max={remaining}
                                   value={formItem?.qtyShipped || 0}
-                                  onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateItemQuantity(index, parseInt(e.target.value) || 0)
+                                  }
                                   className="w-24 text-right"
                                 />
                               </TableCell>
@@ -430,7 +421,7 @@ export function CreateShipmentDialog({
                 <FormItem>
                   <FormLabel>Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       {...field}
                       placeholder="Add any notes about this shipment..."
                       rows={3}

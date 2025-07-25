@@ -2,14 +2,14 @@
 
 import { useRouter } from 'next/navigation';
 import { Card, Button, Badge, Skeleton } from '@ventry/ui';
-import { 
-  CreditCard, 
+import {
+  CreditCard,
   AlertCircle,
   Check,
   ArrowRight,
   Download,
   FileText,
-  TrendingUp
+  TrendingUp,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
@@ -122,7 +122,8 @@ export default function OrganizationBillingPage() {
     );
   }
 
-  const currentPlan = plans.find(p => p.name.toLowerCase() === organization.subscriptionTier) || plans[0];
+  const currentPlan =
+    plans.find((p) => p.name.toLowerCase() === organization.subscriptionTier) || plans[0];
   const isOwner = organization.role === 'OWNER';
 
   return (
@@ -130,9 +131,7 @@ export default function OrganizationBillingPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Billing & Subscription</h1>
-          <p className="text-muted-foreground">
-            Manage your subscription and billing information
-          </p>
+          <p className="text-muted-foreground">Manage your subscription and billing information</p>
         </div>
 
         {/* Current Plan */}
@@ -158,7 +157,9 @@ export default function OrganizationBillingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Status</span>
-                <Badge variant={organization.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
+                <Badge
+                  variant={organization.subscriptionStatus === 'active' ? 'default' : 'secondary'}
+                >
                   {organization.subscriptionStatus}
                 </Badge>
               </div>
@@ -204,8 +205,12 @@ export default function OrganizationBillingPage() {
               <div className="flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-yellow-600" />
                 <p className="text-sm">
-                  Your trial ends in {Math.ceil((new Date(organization.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000))} days.
-                  Upgrade now to continue using all features.
+                  Your trial ends in{' '}
+                  {Math.ceil(
+                    (new Date(organization.trialEndsAt).getTime() - Date.now()) /
+                      (24 * 60 * 60 * 1000)
+                  )}{' '}
+                  days. Upgrade now to continue using all features.
                 </p>
               </div>
             </div>
@@ -225,7 +230,9 @@ export default function OrganizationBillingPage() {
                 <p className="text-2xl font-semibold">
                   {usage.members}
                   {usage.limits.members > 0 && (
-                    <span className="text-sm text-muted-foreground ml-1">/ {usage.limits.members}</span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      / {usage.limits.members}
+                    </span>
                   )}
                 </p>
               </div>
@@ -237,7 +244,9 @@ export default function OrganizationBillingPage() {
                 <p className="text-2xl font-semibold">
                   {usage.items}
                   {usage.limits.items > 0 && (
-                    <span className="text-sm text-muted-foreground ml-1">/ {usage.limits.items}</span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      / {usage.limits.items}
+                    </span>
                   )}
                 </p>
               </div>
@@ -249,7 +258,9 @@ export default function OrganizationBillingPage() {
                 <p className="text-2xl font-semibold">
                   {usage.warehouses}
                   {usage.limits.warehouses > 0 && (
-                    <span className="text-sm text-muted-foreground ml-1">/ {usage.limits.warehouses}</span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      / {usage.limits.warehouses}
+                    </span>
                   )}
                 </p>
               </div>
@@ -261,7 +272,9 @@ export default function OrganizationBillingPage() {
                 <p className="text-2xl font-semibold">
                   {usage.orders}
                   {usage.limits.orders > 0 && (
-                    <span className="text-sm text-muted-foreground ml-1">/ {usage.limits.orders}</span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      / {usage.limits.orders}
+                    </span>
                   )}
                 </p>
               </div>
@@ -276,10 +289,7 @@ export default function OrganizationBillingPage() {
             {plans.map((plan) => {
               const isCurrent = plan.name.toLowerCase() === organization.subscriptionTier;
               return (
-                <Card 
-                  key={plan.name} 
-                  className={`p-6 ${isCurrent ? 'ring-2 ring-primary' : ''}`}
-                >
+                <Card key={plan.name} className={`p-6 ${isCurrent ? 'ring-2 ring-primary' : ''}`}>
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold">{plan.name}</h3>
@@ -299,7 +309,7 @@ export default function OrganizationBillingPage() {
                     </ul>
 
                     {isOwner && (
-                      <Button 
+                      <Button
                         variant={isCurrent ? 'secondary' : 'default'}
                         className="w-full"
                         disabled={isCurrent}
@@ -324,7 +334,7 @@ export default function OrganizationBillingPage() {
               Download All
             </Button>
           </div>
-          
+
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center justify-between p-3 border rounded-lg">

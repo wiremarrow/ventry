@@ -1,11 +1,13 @@
 import { prisma } from '@ventry/database';
 
 export async function seedTestInventory(organizationId: string) {
+  // Generate unique suffix for this test run
+  const testSuffix = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
   // Get or create default unit of measure
   let unitOfMeasure = await prisma.unitOfMeasure.findFirst({
     where: { organizationId },
   });
-  
+
   if (!unitOfMeasure) {
     unitOfMeasure = await prisma.unitOfMeasure.create({
       data: {
@@ -18,10 +20,10 @@ export async function seedTestInventory(organizationId: string) {
     });
   }
 
-  // Create categories
+  // Create categories with unique names
   const electronicsCategory = await prisma.itemCategory.create({
     data: {
-      name: 'Electronics',
+      name: `Electronics-${testSuffix}`,
       description: 'Electronic devices and accessories',
       organizationId,
     },
@@ -29,16 +31,16 @@ export async function seedTestInventory(organizationId: string) {
 
   const officeCategory = await prisma.itemCategory.create({
     data: {
-      name: 'Office Supplies',
+      name: `Office Supplies-${testSuffix}`,
       description: 'Office equipment and supplies',
       organizationId,
     },
   });
 
-  // Create warehouses
+  // Create warehouses with unique codes
   const mainWarehouse = await prisma.warehouse.create({
     data: {
-      code: 'MAIN',
+      code: `MAIN-${testSuffix}`,
       name: 'Main Warehouse',
       organizationId,
       line1: '123 Test St',
@@ -51,7 +53,7 @@ export async function seedTestInventory(organizationId: string) {
 
   const secondaryWarehouse = await prisma.warehouse.create({
     data: {
-      code: 'SEC',
+      code: `SEC-${testSuffix}`,
       name: 'Secondary Warehouse',
       organizationId,
       line1: '456 Test Ave',
@@ -86,7 +88,7 @@ export async function seedTestInventory(organizationId: string) {
   const items = [
     // Electronics - some with low stock
     {
-      sku: 'LAPTOP-001',
+      sku: `LAPTOP-001-${testSuffix}`,
       name: 'Business Laptop Pro',
       category: electronicsCategory.id,
       price: 1299.99,
@@ -95,7 +97,7 @@ export async function seedTestInventory(organizationId: string) {
       stock: 15, // Low stock
     },
     {
-      sku: 'LAPTOP-002',
+      sku: `LAPTOP-002-${testSuffix}`,
       name: 'Developer Laptop Ultra',
       category: electronicsCategory.id,
       price: 1899.99,
@@ -104,7 +106,7 @@ export async function seedTestInventory(organizationId: string) {
       stock: 45,
     },
     {
-      sku: 'MOUSE-001',
+      sku: `MOUSE-001-${testSuffix}`,
       name: 'Wireless Mouse',
       category: electronicsCategory.id,
       price: 29.99,
@@ -113,7 +115,7 @@ export async function seedTestInventory(organizationId: string) {
       stock: 35, // Low stock
     },
     {
-      sku: 'KEYBOARD-001',
+      sku: `KEYBOARD-001-${testSuffix}`,
       name: 'Mechanical Keyboard',
       category: electronicsCategory.id,
       price: 89.99,
@@ -123,7 +125,7 @@ export async function seedTestInventory(organizationId: string) {
     },
     // Office supplies
     {
-      sku: 'PEN-001',
+      sku: `PEN-001-${testSuffix}`,
       name: 'Blue Ballpoint Pens (12 pack)',
       category: officeCategory.id,
       price: 5.99,
@@ -132,7 +134,7 @@ export async function seedTestInventory(organizationId: string) {
       stock: 250,
     },
     {
-      sku: 'PAPER-001',
+      sku: `PAPER-001-${testSuffix}`,
       name: 'A4 Paper (500 sheets)',
       category: officeCategory.id,
       price: 8.99,
@@ -141,7 +143,7 @@ export async function seedTestInventory(organizationId: string) {
       stock: 40, // Low stock
     },
     {
-      sku: 'STAPLER-001',
+      sku: `STAPLER-001-${testSuffix}`,
       name: 'Heavy Duty Stapler',
       category: officeCategory.id,
       price: 15.99,
@@ -189,7 +191,7 @@ export async function seedTestInventory(organizationId: string) {
     const systemUser = await prisma.user.findFirst({
       where: { email: 'admin@ventry.com' },
     });
-    
+
     if (!systemUser) {
       throw new Error('System user not found');
     }

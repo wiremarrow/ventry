@@ -1,8 +1,38 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, Input, Button, Badge, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Plus, Search, TrendingUp, TrendingDown, MoreHorizontal, Eye, RotateCcw, Calendar } from 'lucide-react';
+import {
+  Card,
+  Input,
+  Button,
+  Badge,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import {
+  Plus,
+  Search,
+  TrendingUp,
+  TrendingDown,
+  MoreHorizontal,
+  Eye,
+  RotateCcw,
+  Calendar,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -30,8 +60,12 @@ export default function MovementsPage() {
   }, [dateRange.from, dateRange.to]);
 
   // Fetch movements
-  const { data: movementsData, isLoading, refetch } = trpc.stockMovements.list.useQuery({
-    movementType: movementTypeFilter === 'all' ? undefined : movementTypeFilter as MovementType,
+  const {
+    data: movementsData,
+    isLoading,
+    refetch,
+  } = trpc.stockMovements.list.useQuery({
+    movementType: movementTypeFilter === 'all' ? undefined : (movementTypeFilter as MovementType),
     dateFrom,
     dateTo,
     page,
@@ -41,26 +75,32 @@ export default function MovementsPage() {
   });
 
   // Filter movements by search term
-  const filteredMovements = movementsData?.movements?.filter(movement => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      movement.item.sku.toLowerCase().includes(search) ||
-      movement.item.name.toLowerCase().includes(search) ||
-      movement.notes?.toLowerCase().includes(search) ||
-      movement.refId?.toLowerCase().includes(search)
-    );
-  }) || [];
+  const filteredMovements =
+    movementsData?.movements?.filter((movement) => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        movement.item.sku.toLowerCase().includes(search) ||
+        movement.item.name.toLowerCase().includes(search) ||
+        movement.notes?.toLowerCase().includes(search) ||
+        movement.refId?.toLowerCase().includes(search)
+      );
+    }) || [];
 
   // Calculate stats
   const stats = {
     total: movementsData?.pagination.total || 0,
-    inbound: movementsData?.movements?.filter(m => m.movementType === 'INBOUND').reduce((sum, m) => sum + m.qty, 0) || 0,
-    outbound: movementsData?.movements?.filter(m => m.movementType === 'OUTBOUND').reduce((sum, m) => sum + m.qty, 0) || 0,
+    inbound:
+      movementsData?.movements
+        ?.filter((m) => m.movementType === 'INBOUND')
+        .reduce((sum, m) => sum + m.qty, 0) || 0,
+    outbound:
+      movementsData?.movements
+        ?.filter((m) => m.movementType === 'OUTBOUND')
+        .reduce((sum, m) => sum + m.qty, 0) || 0,
     netChange: 0,
   };
   stats.netChange = stats.inbound - stats.outbound;
-
 
   type LocationWithWarehouse = {
     code: string;
@@ -103,7 +143,9 @@ export default function MovementsPage() {
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Inbound Qty</p>
-                <p className="text-2xl font-bold text-green-600">+{stats.inbound.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  +{stats.inbound.toLocaleString()}
+                </p>
                 <Badge variant="default" className="text-xs">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   Received
@@ -123,8 +165,11 @@ export default function MovementsPage() {
             <Card className="p-6">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Net Change</p>
-                <p className={`text-2xl font-bold ${stats.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.netChange >= 0 ? '+' : ''}{stats.netChange.toLocaleString()}
+                <p
+                  className={`text-2xl font-bold ${stats.netChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                >
+                  {stats.netChange >= 0 ? '+' : ''}
+                  {stats.netChange.toLocaleString()}
                 </p>
                 <p className="text-xs text-muted-foreground">Period balance</p>
               </div>
@@ -158,7 +203,10 @@ export default function MovementsPage() {
                   <SelectItem value="LOSS">Loss</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={dateRange.from.toString()} onValueChange={(value) => setDateRange({ ...dateRange, from: parseInt(value) })}>
+              <Select
+                value={dateRange.from.toString()}
+                onValueChange={(value) => setDateRange({ ...dateRange, from: parseInt(value) })}
+              >
                 <SelectTrigger className="w-48">
                   <Calendar className="h-4 w-4 mr-2" />
                   <SelectValue />
@@ -202,8 +250,8 @@ export default function MovementsPage() {
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8">
                       <p className="text-muted-foreground">
-                        {searchTerm || movementTypeFilter !== 'all' 
-                          ? 'No movements found matching your filters' 
+                        {searchTerm || movementTypeFilter !== 'all'
+                          ? 'No movements found matching your filters'
                           : 'No stock movements recorded yet'}
                       </p>
                     </TableCell>
@@ -215,24 +263,32 @@ export default function MovementsPage() {
                         <div>
                           <p className="font-medium">{formatDate(movement.movedAt)}</p>
                           <p className="text-sm text-muted-foreground">
-                            {new Date(movement.movedAt).toLocaleTimeString('en-US', { 
-                              hour: 'numeric', 
-                              minute: '2-digit', 
-                              hour12: true 
+                            {new Date(movement.movedAt).toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true,
                             })}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell><MovementTypeBadge type={movement.movementType} /></TableCell>
+                      <TableCell>
+                        <MovementTypeBadge type={movement.movementType} />
+                      </TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{movement.item.sku}</p>
                           <p className="text-sm text-muted-foreground">{movement.item.name}</p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-medium">{movement.qty.toLocaleString()}</TableCell>
-                      <TableCell className="text-sm">{formatLocation(movement.fromLocation)}</TableCell>
-                      <TableCell className="text-sm">{formatLocation(movement.toLocation)}</TableCell>
+                      <TableCell className="text-right font-medium">
+                        {movement.qty.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {formatLocation(movement.fromLocation)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {formatLocation(movement.toLocation)}
+                      </TableCell>
                       <TableCell className="text-sm">
                         {movement.movedBy.firstName} {movement.movedBy.lastName}
                       </TableCell>
@@ -253,10 +309,12 @@ export default function MovementsPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
-                              setSelectedMovement(movement.id);
-                              setDetailsOpen(true);
-                            }}>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedMovement(movement.id);
+                                setDetailsOpen(true);
+                              }}
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>

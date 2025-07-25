@@ -111,7 +111,7 @@ describe('StockAdjustmentDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup default mutation mock
     vi.mocked(trpc.inventory.adjust.useMutation).mockReturnValue({
       mutate: mockMutate,
@@ -236,7 +236,7 @@ describe('StockAdjustmentDialog', () => {
 
   it('submits adjustment with correct data', async () => {
     const user = userEvent.setup();
-    
+
     render(
       <StockAdjustmentDialog
         open={true}
@@ -289,10 +289,10 @@ describe('StockAdjustmentDialog', () => {
 
     const quantityInput = screen.getByLabelText('Quantity');
     const reasonInput = screen.getByLabelText('Reason');
-    
+
     // First fill in the reason (required field)
     await user.type(reasonInput, 'Test reason');
-    
+
     // Clear quantity and enter 0
     await user.clear(quantityInput);
     await user.type(quantityInput, '0');
@@ -387,9 +387,11 @@ describe('StockAdjustmentDialog', () => {
 
   it('closes dialog on successful submission', async () => {
     const user = userEvent.setup();
-    
+
     // Set up the mutation to call onSuccess callback
-    let capturedOnSuccess: ((data: unknown, variables: unknown, context: unknown) => void) | undefined;
+    let capturedOnSuccess:
+      | ((data: unknown, variables: unknown, context: unknown) => void)
+      | undefined;
     vi.mocked(trpc.inventory.adjust.useMutation).mockImplementation((options) => {
       capturedOnSuccess = options?.onSuccess;
       return {
@@ -417,7 +419,7 @@ describe('StockAdjustmentDialog', () => {
     await waitFor(() => {
       expect(mockMutate).toHaveBeenCalled();
     });
-    
+
     // Call the onSuccess callback
     capturedOnSuccess?.({}, {}, {});
 

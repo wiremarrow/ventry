@@ -173,7 +173,9 @@ describe('RLS Types', () => {
       ];
 
       invalidValues.forEach((invalid) => {
-        expect(() => sanitizeSessionValue(invalid)).toThrow('Invalid session variable value format');
+        expect(() => sanitizeSessionValue(invalid)).toThrow(
+          'Invalid session variable value format'
+        );
       });
     });
   });

@@ -37,7 +37,7 @@ export const AUTH_ERRORS = {
   },
 } as const;
 
-export type AuthErrorCode = typeof AUTH_ERRORS[keyof typeof AUTH_ERRORS]['code'];
+export type AuthErrorCode = (typeof AUTH_ERRORS)[keyof typeof AUTH_ERRORS]['code'];
 export type AuthErrorKey = keyof typeof AUTH_ERRORS;
 
 /**
@@ -52,7 +52,7 @@ export const RLS_BYPASS_REASONS = {
   ORGANIZATION_VERIFICATION: 'Organization membership verification',
 } as const;
 
-export type RLSBypassReason = typeof RLS_BYPASS_REASONS[keyof typeof RLS_BYPASS_REASONS];
+export type RLSBypassReason = (typeof RLS_BYPASS_REASONS)[keyof typeof RLS_BYPASS_REASONS];
 
 /**
  * Cookie names used in the application
@@ -64,4 +64,4 @@ export const COOKIE_NAMES = {
   SESSION_ID: 'session-id',
 } as const;
 
-export type CookieName = typeof COOKIE_NAMES[keyof typeof COOKIE_NAMES];
+export type CookieName = (typeof COOKIE_NAMES)[keyof typeof COOKIE_NAMES];

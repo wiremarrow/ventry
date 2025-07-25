@@ -60,12 +60,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -90,7 +90,7 @@ describe('Reports Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.inventory.findMany.mockReset();
     mockPrisma.inventory.groupBy.mockReset();
@@ -113,14 +113,14 @@ describe('Reports Router', () => {
     mockPrisma.customer.findMany.mockReset();
     mockPrisma.supplier.findMany.mockReset();
     mockPrisma.auditLog.create.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -128,8 +128,8 @@ describe('Reports Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -311,13 +311,15 @@ describe('Reports Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
       });
 
-      await expect(noOrgCaller.reports.inventoryValuation({})).rejects.toThrow('No organization selected');
+      await expect(noOrgCaller.reports.inventoryValuation({})).rejects.toThrow(
+        'No organization selected'
+      );
     });
   });
 
@@ -620,7 +622,7 @@ describe('Reports Router', () => {
       expect(result.summary.expired).toBe(1);
       expect(result.summary.expiringSoon).toBe(1);
       expect(result.summary.totalValue).toBe(1250); // (100*10) + (50*5)
-      
+
       expect(result.items[0].inventory.status).toBe('EXPIRED');
       expect(result.items[1].inventory.status).toBe('EXPIRING_SOON');
 
@@ -1013,7 +1015,7 @@ describe('Reports Router', () => {
       expect(result.summary.totalGrossProfit).toBe(435);
       expect(result.summary.totalIndirectCosts).toBe(150); // 15% of 1000
       expect(result.summary.totalNetProfit).toBe(285);
-      
+
       expect(result.byItem[0].grossMargin).toBe(43.5); // 435/1000 * 100
       expect(result.byItem[0].netMargin).toBeCloseTo(28.5, 1); // 285/1000 * 100
     });
@@ -1106,7 +1108,7 @@ describe('Reports Router', () => {
 
       expect(result.method).toBe('COGS');
       expect(result.items).toHaveLength(1);
-      
+
       // Average inventory = (100 + 100) / 2 = 100
       // COGS = 1200 * 50 = 60000
       // Annualized COGS = 60000 * (365/31) = 706451.61
@@ -1240,7 +1242,9 @@ describe('Reports Router', () => {
       expect(result.forecasts).toHaveLength(1);
       expect(result.forecasts[0].forecast.confidenceLevel).toBe(95);
       expect(result.forecasts[0].forecast.daily).toBeGreaterThan(0);
-      expect(result.forecasts[0].forecast.upperBound).toBeGreaterThan(result.forecasts[0].forecast.lowerBound);
+      expect(result.forecasts[0].forecast.upperBound).toBeGreaterThan(
+        result.forecasts[0].forecast.lowerBound
+      );
       expect(result.forecasts[0].recommendation.reorderNeeded).toBeDefined();
     });
 

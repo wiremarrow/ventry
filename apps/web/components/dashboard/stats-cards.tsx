@@ -10,22 +10,32 @@ interface StatsCardsProps {
 
 export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps = {}) {
   // Fetch live dashboard analytics data with auto-refresh
-  const { data: analytics, isLoading: loading, error } = trpc.analytics.dashboard.useQuery({
-    period: 'last30days',
-    includeAllWarehouses: true,
-  }, {
-    refetchInterval: refreshInterval,
-    refetchIntervalInBackground: true,
-  });
+  const {
+    data: analytics,
+    isLoading: loading,
+    error,
+  } = trpc.analytics.dashboard.useQuery(
+    {
+      period: 'last30days',
+      includeAllWarehouses: true,
+    },
+    {
+      refetchInterval: refreshInterval,
+      refetchIntervalInBackground: true,
+    }
+  );
 
   // Fetch additional data for locations count with auto-refresh
-  const { data: warehouses } = trpc.warehouses.list.useQuery({
-    includeInactive: false,
-    includeStats: false,
-  }, {
-    refetchInterval: refreshInterval,
-    refetchIntervalInBackground: true,
-  });
+  const { data: warehouses } = trpc.warehouses.list.useQuery(
+    {
+      includeInactive: false,
+      includeStats: false,
+    },
+    {
+      refetchInterval: refreshInterval,
+      refetchIntervalInBackground: true,
+    }
+  );
 
   if (loading) {
     return (
@@ -64,13 +74,14 @@ export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps = {}) {
   }
 
   // Calculate total locations across all warehouses
-  const totalLocations = warehouses?.reduce((sum, warehouse) => 
-    sum + (warehouse._count?.locations || 0), 0) || 0;
+  const totalLocations =
+    warehouses?.reduce((sum, warehouse) => sum + (warehouse._count?.locations || 0), 0) || 0;
 
   // Calculate recent movements (last 30 days)
-  const recentMovements = (analytics.operations?.receipts || 0) + 
-                         (analytics.operations?.shipments || 0) + 
-                         (analytics.operations?.transfers || 0);
+  const recentMovements =
+    (analytics.operations?.receipts || 0) +
+    (analytics.operations?.shipments || 0) +
+    (analytics.operations?.transfers || 0);
 
   const cards = [
     {

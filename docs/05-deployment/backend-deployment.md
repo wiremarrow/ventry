@@ -161,7 +161,7 @@ service:
   taskDefinition: ventry-backend:latest
   desiredCount: 2
   launchType: FARGATE
-  
+
   networkConfiguration:
     awsvpcConfiguration:
       subnets:
@@ -170,12 +170,12 @@ service:
       securityGroups:
         - sg-backend
       assignPublicIp: DISABLED
-  
+
   loadBalancers:
     - targetGroupArn: arn:aws:elasticloadbalancing:xxx
       containerName: ventry-backend
       containerPort: 4000
-  
+
   deploymentConfiguration:
     maximumPercent: 200
     minimumHealthyPercent: 100
@@ -226,44 +226,44 @@ spec:
         app: ventry-backend
     spec:
       containers:
-      - name: backend
-        image: registry.example.com/ventry-backend:latest
-        ports:
-        - containerPort: 4000
-        env:
-        - name: NODE_ENV
-          value: "production"
-        - name: PORT
-          value: "4000"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: ventry-secrets
-              key: database-url
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: ventry-secrets
-              key: jwt-secret
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 4000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 4000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: backend
+          image: registry.example.com/ventry-backend:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: NODE_ENV
+              value: 'production'
+            - name: PORT
+              value: '4000'
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ventry-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ventry-secrets
+                  key: jwt-secret
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '1Gi'
+              cpu: '1000m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 5
 ---
 apiVersion: v1
 kind: Service
@@ -312,7 +312,7 @@ services:
 databases:
   - name: db
     engine: PG
-    version: "16"
+    version: '16'
     size: db-s-1vcpu-1gb
     num_nodes: 1
 ```
@@ -354,9 +354,9 @@ REDIS_URL=redis://xxx:6379
 #### AWS Secrets Manager
 
 ```typescript
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
-const client = new SecretsManagerClient({ region: "us-east-1" });
+const client = new SecretsManagerClient({ region: 'us-east-1' });
 
 async function getSecret(secretName: string) {
   const command = new GetSecretValueCommand({ SecretId: secretName });
@@ -365,7 +365,7 @@ async function getSecret(secretName: string) {
 }
 
 // Load secrets on startup
-const secrets = await getSecret("ventry/production");
+const secrets = await getSecret('ventry/production');
 process.env = { ...process.env, ...secrets };
 ```
 
@@ -418,7 +418,7 @@ upstream ventry_backend {
 server {
     listen 80;
     server_name api.ventry.app;
-    
+
     location / {
         proxy_pass http://ventry_backend;
         proxy_http_version 1.1;
@@ -429,13 +429,13 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_cache_bypass $http_upgrade;
-        
+
         # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
     }
-    
+
     location /health {
         proxy_pass http://ventry_backend/health;
         access_log off;
@@ -497,12 +497,12 @@ export async function healthCheckRoute(server: FastifyInstance) {
     try {
       // Check database connection
       await server.prisma.$queryRaw`SELECT 1`;
-      
+
       // Check Redis if used
       if (server.redis) {
         await server.redis.ping();
       }
-      
+
       return {
         status: 'healthy',
         timestamp: new Date().toISOString(),
@@ -527,9 +527,7 @@ export async function healthCheckRoute(server: FastifyInstance) {
 // Configure Pino logger
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development' 
-    ? { target: 'pino-pretty' }
-    : undefined,
+  transport: process.env.NODE_ENV === 'development' ? { target: 'pino-pretty' } : undefined,
   serializers: {
     req: (req) => ({
       id: req.id,
@@ -601,15 +599,15 @@ const redis = new Redis(process.env.REDIS_URL);
 async function cacheMiddleware(request, reply) {
   const key = `cache:${request.method}:${request.url}`;
   const cached = await redis.get(key);
-  
+
   if (cached) {
     return JSON.parse(cached);
   }
-  
+
   // Store original send
   const originalSend = reply.send;
-  
-  reply.send = function(data) {
+
+  reply.send = function (data) {
     // Cache for 5 minutes
     redis.setex(key, 300, JSON.stringify(data));
     return originalSend.call(this, data);

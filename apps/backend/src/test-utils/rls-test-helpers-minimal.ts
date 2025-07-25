@@ -29,10 +29,7 @@ export async function setRLSContext(
 /**
  * Verifies that RLS is enabled on a table
  */
-export async function verifyRLSEnabled(
-  prisma: PrismaClient,
-  tableName: string
-): Promise<boolean> {
+export async function verifyRLSEnabled(prisma: PrismaClient, tableName: string): Promise<boolean> {
   try {
     const result = await prisma.$queryRaw<Array<{ relrowsecurity: boolean }>>`
       SELECT relrowsecurity 
@@ -40,7 +37,7 @@ export async function verifyRLSEnabled(
       WHERE relname = ${tableName} 
       AND relnamespace = 'public'::regnamespace
     `;
-    
+
     return result[0]?.relrowsecurity === true;
   } catch (error) {
     logger.error({ error, tableName }, 'Failed to verify RLS status');
@@ -63,7 +60,7 @@ export async function getCurrentRLSContext(prisma: PrismaClient): Promise<{
         current_organization_id() as organization_id,
         current_user_id() as user_id
     `;
-    
+
     return {
       organizationId: result[0]?.organization_id || null,
       userId: result[0]?.user_id || null,
@@ -82,26 +79,20 @@ export async function verifyRLSFiltering<T extends { organizationId: string }>(
   items: T[],
   expectedOrganizationId: string
 ): boolean {
-  return items.every(item => item.organizationId === expectedOrganizationId);
+  return items.every((item) => item.organizationId === expectedOrganizationId);
 }
 
 /**
  * Creates a test context for RLS testing
  * This assumes the database already has RLS enabled and policies in place
  */
-export function createRLSTestContext(
-  prisma: PrismaClient,
-  organizationId: string,
-  userId: string
-) {
+export function createRLSTestContext(prisma: PrismaClient, organizationId: string, userId: string) {
   return {
-    async runWithContext<T>(
-      fn: (tx: PrismaClient) => Promise<T>
-    ): Promise<T> {
+    async runWithContext<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
       return prisma.$transaction(async (tx) => {
         // Set the RLS context for this transaction
         await tx.$executeRaw`SELECT set_rls_context(${organizationId}, ${userId})`;
-        
+
         // Run the test function
         return fn(tx);
       });

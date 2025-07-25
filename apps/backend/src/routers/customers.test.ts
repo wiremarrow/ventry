@@ -65,8 +65,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       CustomerWhereInput: {},
@@ -163,14 +163,14 @@ describe('Customers Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and SALES role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -178,8 +178,8 @@ describe('Customers Router', () => {
       organizationRole: 'ADMIN',
       role: 'SALES', // Sales can manage customers
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -267,7 +267,7 @@ describe('Customers Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -357,9 +357,9 @@ describe('Customers Router', () => {
     it('should throw NOT_FOUND when customer does not exist', async () => {
       mockPrisma.customer.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.customers.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Customer not found');
+      await expect(caller.customers.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Customer not found'
+      );
     });
   });
 
@@ -415,7 +415,7 @@ describe('Customers Router', () => {
     });
 
     it.skip('should require SALES or MANAGER role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -489,7 +489,7 @@ describe('Customers Router', () => {
   describe('delete', () => {
     it('should delete a customer', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -521,7 +521,7 @@ describe('Customers Router', () => {
 
     it('should throw PRECONDITION_FAILED when customer has open orders', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -535,14 +535,14 @@ describe('Customers Router', () => {
       mockPrisma.customer.findFirst.mockResolvedValue(mockCustomer);
       mockPrisma.order.count.mockResolvedValue(3); // Has open orders
 
-      await expect(
-        adminCaller.customers.delete({ id: testId('cust1') })
-      ).rejects.toThrow('Cannot delete customer with 3 active orders');
+      await expect(adminCaller.customers.delete({ id: testId('cust1') })).rejects.toThrow(
+        'Cannot delete customer with 3 active orders'
+      );
     });
 
     it('should allow MANAGER role for delete', async () => {
       // Create caller with MANAGER role (default already has SALES role)
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -569,9 +569,9 @@ describe('Customers Router', () => {
     });
 
     it('should require ADMIN or MANAGER role for delete', async () => {
-      await expect(
-        caller.customers.delete({ id: testId('cust1') })
-      ).rejects.toThrow('Only administrators and managers can delete customers');
+      await expect(caller.customers.delete({ id: testId('cust1') })).rejects.toThrow(
+        'Only administrators and managers can delete customers'
+      );
     });
   });
 

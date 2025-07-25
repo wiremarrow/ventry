@@ -62,8 +62,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       InventoryWhereInput: {},
@@ -151,14 +151,14 @@ describe('Inventory Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and MANAGER role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -166,8 +166,8 @@ describe('Inventory Router', () => {
       organizationRole: 'ADMIN',
       role: 'MANAGER', // Required for inventory operations
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -236,9 +236,7 @@ describe('Inventory Router', () => {
           where: expect.objectContaining({
             item: expect.objectContaining({
               organizationId: testId('org'),
-              OR: expect.arrayContaining([
-                { sku: { contains: 'ITEM001', mode: 'insensitive' } },
-              ]),
+              OR: expect.arrayContaining([{ sku: { contains: 'ITEM001', mode: 'insensitive' } }]),
             }),
           }),
         })
@@ -280,10 +278,10 @@ describe('Inventory Router', () => {
       const mockInventory = [
         {
           id: testId('inv1'),
-          qtyOnHand: 0,  // Zero quantity
+          qtyOnHand: 0, // Zero quantity
           qtyReserved: 0,
           item: {
-            reorderPoint: 10,  // Has reorder point
+            reorderPoint: 10, // Has reorder point
             category: {},
             unitOfMeasure: {},
           },
@@ -294,7 +292,7 @@ describe('Inventory Router', () => {
         },
         {
           id: testId('inv2'),
-          qtyOnHand: 5,  // Below reorder point
+          qtyOnHand: 5, // Below reorder point
           qtyReserved: 0,
           item: {
             reorderPoint: 20,
@@ -321,25 +319,27 @@ describe('Inventory Router', () => {
       expect(result.inventory).toHaveLength(2);
       expect(result.inventory[0].lowStock).toBe(true);
       expect(result.inventory[1].lowStock).toBe(true);
-      
+
       // Verify that zero quantity filtering was NOT applied when lowStock is true
       expect(mockPrisma.inventory.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.not.objectContaining({
-            qtyOnHand: { gt: 0 }
-          })
+            qtyOnHand: { gt: 0 },
+          }),
         })
       );
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
       });
 
-      await expect(noOrgCaller.inventory.list({ page: 1, limit: 20 })).rejects.toThrow('No organization selected');
+      await expect(noOrgCaller.inventory.list({ page: 1, limit: 20 })).rejects.toThrow(
+        'No organization selected'
+      );
     });
   });
 
@@ -369,9 +369,9 @@ describe('Inventory Router', () => {
         id: testId('loc1'),
         code: 'A-1-1',
         warehouseId: testId('wh1'),
-        warehouse: { 
+        warehouse: {
           organizationId: testId('org'),
-          name: 'Main Warehouse'
+          name: 'Main Warehouse',
         },
       };
 
@@ -396,9 +396,9 @@ describe('Inventory Router', () => {
         id: testId('loc2'),
         code: 'B-2-2',
         warehouseId: testId('wh1'),
-        warehouse: { 
+        warehouse: {
           organizationId: testId('org'),
-          name: 'Main Warehouse'
+          name: 'Main Warehouse',
         },
       });
       mockPrisma.inventory.findMany.mockResolvedValue([]);
@@ -601,14 +601,16 @@ describe('Inventory Router', () => {
         organizationId: testId('org'),
       });
       mockPrisma.location.findUnique
-        .mockResolvedValueOnce({ // From location
+        .mockResolvedValueOnce({
+          // From location
           id: testId('loc1'),
           code: 'A-1-1',
           warehouse: { organizationId: testId('org'), code: 'WH1' },
         })
-        .mockResolvedValueOnce({ // To location
+        .mockResolvedValueOnce({
+          // To location
           id: testId('loc2'),
-          code: 'B-2-2', 
+          code: 'B-2-2',
           warehouse: { organizationId: testId('org'), code: 'WH2' },
         });
       mockPrisma.inventory.findFirst
@@ -624,7 +626,7 @@ describe('Inventory Router', () => {
         movementType: 'TRANSFER',
       };
       mockPrisma.stockMovement.create.mockResolvedValue(mockMovement);
-      
+
       mockPrisma.$transaction.mockImplementation(async (fn) => {
         const result = await fn(mockPrisma);
         return mockMovement;

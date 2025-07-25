@@ -18,9 +18,9 @@ export const getSupabaseConfig = (): SupabaseConfig => {
 // Helper to check if Supabase operations should be performed
 export const shouldUseSupabase = (operation: 'read' | 'write'): boolean => {
   const config = getSupabaseConfig();
-  
+
   if (!config.enabled) return false;
-  
+
   switch (config.migrationMode) {
     case 'dual':
       return true;

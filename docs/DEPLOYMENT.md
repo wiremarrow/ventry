@@ -14,24 +14,28 @@ Ventry supports multiple deployment strategies with Vercel as the primary platfo
 ### Initial Setup
 
 1. **Install Vercel CLI**
+
    ```bash
    pnpm add -g vercel
    ```
 
 2. **Link your project**
+
    ```bash
    vercel link
    ```
+
    This will create `.vercel` directory with project configuration.
 
 3. **Configure environment variables**
+
    ```bash
    # Production variables
    vercel env add DATABASE_URL production
    vercel env add OPENAI_API_KEY production
    vercel env add ANTHROPIC_API_KEY production
    vercel env add SENTRY_DSN production
-   
+
    # Preview variables (for PRs)
    vercel env add DATABASE_URL preview
    # ... repeat for other variables
@@ -53,6 +57,7 @@ vercel --prod --scope your-team
 ### Automatic Deployments
 
 With GitHub integration:
+
 - **Production**: Deploys on push to `main`
 - **Preview**: Deploys on every PR
 - **Comments**: Bot adds deployment URLs to PRs
@@ -60,6 +65,7 @@ With GitHub integration:
 ### Configuration
 
 The `vercel.json` file controls:
+
 - Build settings
 - Environment variables
 - Headers and redirects
@@ -70,11 +76,13 @@ The `vercel.json` file controls:
 ### Docker Deployment
 
 1. **Build the image**
+
    ```bash
    docker build -t ventry-backend -f apps/backend/Dockerfile .
    ```
 
 2. **Push to registry**
+
    ```bash
    # GitHub Container Registry
    docker tag ventry-backend ghcr.io/your-org/ventry-backend:latest
@@ -90,6 +98,7 @@ The `vercel.json` file controls:
 ### Environment Variables
 
 Required for backend:
+
 ```env
 NODE_ENV=production
 DATABASE_URL=postgresql://...
@@ -163,6 +172,7 @@ pnpm deploy:all
 ### Sentry Integration
 
 Automatic error tracking:
+
 - Frontend errors with session replay
 - Backend errors with context
 - Performance monitoring
@@ -274,17 +284,20 @@ pnpm db:migrate:rollback
 ## Cost Optimization
 
 ### Vercel
+
 - Free tier: 100GB bandwidth
 - Pro: $20/month per member
 - Monitor usage in dashboard
 
 ### Database
+
 - Start with free tiers
 - Scale based on usage
 - Use connection pooling
 - Optimize queries
 
 ### Monitoring
+
 - Sentry free tier: 5k errors/month
 - Upgrade as needed
 
@@ -293,10 +306,11 @@ pnpm db:migrate:rollback
 ### Common Issues
 
 1. **Build Failures**
+
    ```bash
    # Check build logs
    vercel logs [deployment-url]
-   
+
    # Local build test
    pnpm build
    ```
@@ -307,10 +321,11 @@ pnpm db:migrate:rollback
    - Test connection limits
 
 3. **Environment Variables**
+
    ```bash
    # List all env vars
    vercel env ls
-   
+
    # Pull to .env.local
    vercel env pull
    ```

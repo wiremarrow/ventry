@@ -60,15 +60,8 @@ export function InventoryFilters({
 
         {/* Low Stock Toggle */}
         <div className="flex items-center space-x-2">
-          <Switch
-            id="low-stock"
-            checked={showLowStock}
-            onCheckedChange={onLowStockChange}
-          />
-          <label
-            htmlFor="low-stock"
-            className="text-sm font-medium text-gray-700 cursor-pointer"
-          >
+          <Switch id="low-stock" checked={showLowStock} onCheckedChange={onLowStockChange} />
+          <label htmlFor="low-stock" className="text-sm font-medium text-gray-700 cursor-pointer">
             Show low stock only
           </label>
         </div>

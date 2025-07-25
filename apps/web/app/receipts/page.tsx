@@ -1,15 +1,28 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, Input, Button, Skeleton, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { 
-  Plus, 
-  Search, 
-  MoreHorizontal, 
-  Eye, 
-  FileText,
-  AlertCircle
-} from 'lucide-react';
+import {
+  Card,
+  Input,
+  Button,
+  Skeleton,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import { Plus, Search, MoreHorizontal, Eye, FileText, AlertCircle } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { formatDate } from '@/lib/utils';
 import { ProtectedRoute } from '@/components/auth/protected-route';
@@ -36,24 +49,29 @@ export default function ReceiptsPage() {
   }, [dateRange.from, dateRange.to]);
 
   // Fetch receipts with filtering
-  const { data: receipts, isLoading, refetch } = trpc.receipts.list.useQuery({
+  const {
+    data: receipts,
+    isLoading,
+    refetch,
+  } = trpc.receipts.list.useQuery({
     search: searchTerm || undefined,
     dateFrom,
     dateTo,
   });
 
   // Filter by PO status locally
-  const filteredReceipts = receipts?.receipts?.filter(receipt => {
-    if (poStatusFilter === 'all') return true;
-    return receipt.purchaseOrder?.status === poStatusFilter;
-  }) || [];
+  const filteredReceipts =
+    receipts?.receipts?.filter((receipt) => {
+      if (poStatusFilter === 'all') return true;
+      return receipt.purchaseOrder?.status === poStatusFilter;
+    }) || [];
 
   // Calculate stats
   const stats = {
     total: filteredReceipts.length,
     totalItems: filteredReceipts.reduce((sum, r) => sum + (r.itemCount || 0), 0),
-    withDiscrepancies: filteredReceipts.filter(r => r.hasDiscrepancy).length,
-    recentWeek: filteredReceipts.filter(r => {
+    withDiscrepancies: filteredReceipts.filter((r) => r.hasDiscrepancy).length,
+    recentWeek: filteredReceipts.filter((r) => {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
       return new Date(r.receivedDate) >= weekAgo;
@@ -136,8 +154,8 @@ export default function ReceiptsPage() {
                   <SelectItem value="RECEIVED">Fully Received</SelectItem>
                 </SelectContent>
               </Select>
-              <Select 
-                value={`${dateRange.from}`} 
+              <Select
+                value={`${dateRange.from}`}
                 onValueChange={(value) => setDateRange({ from: parseInt(value), to: 0 })}
               >
                 <SelectTrigger className="w-40">
@@ -186,7 +204,7 @@ export default function ReceiptsPage() {
                 ) : (
                   filteredReceipts.map((receipt) => {
                     const hasDiscrepancy = receipt.hasDiscrepancy;
-                    
+
                     return (
                       <TableRow key={receipt.id}>
                         <TableCell className="font-medium">
@@ -203,16 +221,14 @@ export default function ReceiptsPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span className="text-sm">{receipt.itemCount || 0} items</span>
-                            {hasDiscrepancy && (
-                              <AlertCircle className="h-4 w-4 text-orange-500" />
-                            )}
+                            {hasDiscrepancy && <AlertCircle className="h-4 w-4 text-orange-500" />}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
                           {receipt.receivedBy?.firstName} {receipt.receivedBy?.lastName}
                         </TableCell>
                         <TableCell>
-                          <ReceiptStatusBadge 
+                          <ReceiptStatusBadge
                             poStatus={receipt.purchaseOrder?.status || 'PENDING'}
                             hasDiscrepancy={hasDiscrepancy}
                           />
@@ -225,9 +241,7 @@ export default function ReceiptsPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => handleViewDetails(receipt.id)}
-                              >
+                              <DropdownMenuItem onClick={() => handleViewDetails(receipt.id)}>
                                 <Eye className="mr-2 h-4 w-4" />
                                 View Details
                               </DropdownMenuItem>
@@ -244,7 +258,7 @@ export default function ReceiptsPage() {
         </div>
 
         {/* Dialogs */}
-        <CreateReceiptDialog 
+        <CreateReceiptDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
           onSuccess={() => {

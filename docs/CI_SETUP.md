@@ -7,6 +7,7 @@ This guide walks you through setting up the external services and configurations
 ## What's Automated vs Manual
 
 ### ✅ Fully Automated (via scripts)
+
 - Branch protection with all 12 required CI jobs
 - Security features (vulnerability alerts, Dependabot)
 - Environment creation (staging, production)
@@ -14,6 +15,7 @@ This guide walks you through setting up the external services and configurations
 - Setup validation and verification
 
 ### ⚠️ Still Manual (external services)
+
 - Creating accounts on external services (Turbo, Vercel, Sentry)
 - Getting API tokens from these services
 - Linking Vercel project (`vercel link`)
@@ -74,6 +76,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 ### Using GitHub CLI (Recommended)
 
 If you prefer to run just the secrets setup:
+
 ```bash
 ./tools/scripts/setup-ci-secrets.sh
 ```
@@ -84,18 +87,18 @@ If you prefer to run just the secrets setup:
 2. Navigate to **Settings** → **Secrets and variables** → **Actions**
 3. Click **New repository secret** for each:
 
-| Secret Name | Description | Required | How to Get |
-|------------|-------------|----------|------------|
-| `TURBO_TOKEN` | Turborepo remote caching | Yes | [Sign up at turbo.build](https://turbo.build/repo/docs/core-concepts/remote-caching) |
-| `TURBO_TEAM` | Your Turborepo team name | Yes | From your Turbo dashboard |
-| `VERCEL_TOKEN` | Vercel deployment token | Yes | [Get from Vercel dashboard](https://vercel.com/account/tokens) |
-| `VERCEL_ORG_ID` | Vercel organization ID | Yes | Run `vercel link` locally |
-| `VERCEL_PROJECT_ID` | Vercel project ID | Yes | Run `vercel link` locally |
-| `CODECOV_TOKEN` | Code coverage reporting | No | [Sign up at codecov.io](https://codecov.io/) |
-| `SNYK_TOKEN` | Security scanning | No | [Sign up at snyk.io](https://snyk.io/) |
-| `SLACK_WEBHOOK` | Deployment notifications | No | [Create Slack webhook](https://api.slack.com/messaging/webhooks) |
-| `SENTRY_DSN` | Error tracking | No | [Get from Sentry](https://sentry.io/) |
-| `SENTRY_AUTH_TOKEN` | Sentry source maps | No | [Create auth token](https://sentry.io/settings/auth-tokens/) |
+| Secret Name         | Description              | Required | How to Get                                                                           |
+| ------------------- | ------------------------ | -------- | ------------------------------------------------------------------------------------ |
+| `TURBO_TOKEN`       | Turborepo remote caching | Yes      | [Sign up at turbo.build](https://turbo.build/repo/docs/core-concepts/remote-caching) |
+| `TURBO_TEAM`        | Your Turborepo team name | Yes      | From your Turbo dashboard                                                            |
+| `VERCEL_TOKEN`      | Vercel deployment token  | Yes      | [Get from Vercel dashboard](https://vercel.com/account/tokens)                       |
+| `VERCEL_ORG_ID`     | Vercel organization ID   | Yes      | Run `vercel link` locally                                                            |
+| `VERCEL_PROJECT_ID` | Vercel project ID        | Yes      | Run `vercel link` locally                                                            |
+| `CODECOV_TOKEN`     | Code coverage reporting  | No       | [Sign up at codecov.io](https://codecov.io/)                                         |
+| `SNYK_TOKEN`        | Security scanning        | No       | [Sign up at snyk.io](https://snyk.io/)                                               |
+| `SLACK_WEBHOOK`     | Deployment notifications | No       | [Create Slack webhook](https://api.slack.com/messaging/webhooks)                     |
+| `SENTRY_DSN`        | Error tracking           | No       | [Get from Sentry](https://sentry.io/)                                                |
+| `SENTRY_AUTH_TOKEN` | Sentry source maps       | No       | [Create auth token](https://sentry.io/settings/auth-tokens/)                         |
 
 ## Step 3: Environment Configuration
 
@@ -140,6 +143,7 @@ If you prefer manual configuration or need to customize:
 4. Enable these protections:
 
 ### Required Status Checks
+
 - ✅ Require status checks to pass before merging
 - ✅ Require branches to be up to date before merging
 - Select these status checks (add after first CI run):
@@ -157,9 +161,11 @@ If you prefer manual configuration or need to customize:
   - **Coverage Gate** - Test coverage threshold validation
 
 ### Optional Checks
+
 - **Docker Build** - Only runs when Docker files change, not required for merge
 
 ### Pull Request Requirements
+
 - ✅ Require a pull request before merging
   - ✅ Require approvals: 1-2
   - ✅ Dismiss stale pull request approvals
@@ -167,6 +173,7 @@ If you prefer manual configuration or need to customize:
 - ✅ Require conversation resolution before merging
 
 ### Additional Settings
+
 - ✅ Include administrators (optional, for enforcement)
 - ✅ Allow force pushes: ❌ Disabled
 - ✅ Allow deletions: ❌ Disabled
@@ -178,6 +185,7 @@ If you prefer manual configuration or need to customize:
 ### Automated Setup
 
 The setup script automatically enables:
+
 - ✅ Vulnerability alerts
 - ✅ Automated security fixes
 - ✅ Dependabot configuration (creates `.github/dependabot.yml`)
@@ -238,28 +246,33 @@ turbo link
 Our CI pipeline includes several advanced features:
 
 #### 1. Documentation Enforcement
+
 - **docs-check** job enforces README.md and TODO.md updates
 - Only applies to feature PRs (feat:, fix:, refactor:, perf:)
 - Prevents incomplete documentation from reaching main branch
 
 #### 2. Enhanced Testing Strategy
+
 - **Unit Tests**: Node.js 20 LTS with Vitest
 - **Integration Tests**: Real PostgreSQL service container
 - **E2E Tests**: Browser matrix (3 browsers) × sharding (2 shards) = 6 parallel jobs
 - **Coverage**: Codecov integration with threshold gates
 
 #### 3. Advanced E2E Testing
+
 - Browser matrix testing (Chromium, Firefox, WebKit)
 - Test sharding for parallel execution
 - Artifact management for test results and videos
 - Build step before E2E tests for realistic testing
 
 #### 4. Production-Ready Build
+
 - Sentry environment variables for error tracking
 - Proper dependency chains (depends on docs-check + lint)
 - Artifact uploads for deployment
 
 #### 5. PostgreSQL Integration
+
 - Dedicated PostgreSQL integration testing
 - Real database service with health checks
 - Migration testing before integration tests
@@ -267,6 +280,7 @@ Our CI pipeline includes several advanced features:
 ### Quality Gates Summary
 
 #### Branch Protection Requirements
+
 - Pull request reviews required
 - All 9 CI jobs must pass
 - Branches must be up to date
@@ -274,6 +288,7 @@ Our CI pipeline includes several advanced features:
 - Linear history enforced
 
 #### Testing Coverage
+
 - **Unit Testing**: Cross-platform (Node 18 & 20)
 - **Integration Testing**: Real database operations
 - **E2E Testing**: Cross-browser (Chromium, Firefox, WebKit)
@@ -281,6 +296,7 @@ Our CI pipeline includes several advanced features:
 - **Security Testing**: Static analysis via CI
 
 #### Documentation Standards
+
 - Feature PRs must update README.md AND TODO.md
 - Prevents documentation drift
 - Enforces CLAUDE.md requirements
@@ -292,14 +308,18 @@ The workflows use GitHub Container Registry by default. No additional setup requ
 To use a different registry:
 
 ### Docker Hub
+
 Add these secrets:
+
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 
 Then update `.github/workflows/deploy.yml` to use Docker Hub.
 
 ### AWS ECR
+
 Add these secrets:
+
 - `AWS_ACCESS_KEY_ID`
 - `AWS_SECRET_ACCESS_KEY`
 - `AWS_REGION`
@@ -316,6 +336,7 @@ Run the validation script to check your setup:
 ```
 
 This script verifies:
+
 - ✅ All 12 required CI jobs are configured
 - ✅ Required secrets are present
 - ✅ Environments are created
@@ -359,6 +380,7 @@ git push origin test/ci-verification
 ### Deployment Test
 
 Once merged to main:
+
 1. Check Actions tab for deployment workflow
 2. Verify staging deployment runs automatically
 3. Create a tag to test production deployment:
@@ -403,6 +425,7 @@ Once merged to main:
 ### Monitoring
 
 Set up notifications:
+
 1. **Actions** → **Settings** → Configure email notifications
 2. **Watch** → Custom → Actions only
 3. Configure Slack webhook for deployment notifications
@@ -410,6 +433,7 @@ Set up notifications:
 ## Next Steps
 
 With CI/CD configured, you can:
+
 1. Start developing with confidence
 2. Create feature branches that auto-test
 3. Deploy to staging automatically

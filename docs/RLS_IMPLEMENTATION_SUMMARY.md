@@ -53,10 +53,12 @@ const result = await trpc.items.list.query();
 ## Next Developer Guide
 
 To add a new tenant-scoped table:
+
 1. Add `organization_id uuid REFERENCES organizations(id)`
 2. Copy-paste the RLS policy from any other table
 3. Run tests - pgTAP will catch if you forget
 
 To extend with JWT/headers later:
+
 - See `RLS_GUIDE.md` for copy-paste snippets
 - No changes needed to existing code

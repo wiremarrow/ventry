@@ -34,6 +34,7 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
 ### 🛡️ Application Security
 
 - [ ] **Input Validation**
+
   ```typescript
   // All inputs validated with Zod
   const schema = z.object({
@@ -57,11 +58,13 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
 - [ ] **Rate Limiting**
   ```typescript
   // Implement rate limiting
-  app.use(rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests',
-  }));
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // limit each IP to 100 requests per windowMs
+      message: 'Too many requests',
+    })
+  );
   ```
 
 ### 🗄️ Database Security
@@ -99,6 +102,7 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
   - [ ] Certificate pinning (optional)
 
 - [ ] **Security Headers**
+
   ```typescript
   // nextjs.config.js
   headers: [
@@ -120,9 +124,10 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
     },
     {
       key: 'Content-Security-Policy',
-      value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
+      value:
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
     },
-  ]
+  ];
   ```
 
 - [ ] **CORS Configuration**
@@ -224,26 +229,28 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
 ### Before Going Live
 
 1. **Security Scan**
+
    ```bash
    # Run security audit
    npm audit
    pnpm audit
-   
+
    # Scan for secrets
    gitleaks detect
-   
+
    # Check dependencies
    snyk test
    ```
 
 2. **Configuration Review**
+
    ```bash
    # Verify environment
    node scripts/verify-env.js
-   
+
    # Check security headers
    curl -I https://your-domain.com
-   
+
    # Test RLS
    npm run test:security
    ```
@@ -273,11 +280,13 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
 ## Security Contacts
 
 ### Internal Contacts
+
 - **Security Lead**: security@ventry.com
 - **Incident Response**: incident@ventry.com
 - **DevOps On-Call**: +1-XXX-XXX-XXXX
 
 ### External Resources
+
 - **Security Vendor**: vendor@security.com
 - **Penetration Testing**: pentest@security.com
 - **Legal Counsel**: legal@lawfirm.com
@@ -310,7 +319,7 @@ This checklist provides a comprehensive guide for hardening Ventry for productio
 
 - **Scanning**: OWASP ZAP, Burp Suite
 - **Dependencies**: Snyk, npm audit
-- **Secrets**: GitLeaks, TruffleHog  
+- **Secrets**: GitLeaks, TruffleHog
 - **Monitoring**: Datadog, New Relic
 - **WAF**: Cloudflare, AWS WAF
 - **SIEM**: Splunk, ELK Stack

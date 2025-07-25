@@ -11,13 +11,15 @@ export default defineConfig({
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true
-      }
+        singleFork: true,
+      },
     },
     env: {
       // Fallback database URL for integration tests (overridden by setup file)
       // Use non-superuser role for proper RLS testing
-      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_integration_test',
-    }
-  }
+      DATABASE_URL:
+        process.env.DATABASE_URL ||
+        'postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_integration_test',
+    },
+  },
 });

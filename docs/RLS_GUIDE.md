@@ -24,6 +24,7 @@ const warehouses = await withRLS(prisma, context, async (tx) => {
 ## Adding a New Table
 
 1. Add to migration:
+
 ```sql
 ALTER TABLE new_table ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation ON new_table
@@ -35,6 +36,7 @@ CREATE POLICY tenant_isolation ON new_table
 ## Future Extensions (When Needed)
 
 ### JWT Claims Support
+
 ```sql
 -- Add this function when you need JWT support
 CREATE FUNCTION current_jwt_claim(claim TEXT) RETURNS TEXT AS $$
@@ -43,12 +45,14 @@ $$ LANGUAGE sql;
 ```
 
 ### Header Injection
+
 ```typescript
 // Add to tRPC context when needed
 const orgId = req.headers['x-organization-id'] || context.organizationId;
 ```
 
 ### Supabase Compatibility
+
 ```sql
 -- Add these aliases if migrating from Supabase
 CREATE FUNCTION auth.uid() RETURNS uuid AS $$
@@ -59,6 +63,7 @@ $$ LANGUAGE sql;
 ## Testing
 
 Run pgTAP tests to verify RLS coverage:
+
 ```bash
 psql $DATABASE_URL -f packages/database/tests/rls_coverage.sql
 ```

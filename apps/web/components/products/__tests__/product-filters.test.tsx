@@ -43,7 +43,7 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     expect(screen.getByPlaceholderText('Search by SKU, name, or barcode...')).toBeInTheDocument();
-    
+
     // Check for select triggers (comboboxes)
     const comboboxes = screen.getAllByRole('combobox');
     expect(comboboxes).toHaveLength(2); // Category and Status selects
@@ -52,7 +52,9 @@ describe('ProductFilters', () => {
   it('displays search value correctly', () => {
     render(<ProductFilters {...defaultProps} searchTerm="test search" />);
 
-    const searchInput = screen.getByPlaceholderText('Search by SKU, name, or barcode...') as HTMLInputElement;
+    const searchInput = screen.getByPlaceholderText(
+      'Search by SKU, name, or barcode...'
+    ) as HTMLInputElement;
     expect(searchInput.value).toBe('test search');
   });
 
@@ -77,13 +79,13 @@ describe('ProductFilters', () => {
     await waitFor(() => {
       const allCategoriesOptions = screen.getAllByText('All Categories');
       expect(allCategoriesOptions.length).toBeGreaterThan(0);
-      
+
       const electronicsOptions = screen.getAllByText('Electronics');
       expect(electronicsOptions.length).toBeGreaterThan(0);
-      
+
       const clothingOptions = screen.getAllByText('Clothing');
       expect(clothingOptions.length).toBeGreaterThan(0);
-      
+
       const foodOptions = screen.getAllByText('Food');
       expect(foodOptions.length).toBeGreaterThan(0);
     });
@@ -96,7 +98,7 @@ describe('ProductFilters', () => {
     // Open category dropdown
     const categorySelect = screen.getAllByRole('combobox')[0];
     await user.click(categorySelect);
-    
+
     // Select a category
     await user.click(screen.getByText('Electronics'));
 
@@ -114,10 +116,10 @@ describe('ProductFilters', () => {
     await waitFor(() => {
       const allStatusOptions = screen.getAllByText('All Status');
       expect(allStatusOptions.length).toBeGreaterThan(0);
-      
+
       const activeOptions = screen.getAllByText('Active');
       expect(activeOptions.length).toBeGreaterThan(0);
-      
+
       const inactiveOptions = screen.getAllByText('Inactive');
       expect(inactiveOptions.length).toBeGreaterThan(0);
     });
@@ -130,7 +132,7 @@ describe('ProductFilters', () => {
     // Open status dropdown
     const statusSelect = screen.getAllByRole('combobox')[1];
     await user.click(statusSelect);
-    
+
     // Select a status
     await user.click(screen.getByText('Active'));
 
@@ -193,7 +195,9 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     // Check for search icon by looking for the container with the icon
-    const searchContainer = screen.getByPlaceholderText('Search by SKU, name, or barcode...').parentElement;
+    const searchContainer = screen.getByPlaceholderText(
+      'Search by SKU, name, or barcode...'
+    ).parentElement;
     expect(searchContainer?.querySelector('svg')).toBeInTheDocument();
   });
 
@@ -201,7 +205,9 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     // Check for main container styling
-    const container = screen.getByPlaceholderText('Search by SKU, name, or barcode...').closest('.bg-white');
+    const container = screen
+      .getByPlaceholderText('Search by SKU, name, or barcode...')
+      .closest('.bg-white');
     expect(container).toHaveClass('bg-white', 'p-4', 'rounded-lg', 'border', 'border-gray-200');
   });
 
@@ -209,7 +215,9 @@ describe('ProductFilters', () => {
     render(<ProductFilters {...defaultProps} />);
 
     // Check for grid container
-    const gridContainer = screen.getByPlaceholderText('Search by SKU, name, or barcode...').closest('.grid');
+    const gridContainer = screen
+      .getByPlaceholderText('Search by SKU, name, or barcode...')
+      .closest('.grid');
     expect(gridContainer).toHaveClass('grid', 'grid-cols-1', 'md:grid-cols-3', 'gap-4');
   });
 });

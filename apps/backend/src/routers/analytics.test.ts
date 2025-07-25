@@ -60,12 +60,12 @@ vi.mock('@ventry/database', () => {
     $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -90,7 +90,7 @@ describe('Analytics Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.inventory.aggregate.mockReset();
     mockPrisma.inventory.findMany.mockReset();
@@ -115,14 +115,14 @@ describe('Analytics Router', () => {
     mockPrisma.location.findMany.mockReset();
     mockPrisma.purchaseOrderItem.findMany.mockReset();
     mockPrisma.$queryRaw.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -130,8 +130,8 @@ describe('Analytics Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -215,7 +215,7 @@ describe('Analytics Router', () => {
       });
 
       mockPrisma.inventory.findMany.mockResolvedValue([]);
-      
+
       // Add missing mocks
       mockPrisma.order.count.mockResolvedValue(0);
       mockPrisma.order.aggregate.mockResolvedValue({
@@ -256,7 +256,7 @@ describe('Analytics Router', () => {
       });
 
       mockPrisma.inventory.findMany.mockResolvedValue([]);
-      
+
       // Add missing mocks
       mockPrisma.order.count.mockResolvedValue(0);
       mockPrisma.order.aggregate.mockResolvedValue({
@@ -325,7 +325,7 @@ describe('Analytics Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -692,13 +692,15 @@ describe('Analytics Router', () => {
     it('should detect price anomalies', async () => {
       const mockOrderItems = [
         // Normal prices
-        ...Array(10).fill(null).map((_, i) => ({
-          id: testId(`oi${i}`),
-          itemId: testId('item1'),
-          unitPrice: 100,
-          item: { id: testId('item1'), sku: 'ITEM-001', name: 'Test Item' },
-          order: { orderNumber: `ORD-00${i}`, orderDate: new Date() },
-        })),
+        ...Array(10)
+          .fill(null)
+          .map((_, i) => ({
+            id: testId(`oi${i}`),
+            itemId: testId('item1'),
+            unitPrice: 100,
+            item: { id: testId('item1'), sku: 'ITEM-001', name: 'Test Item' },
+            order: { orderNumber: `ORD-00${i}`, orderDate: new Date() },
+          })),
         // Anomalous price
         {
           id: testId('oi-anomaly'),
@@ -725,14 +727,16 @@ describe('Analytics Router', () => {
     it('should detect quantity anomalies', async () => {
       const mockMovements = [
         // Normal quantities
-        ...Array(10).fill(null).map((_, i) => ({
-          id: testId(`sm${i}`),
-          itemId: testId('item1'),
-          movementType: 'OUTBOUND',
-          qty: 10,
-          movedAt: new Date(),
-          item: { id: testId('item1'), sku: 'ITEM-001', name: 'Test Item' },
-        })),
+        ...Array(10)
+          .fill(null)
+          .map((_, i) => ({
+            id: testId(`sm${i}`),
+            itemId: testId('item1'),
+            movementType: 'OUTBOUND',
+            qty: 10,
+            movedAt: new Date(),
+            item: { id: testId('item1'), sku: 'ITEM-001', name: 'Test Item' },
+          })),
         // Anomalous quantity
         {
           id: testId('sm-anomaly'),

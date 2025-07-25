@@ -48,8 +48,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       SupplierWhereInput: {},
@@ -128,14 +128,14 @@ describe('Suppliers Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and MANAGER role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -143,8 +143,8 @@ describe('Suppliers Router', () => {
       organizationRole: 'ADMIN',
       role: 'MANAGER', // Managers can manage suppliers
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -273,7 +273,7 @@ describe('Suppliers Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -360,9 +360,9 @@ describe('Suppliers Router', () => {
     it('should throw NOT_FOUND when supplier does not exist', async () => {
       mockPrisma.supplier.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.suppliers.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Supplier not found');
+      await expect(caller.suppliers.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Supplier not found'
+      );
     });
   });
 
@@ -423,7 +423,7 @@ describe('Suppliers Router', () => {
     });
 
     it('should require ADMIN or MANAGER role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -499,7 +499,7 @@ describe('Suppliers Router', () => {
   describe('delete', () => {
     it('should delete a supplier', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -529,7 +529,7 @@ describe('Suppliers Router', () => {
 
     it('should throw PRECONDITION_FAILED when supplier has active orders', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -537,20 +537,20 @@ describe('Suppliers Router', () => {
 
       mockPrisma.purchaseOrder.count.mockResolvedValue(3); // Has active orders
 
-      await expect(
-        adminCaller.suppliers.delete({ id: testId('supp1') })
-      ).rejects.toThrow('Cannot delete supplier with 3 active orders');
+      await expect(adminCaller.suppliers.delete({ id: testId('supp1') })).rejects.toThrow(
+        'Cannot delete supplier with 3 active orders'
+      );
     });
 
     it('should require ADMIN role for delete', async () => {
-      await expect(
-        caller.suppliers.delete({ id: testId('supp1') })
-      ).rejects.toThrow('Only administrators can delete suppliers');
+      await expect(caller.suppliers.delete({ id: testId('supp1') })).rejects.toThrow(
+        'Only administrators can delete suppliers'
+      );
     });
 
     it('should allow force deletion with active orders', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -609,17 +609,17 @@ describe('Suppliers Router', () => {
       mockPrisma.supplier.findFirst.mockResolvedValue(mockSupplier);
       mockPrisma.purchaseOrder.count.mockResolvedValue(2); // Has active orders
 
-      await expect(
-        caller.suppliers.archive({ id: testId('supp1') })
-      ).rejects.toThrow('Cannot archive supplier with 2 active purchase orders');
+      await expect(caller.suppliers.archive({ id: testId('supp1') })).rejects.toThrow(
+        'Cannot archive supplier with 2 active purchase orders'
+      );
     });
 
     it('should throw NOT_FOUND when supplier does not exist', async () => {
       mockPrisma.supplier.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.suppliers.archive({ id: testId('nonexistent') })
-      ).rejects.toThrow('Supplier not found');
+      await expect(caller.suppliers.archive({ id: testId('nonexistent') })).rejects.toThrow(
+        'Supplier not found'
+      );
     });
   });
 
@@ -726,7 +726,7 @@ describe('Suppliers Router', () => {
   describe('import', () => {
     it('should validate suppliers in validation mode', async () => {
       // Create caller with ADMIN role for import
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -761,7 +761,7 @@ describe('Suppliers Router', () => {
 
     it('should import valid suppliers', async () => {
       // Create caller with ADMIN role for import
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -806,7 +806,7 @@ describe('Suppliers Router', () => {
 
     it('should report validation errors', async () => {
       // Create caller with ADMIN role for import
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },

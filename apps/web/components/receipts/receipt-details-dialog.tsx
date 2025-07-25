@@ -1,10 +1,10 @@
 'use client';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   Skeleton,
   Table,
@@ -17,15 +17,7 @@ import {
   AlertDescription,
   Badge,
 } from '@ventry/ui';
-import { 
-  FileText, 
-  Calendar, 
-  User, 
-  AlertCircle,
-  CheckCircle2,
-  Warehouse,
-  Hash
-} from 'lucide-react';
+import { FileText, Calendar, User, AlertCircle, CheckCircle2, Warehouse, Hash } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { formatDateTime } from '@/lib/utils';
 import { ReceiptStatusBadge } from './receipt-status-badge';
@@ -36,11 +28,7 @@ interface ReceiptDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function ReceiptDetailsDialog({ 
-  receiptId, 
-  open, 
-  onOpenChange 
-}: ReceiptDetailsDialogProps) {
+export function ReceiptDetailsDialog({ receiptId, open, onOpenChange }: ReceiptDetailsDialogProps) {
   // Fetch receipt details
   const { data: receipt, isLoading } = trpc.receipts.get.useQuery(
     { id: receiptId },
@@ -49,24 +37,18 @@ export function ReceiptDetailsDialog({
 
   if (!open) return null;
 
-  const hasDiscrepancy = receipt?.items.some(
-    item => {
-      // Find the corresponding PO item to check quantities
-      const poItem = receipt.purchaseOrder?.items.find(
-        poi => poi.itemId === item.itemId
-      );
-      return poItem && item.qtyReceived !== poItem.qtyOrdered;
-    }
-  );
+  const hasDiscrepancy = receipt?.items.some((item) => {
+    // Find the corresponding PO item to check quantities
+    const poItem = receipt.purchaseOrder?.items.find((poi) => poi.itemId === item.itemId);
+    return poItem && item.qtyReceived !== poItem.qtyOrdered;
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Receipt Details</DialogTitle>
-          <DialogDescription>
-            View receipt information and items received
-          </DialogDescription>
+          <DialogDescription>View receipt information and items received</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -116,7 +98,7 @@ export function ReceiptDetailsDialog({
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <ReceiptStatusBadge 
+                  <ReceiptStatusBadge
                     poStatus={receipt.purchaseOrder?.status || 'PENDING'}
                     hasDiscrepancy={hasDiscrepancy}
                   />
@@ -129,7 +111,8 @@ export function ReceiptDetailsDialog({
               <Alert className="border-orange-200 bg-orange-50">
                 <AlertCircle className="h-4 w-4 text-orange-600" />
                 <AlertDescription className="text-orange-800">
-                  This receipt has quantity discrepancies. Some items were received in different quantities than ordered.
+                  This receipt has quantity discrepancies. Some items were received in different
+                  quantities than ordered.
                 </AlertDescription>
               </Alert>
             )}
@@ -163,17 +146,15 @@ export function ReceiptDetailsDialog({
                     {receipt.items.map((item) => {
                       // Find the corresponding PO item to get ordered quantity
                       const poItem = receipt.purchaseOrder?.items.find(
-                        poi => poi.itemId === item.itemId
+                        (poi) => poi.itemId === item.itemId
                       );
                       const qtyOrdered = poItem?.qtyOrdered || 0;
                       const difference = item.qtyReceived - qtyOrdered;
                       const hasItemDiscrepancy = difference !== 0;
-                      
+
                       return (
                         <TableRow key={item.id}>
-                          <TableCell className="font-medium">
-                            {item.item.name}
-                          </TableCell>
+                          <TableCell className="font-medium">{item.item.name}</TableCell>
                           <TableCell>{item.item.sku}</TableCell>
                           <TableCell className="text-right">{qtyOrdered}</TableCell>
                           <TableCell className="text-right font-medium">
@@ -181,8 +162,11 @@ export function ReceiptDetailsDialog({
                           </TableCell>
                           <TableCell className="text-right">
                             {hasItemDiscrepancy ? (
-                              <span className={difference > 0 ? 'text-blue-600' : 'text-orange-600'}>
-                                {difference > 0 ? '+' : ''}{difference}
+                              <span
+                                className={difference > 0 ? 'text-blue-600' : 'text-orange-600'}
+                              >
+                                {difference > 0 ? '+' : ''}
+                                {difference}
                               </span>
                             ) : (
                               <span className="text-green-600">✓</span>
@@ -214,7 +198,9 @@ export function ReceiptDetailsDialog({
                           </TableCell>
                           <TableCell>
                             {item.serialNumber ? (
-                              <span className="text-sm text-muted-foreground">SN: {item.serialNumber}</span>
+                              <span className="text-sm text-muted-foreground">
+                                SN: {item.serialNumber}
+                              </span>
                             ) : (
                               '-'
                             )}

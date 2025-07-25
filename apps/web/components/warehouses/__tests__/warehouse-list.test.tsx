@@ -40,13 +40,23 @@ vi.mock('sonner', () => ({
 
 // Mock the dialogs
 vi.mock('../edit-warehouse-dialog', () => ({
-  EditWarehouseDialog: ({ open }: { warehouse: unknown; open: boolean; onOpenChange: (open: boolean) => void }) => 
-    open ? <div data-testid="edit-dialog">Edit Dialog</div> : null,
+  EditWarehouseDialog: ({
+    open,
+  }: {
+    warehouse: unknown;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => (open ? <div data-testid="edit-dialog">Edit Dialog</div> : null),
 }));
 
 vi.mock('../warehouse-details-dialog', () => ({
-  WarehouseDetailsDialog: ({ open }: { warehouseId: string | null; open: boolean; onOpenChange: (open: boolean) => void }) => 
-    open ? <div data-testid="details-dialog">Details Dialog</div> : null,
+  WarehouseDetailsDialog: ({
+    open,
+  }: {
+    warehouseId: string | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  }) => (open ? <div data-testid="details-dialog">Details Dialog</div> : null),
 }));
 
 describe('WarehouseList', () => {
@@ -119,9 +129,7 @@ describe('WarehouseList', () => {
   });
 
   it('renders empty state when no warehouses exist', () => {
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult([])
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult([]));
 
     render(<WarehouseList searchTerm="" />);
 
@@ -130,9 +138,7 @@ describe('WarehouseList', () => {
   });
 
   it('renders warehouse list correctly', () => {
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="" />);
 
@@ -148,9 +154,7 @@ describe('WarehouseList', () => {
   });
 
   it('filters warehouses based on search term', () => {
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="main" />);
 
@@ -160,9 +164,7 @@ describe('WarehouseList', () => {
 
   it('opens edit dialog when edit is clicked', async () => {
     const user = userEvent.setup();
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="" />);
 
@@ -171,11 +173,14 @@ describe('WarehouseList', () => {
     await user.click(dropdownButtons[0]);
 
     // Wait for dropdown to open and find edit button
-    await waitFor(async () => {
-      const editButton = screen.getByText('Edit');
-      expect(editButton).toBeInTheDocument();
-      await user.click(editButton);
-    }, { timeout: 5000 });
+    await waitFor(
+      async () => {
+        const editButton = screen.getByText('Edit');
+        expect(editButton).toBeInTheDocument();
+        await user.click(editButton);
+      },
+      { timeout: 5000 }
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('edit-dialog')).toBeInTheDocument();
@@ -184,9 +189,7 @@ describe('WarehouseList', () => {
 
   it('opens details dialog when view details is clicked', async () => {
     const user = userEvent.setup();
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="" />);
 
@@ -195,11 +198,14 @@ describe('WarehouseList', () => {
     await user.click(dropdownButtons[0]);
 
     // Wait for dropdown to open and find details button
-    await waitFor(async () => {
-      const detailsButton = screen.getByText('View Details');
-      expect(detailsButton).toBeInTheDocument();
-      await user.click(detailsButton);
-    }, { timeout: 5000 });
+    await waitFor(
+      async () => {
+        const detailsButton = screen.getByText('View Details');
+        expect(detailsButton).toBeInTheDocument();
+        await user.click(detailsButton);
+      },
+      { timeout: 5000 }
+    );
 
     await waitFor(() => {
       expect(screen.getByTestId('details-dialog')).toBeInTheDocument();
@@ -208,9 +214,7 @@ describe('WarehouseList', () => {
 
   it('calls delete mutation when delete is clicked', async () => {
     const user = userEvent.setup();
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="" />);
 
@@ -219,11 +223,14 @@ describe('WarehouseList', () => {
     await user.click(dropdownButtons[0]);
 
     // Wait for dropdown to open and find delete button
-    await waitFor(async () => {
-      const deleteButton = screen.getByText('Delete');
-      expect(deleteButton).toBeInTheDocument();
-      await user.click(deleteButton);
-    }, { timeout: 5000 });
+    await waitFor(
+      async () => {
+        const deleteButton = screen.getByText('Delete');
+        expect(deleteButton).toBeInTheDocument();
+        await user.click(deleteButton);
+      },
+      { timeout: 5000 }
+    );
 
     await waitFor(() => {
       expect(mockDeleteMutation).toHaveBeenCalledWith({ id: '1' });
@@ -231,16 +238,14 @@ describe('WarehouseList', () => {
   });
 
   it('displays capacity and utilization correctly', () => {
-    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(mockWarehouses)
-    );
+    vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(createQueryResult(mockWarehouses));
 
     render(<WarehouseList searchTerm="" />);
 
     // Since stats are not included in list query, capacity and utilization show as '-'
     const dashElements = screen.getAllByText('-');
     expect(dashElements.length).toBeGreaterThan(0);
-    
+
     // Verify warehouse names are displayed
     expect(screen.getByText('Main Warehouse')).toBeInTheDocument();
     expect(screen.getByText('Secondary Warehouse')).toBeInTheDocument();
@@ -248,7 +253,10 @@ describe('WarehouseList', () => {
 
   it('handles error state correctly', () => {
     vi.mocked(trpc.warehouses.list.useQuery).mockReturnValue(
-      createQueryResult(undefined, { isError: true, error: { message: 'Failed to load warehouses' } })
+      createQueryResult(undefined, {
+        isError: true,
+        error: { message: 'Failed to load warehouses' },
+      })
     );
 
     render(<WarehouseList searchTerm="" />);

@@ -1,17 +1,13 @@
 /**
  * RLS (Row-Level Security) Service
- * 
+ *
  * This service provides secure methods for managing RLS context in PostgreSQL.
  * It includes input validation, parameterized queries, and audit logging.
  */
 
 import { Prisma, type PrismaClient } from '@ventry/database';
 import { createLogger } from '../logger.js';
-import {
-  RLS_ERRORS,
-  RLS_AUDIT_EVENTS,
-  RLS_METRICS,
-} from './constants.js';
+import { RLS_ERRORS, RLS_AUDIT_EVENTS, RLS_METRICS } from './constants.js';
 import {
   type RLSContext,
   type ValidatedRLSContext,
@@ -65,7 +61,7 @@ export async function setRLSContext(
         throw new Error(RLS_ERRORS.INVALID_ORG_ID);
       }
     }
-    
+
     logger.error(
       {
         error,
@@ -80,9 +76,7 @@ export async function setRLSContext(
 /**
  * Clears RLS context (for cleanup)
  */
-export async function clearRLSContext(
-  tx: Pick<PrismaClient, '$executeRaw'>
-): Promise<void> {
+export async function clearRLSContext(tx: Pick<PrismaClient, '$executeRaw'>): Promise<void> {
   try {
     // Use the secure database function to clear context
     await tx.$executeRaw`SELECT clear_rls_context()`;
@@ -100,7 +94,12 @@ export async function clearRLSContext(
 export async function withRLS<T>(
   prisma: PrismaClient,
   context: RLSContext,
-  operation: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>
+  operation: (
+    tx: Omit<
+      PrismaClient,
+      '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'
+    >
+  ) => Promise<T>
 ): Promise<RLSOperationResult<T>> {
   const startTime = Date.now();
   const timings = {
@@ -116,7 +115,7 @@ export async function withRLS<T>(
     // Handle bypass case
     if (isBypassContext(validatedContext)) {
       await auditRLSBypass(validatedContext);
-      
+
       const queryStart = Date.now();
       const data = await prisma.$transaction(async (tx) => await operation(tx));
       timings.queryMs = Date.now() - queryStart;
@@ -180,10 +179,7 @@ async function auditRLSBypass(context: RLSBypassContext): Promise<void> {
     success: true,
   };
 
-  logger.warn(
-    auditEntry,
-    'RLS bypass granted - this should be rare in production'
-  );
+  logger.warn(auditEntry, 'RLS bypass granted - this should be rare in production');
 
   // Record metric
   recordMetric(RLS_METRICS.BYPASS_COUNT, 1);
@@ -226,9 +222,7 @@ export function createRLSContextGetter(
 /**
  * Validates that RLS is properly configured in the database
  */
-export async function validateRLSConfiguration(
-  prisma: PrismaClient
-): Promise<boolean> {
+export async function validateRLSConfiguration(prisma: PrismaClient): Promise<boolean> {
   try {
     // Check if our secure RLS functions exist
     const functions = await prisma.$queryRaw<Array<{ routine_name: string }>>`
@@ -240,9 +234,9 @@ export async function validateRLSConfiguration(
     `;
 
     const requiredFunctions = ['set_rls_context', 'clear_rls_context', 'get_rls_context'];
-    const foundFunctions = functions.map(f => f.routine_name);
-    const missingFunctions = requiredFunctions.filter(f => !foundFunctions.includes(f));
-    
+    const foundFunctions = functions.map((f) => f.routine_name);
+    const missingFunctions = requiredFunctions.filter((f) => !foundFunctions.includes(f));
+
     if (missingFunctions.length > 0) {
       logger.error(
         { missingFunctions, foundFunctions },
@@ -256,16 +250,16 @@ export async function validateRLSConfiguration(
       await prisma.$transaction(async (tx) => {
         // Test setting context with valid CUID
         await tx.$queryRaw`SELECT set_rls_context(${'cjld2cjxh0000qzrmn831i7rn'}, ${'cjld2cjxh0001qzrmn831i7ro'})`;
-        
+
         // Test getting context
-        const context = await tx.$queryRaw<Array<{ organization_id: string, user_id: string }>>`
+        const context = await tx.$queryRaw<Array<{ organization_id: string; user_id: string }>>`
           SELECT * FROM get_rls_context()
         `;
-        
+
         if (context.length === 0 || context[0].organization_id !== 'cjld2cjxh0000qzrmn831i7rn') {
           throw new Error('RLS context verification failed');
         }
-        
+
         // Test clearing context
         await tx.$queryRaw`SELECT clear_rls_context()`;
       });
@@ -275,7 +269,7 @@ export async function validateRLSConfiguration(
     }
 
     // Check if RLS is enabled on critical tables
-    const rlsEnabled = await prisma.$queryRaw<Array<{ relname: string, relrowsecurity: boolean }>>`
+    const rlsEnabled = await prisma.$queryRaw<Array<{ relname: string; relrowsecurity: boolean }>>`
       SELECT c.relname, c.relrowsecurity 
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -284,10 +278,10 @@ export async function validateRLSConfiguration(
       AND c.relname = ANY(ARRAY['items', 'orders', 'inventory'])
     `;
 
-    const disabledTables = rlsEnabled.filter(t => !t.relrowsecurity);
+    const disabledTables = rlsEnabled.filter((t) => !t.relrowsecurity);
     if (disabledTables.length > 0) {
       logger.error(
-        { tables: disabledTables.map(t => t.relname) },
+        { tables: disabledTables.map((t) => t.relname) },
         'RLS not enabled on critical tables'
       );
       return false;

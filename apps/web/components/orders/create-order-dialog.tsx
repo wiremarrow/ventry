@@ -71,7 +71,6 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
     isActive: true,
   });
 
-
   const createMutation = trpc.orders.create.useMutation({
     onSuccess: () => {
       toast.success('Order created successfully');
@@ -91,7 +90,9 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
       requestedShipDate: undefined,
       defaultPaymentTerms: '',
       notes: '',
-      items: [{ itemId: '', qtyOrdered: 1, unitPrice: 0, discountPct: 0, taxRate: 0, description: '' }],
+      items: [
+        { itemId: '', qtyOrdered: 1, unitPrice: 0, discountPct: 0, taxRate: 0, description: '' },
+      ],
     },
   });
 
@@ -105,7 +106,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
   };
 
   const handleItemChange = (index: number, itemId: string) => {
-    const item = items?.items.find(i => i.id === itemId);
+    const item = items?.items.find((i) => i.id === itemId);
     if (item && item.defaultPrice) {
       form.setValue(`items.${index}.unitPrice`, parseFloat(item.defaultPrice.toString()));
     }
@@ -127,9 +128,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Order</DialogTitle>
-          <DialogDescription>
-            Create a new sales order for a customer
-          </DialogDescription>
+          <DialogDescription>Create a new sales order for a customer</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -150,7 +149,8 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                       <SelectContent>
                         {customers?.customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            {customer.companyName || `${customer.firstName} ${customer.lastName}`} ({customer.email})
+                            {customer.companyName || `${customer.firstName} ${customer.lastName}`} (
+                            {customer.email})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -167,11 +167,13 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   <FormItem>
                     <FormLabel>Requested Ship Date</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="date" 
-                        {...field} 
+                      <Input
+                        type="date"
+                        {...field}
                         value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : undefined)}
+                        onChange={(e) =>
+                          field.onChange(e.target.value ? new Date(e.target.value) : undefined)
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -180,7 +182,6 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
               />
             </div>
 
-
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-medium">Order Items</h4>
@@ -188,7 +189,16 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => append({ itemId: '', qtyOrdered: 1, unitPrice: 0, discountPct: 0, taxRate: 0, description: '' })}
+                  onClick={() =>
+                    append({
+                      itemId: '',
+                      qtyOrdered: 1,
+                      unitPrice: 0,
+                      discountPct: 0,
+                      taxRate: 0,
+                      description: '',
+                    })
+                  }
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Item
@@ -203,11 +213,11 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                       name={`items.${index}.itemId`}
                       render={({ field }) => (
                         <FormItem>
-                          <Select 
+                          <Select
                             onValueChange={(value) => {
                               field.onChange(value);
                               handleItemChange(index, value);
-                            }} 
+                            }}
                             value={field.value}
                           >
                             <FormControl>
@@ -236,10 +246,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input
-                              placeholder="Item description"
-                              {...field}
-                            />
+                            <Input placeholder="Item description" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -328,9 +335,7 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
               <div className="flex justify-end pt-4 border-t">
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Subtotal</p>
-                  <p className="text-xl font-bold">
-                    ${calculateSubtotal().toFixed(2)}
-                  </p>
+                  <p className="text-xl font-bold">${calculateSubtotal().toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -342,23 +347,15 @@ export function CreateOrderDialog({ open, onOpenChange }: CreateOrderDialogProps
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Add any order notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Add any order notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

@@ -2,7 +2,7 @@ import { prisma } from '@ventry/database';
 
 /**
  * Database Cleanup Utilities for E2E Tests
- * 
+ *
  * Provides functions to clean up test data after E2E tests.
  * Only removes data with `.e2e.test` email suffix to preserve seed data.
  */
@@ -36,9 +36,38 @@ export async function cleanupTestItems() {
     },
   });
 
-  const itemIds = testItems.map(i => i.id);
+  const itemIds = testItems.map((i) => i.id);
 
   if (itemIds.length > 0) {
+    // Delete all related records before deleting items (order matters due to foreign keys)
+
+    // Delete POS transaction items
+    await prisma.pOSTransactionItem.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete cycle count items
+    await prisma.cycleCountItem.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete stock adjustments
+    await prisma.stockAdjustment.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
     // Delete stock movements for test items
     await prisma.stockMovement.deleteMany({
       where: {
@@ -50,6 +79,42 @@ export async function cleanupTestItems() {
 
     // Delete inventory entries for test items
     await prisma.inventory.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete serial numbers
+    await prisma.serialNumber.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete lots
+    await prisma.lot.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete item images
+    await prisma.itemImage.deleteMany({
+      where: {
+        itemId: {
+          in: itemIds,
+        },
+      },
+    });
+
+    // Delete price history
+    await prisma.priceHistory.deleteMany({
       where: {
         itemId: {
           in: itemIds,
@@ -84,7 +149,7 @@ export async function cleanupTestCategories() {
   if (deleted.count > 0) {
     console.log(`Cleaned up ${deleted.count} test categories`);
   }
-  
+
   return deleted.count;
 }
 
@@ -103,7 +168,7 @@ export async function cleanupTestLocations() {
   if (deleted.count > 0) {
     console.log(`Cleaned up ${deleted.count} test locations`);
   }
-  
+
   return deleted.count;
 }
 
@@ -122,13 +187,42 @@ export async function cleanupAuditLogs() {
   if (deleted.count > 0) {
     console.log(`Cleaned up ${deleted.count} audit logs`);
   }
-  
+
   return deleted.count;
+}
+
+// Cleanup orphaned test organizations (organizations without members created by test users)
+export async function cleanupOrphanedTestOrganizations() {
+  // Find organizations that were created by test users but have no members
+  const orphanedOrgs = await prisma.organization.findMany({
+    where: {
+      members: {
+        none: {},
+      },
+      // Only clean up organizations with test-like names
+      OR: [
+        { name: { contains: 'Test Org' } },
+        { slug: { contains: 'test-org' } },
+      ],
+    },
+    select: { id: true, name: true },
+  });
+
+  for (const org of orphanedOrgs) {
+    try {
+      await cleanupTestDataForOrganization(org.id);
+      console.log(`Cleaned up orphaned test organization: ${org.name}`);
+    } catch (error) {
+      console.error(`Failed to clean up orphaned organization ${org.id}:`, error);
+    }
+  }
+
+  return orphanedOrgs.length;
 }
 
 export async function cleanupAllTestData() {
   console.log('Starting E2E test data cleanup...');
-  
+
   try {
     // Order matters due to foreign key constraints
     await cleanupAuditLogs();
@@ -136,7 +230,9 @@ export async function cleanupAllTestData() {
     await cleanupTestCategories();
     await cleanupTestLocations();
     await cleanupTestUsers();
-    
+    // Clean up any orphaned test organizations
+    await cleanupOrphanedTestOrganizations();
+
     console.log('E2E test data cleanup completed successfully');
   } catch (error) {
     console.error('Error during test data cleanup:', error);
@@ -159,9 +255,38 @@ export async function cleanupTestDataForUser(userId: string) {
       select: { id: true },
     });
 
-    const itemIds = testItems.map(i => i.id);
+    const itemIds = testItems.map((i) => i.id);
 
     if (itemIds.length > 0) {
+      // Delete all related records before deleting items (order matters due to foreign keys)
+
+      // Delete POS transaction items
+      await prisma.pOSTransactionItem.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete cycle count items
+      await prisma.cycleCountItem.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete stock adjustments
+      await prisma.stockAdjustment.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
       // Delete stock movements for test items
       await prisma.stockMovement.deleteMany({
         where: {
@@ -173,6 +298,42 @@ export async function cleanupTestDataForUser(userId: string) {
 
       // Delete inventory entries for these items
       await prisma.inventory.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete serial numbers
+      await prisma.serialNumber.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete lots
+      await prisma.lot.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete item images
+      await prisma.itemImage.deleteMany({
+        where: {
+          itemId: {
+            in: itemIds,
+          },
+        },
+      });
+
+      // Delete price history
+      await prisma.priceHistory.deleteMany({
         where: {
           itemId: {
             in: itemIds,
@@ -213,11 +374,7 @@ export async function cleanupTestDataForUser(userId: string) {
 
 // Verify seed data exists (for global setup)
 export async function verifySeedDataExists() {
-  const requiredUsers = [
-    'admin@ventry.com',
-    'manager@ventry.com',
-    'user@ventry.com',
-  ];
+  const requiredUsers = ['admin@ventry.com', 'manager@ventry.com', 'user@ventry.com'];
 
   for (const email of requiredUsers) {
     const user = await prisma.user.findUnique({
@@ -234,12 +391,7 @@ export async function verifySeedDataExists() {
 
 // Get database statistics (useful for debugging)
 export async function getDatabaseStats() {
-  const [
-    totalUsers,
-    testUsers,
-    totalItems,
-    testItems,
-  ] = await Promise.all([
+  const [totalUsers, testUsers, totalItems, testItems] = await Promise.all([
     prisma.user.count(),
     prisma.user.count({
       where: {
@@ -271,10 +423,20 @@ export async function getDatabaseStats() {
 // Cleanup all data for a specific organization
 export async function cleanupTestDataForOrganization(organizationId: string) {
   console.log(`🧹 Cleaning up data for organization: ${organizationId}`);
-  
+
   try {
+    // First check if the organization exists
+    const orgExists = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { id: true },
+    });
+
+    if (!orgExists) {
+      console.log(`⚠️ Organization ${organizationId} not found - may have been already deleted`);
+      return;
+    }
     // Delete in order of dependencies
-    
+
     // Delete stock movements
     await prisma.stockMovement.deleteMany({
       where: { organizationId },
@@ -287,8 +449,8 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
 
     // Delete order items
     await prisma.orderItem.deleteMany({
-      where: { 
-        order: { organizationId }
+      where: {
+        order: { organizationId },
       },
     });
 
@@ -300,7 +462,7 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
     // Delete purchase order items
     await prisma.purchaseOrderItem.deleteMany({
       where: {
-        purchaseOrder: { organizationId }
+        purchaseOrder: { organizationId },
       },
     });
 
@@ -312,7 +474,7 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
     // Delete shipment items
     await prisma.shipmentItem.deleteMany({
       where: {
-        shipment: { organizationId }
+        shipment: { organizationId },
       },
     });
 
@@ -324,7 +486,7 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
     // Delete receipt items
     await prisma.receiptItem.deleteMany({
       where: {
-        receipt: { organizationId }
+        receipt: { organizationId },
       },
     });
 
@@ -336,7 +498,7 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
     // Delete return items
     await prisma.returnItem.deleteMany({
       where: {
-        return: { organizationId }
+        return: { organizationId },
       },
     });
 
@@ -352,6 +514,46 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
 
     // Delete suppliers
     await prisma.supplier.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete all item-related records before deleting items
+    // Delete POS transaction items
+    await prisma.pOSTransactionItem.deleteMany({
+      where: {
+        item: { organizationId },
+      },
+    });
+
+    // Delete cycle count items
+    await prisma.cycleCountItem.deleteMany({
+      where: {
+        item: { organizationId },
+      },
+    });
+
+    // Delete stock adjustments
+    await prisma.stockAdjustment.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete serial numbers
+    await prisma.serialNumber.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete lots
+    await prisma.lot.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete item images
+    await prisma.itemImage.deleteMany({
+      where: { organizationId },
+    });
+
+    // Delete price history
+    await prisma.priceHistory.deleteMany({
       where: { organizationId },
     });
 
@@ -375,17 +577,31 @@ export async function cleanupTestDataForOrganization(organizationId: string) {
       where: { organizationId },
     });
 
+    // Delete unit of measures
+    await prisma.unitOfMeasure.deleteMany({
+      where: { organizationId },
+    });
+
     // Delete organization members
     await prisma.organizationMember.deleteMany({
       where: { organizationId },
     });
 
     // Delete the organization itself
-    await prisma.organization.delete({
+    const deletedOrg = await prisma.organization.delete({
       where: { id: organizationId },
+    }).catch((error) => {
+      if (error.code === 'P2025') {
+        // Record not found - organization already deleted
+        console.log(`⚠️ Organization ${organizationId} was already deleted`);
+        return null;
+      }
+      throw error;
     });
 
-    console.log(`✅ Cleaned up organization: ${organizationId}`);
+    if (deletedOrg) {
+      console.log(`✅ Cleaned up organization: ${organizationId}`);
+    }
   } catch (error) {
     console.error(`❌ Error cleaning up organization ${organizationId}:`, error);
     throw error;

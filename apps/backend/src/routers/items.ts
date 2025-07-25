@@ -47,100 +47,89 @@ const bulkImportSchema = z.object({
 
 export const itemsRouter = createTRPCRouter({
   // List items with advanced filtering
-  list: organizationProcedure
-    .input(itemFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const { 
-        search, 
-        categoryId, 
-        supplierId, 
-        isActive, 
-        lowStock,
-        page, 
-        limit, 
-        sortBy, 
-        sortOrder 
-      } = input;
+  list: organizationProcedure.input(itemFilterSchema).query(async ({ ctx, input }) => {
+    const { search, categoryId, supplierId, isActive, lowStock, page, limit, sortBy, sortOrder } =
+      input;
 
-      const where: Prisma.ItemWhereInput = {
-        organizationId: ctx.user.organizationId,
-      };
+    const where: Prisma.ItemWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { sku: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+    // Search filter
+    if (search) {
+      where.OR = [
+        { sku: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
-      // Category filter
-      if (categoryId) {
-        where.categoryId = categoryId;
-      }
+    // Category filter
+    if (categoryId) {
+      where.categoryId = categoryId;
+    }
 
-      // Supplier filter
-      if (supplierId) {
-        where.defaultSupplierId = supplierId;
-      }
+    // Supplier filter
+    if (supplierId) {
+      where.defaultSupplierId = supplierId;
+    }
 
-      // Active filter
-      if (isActive !== undefined) {
-        where.isActive = isActive;
-      }
+    // Active filter
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
 
-      // Low stock filter
-      if (lowStock) {
-        where.inventory = {
-          some: {
-            qtyOnHand: {
-              // Low stock check would need a custom query
-              // as we can't reference item reorderPoint in this context
-            },
+    // Low stock filter
+    if (lowStock) {
+      where.inventory = {
+        some: {
+          qtyOnHand: {
+            // Low stock check would need a custom query
+            // as we can't reference item reorderPoint in this context
           },
-        };
-      }
-
-      // Execute queries
-      const [items, total] = await Promise.all([
-        ctx.prisma.item.findMany({
-          where,
-          include: {
-            category: true,
-            unitOfMeasure: true,
-            defaultSupplier: true,
-            _count: {
-              select: {
-                inventory: true,
-                images: true,
-              },
-            },
-          },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { [sortBy]: sortOrder },
-        }),
-        ctx.prisma.item.count({ where }),
-      ]);
-
-      return {
-        items,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
         },
       };
-    }),
+    }
+
+    // Execute queries
+    const [items, total] = await Promise.all([
+      ctx.prisma.item.findMany({
+        where,
+        include: {
+          category: true,
+          unitOfMeasure: true,
+          defaultSupplier: true,
+          _count: {
+            select: {
+              inventory: true,
+              images: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      ctx.prisma.item.count({ where }),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get single item with all related data
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const item = await ctx.prisma.item.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
@@ -201,21 +190,106 @@ export const itemsRouter = createTRPCRouter({
     }),
 
   // Create new item
-  create: organizationProcedure
-    .input(itemCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for role permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators and managers can create items',
+  create: organizationProcedure.input(itemCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check for role permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators and managers can create items',
+      });
+    }
+
+    // Check for duplicate SKU
+    const existingItem = await ctx.prisma.item.findFirst({
+      where: {
+        sku: input.sku,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (existingItem) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'An item with this SKU already exists',
+      });
+    }
+
+    // Create item with audit log
+    const item = await ctx.prisma.$transaction(async (tx) => {
+      const newItem = await tx.item.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId,
+        },
+        include: {
+          category: true,
+          unitOfMeasure: true,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'items',
+          recordPk: newItem.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newItem,
+        },
+      });
+
+      // Create initial price history if default price is set
+      if (input.defaultPrice) {
+        await tx.priceHistory.create({
+          data: {
+            itemId: newItem.id,
+            priceType: 'RETAIL',
+            price: input.defaultPrice,
+            startDate: new Date(),
+            organizationId: ctx.user.organizationId!,
+          },
         });
       }
 
-      // Check for duplicate SKU
+      return newItem;
+    });
+
+    return item;
+  }),
+
+  // Update item
+  update: organizationProcedure.input(itemUpdateSchema).mutation(async ({ ctx, input }) => {
+    // Check for role permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators and managers can update items',
+      });
+    }
+
+    const { id, ...data } = input;
+
+    // Get current item for audit
+    const currentItem = await ctx.prisma.item.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!currentItem) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Item not found',
+      });
+    }
+
+    // Check for SKU uniqueness if updating SKU
+    if (data.sku && data.sku !== currentItem.sku) {
       const existingItem = await ctx.prisma.item.findFirst({
-        where: { 
-          sku: input.sku,
+        where: {
+          sku: data.sku,
           organizationId: ctx.user.organizationId,
         },
       });
@@ -226,159 +300,72 @@ export const itemsRouter = createTRPCRouter({
           message: 'An item with this SKU already exists',
         });
       }
+    }
 
-      // Create item with audit log
-      const item = await ctx.prisma.$transaction(async (tx) => {
-        const newItem = await tx.item.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId,
-          },
-          include: {
-            category: true,
-            unitOfMeasure: true,
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'items',
-            recordPk: newItem.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newItem,
-          },
-        });
-
-        // Create initial price history if default price is set
-        if (input.defaultPrice) {
-          await tx.priceHistory.create({
-            data: {
-              itemId: newItem.id,
-              priceType: 'RETAIL',
-              price: input.defaultPrice,
-              startDate: new Date(),
-              organizationId: ctx.user.organizationId!,
-            },
-          });
-        }
-
-        return newItem;
-      });
-
-      return item;
-    }),
-
-  // Update item
-  update: organizationProcedure
-    .input(itemUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for role permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators and managers can update items',
-        });
-      }
-
-      const { id, ...data } = input;
-
-      // Get current item for audit
-      const currentItem = await ctx.prisma.item.findFirst({
-        where: { 
-          id,
-          organizationId: ctx.user.organizationId,
+    // Update item with audit log
+    const updatedItem = await ctx.prisma.$transaction(async (tx) => {
+      const updated = await tx.item.update({
+        where: { id },
+        data,
+        include: {
+          category: true,
+          unitOfMeasure: true,
         },
       });
 
-      if (!currentItem) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Item not found',
-        });
-      }
-
-      // Check for SKU uniqueness if updating SKU
-      if (data.sku && data.sku !== currentItem.sku) {
-        const existingItem = await ctx.prisma.item.findFirst({
-          where: { 
-            sku: data.sku,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        if (existingItem) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'An item with this SKU already exists',
-          });
-        }
-      }
-
-      // Update item with audit log
-      const updatedItem = await ctx.prisma.$transaction(async (tx) => {
-        const updated = await tx.item.update({
-          where: { id },
-          data,
-          include: {
-            category: true,
-            unitOfMeasure: true,
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'items',
-            recordPk: id,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: currentItem,
-            afterData: updated,
-          },
-        });
-
-        // Update price history if price changed
-        if (data.defaultPrice && data.defaultPrice !== Number(currentItem.defaultPrice)) {
-          // End current price
-          await tx.priceHistory.updateMany({
-            where: {
-              itemId: id,
-              priceType: 'RETAIL',
-              endDate: null,
-            },
-            data: {
-              endDate: new Date(),
-            },
-          });
-
-          // Create new price
-          await tx.priceHistory.create({
-            data: {
-              itemId: id,
-              priceType: 'RETAIL',
-              price: data.defaultPrice,
-              startDate: new Date(),
-              organizationId: ctx.user.organizationId!,
-            },
-          });
-        }
-
-        return updated;
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'items',
+          recordPk: id,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: currentItem,
+          afterData: updated,
+        },
       });
 
-      return updatedItem;
-    }),
+      // Update price history if price changed
+      if (data.defaultPrice && data.defaultPrice !== Number(currentItem.defaultPrice)) {
+        // End current price
+        await tx.priceHistory.updateMany({
+          where: {
+            itemId: id,
+            priceType: 'RETAIL',
+            endDate: null,
+          },
+          data: {
+            endDate: new Date(),
+          },
+        });
+
+        // Create new price
+        await tx.priceHistory.create({
+          data: {
+            itemId: id,
+            priceType: 'RETAIL',
+            price: data.defaultPrice,
+            startDate: new Date(),
+            organizationId: ctx.user.organizationId!,
+          },
+        });
+      }
+
+      return updated;
+    });
+
+    return updatedItem;
+  }),
 
   // Soft delete item
   delete: organizationProcedure
-    .input(z.object({ 
-      id: z.string().cuid(),
-      reason: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        reason: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check for role permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -430,149 +417,149 @@ export const itemsRouter = createTRPCRouter({
     }),
 
   // Bulk import items
-  bulkImport: organizationProcedure
-    .input(bulkImportSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for role permissions
-      if (ctx.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators can bulk import items',
-        });
+  bulkImport: organizationProcedure.input(bulkImportSchema).mutation(async ({ ctx, input }) => {
+    // Check for role permissions
+    if (ctx.user.role !== 'ADMIN') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators can bulk import items',
+      });
+    }
+
+    const { items, validateOnly } = input;
+    const errors: Array<{ row: number; errors: string[] }> = [];
+    const validItems: typeof items = [];
+
+    // Validate all items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const itemErrors: string[] = [];
+
+      // Check for duplicate SKU
+      const existingItem = await ctx.prisma.item.findFirst({
+        where: {
+          sku: item.sku,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (existingItem) {
+        itemErrors.push(`SKU ${item.sku} already exists`);
       }
 
-      const { items, validateOnly } = input;
-      const errors: Array<{ row: number; errors: string[] }> = [];
-      const validItems: typeof items = [];
+      // Validate category exists
+      const category = await ctx.prisma.itemCategory.findUnique({
+        where: { id: item.categoryId },
+      });
 
-      // Validate all items
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i];
-        const itemErrors: string[] = [];
+      if (!category) {
+        itemErrors.push('Invalid category');
+      }
 
-        // Check for duplicate SKU
-        const existingItem = await ctx.prisma.item.findFirst({
-          where: { 
-            sku: item.sku,
+      // Validate UOM exists
+      const uom = await ctx.prisma.unitOfMeasure.findUnique({
+        where: { id: item.uomId },
+      });
+
+      if (!uom) {
+        itemErrors.push('Invalid unit of measure');
+      }
+
+      // Validate supplier if provided
+      if (item.defaultSupplierId) {
+        const supplier = await ctx.prisma.supplier.findUnique({
+          where: { id: item.defaultSupplierId },
+        });
+
+        if (!supplier) {
+          itemErrors.push('Invalid supplier');
+        }
+      }
+
+      if (itemErrors.length > 0) {
+        errors.push({ row: i + 1, errors: itemErrors });
+      } else {
+        validItems.push(item);
+      }
+    }
+
+    // Return validation results if validateOnly
+    if (validateOnly) {
+      return {
+        valid: errors.length === 0,
+        errors,
+        validCount: validItems.length,
+        totalCount: items.length,
+      };
+    }
+
+    // If errors found, don't proceed
+    if (errors.length > 0) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Validation failed for ${errors.length} items`,
+        cause: errors,
+      });
+    }
+
+    // Import valid items
+    const createdItems = await ctx.prisma.$transaction(async (tx) => {
+      const created = [];
+
+      for (const item of validItems) {
+        const newItem = await tx.item.create({
+          data: {
+            ...item,
             organizationId: ctx.user.organizationId,
           },
         });
 
-        if (existingItem) {
-          itemErrors.push(`SKU ${item.sku} already exists`);
-        }
-
-        // Validate category exists
-        const category = await ctx.prisma.itemCategory.findUnique({
-          where: { id: item.categoryId },
-        });
-
-        if (!category) {
-          itemErrors.push('Invalid category');
-        }
-
-        // Validate UOM exists
-        const uom = await ctx.prisma.unitOfMeasure.findUnique({
-          where: { id: item.uomId },
-        });
-
-        if (!uom) {
-          itemErrors.push('Invalid unit of measure');
-        }
-
-        // Validate supplier if provided
-        if (item.defaultSupplierId) {
-          const supplier = await ctx.prisma.supplier.findUnique({
-            where: { id: item.defaultSupplierId },
-          });
-
-          if (!supplier) {
-            itemErrors.push('Invalid supplier');
-          }
-        }
-
-        if (itemErrors.length > 0) {
-          errors.push({ row: i + 1, errors: itemErrors });
-        } else {
-          validItems.push(item);
-        }
-      }
-
-      // Return validation results if validateOnly
-      if (validateOnly) {
-        return {
-          valid: errors.length === 0,
-          errors,
-          validCount: validItems.length,
-          totalCount: items.length,
-        };
-      }
-
-      // If errors found, don't proceed
-      if (errors.length > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Validation failed for ${errors.length} items`,
-          cause: errors,
-        });
-      }
-
-      // Import valid items
-      const createdItems = await ctx.prisma.$transaction(async (tx) => {
-        const created = [];
-
-        for (const item of validItems) {
-          const newItem = await tx.item.create({
+        // Create initial price history if default price is set
+        if (item.defaultPrice) {
+          await tx.priceHistory.create({
             data: {
-              ...item,
-              organizationId: ctx.user.organizationId,
+              itemId: newItem.id,
+              priceType: 'RETAIL',
+              price: item.defaultPrice,
+              startDate: new Date(),
+              organizationId: ctx.user.organizationId!,
             },
           });
-
-          // Create initial price history if default price is set
-          if (item.defaultPrice) {
-            await tx.priceHistory.create({
-              data: {
-                itemId: newItem.id,
-                priceType: 'RETAIL',
-                price: item.defaultPrice,
-                startDate: new Date(),
-                organizationId: ctx.user.organizationId!,
-              },
-            });
-          }
-
-          created.push(newItem);
         }
 
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'items',
-            recordPk: 'BULK_IMPORT',
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: { count: created.length },
-          },
-        });
+        created.push(newItem);
+      }
 
-        return created;
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'items',
+          recordPk: 'BULK_IMPORT',
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: { count: created.length },
+        },
       });
 
-      return {
-        success: true,
-        imported: createdItems.length,
-        items: createdItems,
-      };
-    }),
+      return created;
+    });
+
+    return {
+      success: true,
+      imported: createdItems.length,
+      items: createdItems,
+    };
+  }),
 
   // Get item history
   getHistory: organizationProcedure
-    .input(z.object({ 
-      itemId: z.string().cuid(),
-      days: z.number().int().min(1).max(365).default(30),
-    }))
+    .input(
+      z.object({
+        itemId: z.string().cuid(),
+        days: z.number().int().min(1).max(365).default(30),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const since = new Date();
       since.setDate(since.getDate() - input.days);
@@ -662,11 +649,13 @@ export const itemsRouter = createTRPCRouter({
 
   // Duplicate item
   duplicate: organizationProcedure
-    .input(z.object({
-      itemId: z.string().cuid(),
-      newSku: z.string().min(1).max(50),
-      newName: z.string().min(1).max(200),
-    }))
+    .input(
+      z.object({
+        itemId: z.string().cuid(),
+        newSku: z.string().min(1).max(50),
+        newName: z.string().min(1).max(200),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check for role permissions
       if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
@@ -678,7 +667,7 @@ export const itemsRouter = createTRPCRouter({
 
       // Get source item
       const sourceItem = await ctx.prisma.item.findFirst({
-        where: { 
+        where: {
           id: input.itemId,
           organizationId: ctx.user.organizationId,
         },
@@ -696,7 +685,7 @@ export const itemsRouter = createTRPCRouter({
 
       // Check for duplicate SKU
       const existingItem = await ctx.prisma.item.findFirst({
-        where: { 
+        where: {
           sku: input.newSku,
           organizationId: ctx.user.organizationId,
         },
@@ -713,7 +702,7 @@ export const itemsRouter = createTRPCRouter({
       const duplicatedItem = await ctx.prisma.$transaction(async (tx) => {
         // Create new item
         const { id, sku, name, createdAt, updatedAt, images, ...itemData } = sourceItem;
-        
+
         const newItem = await tx.item.create({
           data: {
             ...itemData,
@@ -730,7 +719,7 @@ export const itemsRouter = createTRPCRouter({
         // Copy images
         if (sourceItem.images.length > 0) {
           await tx.itemImage.createMany({
-            data: sourceItem.images.map(img => ({
+            data: sourceItem.images.map((img) => ({
               itemId: newItem.id,
               url: img.url,
               altText: img.altText,
@@ -776,10 +765,12 @@ export const itemsRouter = createTRPCRouter({
 
   // Archive items
   archive: organizationProcedure
-    .input(z.object({
-      itemIds: z.array(z.string().cuid()),
-      reason: z.string(),
-    }))
+    .input(
+      z.object({
+        itemIds: z.array(z.string().cuid()),
+        reason: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check for role permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -807,7 +798,7 @@ export const itemsRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
           message: 'Cannot archive items with active inventory',
-          cause: activeInventory.map(inv => ({
+          cause: activeInventory.map((inv) => ({
             sku: inv.item.sku,
             name: inv.item.name,
           })),

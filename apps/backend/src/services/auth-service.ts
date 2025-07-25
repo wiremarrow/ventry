@@ -158,19 +158,15 @@ export class AuthService {
     // Check if user already exists
     const existingUser = await this.prisma.user.findFirst({
       where: {
-        OR: [
-          { email },
-          { username },
-        ],
+        OR: [{ email }, { username }],
       },
     });
 
     if (existingUser) {
       throw new TRPCError({
         code: 'CONFLICT',
-        message: existingUser.email === email 
-          ? 'Email already registered' 
-          : 'Username already taken',
+        message:
+          existingUser.email === email ? 'Email already registered' : 'Username already taken',
       });
     }
 
@@ -251,7 +247,7 @@ export class AuthService {
   async logout(userId: string | undefined, res: FastifyReply): Promise<void> {
     // Clear all authentication-related cookies
     CookieService.clearAllAuthCookies(res);
-    
+
     this.logger.info({ userId }, 'User logged out');
   }
 

@@ -1,15 +1,15 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { 
-  MoreHorizontal, 
-  Eye, 
-  Copy, 
+import {
+  MoreHorizontal,
+  Eye,
+  Copy,
   Printer,
   CheckCircle,
   XCircle,
   Package,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -111,12 +111,8 @@ export function PurchaseOrderList() {
     return (
       <div className="rounded-lg border p-8 text-center">
         <Package className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">
-          No purchase orders
-        </h3>
-        <p className="mt-1 text-sm text-gray-500">
-          Get started by creating a new purchase order.
-        </p>
+        <h3 className="mt-2 text-sm font-medium text-gray-900">No purchase orders</h3>
+        <p className="mt-1 text-sm text-gray-500">Get started by creating a new purchase order.</p>
       </div>
     );
   }
@@ -127,61 +123,36 @@ export function PurchaseOrderList() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('poNumber')}
-              >
+              <TableHead className="cursor-pointer" onClick={() => handleSort('poNumber')}>
                 PO Number
                 {filters.sortBy === 'poNumber' && (
-                  <span className="ml-1">
-                    {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
+                  <span className="ml-1">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('orderDate')}
-              >
+              <TableHead className="cursor-pointer" onClick={() => handleSort('orderDate')}>
                 Order Date
                 {filters.sortBy === 'orderDate' && (
-                  <span className="ml-1">
-                    {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
+                  <span className="ml-1">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('supplier')}
-              >
+              <TableHead className="cursor-pointer" onClick={() => handleSort('supplier')}>
                 Supplier
                 {filters.sortBy === 'supplier' && (
-                  <span className="ml-1">
-                    {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
+                  <span className="ml-1">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </TableHead>
               <TableHead>Items</TableHead>
               <TableHead>Progress</TableHead>
-              <TableHead 
-                className="cursor-pointer"
-                onClick={() => handleSort('status')}
-              >
+              <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
                 Status
                 {filters.sortBy === 'status' && (
-                  <span className="ml-1">
-                    {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
+                  <span className="ml-1">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </TableHead>
-              <TableHead 
-                className="cursor-pointer text-right"
-                onClick={() => handleSort('total')}
-              >
+              <TableHead className="cursor-pointer text-right" onClick={() => handleSort('total')}>
                 Total
                 {filters.sortBy === 'total' && (
-                  <span className="ml-1">
-                    {filters.sortOrder === 'asc' ? '↑' : '↓'}
-                  </span>
+                  <span className="ml-1">{filters.sortOrder === 'asc' ? '↑' : '↓'}</span>
                 )}
               </TableHead>
               <TableHead className="w-[50px]"></TableHead>
@@ -189,26 +160,20 @@ export function PurchaseOrderList() {
           </TableHeader>
           <TableBody>
             {purchaseOrders.map((po) => (
-              <TableRow 
+              <TableRow
                 key={po.id}
                 className="cursor-pointer hover:bg-gray-50"
                 onClick={() => router.push(`/purchase-orders/${po.id}`)}
               >
                 <TableCell className="font-medium">
                   {po.poNumber}
-                  {po.isOverdue && (
-                    <AlertCircle className="ml-1 inline h-4 w-4 text-red-500" />
-                  )}
+                  {po.isOverdue && <AlertCircle className="ml-1 inline h-4 w-4 text-red-500" />}
                 </TableCell>
-                <TableCell>
-                  {format(new Date(po.orderDate), 'PP')}
-                </TableCell>
+                <TableCell>{format(new Date(po.orderDate), 'PP')}</TableCell>
                 <TableCell>
                   <div>
                     <div className="font-medium">{po.supplier.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {po.supplier.supplierCode}
-                    </div>
+                    <div className="text-sm text-gray-500">{po.supplier.supplierCode}</div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -234,9 +199,7 @@ export function PurchaseOrderList() {
                     {statusConfig[po.status].label}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">
-                  {formatCurrency(po.total)}
-                </TableCell>
+                <TableCell className="text-right">{formatCurrency(po.total)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -328,7 +291,7 @@ export function PurchaseOrderList() {
                 }
               />
             </PaginationItem>
-            
+
             {[...Array(Math.min(5, pagination.totalPages))].map((_, i) => {
               const pageNumber = i + 1;
               return (
@@ -343,13 +306,13 @@ export function PurchaseOrderList() {
                 </PaginationItem>
               );
             })}
-            
+
             {pagination.totalPages > 5 && (
               <PaginationItem>
                 <span className="px-2">...</span>
               </PaginationItem>
             )}
-            
+
             <PaginationItem>
               <PaginationNext
                 onClick={() =>

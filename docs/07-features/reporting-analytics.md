@@ -28,7 +28,7 @@ const getExecutiveDashboard = async (period: DateRange) => {
     endDate: period.end,
     compareWith: 'PREVIOUS_PERIOD',
   });
-  
+
   return {
     // Revenue metrics
     revenue: {
@@ -37,7 +37,7 @@ const getExecutiveDashboard = async (period: DateRange) => {
       byChannel: metrics.revenue.channels,
       forecast: metrics.revenue.forecast,
     },
-    
+
     // Order metrics
     orders: {
       count: metrics.orders.count,
@@ -45,7 +45,7 @@ const getExecutiveDashboard = async (period: DateRange) => {
       fulfillmentRate: metrics.orders.fulfillmentRate,
       trend: metrics.orders.trend,
     },
-    
+
     // Inventory metrics
     inventory: {
       totalValue: metrics.inventory.value,
@@ -53,7 +53,7 @@ const getExecutiveDashboard = async (period: DateRange) => {
       stockouts: metrics.inventory.stockouts,
       excess: metrics.inventory.excess,
     },
-    
+
     // Operational metrics
     operations: {
       warehouseUtilization: metrics.operations.utilization,
@@ -67,10 +67,10 @@ const getExecutiveDashboard = async (period: DateRange) => {
 // Real-time updates
 const subscribeToMetrics = () => {
   const ws = new WebSocket('wss://api.ventry.app/metrics');
-  
+
   ws.on('message', (data) => {
     const update = JSON.parse(data);
-    
+
     switch (update.type) {
       case 'ORDER_CREATED':
         updateOrderMetrics(update.data);
@@ -110,14 +110,14 @@ interface OperationalDashboard {
       carriers: CarrierMetric[];
     };
   };
-  
+
   alerts: {
     lowStock: Alert[];
     expiring: Alert[];
     delayed: Alert[];
     errors: Alert[];
   };
-  
+
   performance: {
     throughput: TimeSeriesData;
     efficiency: GaugeData;
@@ -132,7 +132,7 @@ const getOperationalDashboard = async () => {
     getActiveAlerts(),
     getPerformanceMetrics(),
   ]);
-  
+
   return {
     warehouse,
     alerts,
@@ -156,7 +156,7 @@ const generateInventoryValuation = async (options: ValuationOptions) => {
     includeDetails: options.detailed,
     format: options.format || 'PDF',
   });
-  
+
   return {
     summary: {
       totalValue: report.totalValue,
@@ -176,10 +176,10 @@ const generateAgingReport = async () => {
     includeValue: true,
     highlightSlow: true,
   });
-  
+
   return {
     summary: aging.summary,
-    items: aging.items.map(item => ({
+    items: aging.items.map((item) => ({
       ...item,
       risk: calculateObsolescenceRisk(item),
       recommendation: getAgingRecommendation(item),
@@ -194,7 +194,7 @@ const generateABCAnalysis = async () => {
     period: 'LAST_12_MONTHS',
     includeRecommendations: true,
   });
-  
+
   return {
     classification: {
       A: { items: analysis.A, value: analysis.AValue },
@@ -216,16 +216,10 @@ const generateSalesReport = async (period: DateRange) => {
     startDate: period.start,
     endDate: period.end,
     groupBy: ['date', 'channel', 'category'],
-    metrics: [
-      'revenue',
-      'units',
-      'orders',
-      'average_order_value',
-      'conversion_rate',
-    ],
+    metrics: ['revenue', 'units', 'orders', 'average_order_value', 'conversion_rate'],
     compareWith: 'PREVIOUS_YEAR',
   });
-  
+
   return {
     summary: report.summary,
     trends: report.trends,
@@ -243,7 +237,7 @@ const generateCustomerAnalysis = async () => {
     metrics: ['lifetime_value', 'order_frequency', 'average_basket'],
     includeChurn: true,
   });
-  
+
   return {
     segments: analysis.segments,
     retention: analysis.retentionCurve,
@@ -270,7 +264,7 @@ const generateEfficiencyReport = async (warehouseId: string) => {
     ],
     includeBenchmarks: true,
   });
-  
+
   return {
     overall: report.overallScore,
     metrics: report.detailedMetrics,
@@ -284,15 +278,10 @@ const generateEfficiencyReport = async (warehouseId: string) => {
 const generateSupplierReport = async () => {
   const report = await trpc.reports.supplierPerformance.generate({
     period: 'LAST_QUARTER',
-    metrics: [
-      'on_time_delivery',
-      'quality_score',
-      'price_competitiveness',
-      'responsiveness',
-    ],
+    metrics: ['on_time_delivery', 'quality_score', 'price_competitiveness', 'responsiveness'],
     includeScorecard: true,
   });
-  
+
   return {
     rankings: report.supplierRankings,
     scorecards: report.individualScorecards,
@@ -312,24 +301,24 @@ interface CustomReport {
   id: string;
   name: string;
   description: string;
-  
+
   // Data source
   dataSources: DataSource[];
-  
+
   // Filters
   filters: ReportFilter[];
-  
+
   // Columns/Metrics
   columns: ReportColumn[];
   metrics: ReportMetric[];
-  
+
   // Grouping and sorting
   groupBy?: string[];
   orderBy?: OrderByClause[];
-  
+
   // Visualization
   charts?: ChartConfig[];
-  
+
   // Output
   format: 'TABLE' | 'CHART' | 'DASHBOARD';
   exportFormats: ('PDF' | 'EXCEL' | 'CSV')[];
@@ -342,17 +331,17 @@ const createCustomReport = async (config: CustomReportConfig) => {
   if (!validation.valid) {
     throw new Error(validation.errors.join(', '));
   }
-  
+
   // Save report definition
   const report = await trpc.reports.create.mutate({
     ...config,
     createdBy: getCurrentUserId(),
     organizationId: getCurrentOrgId(),
   });
-  
+
   // Generate initial version
   const result = await generateCustomReport(report.id);
-  
+
   return {
     report,
     result,
@@ -368,38 +357,38 @@ const ReportBuilder = () => {
     columns: [],
     metrics: [],
   });
-  
+
   return (
     <div className="report-builder">
       <DataSourceSelector
         selected={config.dataSources}
         onChange={(sources) => setConfig({ ...config, dataSources: sources })}
       />
-      
+
       <FilterBuilder
         dataSources={config.dataSources}
         filters={config.filters}
         onChange={(filters) => setConfig({ ...config, filters })}
       />
-      
+
       <ColumnSelector
         available={getAvailableColumns(config.dataSources)}
         selected={config.columns}
         onChange={(columns) => setConfig({ ...config, columns })}
       />
-      
+
       <MetricBuilder
         columns={config.columns}
         metrics={config.metrics}
         onChange={(metrics) => setConfig({ ...config, metrics })}
       />
-      
+
       <ChartDesigner
         data={previewData}
         charts={config.charts}
         onChange={(charts) => setConfig({ ...config, charts })}
       />
-      
+
       <ReportPreview config={config} />
     </div>
   );
@@ -416,13 +405,13 @@ const executeSQL = async (query: string, params: any[]) => {
   if (!validation.safe) {
     throw new Error('Invalid SQL query');
   }
-  
+
   // Add organization filter
   const scopedQuery = addOrganizationScope(query);
-  
+
   // Execute with read-only connection
   const result = await prisma.$queryRawUnsafe(scopedQuery, ...params);
-  
+
   // Format results
   return {
     columns: Object.keys(result[0] || {}),
@@ -454,7 +443,7 @@ const sqlTemplates = {
     GROUP BY i.id, i.sku, i.name
     ORDER BY turnover_rate DESC
   `,
-  
+
   customerLifetimeValue: `
     SELECT 
       c.id,
@@ -484,7 +473,7 @@ const generateTimeSeriesChart = (data: TimeSeriesData) => {
     type: 'line',
     data: {
       labels: data.timestamps,
-      datasets: data.series.map(s => ({
+      datasets: data.series.map((s) => ({
         label: s.name,
         data: s.values,
         borderColor: s.color,
@@ -514,13 +503,15 @@ const generateHeatmap = (data: HeatmapData) => {
         x: data.xLabels,
         y: data.yLabels,
       },
-      datasets: [{
-        data: data.values,
-        backgroundColor: (ctx) => {
-          const value = ctx.dataset.data[ctx.dataIndex].v;
-          return getHeatmapColor(value, data.min, data.max);
+      datasets: [
+        {
+          data: data.values,
+          backgroundColor: (ctx) => {
+            const value = ctx.dataset.data[ctx.dataIndex].v;
+            return getHeatmapColor(value, data.min, data.max);
+          },
         },
-      }],
+      ],
     },
     options: {
       plugins: {
@@ -539,15 +530,17 @@ const generateSankeyDiagram = (flows: FlowData[]) => {
   return {
     type: 'sankey',
     data: {
-      datasets: [{
-        data: flows.map(f => ({
-          from: f.source,
-          to: f.target,
-          flow: f.value,
-        })),
-        colorFrom: (c) => getNodeColor(c.dataset.data[c.dataIndex].from),
-        colorTo: (c) => getNodeColor(c.dataset.data[c.dataIndex].to),
-      }],
+      datasets: [
+        {
+          data: flows.map((f) => ({
+            from: f.source,
+            to: f.target,
+            flow: f.value,
+          })),
+          colorFrom: (c) => getNodeColor(c.dataset.data[c.dataIndex].from),
+          colorTo: (c) => getNodeColor(c.dataset.data[c.dataIndex].to),
+        },
+      ],
     },
   };
 };
@@ -569,7 +562,7 @@ interface DashboardConfig {
 // Create interactive dashboard
 const createDashboard = async (config: DashboardConfig) => {
   const dashboard = await trpc.dashboards.create.mutate(config);
-  
+
   return {
     id: dashboard.id,
     url: `/dashboards/${dashboard.id}`,
@@ -581,12 +574,12 @@ const createDashboard = async (config: DashboardConfig) => {
 const InteractiveDashboard = ({ dashboardId }) => {
   const { data, isLoading } = trpc.dashboards.get.useQuery({ id: dashboardId });
   const [filters, setFilters] = useState({});
-  
+
   // Auto-refresh
   useInterval(() => {
     refetch();
   }, data?.refreshInterval || 60000);
-  
+
   return (
     <DashboardLayout>
       <FilterBar
@@ -594,7 +587,7 @@ const InteractiveDashboard = ({ dashboardId }) => {
         values={filters}
         onChange={setFilters}
       />
-      
+
       <GridLayout layout={data?.layout}>
         {data?.widgets.map(widget => (
           <DashboardWidget
@@ -624,21 +617,21 @@ const scheduleReport = async (schedule: ReportSchedule) => {
     timezone: schedule.timezone,
     recipients: schedule.recipients,
     format: schedule.format,
-    
+
     // Conditional delivery
     conditions: schedule.conditions, // Only send if conditions met
-    
+
     // Dynamic parameters
     parameters: schedule.parameters,
   });
-  
+
   return scheduled;
 };
 
 // Report scheduler implementation
 const processScheduledReports = async () => {
   const due = await trpc.reports.schedule.getDue.query();
-  
+
   for (const schedule of due) {
     try {
       // Generate report with current data
@@ -646,26 +639,23 @@ const processScheduledReports = async () => {
         ...schedule.parameters,
         asOf: new Date(),
       });
-      
+
       // Check conditions
       if (schedule.conditions) {
-        const shouldSend = await evaluateConditions(
-          schedule.conditions,
-          report
-        );
-        
+        const shouldSend = await evaluateConditions(schedule.conditions, report);
+
         if (!shouldSend) {
           continue;
         }
       }
-      
+
       // Send to recipients
       await sendReport(report, schedule.recipients, {
         format: schedule.format,
         subject: generateSubject(schedule, report),
         message: schedule.message,
       });
-      
+
       // Log delivery
       await trpc.reports.schedule.logDelivery.mutate({
         scheduleId: schedule.id,
@@ -691,34 +681,33 @@ const emailReport = async (
 ) => {
   // Convert to requested format
   const attachment = await convertReport(report, options.format);
-  
+
   // Personalize for each recipient
   for (const recipient of recipients) {
     const personalized = personalizeReport(report, recipient);
-    
+
     await sendEmail({
       to: recipient.email,
       subject: options.subject,
       html: generateEmailBody(personalized, options),
-      attachments: [{
-        filename: `${report.name}_${format(new Date(), 'yyyy-MM-dd')}.${options.format}`,
-        content: attachment,
-      }],
+      attachments: [
+        {
+          filename: `${report.name}_${format(new Date(), 'yyyy-MM-dd')}.${options.format}`,
+          content: attachment,
+        },
+      ],
     });
   }
 };
 
 // Slack integration
-const slackReport = async (
-  report: GeneratedReport,
-  channel: string
-) => {
+const slackReport = async (report: GeneratedReport, channel: string) => {
   // Generate summary
   const summary = generateReportSummary(report);
-  
+
   // Create chart images
   const charts = await generateChartImages(report.charts);
-  
+
   // Send to Slack
   await slack.chat.postMessage({
     channel,
@@ -726,7 +715,7 @@ const slackReport = async (
     attachments: [
       {
         title: report.name,
-        fields: summary.keyMetrics.map(m => ({
+        fields: summary.keyMetrics.map((m) => ({
           title: m.label,
           value: m.value,
           short: true,
@@ -735,7 +724,7 @@ const slackReport = async (
       },
     ],
   });
-  
+
   // Thread with additional charts
   if (charts.length > 1) {
     await postChartsToThread(channel, charts.slice(1));
@@ -758,7 +747,7 @@ const forecastDemand = async (itemId: string, options: ForecastOptions) => {
     includePromotion: true,
     confidenceLevel: 0.95,
   });
-  
+
   return {
     predictions: forecast.daily,
     confidence: forecast.confidence,
@@ -777,8 +766,8 @@ const detectAnomalies = async (metric: string, period: DateRange) => {
     sensitivity: 'MEDIUM',
     includeContext: true,
   });
-  
-  return anomalies.map(a => ({
+
+  return anomalies.map((a) => ({
     ...a,
     severity: calculateSeverity(a),
     explanation: generateExplanation(a),
@@ -797,7 +786,7 @@ const generateInsights = async (reportData: ReportData) => {
     focus: ['trends', 'anomalies', 'opportunities', 'risks'],
     style: 'EXECUTIVE_SUMMARY',
   });
-  
+
   return {
     summary: insights.executiveSummary,
     keyFindings: insights.findings,
@@ -813,7 +802,7 @@ const queryWithNLP = async (question: string) => {
     context: 'INVENTORY_MANAGEMENT',
     includeVisualization: true,
   });
-  
+
   return {
     answer: result.answer,
     data: result.data,
@@ -832,33 +821,33 @@ const queryWithNLP = async (question: string) => {
 // Export to Excel with formatting
 const exportToExcel = async (report: Report) => {
   const workbook = new ExcelJS.Workbook();
-  
+
   // Summary sheet
   const summarySheet = workbook.addWorksheet('Summary');
   addSummaryData(summarySheet, report.summary);
-  
+
   // Data sheets
   for (const dataset of report.datasets) {
     const sheet = workbook.addWorksheet(dataset.name);
-    
+
     // Headers
-    sheet.columns = dataset.columns.map(col => ({
+    sheet.columns = dataset.columns.map((col) => ({
       header: col.label,
       key: col.key,
       width: col.width || 15,
     }));
-    
+
     // Data with formatting
     dataset.rows.forEach((row, index) => {
       const excelRow = sheet.addRow(row);
-      
+
       // Apply conditional formatting
       dataset.columns.forEach((col, colIndex) => {
         const cell = excelRow.getCell(colIndex + 1);
         applyFormatting(cell, col, row[col.key]);
       });
     });
-    
+
     // Charts
     if (dataset.charts) {
       for (const chart of dataset.charts) {
@@ -866,7 +855,7 @@ const exportToExcel = async (report: Report) => {
       }
     }
   }
-  
+
   // Generate file
   const buffer = await workbook.xlsx.writeBuffer();
   return buffer;
@@ -881,7 +870,7 @@ const createExportEndpoint = async (reportId: string) => {
     formats: ['JSON', 'CSV', 'XML'],
     parameters: ['date_from', 'date_to', 'format'],
   });
-  
+
   return {
     url: `https://api.ventry.app/reports/${endpoint.id}`,
     apiKey: endpoint.apiKey,
@@ -900,7 +889,7 @@ const createMaterializedView = async (viewName: string, query: string) => {
   await prisma.$executeRawUnsafe(`
     CREATE MATERIALIZED VIEW ${viewName} AS ${query}
   `);
-  
+
   // Schedule refresh
   await scheduleViewRefresh(viewName, 'HOURLY');
 };
@@ -908,19 +897,19 @@ const createMaterializedView = async (viewName: string, query: string) => {
 // Implement caching
 const getCachedReport = async (reportId: string, params: any) => {
   const cacheKey = generateCacheKey(reportId, params);
-  
+
   // Check cache
   const cached = await redis.get(cacheKey);
   if (cached) {
     return JSON.parse(cached);
   }
-  
+
   // Generate report
   const report = await generateReport(reportId, params);
-  
+
   // Cache with TTL
   await redis.setex(cacheKey, 3600, JSON.stringify(report));
-  
+
   return report;
 };
 ```
@@ -940,25 +929,25 @@ const getCachedReport = async (reportId: string, params: any) => {
 const streamLargeReport = async function* (reportId: string) {
   const totalRows = await getReportRowCount(reportId);
   const batchSize = 1000;
-  
+
   // Yield metadata first
   yield {
     type: 'metadata',
     totalRows,
     columns: await getReportColumns(reportId),
   };
-  
+
   // Stream data in batches
   for (let offset = 0; offset < totalRows; offset += batchSize) {
     const batch = await getReportBatch(reportId, offset, batchSize);
-    
+
     yield {
       type: 'data',
       rows: batch,
       progress: (offset + batch.length) / totalRows,
     };
   }
-  
+
   // Final summary
   yield {
     type: 'complete',
@@ -1003,7 +992,7 @@ CREATE TABLE report_performance_log (
 );
 
 -- Analyze slow reports
-SELECT 
+SELECT
   report_id,
   AVG(execution_time_ms) as avg_time,
   MAX(execution_time_ms) as max_time,

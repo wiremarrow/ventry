@@ -55,13 +55,13 @@ interface CreateProductDialogProps {
 
 export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogProps) {
   const utils = trpc.useUtils();
-  
+
   // Fetch categories
   const { data: categories } = trpc.itemCategories.list.useQuery({});
-  
+
   // Fetch units of measure
   const { data: uoms } = trpc.unitsOfMeasure.list.useQuery({});
-  
+
   // Fetch suppliers
   const { data: suppliers } = trpc.suppliers.list.useQuery({
     page: 1,
@@ -110,9 +110,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
-          <DialogDescription>
-            Create a new product in your inventory catalog
-          </DialogDescription>
+          <DialogDescription>Create a new product in your inventory catalog</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -120,7 +118,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Basic Information</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -158,10 +156,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Enter product description"
-                        {...field}
-                      />
+                      <Textarea placeholder="Enter product description" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -224,7 +219,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
             {/* Pricing & Supplier */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Pricing & Supplier</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -233,8 +228,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     <FormItem>
                       <FormLabel>Default Cost</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.01"
                           placeholder="0.00"
                           {...field}
@@ -253,8 +248,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     <FormItem>
                       <FormLabel>Default Price</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.01"
                           placeholder="0.00"
                           {...field}
@@ -296,7 +291,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
             {/* Inventory Management */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Inventory Management</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -305,16 +300,14 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     <FormItem>
                       <FormLabel>Reorder Point</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           placeholder="0"
                           {...field}
                           onChange={(e) => field.onChange(e.target.valueAsNumber || 0)}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Minimum quantity before reordering
-                      </FormDescription>
+                      <FormDescription>Minimum quantity before reordering</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -327,16 +320,14 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     <FormItem>
                       <FormLabel>Reorder Quantity</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           placeholder="1"
                           {...field}
                           onChange={(e) => field.onChange(e.target.valueAsNumber || 1)}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Quantity to reorder
-                      </FormDescription>
+                      <FormDescription>Quantity to reorder</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -347,7 +338,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
             {/* Physical Dimensions */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Physical Dimensions (Optional)</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -356,8 +347,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     <FormItem>
                       <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.001"
                           placeholder="0.000"
                           {...field}
@@ -377,8 +368,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                       <FormItem>
                         <FormLabel>L (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
@@ -396,8 +387,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                       <FormItem>
                         <FormLabel>W (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
@@ -415,8 +406,8 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                       <FormItem>
                         <FormLabel>H (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
@@ -443,10 +434,7 @@ export function CreateProductDialog({ open, onOpenChange }: CreateProductDialogP
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}

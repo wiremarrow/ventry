@@ -49,14 +49,14 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     OrganizationRole: {
       OWNER: 'OWNER',
       ADMIN: 'ADMIN',
-      MEMBER: 'MEMBER'
-    }
+      MEMBER: 'MEMBER',
+    },
   };
 });
 
@@ -69,17 +69,17 @@ describe('Auth Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object with setCookie
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
-      res: mockRes
+      res: mockRes,
     });
   });
 
@@ -94,7 +94,7 @@ describe('Auth Router', () => {
         role: 'MEMBER',
         organization: mockOrganization,
       };
-      
+
       mockPrisma.user.findUnique.mockResolvedValue(userWithPassword);
       mockPrisma.user.update.mockResolvedValue(userWithPassword);
       mockPrisma.organizationMember.findFirst.mockResolvedValue(mockMembership);
@@ -158,10 +158,10 @@ describe('Auth Router', () => {
       vi.mocked(bcrypt.hash).mockResolvedValue('hashedpassword' as never);
 
       // Mock the transaction
-      const mockOrg = { 
-        id: 'org-123', 
+      const mockOrg = {
+        id: 'org-123',
         name: "New's Organization",
-        slug: 'newuser-org-123456'
+        slug: 'newuser-org-123456',
       };
       const newUser = {
         ...mockUser,
@@ -175,24 +175,24 @@ describe('Auth Router', () => {
         id: 'member-123',
         userId: newUser.id,
         organizationId: mockOrg.id,
-        role: 'OWNER'
+        role: 'OWNER',
       };
 
       mockPrisma.$transaction.mockImplementation(async (fn) => {
         const txMock = {
           user: {
-            create: vi.fn().mockResolvedValue(newUser)
+            create: vi.fn().mockResolvedValue(newUser),
           },
           organization: {
-            create: vi.fn().mockResolvedValue(mockOrg)
+            create: vi.fn().mockResolvedValue(mockOrg),
           },
           organizationMember: {
-            create: vi.fn().mockResolvedValue(mockMembership)
-          }
+            create: vi.fn().mockResolvedValue(mockMembership),
+          },
         };
-        
+
         const result = await fn(txMock);
-        
+
         // Verify the transaction calls
         expect(txMock.user.create).toHaveBeenCalledWith({
           data: {
@@ -203,7 +203,7 @@ describe('Auth Router', () => {
             password: 'hashedpassword',
           },
         });
-        
+
         return result;
       });
 
@@ -254,10 +254,10 @@ describe('Auth Router', () => {
 
   describe('me', () => {
     it('should return current user when authenticated', async () => {
-      const authenticatedCaller = await createDirectCaller({ 
+      const authenticatedCaller = await createDirectCaller({
         user: mockAuthenticatedUser,
         prisma: mockPrisma as any,
-        res: mockRes
+        res: mockRes,
       });
 
       const result = await authenticatedCaller.auth.me();
@@ -272,10 +272,10 @@ describe('Auth Router', () => {
 
   describe('logout', () => {
     it('should successfully logout authenticated user', async () => {
-      const authenticatedCaller = await createDirectCaller({ 
+      const authenticatedCaller = await createDirectCaller({
         user: mockAuthenticatedUser,
         prisma: mockPrisma as any,
-        res: mockRes
+        res: mockRes,
       });
 
       const result = await authenticatedCaller.auth.logout();
@@ -318,11 +318,11 @@ describe('Auth Router', () => {
         },
       };
 
-      const authenticatedCaller = await createDirectCaller({ 
+      const authenticatedCaller = await createDirectCaller({
         user: mockAuthenticatedUser,
         prisma: mockPrisma as any,
         res: mockRes,
-        req: mockReq
+        req: mockReq,
       });
 
       const result = await authenticatedCaller.auth.debug();

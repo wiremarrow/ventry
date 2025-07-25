@@ -7,7 +7,9 @@ import type { Prisma } from '@ventry/database';
 
 // Input validation schemas
 const timeRangeSchema = z.object({
-  period: z.enum(['today', 'yesterday', 'last7days', 'last30days', 'last90days', 'last365days', 'custom']).default('last30days'),
+  period: z
+    .enum(['today', 'yesterday', 'last7days', 'last30days', 'last90days', 'last365days', 'custom'])
+    .default('last30days'),
   customFrom: z.date().optional(),
   customTo: z.date().optional(),
   compareWith: z.enum(['previous', 'lastYear', 'none']).default('none'),
@@ -23,12 +25,22 @@ const metricsFilterSchema = z.object({
 export const analyticsRouter = createTRPCRouter({
   // Main Dashboard Analytics
   dashboard: organizationProcedure
-    .input(z.object({
-      ...timeRangeSchema.shape,
-      ...metricsFilterSchema.shape,
-    }))
+    .input(
+      z.object({
+        ...timeRangeSchema.shape,
+        ...metricsFilterSchema.shape,
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { period, customFrom, customTo, compareWith, warehouseIds, includeAllWarehouses, categoryIds } = input;
+      const {
+        period,
+        customFrom,
+        customTo,
+        compareWith,
+        warehouseIds,
+        includeAllWarehouses,
+        categoryIds,
+      } = input;
 
       // Calculate date ranges
       const now = new Date();
@@ -70,8 +82,10 @@ export const analyticsRouter = createTRPCRouter({
       let compareDateTo: Date | null = null;
 
       if (compareWith !== 'none') {
-        const periodDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
-        
+        const periodDays = Math.ceil(
+          (dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
         if (compareWith === 'previous') {
           compareDateTo = new Date(dateFrom.getTime() - 1);
           compareDateFrom = new Date(compareDateTo.getTime() - periodDays * 24 * 60 * 60 * 1000);
@@ -84,21 +98,25 @@ export const analyticsRouter = createTRPCRouter({
       }
 
       // Build warehouse filter
-      const warehouseFilter = includeAllWarehouses ? {} : {
-        location: {
-          warehouseId: { in: warehouseIds || [] },
-        },
-      };
+      const warehouseFilter = includeAllWarehouses
+        ? {}
+        : {
+            location: {
+              warehouseId: { in: warehouseIds || [] },
+            },
+          };
 
       // 1. Inventory Metrics
       const currentInventory = await ctx.prisma.inventory.aggregate({
         where: {
           ...warehouseFilter,
-          ...(categoryIds?.length ? {
-            item: {
-              categoryId: { in: categoryIds },
-            },
-          } : {}),
+          ...(categoryIds?.length
+            ? {
+                item: {
+                  categoryId: { in: categoryIds },
+                },
+              }
+            : {}),
         },
         _sum: {
           qtyOnHand: true,
@@ -108,19 +126,22 @@ export const analyticsRouter = createTRPCRouter({
       });
 
       // Get inventory value
-      const inventoryValue = await ctx.prisma.inventory.findMany({
-        where: {
-          ...warehouseFilter,
-          qtyOnHand: { gt: 0 },
-        },
-        include: {
-          item: true,
-        },
-      }).then(inventory => 
-        inventory.reduce((sum, inv) => 
-          sum + (inv.qtyOnHand * Number(inv.item.defaultPrice || 0)), 0
-        )
-      );
+      const inventoryValue = await ctx.prisma.inventory
+        .findMany({
+          where: {
+            ...warehouseFilter,
+            qtyOnHand: { gt: 0 },
+          },
+          include: {
+            item: true,
+          },
+        })
+        .then((inventory) =>
+          inventory.reduce(
+            (sum, inv) => sum + inv.qtyOnHand * Number(inv.item.defaultPrice || 0),
+            0
+          )
+        );
 
       // 2. Sales Metrics
       const orderCount = await ctx.prisma.order.count({
@@ -242,15 +263,19 @@ export const analyticsRouter = createTRPCRouter({
           to: dateTo,
           label: period,
         },
-        comparison: compareDateFrom && compareDateTo ? {
-          from: compareDateFrom,
-          to: compareDateTo,
-          type: compareWith,
-        } : null,
+        comparison:
+          compareDateFrom && compareDateTo
+            ? {
+                from: compareDateFrom,
+                to: compareDateTo,
+                type: compareWith,
+              }
+            : null,
         inventory: {
           totalValue: inventoryValue,
           totalOnHand: currentInventory._sum?.qtyOnHand || 0,
-          totalAvailable: (currentInventory._sum?.qtyOnHand || 0) - (currentInventory._sum?.qtyReserved || 0),
+          totalAvailable:
+            (currentInventory._sum?.qtyOnHand || 0) - (currentInventory._sum?.qtyReserved || 0),
           totalAllocated: 0, // TODO: Track allocated quantity
           totalReserved: currentInventory._sum?.qtyReserved || 0,
           lowStockItems: lowStockCount,
@@ -259,26 +284,29 @@ export const analyticsRouter = createTRPCRouter({
         sales: {
           orderCount: orderCount,
           totalRevenue: Number(salesMetrics._sum?.grandTotal || 0),
-          avgOrderValue: orderCount > 0 
-            ? Number(salesMetrics._sum?.grandTotal || 0) / orderCount 
-            : 0,
-          change: compareSalesMetrics 
-            ? calculateChange(Number(salesMetrics._sum?.grandTotal || 0), Number(compareSalesMetrics._sum?.grandTotal || 0))
+          avgOrderValue:
+            orderCount > 0 ? Number(salesMetrics._sum?.grandTotal || 0) / orderCount : 0,
+          change: compareSalesMetrics
+            ? calculateChange(
+                Number(salesMetrics._sum?.grandTotal || 0),
+                Number(compareSalesMetrics._sum?.grandTotal || 0)
+              )
             : null,
         },
         purchases: {
           orderCount: purchaseMetrics._count,
           totalSpend: Number(purchaseMetrics._sum?.total || 0),
-          avgOrderValue: purchaseMetrics._count > 0 
-            ? Number(purchaseMetrics._sum?.total || 0) / purchaseMetrics._count 
-            : 0,
+          avgOrderValue:
+            purchaseMetrics._count > 0
+              ? Number(purchaseMetrics._sum?.total || 0) / purchaseMetrics._count
+              : 0,
         },
         operations: {
-          receipts: stockMovements.find(m => m.movementType === 'INBOUND')?._count || 0,
-          shipments: stockMovements.find(m => m.movementType === 'OUTBOUND')?._count || 0,
-          adjustments: stockMovements.find(m => m.movementType === 'ADJUSTMENT')?._count || 0,
-          transfers: stockMovements.find(m => m.movementType === 'TRANSFER')?._count || 0,
-          returns: stockMovements.find(m => m.movementType === 'RETURN')?._count || 0,
+          receipts: stockMovements.find((m) => m.movementType === 'INBOUND')?._count || 0,
+          shipments: stockMovements.find((m) => m.movementType === 'OUTBOUND')?._count || 0,
+          adjustments: stockMovements.find((m) => m.movementType === 'ADJUSTMENT')?._count || 0,
+          transfers: stockMovements.find((m) => m.movementType === 'TRANSFER')?._count || 0,
+          returns: stockMovements.find((m) => m.movementType === 'RETURN')?._count || 0,
         },
         entities: {
           activeItems: activeCounts[0],
@@ -290,16 +318,19 @@ export const analyticsRouter = createTRPCRouter({
 
   // Sales Trends Analysis
   trends: organizationProcedure
-    .input(z.object({
-      ...timeRangeSchema.shape,
-      groupBy: z.enum(['day', 'week', 'month']).default('day'),
-      metric: z.enum(['revenue', 'orders', 'quantity', 'customers']).default('revenue'),
-      itemIds: z.array(z.string().cuid()).optional(),
-      categoryIds: z.array(z.string().cuid()).optional(),
-      customerIds: z.array(z.string().cuid()).optional(),
-    }))
+    .input(
+      z.object({
+        ...timeRangeSchema.shape,
+        groupBy: z.enum(['day', 'week', 'month']).default('day'),
+        metric: z.enum(['revenue', 'orders', 'quantity', 'customers']).default('revenue'),
+        itemIds: z.array(z.string().cuid()).optional(),
+        categoryIds: z.array(z.string().cuid()).optional(),
+        customerIds: z.array(z.string().cuid()).optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { period, customFrom, customTo, groupBy, metric, itemIds, categoryIds, customerIds } = input;
+      const { period, customFrom, customTo, groupBy, metric, itemIds, categoryIds, customerIds } =
+        input;
 
       // Calculate date range
       const now = new Date();
@@ -366,7 +397,7 @@ export const analyticsRouter = createTRPCRouter({
       // Group data by time period
       const groupedData = new Map<string, any>();
 
-      orders.forEach(order => {
+      orders.forEach((order) => {
         let groupKey: string;
         const orderDate = new Date(order.orderDate);
 
@@ -399,8 +430,14 @@ export const analyticsRouter = createTRPCRouter({
         data.customers.add(order.customerId);
 
         // Calculate based on filtered items
-        const filteredRevenue = order.items.reduce((sum: number, item: any) => sum + Number(item.totalPrice), 0);
-        const filteredQuantity = order.items.reduce((sum: number, item: any) => sum + item.qtyOrdered, 0);
+        const filteredRevenue = order.items.reduce(
+          (sum: number, item: any) => sum + Number(item.totalPrice),
+          0
+        );
+        const filteredQuantity = order.items.reduce(
+          (sum: number, item: any) => sum + item.qtyOrdered,
+          0
+        );
 
         data.revenue += filteredRevenue;
         data.quantity += filteredQuantity;
@@ -408,12 +445,16 @@ export const analyticsRouter = createTRPCRouter({
 
       // Convert to array and sort by period
       const trendData = Array.from(groupedData.values())
-        .map(d => ({
+        .map((d) => ({
           period: d.period,
-          value: metric === 'revenue' ? d.revenue :
-                 metric === 'orders' ? d.orders :
-                 metric === 'quantity' ? d.quantity :
-                 d.customers.size,
+          value:
+            metric === 'revenue'
+              ? d.revenue
+              : metric === 'orders'
+                ? d.orders
+                : metric === 'quantity'
+                  ? d.quantity
+                  : d.customers.size,
           orders: d.orders,
           revenue: d.revenue,
           quantity: d.quantity,
@@ -422,14 +463,13 @@ export const analyticsRouter = createTRPCRouter({
         .sort((a, b) => a.period.localeCompare(b.period));
 
       // Calculate summary statistics
-      const values = trendData.map(d => d.value);
+      const values = trendData.map((d) => d.value);
       const summary = {
         total: values.reduce((sum, v) => sum + v, 0),
         average: values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0,
         min: values.length > 0 ? Math.min(...values) : 0,
         max: values.length > 0 ? Math.max(...values) : 0,
-        trend: values.length > 1 ? 
-          ((values[values.length - 1] - values[0]) / values[0]) * 100 : 0,
+        trend: values.length > 1 ? ((values[values.length - 1] - values[0]) / values[0]) * 100 : 0,
       };
 
       return {
@@ -446,19 +486,25 @@ export const analyticsRouter = createTRPCRouter({
 
   // Key Performance Indicators
   kpis: organizationProcedure
-    .input(z.object({
-      ...timeRangeSchema.shape,
-      kpiTypes: z.array(z.enum([
-        'inventoryTurnover',
-        'stockAccuracy',
-        'orderFulfillmentRate',
-        'onTimeDeliveryRate',
-        'supplierPerformance',
-        'customerSatisfaction',
-        'grossMargin',
-        'operatingMargin',
-      ])).optional(),
-    }))
+    .input(
+      z.object({
+        ...timeRangeSchema.shape,
+        kpiTypes: z
+          .array(
+            z.enum([
+              'inventoryTurnover',
+              'stockAccuracy',
+              'orderFulfillmentRate',
+              'onTimeDeliveryRate',
+              'supplierPerformance',
+              'customerSatisfaction',
+              'grossMargin',
+              'operatingMargin',
+            ])
+          )
+          .optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { period, customFrom, customTo, kpiTypes } = input;
 
@@ -511,12 +557,15 @@ export const analyticsRouter = createTRPCRouter({
           },
         });
 
-        const daysInPeriod = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+        const daysInPeriod = Math.ceil(
+          (dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)
+        );
         const annualizationFactor = 365 / daysInPeriod;
         const annualizedShipments = (shipments._sum.qty || 0) * annualizationFactor;
-        const turnoverRate = avgInventory._avg.qtyOnHand && avgInventory._avg.qtyOnHand > 0
-          ? annualizedShipments / avgInventory._avg.qtyOnHand
-          : 0;
+        const turnoverRate =
+          avgInventory._avg.qtyOnHand && avgInventory._avg.qtyOnHand > 0
+            ? annualizedShipments / avgInventory._avg.qtyOnHand
+            : 0;
 
         kpis.inventoryTurnover = {
           name: 'Inventory Turnover',
@@ -550,9 +599,8 @@ export const analyticsRouter = createTRPCRouter({
           },
         });
 
-        const accuracy = totalMovements > 0 
-          ? ((totalMovements - adjustments) / totalMovements) * 100
-          : 100;
+        const accuracy =
+          totalMovements > 0 ? ((totalMovements - adjustments) / totalMovements) * 100 : 100;
 
         kpis.stockAccuracy = {
           name: 'Stock Accuracy',
@@ -585,9 +633,7 @@ export const analyticsRouter = createTRPCRouter({
           },
         });
 
-        const fulfillmentRate = totalOrders > 0 
-          ? (fulfilledOrders / totalOrders) * 100
-          : 0;
+        const fulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;
 
         kpis.orderFulfillmentRate = {
           name: 'Order Fulfillment Rate',
@@ -603,7 +649,8 @@ export const analyticsRouter = createTRPCRouter({
       if (requestedKPIs.includes('onTimeDeliveryRate')) {
         const deliveredShipments = await ctx.prisma.shipment.findMany({
           where: {
-            updatedAt: { // Use updatedAt for delivered date
+            updatedAt: {
+              // Use updatedAt for delivered date
               gte: dateFrom,
               lte: dateTo,
             },
@@ -616,14 +663,12 @@ export const analyticsRouter = createTRPCRouter({
           },
         });
 
-        const onTimeCount = deliveredShipments.filter(s => 
-          s.status === 'DELIVERED' && s.expectedDelivery &&
-          s.updatedAt <= s.expectedDelivery
+        const onTimeCount = deliveredShipments.filter(
+          (s) => s.status === 'DELIVERED' && s.expectedDelivery && s.updatedAt <= s.expectedDelivery
         ).length;
 
-        const onTimeRate = deliveredShipments.length > 0
-          ? (onTimeCount / deliveredShipments.length) * 100
-          : 100;
+        const onTimeRate =
+          deliveredShipments.length > 0 ? (onTimeCount / deliveredShipments.length) * 100 : 100;
 
         kpis.onTimeDeliveryRate = {
           name: 'On-Time Delivery Rate',
@@ -649,14 +694,11 @@ export const analyticsRouter = createTRPCRouter({
           },
         });
 
-        const onTimeReceipts = receipts.filter(r => 
-          r.purchaseOrder?.expectedDate &&
-          r.receivedDate <= r.purchaseOrder.expectedDate
+        const onTimeReceipts = receipts.filter(
+          (r) => r.purchaseOrder?.expectedDate && r.receivedDate <= r.purchaseOrder.expectedDate
         ).length;
 
-        const supplierScore = receipts.length > 0
-          ? (onTimeReceipts / receipts.length) * 100
-          : 100;
+        const supplierScore = receipts.length > 0 ? (onTimeReceipts / receipts.length) * 100 : 100;
 
         kpis.supplierPerformance = {
           name: 'Supplier Performance',
@@ -710,13 +752,15 @@ export const analyticsRouter = createTRPCRouter({
 
   // Predictive Analytics
   predictions: organizationProcedure
-    .input(z.object({
-      predictionType: z.enum(['demand', 'stockout', 'reorder', 'seasonal']),
-      horizonDays: z.number().int().min(1).max(365).default(30),
-      itemIds: z.array(z.string().cuid()).optional(),
-      categoryIds: z.array(z.string().cuid()).optional(),
-      confidenceLevel: z.number().min(0.5).max(0.99).default(0.95),
-    }))
+    .input(
+      z.object({
+        predictionType: z.enum(['demand', 'stockout', 'reorder', 'seasonal']),
+        horizonDays: z.number().int().min(1).max(365).default(30),
+        itemIds: z.array(z.string().cuid()).optional(),
+        categoryIds: z.array(z.string().cuid()).optional(),
+        confidenceLevel: z.number().min(0.5).max(0.99).default(0.95),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { predictionType, horizonDays, itemIds, categoryIds, confidenceLevel } = input;
 
@@ -761,9 +805,10 @@ export const analyticsRouter = createTRPCRouter({
             quantity: Number(s._sum) || 0,
           }));
 
-          const avgDailySales = salesData.length > 0
-            ? salesData.reduce((sum, s) => sum + s.quantity, 0) / salesData.length
-            : 0;
+          const avgDailySales =
+            salesData.length > 0
+              ? salesData.reduce((sum, s) => sum + s.quantity, 0) / salesData.length
+              : 0;
 
           // Calculate trend
           let trend = 0;
@@ -777,10 +822,11 @@ export const analyticsRouter = createTRPCRouter({
             trend = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
           }
 
-          const predictedDemand = avgDailySales * horizonDays + (trend * horizonDays * horizonDays / 2);
+          const predictedDemand =
+            avgDailySales * horizonDays + (trend * horizonDays * horizonDays) / 2;
           const stdDev = Math.sqrt(
-            salesData.reduce((sum, s) => sum + Math.pow(s.quantity - avgDailySales, 2), 0) / 
-            Math.max(1, salesData.length - 1)
+            salesData.reduce((sum, s) => sum + Math.pow(s.quantity - avgDailySales, 2), 0) /
+              Math.max(1, salesData.length - 1)
           );
 
           const zScore = confidenceLevel === 0.95 ? 1.96 : confidenceLevel === 0.99 ? 2.576 : 1.645;
@@ -806,7 +852,6 @@ export const analyticsRouter = createTRPCRouter({
               dataPoints: salesData.length,
             },
           });
-
         } else if (predictionType === 'stockout') {
           // Get current inventory
           const inventory = await ctx.prisma.inventory.aggregate({
@@ -830,18 +875,16 @@ export const analyticsRouter = createTRPCRouter({
             _count: true,
           });
 
-          const avgDailyUsage = usage._count > 0 
-            ? (usage._sum.qty || 0) / 90
-            : 0;
+          const avgDailyUsage = usage._count > 0 ? (usage._sum.qty || 0) / 90 : 0;
 
-          const currentStock = (inventory._sum?.qtyOnHand || 0) - (inventory._sum?.qtyReserved || 0);
-          const daysUntilStockout = avgDailyUsage > 0 
-            ? currentStock / avgDailyUsage
-            : Infinity;
+          const currentStock =
+            (inventory._sum?.qtyOnHand || 0) - (inventory._sum?.qtyReserved || 0);
+          const daysUntilStockout = avgDailyUsage > 0 ? currentStock / avgDailyUsage : Infinity;
 
-          const stockoutProbability = 
-            daysUntilStockout <= horizonDays ? 
-              Math.min(100, (horizonDays - daysUntilStockout) / horizonDays * 100) : 0;
+          const stockoutProbability =
+            daysUntilStockout <= horizonDays
+              ? Math.min(100, ((horizonDays - daysUntilStockout) / horizonDays) * 100)
+              : 0;
 
           predictions.push({
             item: {
@@ -854,13 +897,12 @@ export const analyticsRouter = createTRPCRouter({
             prediction: {
               daysUntilStockout: Math.round(daysUntilStockout),
               probability: Math.round(stockoutProbability),
-              riskLevel: stockoutProbability > 75 ? 'high' : 
-                         stockoutProbability > 25 ? 'medium' : 'low',
+              riskLevel:
+                stockoutProbability > 75 ? 'high' : stockoutProbability > 25 ? 'medium' : 'low',
               currentStock,
               avgDailyUsage: Math.round(avgDailyUsage * 10) / 10,
             },
           });
-
         } else if (predictionType === 'reorder') {
           // Get lead time from recent POs
           const recentPOs = await ctx.prisma.purchaseOrderItem.findMany({
@@ -882,18 +924,19 @@ export const analyticsRouter = createTRPCRouter({
           });
 
           const leadTimes = recentPOs
-            .filter(po => po.purchaseOrder.status === 'RECEIVED')
-            .map(po => {
+            .filter((po) => po.purchaseOrder.status === 'RECEIVED')
+            .map((po) => {
               const days = Math.ceil(
-                (po.purchaseOrder.updatedAt.getTime() - po.purchaseOrder.orderDate.getTime()) / 
-                (1000 * 60 * 60 * 24)
+                (po.purchaseOrder.updatedAt.getTime() - po.purchaseOrder.orderDate.getTime()) /
+                  (1000 * 60 * 60 * 24)
               );
               return days;
             });
 
-          const avgLeadTime = leadTimes.length > 0
-            ? leadTimes.reduce((sum, lt) => sum + lt, 0) / leadTimes.length
-            : 14; // Default 2 weeks
+          const avgLeadTime =
+            leadTimes.length > 0
+              ? leadTimes.reduce((sum, lt) => sum + lt, 0) / leadTimes.length
+              : 14; // Default 2 weeks
 
           // Get usage data
           const usage = await ctx.prisma.stockMovement.aggregate({
@@ -909,7 +952,7 @@ export const analyticsRouter = createTRPCRouter({
 
           const avgDailyUsage = (usage._sum.qty || 0) / 90;
           const safetyStock = avgDailyUsage * 7; // 1 week safety stock
-          const reorderPoint = (avgDailyUsage * avgLeadTime) + safetyStock;
+          const reorderPoint = avgDailyUsage * avgLeadTime + safetyStock;
           const reorderQuantity = avgDailyUsage * 30; // 1 month supply
 
           // Get current stock
@@ -921,7 +964,9 @@ export const analyticsRouter = createTRPCRouter({
             },
           });
 
-          const shouldReorder = ((currentStock._sum?.qtyOnHand || 0) - (currentStock._sum?.qtyReserved || 0)) <= reorderPoint;
+          const shouldReorder =
+            (currentStock._sum?.qtyOnHand || 0) - (currentStock._sum?.qtyReserved || 0) <=
+            reorderPoint;
 
           predictions.push({
             item: {
@@ -935,12 +980,12 @@ export const analyticsRouter = createTRPCRouter({
               shouldReorder,
               reorderPoint: Math.round(reorderPoint),
               reorderQuantity: Math.round(reorderQuantity),
-              currentStock: (currentStock._sum?.qtyOnHand || 0) - (currentStock._sum?.qtyReserved || 0),
+              currentStock:
+                (currentStock._sum?.qtyOnHand || 0) - (currentStock._sum?.qtyReserved || 0),
               avgLeadTimeDays: Math.round(avgLeadTime),
               safetyStock: Math.round(safetyStock),
             },
           });
-
         } else if (predictionType === 'seasonal') {
           // Analyze seasonal patterns
           const oneYearAgo = new Date();
@@ -960,12 +1005,12 @@ export const analyticsRouter = createTRPCRouter({
           `;
 
           const monthlyData = Array(12).fill(0);
-          monthlySales.forEach(ms => {
+          monthlySales.forEach((ms) => {
             monthlyData[ms.month - 1] = Number(ms.quantity);
           });
 
           const avgMonthlySales = monthlyData.reduce((sum, q) => sum + q, 0) / 12;
-          const seasonalFactors = monthlyData.map(q => 
+          const seasonalFactors = monthlyData.map((q) =>
             avgMonthlySales > 0 ? q / avgMonthlySales : 1
           );
 
@@ -988,8 +1033,12 @@ export const analyticsRouter = createTRPCRouter({
               targetMonth: targetMonth.toLocaleString('default', { month: 'long' }),
               expectedDemand: Math.round(predictedDemand),
               seasonalFactor: Math.round(seasonalFactors[targetMonthIndex] * 100) / 100,
-              trend: seasonalFactors[targetMonthIndex] > 1.2 ? 'peak' :
-                     seasonalFactors[targetMonthIndex] < 0.8 ? 'low' : 'normal',
+              trend:
+                seasonalFactors[targetMonthIndex] > 1.2
+                  ? 'peak'
+                  : seasonalFactors[targetMonthIndex] < 0.8
+                    ? 'low'
+                    : 'normal',
             },
             historicalData: {
               monthlyAverage: Math.round(avgMonthlySales),
@@ -1017,12 +1066,12 @@ export const analyticsRouter = createTRPCRouter({
         summary: {
           totalItems: predictions.length,
           ...(predictionType === 'stockout' && {
-            highRisk: predictions.filter(p => p.prediction.riskLevel === 'high').length,
-            mediumRisk: predictions.filter(p => p.prediction.riskLevel === 'medium').length,
-            lowRisk: predictions.filter(p => p.prediction.riskLevel === 'low').length,
+            highRisk: predictions.filter((p) => p.prediction.riskLevel === 'high').length,
+            mediumRisk: predictions.filter((p) => p.prediction.riskLevel === 'medium').length,
+            lowRisk: predictions.filter((p) => p.prediction.riskLevel === 'low').length,
           }),
           ...(predictionType === 'reorder' && {
-            needsReorder: predictions.filter(p => p.prediction.shouldReorder).length,
+            needsReorder: predictions.filter((p) => p.prediction.shouldReorder).length,
           }),
         },
       };
@@ -1030,11 +1079,13 @@ export const analyticsRouter = createTRPCRouter({
 
   // Anomaly Detection
   anomalies: organizationProcedure
-    .input(z.object({
-      anomalyType: z.enum(['price', 'quantity', 'movement', 'pattern']),
-      sensitivity: z.enum(['low', 'medium', 'high']).default('medium'),
-      lookbackDays: z.number().int().min(7).max(90).default(30),
-    }))
+    .input(
+      z.object({
+        anomalyType: z.enum(['price', 'quantity', 'movement', 'pattern']),
+        sensitivity: z.enum(['low', 'medium', 'high']).default('medium'),
+        lookbackDays: z.number().int().min(7).max(90).default(30),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { anomalyType, sensitivity, lookbackDays } = input;
 
@@ -1047,7 +1098,7 @@ export const analyticsRouter = createTRPCRouter({
       const thresholds = {
         low: { zscore: 3, percentile: 0.99 },
         medium: { zscore: 2.5, percentile: 0.95 },
-        high: { zscore: 2, percentile: 0.90 },
+        high: { zscore: 2, percentile: 0.9 },
       };
 
       const threshold = thresholds[sensitivity];
@@ -1068,7 +1119,7 @@ export const analyticsRouter = createTRPCRouter({
 
         // Group by item and calculate statistics
         const itemPrices = new Map<string, number[]>();
-        orderItems.forEach(oi => {
+        orderItems.forEach((oi) => {
           if (!itemPrices.has(oi.itemId)) {
             itemPrices.set(oi.itemId, []);
           }
@@ -1080,13 +1131,14 @@ export const analyticsRouter = createTRPCRouter({
           if (prices.length < 5) return; // Need sufficient data
 
           const mean = prices.reduce((sum, p) => sum + p, 0) / prices.length;
-          const variance = prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
+          const variance =
+            prices.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / prices.length;
           const stdDev = Math.sqrt(variance);
 
           // Find outliers
           orderItems
-            .filter(oi => oi.itemId === itemId)
-            .forEach(oi => {
+            .filter((oi) => oi.itemId === itemId)
+            .forEach((oi) => {
               const zScore = stdDev > 0 ? Math.abs((Number(oi.unitPrice) - mean) / stdDev) : 0;
               if (zScore > threshold.zscore) {
                 anomalies.push({
@@ -1102,14 +1154,13 @@ export const analyticsRouter = createTRPCRouter({
                     date: oi.order.orderDate,
                     anomalousPrice: Number(oi.unitPrice),
                     normalPrice: mean,
-                    deviation: `${Math.round((Number(oi.unitPrice) - mean) / mean * 100)}%`,
+                    deviation: `${Math.round(((Number(oi.unitPrice) - mean) / mean) * 100)}%`,
                     zScore: Math.round(zScore * 10) / 10,
                   },
                 });
               }
             });
         });
-
       } else if (anomalyType === 'quantity') {
         // Detect unusual order quantities
         const movements = await ctx.prisma.stockMovement.findMany({
@@ -1124,7 +1175,7 @@ export const analyticsRouter = createTRPCRouter({
 
         // Group by item and type
         const itemMovements = new Map<string, number[]>();
-        movements.forEach(m => {
+        movements.forEach((m) => {
           const key = `${m.itemId}-${m.movementType}`;
           if (!itemMovements.has(key)) {
             itemMovements.set(key, []);
@@ -1138,39 +1189,41 @@ export const analyticsRouter = createTRPCRouter({
 
           const [itemId, type] = key.split('-');
           const mean = quantities.reduce((sum, q) => sum + q, 0) / quantities.length;
-          const variance = quantities.reduce((sum, q) => sum + Math.pow(q - mean, 2), 0) / quantities.length;
+          const variance =
+            quantities.reduce((sum, q) => sum + Math.pow(q - mean, 2), 0) / quantities.length;
           const stdDev = Math.sqrt(variance);
 
           movements
-            .filter(m => m.itemId === itemId && m.movementType === type)
-            .forEach(m => {
+            .filter((m) => m.itemId === itemId && m.movementType === type)
+            .forEach((m) => {
               const zScore = stdDev > 0 ? Math.abs((m.qty - mean) / stdDev) : 0;
               if (zScore > threshold.zscore) {
                 anomalies.push({
                   type: 'quantity',
                   severity: zScore > 3 ? 'high' : zScore > 2.5 ? 'medium' : 'low',
-                  item: m.item ? {
-                    id: m.item.id,
-                    sku: m.item.sku,
-                    name: m.item.name,
-                  } : {
-                    id: m.itemId,
-                    sku: 'Unknown',
-                    name: 'Unknown Item',
-                  },
+                  item: m.item
+                    ? {
+                        id: m.item.id,
+                        sku: m.item.sku,
+                        name: m.item.name,
+                      }
+                    : {
+                        id: m.itemId,
+                        sku: 'Unknown',
+                        name: 'Unknown Item',
+                      },
                   details: {
                     movementType: m.movementType,
                     date: m.movedAt,
                     anomalousQuantity: m.qty,
                     normalQuantity: Math.round(mean),
-                    deviation: `${Math.round((m.qty - mean) / mean * 100)}%`,
+                    deviation: `${Math.round(((m.qty - mean) / mean) * 100)}%`,
                     zScore: Math.round(zScore * 10) / 10,
                   },
                 });
               }
             });
         });
-
       } else if (anomalyType === 'movement') {
         // Detect unusual movement patterns
         const dailyMovements = await ctx.prisma.$queryRaw<any[]>`
@@ -1187,7 +1240,7 @@ export const analyticsRouter = createTRPCRouter({
 
         // Analyze patterns
         const patterns = new Map<string, any[]>();
-        dailyMovements.forEach(dm => {
+        dailyMovements.forEach((dm) => {
           const key = `${dm.itemId}-${dm.movementType}`;
           if (!patterns.has(key)) {
             patterns.set(key, []);
@@ -1204,11 +1257,11 @@ export const analyticsRouter = createTRPCRouter({
           if (days.length < 7) return;
 
           const [itemId, type] = key.split('-');
-          const counts = days.map(d => d.count);
+          const counts = days.map((d) => d.count);
           const meanCount = counts.reduce((sum, c) => sum + c, 0) / counts.length;
 
           // Find days with unusual activity
-          days.forEach(day => {
+          days.forEach((day) => {
             if (day.count > meanCount * 3 || (meanCount > 0 && day.count === 0)) {
               anomalies.push({
                 type: 'movement',
@@ -1225,7 +1278,6 @@ export const analyticsRouter = createTRPCRouter({
             }
           });
         });
-
       } else if (anomalyType === 'pattern') {
         // Detect unusual ordering patterns
         const customers = await ctx.prisma.customer.findMany({});
@@ -1246,16 +1298,16 @@ export const analyticsRouter = createTRPCRouter({
           const intervals: number[] = [];
           for (let i = 1; i < orders.length; i++) {
             const days = Math.ceil(
-              (orders[i].orderDate.getTime() - orders[i-1].orderDate.getTime()) / 
-              (1000 * 60 * 60 * 24)
+              (orders[i].orderDate.getTime() - orders[i - 1].orderDate.getTime()) /
+                (1000 * 60 * 60 * 24)
             );
             intervals.push(days);
           }
 
           const avgInterval = intervals.reduce((sum, i) => sum + i, 0) / intervals.length;
           const lastOrderDays = Math.ceil(
-            (new Date().getTime() - orders[orders.length - 1].orderDate.getTime()) / 
-            (1000 * 60 * 60 * 24)
+            (new Date().getTime() - orders[orders.length - 1].orderDate.getTime()) /
+              (1000 * 60 * 60 * 24)
           );
 
           // Detect unusual patterns
@@ -1265,7 +1317,10 @@ export const analyticsRouter = createTRPCRouter({
               severity: lastOrderDays > avgInterval * 3 ? 'high' : 'medium',
               customer: {
                 id: customer.id,
-                name: customer.companyName || `${customer.firstName || ''} ${customer.lastName || ''}`.trim() || 'Unknown',
+                name:
+                  customer.companyName ||
+                  `${customer.firstName || ''} ${customer.lastName || ''}`.trim() ||
+                  'Unknown',
                 email: customer.email,
               },
               details: {
@@ -1293,9 +1348,9 @@ export const analyticsRouter = createTRPCRouter({
         anomalies,
         summary: {
           total: anomalies.length,
-          high: anomalies.filter(a => a.severity === 'high').length,
-          medium: anomalies.filter(a => a.severity === 'medium').length,
-          low: anomalies.filter(a => a.severity === 'low').length,
+          high: anomalies.filter((a) => a.severity === 'high').length,
+          medium: anomalies.filter((a) => a.severity === 'medium').length,
+          low: anomalies.filter((a) => a.severity === 'low').length,
         },
       };
     }),
@@ -1385,10 +1440,12 @@ export const analyticsRouter = createTRPCRouter({
 
   // Warehouse Performance Analytics
   warehouseAnalytics: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().cuid(),
-      ...timeRangeSchema.shape,
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().cuid(),
+        ...timeRangeSchema.shape,
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { warehouseId, period, customFrom, customTo } = input;
 
@@ -1434,16 +1491,20 @@ export const analyticsRouter = createTRPCRouter({
 
       // Calculate space utilization
       const totalLocations = warehouse.locations.length;
-      const occupiedLocations = warehouse.locations.filter(loc => 
-        loc.inventory.some(inv => inv.qtyOnHand > 0)
+      const occupiedLocations = warehouse.locations.filter((loc) =>
+        loc.inventory.some((inv) => inv.qtyOnHand > 0)
       ).length;
       const utilizationRate = totalLocations > 0 ? (occupiedLocations / totalLocations) * 100 : 0;
 
       // Calculate inventory value
-      const inventoryValue = warehouse.locations.reduce((sum, loc) => 
-        sum + loc.inventory.reduce((locSum, inv) => 
-          locSum + (inv.qtyOnHand * (Number(inv.item.defaultPrice) || 0)), 0
-        ), 0
+      const inventoryValue = warehouse.locations.reduce(
+        (sum, loc) =>
+          sum +
+          loc.inventory.reduce(
+            (locSum, inv) => locSum + inv.qtyOnHand * (Number(inv.item.defaultPrice) || 0),
+            0
+          ),
+        0
       );
 
       // Get movement statistics
@@ -1507,7 +1568,9 @@ export const analyticsRouter = createTRPCRouter({
         },
       });
 
-      const daysInPeriod = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+      const daysInPeriod = Math.ceil(
+        (dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)
+      );
       const avgShipmentsPerDay = shipments / daysInPeriod;
 
       return {
@@ -1529,23 +1592,20 @@ export const analyticsRouter = createTRPCRouter({
         },
         inventory: {
           totalValue: inventoryValue,
-          totalItems: warehouse.locations.reduce((sum, loc) => 
-            sum + loc.inventory.length, 0
-          ),
-          totalQuantity: warehouse.locations.reduce((sum, loc) => 
-            sum + loc.inventory.reduce((locSum, inv) => 
-              locSum + inv.qtyOnHand, 0
-            ), 0
+          totalItems: warehouse.locations.reduce((sum, loc) => sum + loc.inventory.length, 0),
+          totalQuantity: warehouse.locations.reduce(
+            (sum, loc) => sum + loc.inventory.reduce((locSum, inv) => locSum + inv.qtyOnHand, 0),
+            0
           ),
         },
-        movements: movements.map(m => ({
+        movements: movements.map((m) => ({
           type: m.movementType,
           count: m._count,
           quantity: m._sum.qty || 0,
         })),
         efficiency: {
           avgShipmentsPerDay: Math.round(avgShipmentsPerDay * 10) / 10,
-          topMovedItems: topMovedItems.map(item => ({
+          topMovedItems: topMovedItems.map((item) => ({
             id: item.id,
             sku: item.sku,
             name: item.name,

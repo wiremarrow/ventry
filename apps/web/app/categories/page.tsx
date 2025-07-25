@@ -20,7 +20,11 @@ export default function CategoriesPage() {
   const { data: categoryTree, isLoading, refetch } = trpc.categories.tree.useQuery();
 
   // Fetch flat list for stats
-  const { data: categoriesData, isLoading: isLoadingStats, error: statsError } = trpc.categories.list.useQuery({
+  const {
+    data: categoriesData,
+    isLoading: isLoadingStats,
+    error: statsError,
+  } = trpc.categories.list.useQuery({
     limit: 100,
   });
 
@@ -28,10 +32,12 @@ export default function CategoriesPage() {
   const stats = {
     total: categoriesData?.pagination?.total || categoriesData?.categories?.length || 0,
     rootCategories: categoryTree?.length || 0,
-    totalItems: categoriesData?.categories?.reduce((sum, cat) => sum + (cat._count?.items || 0), 0) || 0,
-    mostUsed: categoriesData?.categories?.reduce((max, cat) => 
-      (!max || (cat._count?.items || 0) > (max._count?.items || 0)) ? cat : max
-    , null as (typeof categoriesData.categories[0] | null)),
+    totalItems:
+      categoriesData?.categories?.reduce((sum, cat) => sum + (cat._count?.items || 0), 0) || 0,
+    mostUsed: categoriesData?.categories?.reduce(
+      (max, cat) => (!max || (cat._count?.items || 0) > (max._count?.items || 0) ? cat : max),
+      null as (typeof categoriesData.categories)[0] | null
+    ),
   };
 
   // Log error if there is one
@@ -59,26 +65,30 @@ export default function CategoriesPage() {
     setExpandedCategories(newExpanded);
   };
 
-  type CategoryWithChildren = ItemCategory & { 
+  type CategoryWithChildren = ItemCategory & {
     _count?: { items: number };
     children?: CategoryWithChildren[];
   };
-  
-  const filterCategories = (categories: CategoryWithChildren[], search: string): CategoryWithChildren[] => {
+
+  const filterCategories = (
+    categories: CategoryWithChildren[],
+    search: string
+  ): CategoryWithChildren[] => {
     if (!search) return categories;
-    
+
     return categories.reduce((acc: CategoryWithChildren[], category) => {
-      const matchesSearch = category.name.toLowerCase().includes(search.toLowerCase()) ||
-                          category.description?.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch =
+        category.name.toLowerCase().includes(search.toLowerCase()) ||
+        category.description?.toLowerCase().includes(search.toLowerCase());
       const filteredChildren = filterCategories(category.children || [], search);
-      
+
       if (matchesSearch || filteredChildren.length > 0) {
         acc.push({
           ...category,
           children: filteredChildren,
         });
       }
-      
+
       return acc;
     }, []);
   };
@@ -144,9 +154,7 @@ export default function CategoriesPage() {
                   </>
                 ) : (
                   <>
-                    <p className="text-lg font-medium truncate">
-                      {stats.mostUsed?.name || '-'}
-                    </p>
+                    <p className="text-lg font-medium truncate">{stats.mostUsed?.name || '-'}</p>
                     <p className="text-xs text-muted-foreground">
                       {stats.mostUsed ? `${stats.mostUsed._count?.items || 0} items` : ''}
                     </p>
@@ -186,7 +194,9 @@ export default function CategoriesPage() {
               <div className="text-center py-8">
                 <Folder className="h-12 w-12 text-gray-300 mx-auto mb-2" />
                 <p className="text-muted-foreground">
-                  {searchTerm ? 'No categories found matching your search' : 'No categories created yet'}
+                  {searchTerm
+                    ? 'No categories found matching your search'
+                    : 'No categories created yet'}
                 </p>
                 {!searchTerm && (
                   <Button size="sm" className="mt-2" onClick={handleCreateNew}>

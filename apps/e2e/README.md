@@ -7,12 +7,14 @@ This directory contains end-to-end tests for the Ventry application using Playwr
 ## Test Architecture
 
 ### Key Principles
+
 1. **Test Isolation**: Each test creates its own test data and cleans up after itself
 2. **No Shared State**: Tests don't rely on shared users or data
 3. **Clean Browser State**: Browser storage is cleared between tests
 4. **Database Cleanup**: Test data is identified by `.e2e.test` email suffix
 
 ### Directory Structure
+
 ```
 e2e/
 ├── fixtures/          # Custom Playwright fixtures
@@ -57,7 +59,7 @@ import { cleanupTestDataForUser } from '../utils/db-cleanup';
 
 test('product creation', async ({ browser }) => {
   const testUser = await createTestUser({ role: 'MANAGER' });
-  
+
   try {
     // Your test logic here
     const product = await createTestProduct();
@@ -72,11 +74,13 @@ test('product creation', async ({ browser }) => {
 ### Test Patterns
 
 1. **Always use unique test data**
+
    ```typescript
    const email = `test-${Date.now()}@ventry.e2e.test`;
    ```
 
 2. **Clean up in finally blocks**
+
    ```typescript
    try {
      // Test logic
@@ -93,6 +97,7 @@ test('product creation', async ({ browser }) => {
 ## Running Tests
 
 ### Local Development
+
 ```bash
 # Run all E2E tests
 pnpm test:e2e
@@ -108,11 +113,13 @@ pnpm test:e2e --debug
 ```
 
 ### Prerequisites
+
 1. Database must be running: `./tools/scripts/switch-db.sh start`
 2. Seed data must exist: `pnpm db:seed`
 3. Backend and frontend servers will be started automatically
 
 ### CI Environment
+
 - Tests run with single worker to prevent race conditions
 - Each job gets its own database
 - Automatic cleanup after tests
@@ -120,12 +127,15 @@ pnpm test:e2e --debug
 ## Debugging
 
 ### View Test Reports
+
 ```bash
 pnpm exec playwright show-report e2e/playwright-report
 ```
 
 ### Check Database State
+
 The global setup logs database statistics before and after cleanup:
+
 - Total users (including test users)
 - Total products (including test products)
 
@@ -151,6 +161,7 @@ The global setup logs database statistics before and after cleanup:
 ## CI/CD Integration
 
 The E2E tests are integrated into the CI pipeline with:
+
 - Automatic database setup per test job
 - Test sharding for parallel execution
 - Screenshot and video capture on failure

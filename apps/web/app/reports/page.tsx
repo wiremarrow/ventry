@@ -105,14 +105,23 @@ const reports = [
   },
 ];
 
-const categories = ['All', 'Financial', 'Operations', 'Sales', 'Procurement', 'Analytics', 'Alerts'];
+const categories = [
+  'All',
+  'Financial',
+  'Operations',
+  'Sales',
+  'Procurement',
+  'Analytics',
+  'Alerts',
+];
 
 export default function ReportsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  
-  const filteredReports = selectedCategory === 'All' 
-    ? reports 
-    : reports.filter(report => report.category === selectedCategory);
+
+  const filteredReports =
+    selectedCategory === 'All'
+      ? reports
+      : reports.filter((report) => report.category === selectedCategory);
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
@@ -126,7 +135,9 @@ export default function ReportsPage() {
     return colors[category] || 'bg-gray-100 text-gray-800';
   };
 
-  const getFrequencyBadge = (frequency: string): 'destructive' | 'success' | 'warning' | 'secondary' => {
+  const getFrequencyBadge = (
+    frequency: string
+  ): 'destructive' | 'success' | 'warning' | 'secondary' => {
     if (frequency === 'Real-time') return 'destructive';
     if (frequency === 'Daily') return 'success';
     if (frequency === 'Weekly') return 'warning';
@@ -141,7 +152,9 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Reports</h1>
-              <p className="text-muted-foreground">Generate insights and analytics from your inventory data</p>
+              <p className="text-muted-foreground">
+                Generate insights and analytics from your inventory data
+              </p>
             </div>
           </div>
 
@@ -169,23 +182,23 @@ export default function ReportsPage() {
                     <div className="p-2 bg-gray-100 rounded-lg">
                       <Icon className="h-6 w-6 text-gray-700" />
                     </div>
-                    <Badge variant={getFrequencyBadge(report.frequency)}>
-                      {report.frequency}
-                    </Badge>
+                    <Badge variant={getFrequencyBadge(report.frequency)}>{report.frequency}</Badge>
                   </div>
-                  
+
                   <h3 className="font-semibold text-lg mb-2">{report.name}</h3>
                   <p className="text-sm text-muted-foreground mb-4">{report.description}</p>
-                  
+
                   <div className="flex items-center justify-between mb-4">
-                    <span className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(report.category)}`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${getCategoryColor(report.category)}`}
+                    >
                       {report.category}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Last run: {report.lastRun}
                     </span>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <Button className="flex-1" size="sm">
                       <FileText className="h-4 w-4 mr-2" />

@@ -29,21 +29,21 @@ interface Item {
   description?: string;
   category: Category;
   unitOfMeasure: UnitOfMeasure;
-  
+
   // Inventory settings
   trackInventory: boolean;
   trackSerialNumbers: boolean;
   trackBatchNumbers: boolean;
-  
+
   // Reorder settings
   reorderPoint?: number;
   reorderQuantity?: number;
   leadTimeDays?: number;
-  
+
   // Costing
   costingMethod: 'FIFO' | 'LIFO' | 'AVERAGE';
   standardCost?: number;
-  
+
   // Dimensions
   weight?: number;
   length?: number;
@@ -61,21 +61,21 @@ interface Inventory {
   id: string;
   itemId: string;
   locationId: string;
-  
+
   // Quantities
   quantityOnHand: number;
   quantityReserved: number;
   quantityAvailable: number; // onHand - reserved
-  
+
   // Batch/Serial tracking
   batchNumber?: string;
   serialNumber?: string;
   expirationDate?: Date;
-  
+
   // Valuation
   unitCost: number;
   totalValue: number;
-  
+
   lastCountDate?: Date;
   lastMovementDate?: Date;
 }
@@ -89,25 +89,25 @@ All inventory changes are tracked as movements.
 interface StockMovement {
   id: string;
   type: MovementType;
-  
+
   // References
   itemId: string;
   fromLocationId?: string;
   toLocationId?: string;
-  
+
   // Quantities
   quantity: number;
   unitCost: number;
-  
+
   // Context
   reason: string;
   reference?: string; // Order ID, PO ID, etc.
   notes?: string;
-  
+
   // Tracking
   batchNumber?: string;
   serialNumbers?: string[];
-  
+
   // Audit
   createdBy: string;
   createdAt: Date;
@@ -140,7 +140,7 @@ const receiveStock = async (receipt: StockReceipt) => {
     batchNumber: receipt.batchNumber,
     expirationDate: receipt.expirationDate,
   });
-  
+
   return movement;
 };
 
@@ -149,7 +149,7 @@ await receiveStock({
   itemId: 'itm_123',
   locationId: 'loc_warehouse_a',
   quantity: 100,
-  unitCost: 25.50,
+  unitCost: 25.5,
   purchaseOrderId: 'po_456',
   batchNumber: 'BATCH-2024-001',
   expirationDate: '2025-12-31',
@@ -167,11 +167,11 @@ const issueStock = async (issue: StockIssue) => {
     locationId: issue.locationId,
     quantity: issue.quantity,
   });
-  
+
   if (!availability.available) {
     throw new Error(`Insufficient stock: ${availability.message}`);
   }
-  
+
   // Issue stock
   const movement = await trpc.inventory.issue.mutate({
     itemId: issue.itemId,
@@ -180,7 +180,7 @@ const issueStock = async (issue: StockIssue) => {
     reference: issue.orderId,
     serialNumbers: issue.serialNumbers,
   });
-  
+
   return movement;
 };
 ```
@@ -197,7 +197,7 @@ const transferStock = async (transfer: StockTransfer) => {
     quantity: transfer.quantity,
     reason: 'Inter-warehouse transfer',
   });
-  
+
   return movement;
 };
 
@@ -207,7 +207,7 @@ const bulkTransfer = async (transfers: StockTransfer[]) => {
     transfers,
     reference: 'TRANSFER-BATCH-001',
   });
-  
+
   return movements;
 };
 ```
@@ -224,7 +224,7 @@ const adjustStock = async (adjustment: StockAdjustment) => {
     reason: adjustment.reason,
     notes: adjustment.notes,
   });
-  
+
   return movement;
 };
 
@@ -246,13 +246,13 @@ enum AdjustmentReason {
 const performCycleCount = async (count: CycleCount) => {
   const result = await trpc.inventory.cycleCount.mutate({
     locationId: count.locationId,
-    counts: count.items.map(item => ({
+    counts: count.items.map((item) => ({
       itemId: item.itemId,
       countedQuantity: item.quantity,
       batchNumber: item.batchNumber,
     })),
   });
-  
+
   // Returns variances and creates adjustments
   return result;
 };
@@ -263,11 +263,11 @@ const scheduleCycleCounts = async () => {
     method: 'ABC', // ABC analysis
     frequency: {
       A: 'WEEKLY',
-      B: 'MONTHLY', 
+      B: 'MONTHLY',
       C: 'QUARTERLY',
     },
   });
-  
+
   return schedule;
 };
 ```
@@ -285,14 +285,14 @@ const getStockLevels = async (filters: StockFilters) => {
     includeReserved: true,
     includeBatches: filters.trackBatches,
   });
-  
+
   return levels;
 };
 
 // Real-time dashboard data
 const getDashboardMetrics = async () => {
   const metrics = await trpc.inventory.getDashboardMetrics.query();
-  
+
   return {
     totalValue: metrics.totalValue,
     totalItems: metrics.totalItems,
@@ -317,7 +317,7 @@ const getMovementHistory = async (filters: MovementFilters) => {
     page: filters.page,
     limit: filters.limit,
   });
-  
+
   return movements;
 };
 
@@ -327,7 +327,7 @@ const getMovementAnalytics = async (itemId: string) => {
     itemId,
     period: 'LAST_90_DAYS',
   });
-  
+
   return {
     averageDailyUsage: analytics.avgDailyUsage,
     turnoverRate: analytics.turnoverRate,
@@ -343,7 +343,7 @@ const getMovementAnalytics = async (itemId: string) => {
 // GET /api/inventory/batches
 const getBatchInfo = async (batchNumber: string) => {
   const batch = await trpc.inventory.getBatch.query({ batchNumber });
-  
+
   return {
     items: batch.items,
     locations: batch.locations,
@@ -356,7 +356,7 @@ const getBatchInfo = async (batchNumber: string) => {
 // Track serial number
 const trackSerialNumber = async (serialNumber: string) => {
   const history = await trpc.inventory.trackSerial.query({ serialNumber });
-  
+
   return {
     currentLocation: history.currentLocation,
     currentStatus: history.status,
@@ -378,7 +378,7 @@ const calculateReorderPoints = async () => {
     safetyStockMultiplier: 1.65, // 95% service level
     reviewPeriodDays: 7,
   });
-  
+
   return calculations;
 };
 
@@ -388,7 +388,7 @@ const generatePurchaseOrders = async () => {
     includeItems: 'BELOW_REORDER_POINT',
     consolidateBySupplier: true,
   });
-  
+
   return orders;
 };
 ```
@@ -407,7 +407,7 @@ const performABCAnalysis = async () => {
       C: 0.5, // Bottom 50%
     },
   });
-  
+
   return analysis;
 };
 ```
@@ -424,7 +424,7 @@ const forecastDemand = async (itemId: string) => {
     includeSeasonality: true,
     includePromotion: true,
   });
-  
+
   return {
     predictions: forecast.dailyPredictions,
     confidence: forecast.confidenceIntervals,
@@ -446,7 +446,7 @@ const getValuationReport = async (date: Date) => {
     costingMethod: 'AVERAGE',
     includeDetails: true,
   });
-  
+
   return report;
 };
 
@@ -456,7 +456,7 @@ const getAgingReport = async () => {
     buckets: [30, 60, 90, 180, 365],
     groupBy: 'category',
   });
-  
+
   return report;
 };
 ```
@@ -472,7 +472,7 @@ const getMovementSummary = async (period: DateRange) => {
     groupBy: ['item', 'type'],
     includeValues: true,
   });
-  
+
   return summary;
 };
 ```
@@ -494,7 +494,7 @@ const getMovementSummary = async (period: DateRange) => {
 const locationNaming = {
   pattern: '{building}-{zone}-{aisle}-{rack}-{level}-{bin}',
   example: 'WH1-A-01-R01-L3-B05',
-  
+
   // Virtual locations
   virtual: {
     RECEIVING: 'RECV-DOCK',
@@ -521,7 +521,7 @@ const locationNaming = {
 // Integrate with barcode scanner
 const scanBarcode = async (barcode: string) => {
   const result = await trpc.inventory.scanBarcode.query({ barcode });
-  
+
   if (result.type === 'ITEM') {
     // Show item details and stock levels
     return getStockLevels({ itemIds: [result.itemId] });
@@ -542,10 +542,10 @@ const syncWithERP = async () => {
     syncStatus: 'PENDING',
     limit: 1000,
   });
-  
+
   // Send to ERP
   const results = await erpClient.importMovements(movements);
-  
+
   // Mark as synced
   await trpc.inventory.markSynced.mutate({
     movementIds: results.successful,
@@ -585,12 +585,12 @@ WHERE i.qty_on_hand < 0;
 -- Orphaned movements
 SELECT sm.*
 FROM stock_movements sm
-LEFT JOIN inventory i ON sm.item_id = i.item_id 
+LEFT JOIN inventory i ON sm.item_id = i.item_id
   AND sm.to_location_id = i.location_id
 WHERE i.id IS NULL AND sm.type = 'RECEIPT';
 
 -- Value discrepancies
-SELECT 
+SELECT
   i.item_id,
   SUM(i.qty_on_hand * i.unit_cost) as calculated,
   iv.total_value as stored,

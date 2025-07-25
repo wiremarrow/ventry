@@ -30,68 +30,62 @@ const categoryFilterSchema = z.object({
 
 export const categoriesRouter = createTRPCRouter({
   // List categories with filtering and pagination
-  list: organizationProcedure
-    .input(categoryFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        parentId,
+  list: organizationProcedure.input(categoryFilterSchema).query(async ({ ctx, input }) => {
+    const { search, parentId, page, limit, sortBy, sortOrder } = input;
+
+    const where: {
+      organizationId: string;
+      OR?: Array<{
+        name?: { contains: string; mode: 'insensitive' };
+        description?: { contains: string; mode: 'insensitive' };
+      }>;
+      parentId?: string | null;
+    } = {
+      organizationId: ctx.user.organizationId,
+    };
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (parentId !== undefined) {
+      where.parentId = parentId;
+    }
+
+    // Remove isActive filter - field doesn't exist
+
+    const [categories, total] = await Promise.all([
+      ctx.prisma.itemCategory.findMany({
+        where,
+        include: {
+          parent: true,
+          children: {
+            orderBy: { name: 'asc' },
+          },
+          _count: {
+            select: { items: true },
+          },
+        },
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      ctx.prisma.itemCategory.count({ where }),
+    ]);
+
+    return {
+      categories,
+      pagination: {
         page,
         limit,
-        sortBy,
-        sortOrder,
-      } = input;
-
-      const where: {
-        organizationId: string;
-        OR?: Array<{ name?: { contains: string; mode: 'insensitive' }; description?: { contains: string; mode: 'insensitive' } }>;
-        parentId?: string | null;
-      } = {
-        organizationId: ctx.user.organizationId,
-      };
-
-      if (search) {
-        where.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      if (parentId !== undefined) {
-        where.parentId = parentId;
-      }
-
-      // Remove isActive filter - field doesn't exist
-
-      const [categories, total] = await Promise.all([
-        ctx.prisma.itemCategory.findMany({
-          where,
-          include: {
-            parent: true,
-            children: {
-              orderBy: { name: 'asc' },
-            },
-            _count: {
-              select: { items: true },
-            },
-          },
-          orderBy: { [sortBy]: sortOrder },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        ctx.prisma.itemCategory.count({ where }),
-      ]);
-
-      return {
-        categories,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get category tree (hierarchical view)
   tree: organizationProcedure.query(async ({ ctx }) => {
@@ -104,11 +98,7 @@ export const categoriesRouter = createTRPCRouter({
           select: { items: true },
         },
       },
-      orderBy: [
-        { parentId: 'asc' },
-        { name: 'asc' },
-        { name: 'asc' },
-      ],
+      orderBy: [{ parentId: 'asc' }, { name: 'asc' }, { name: 'asc' }],
     });
 
     // Build tree structure
@@ -120,8 +110,8 @@ export const categoriesRouter = createTRPCRouter({
       parentId: string | null = null
     ): CategoryWithChildren[] => {
       return categories
-        .filter(cat => cat.parentId === parentId)
-        .map(cat => ({
+        .filter((cat) => cat.parentId === parentId)
+        .map((cat) => ({
           ...cat,
           children: buildTree(categories, cat.id),
         }));
@@ -165,22 +155,98 @@ export const categoriesRouter = createTRPCRouter({
     }),
 
   // Create new category
-  create: organizationProcedure
-    .input(categoryCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+  create: organizationProcedure.input(categoryCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Insufficient permissions to create categories',
+      });
+    }
+
+    // Validate parent if provided
+    if (input.parentId) {
+      const parent = await ctx.prisma.itemCategory.findFirst({
+        where: {
+          id: input.parentId,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      if (!parent) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions to create categories',
+          code: 'BAD_REQUEST',
+          message: 'Parent category not found',
+        });
+      }
+    }
+
+    // Create category
+    const category = await ctx.prisma.itemCategory.create({
+      data: {
+        ...input,
+        organizationId: ctx.user.organizationId,
+      },
+      include: {
+        parent: true,
+      },
+    });
+
+    // Create audit log
+    await ctx.prisma.auditLog.create({
+      data: {
+        tableName: 'item_categories',
+        recordPk: category.id,
+        action: 'CREATE',
+        userId: ctx.user.id,
+        organizationId: ctx.user.organizationId!,
+        afterData: category,
+      },
+    });
+
+    return category;
+  }),
+
+  // Update category
+  update: organizationProcedure.input(categoryUpdateSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
+
+    // Check permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Insufficient permissions to update categories',
+      });
+    }
+
+    // Get existing category
+    const existing = await ctx.prisma.itemCategory.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!existing) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Category not found',
+      });
+    }
+
+    // Validate parent if being changed
+    if (data.parentId !== undefined && data.parentId !== existing.parentId) {
+      if (data.parentId === id) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Category cannot be its own parent',
         });
       }
 
-      // Validate parent if provided
-      if (input.parentId) {
+      if (data.parentId) {
         const parent = await ctx.prisma.itemCategory.findFirst({
           where: {
-            id: input.parentId,
+            id: data.parentId,
             organizationId: ctx.user.organizationId,
           },
         });
@@ -191,130 +257,50 @@ export const categoriesRouter = createTRPCRouter({
             message: 'Parent category not found',
           });
         }
-      }
 
-      // Create category
-      const category = await ctx.prisma.itemCategory.create({
-        data: {
-          ...input,
-          organizationId: ctx.user.organizationId,
-        },
-        include: {
-          parent: true,
-        },
-      });
-
-      // Create audit log
-      await ctx.prisma.auditLog.create({
-        data: {
-          tableName: 'item_categories',
-          recordPk: category.id,
-          action: 'CREATE',
-          userId: ctx.user.id,
-          organizationId: ctx.user.organizationId!,
-          afterData: category,
-        },
-      });
-
-      return category;
-    }),
-
-  // Update category
-  update: organizationProcedure
-    .input(categoryUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-
-      // Check permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions to update categories',
-        });
-      }
-
-      // Get existing category
-      const existing = await ctx.prisma.itemCategory.findFirst({
-        where: {
-          id,
-          organizationId: ctx.user.organizationId,
-        },
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Category not found',
-        });
-      }
-
-      // Validate parent if being changed
-      if (data.parentId !== undefined && data.parentId !== existing.parentId) {
-        if (data.parentId === id) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Category cannot be its own parent',
-          });
-        }
-
-        if (data.parentId) {
-          const parent = await ctx.prisma.itemCategory.findFirst({
-            where: {
-              id: data.parentId,
-              organizationId: ctx.user.organizationId,
-            },
-          });
-
-          if (!parent) {
+        // Check for circular reference
+        let currentParent = parent;
+        while (currentParent.parentId) {
+          if (currentParent.parentId === id) {
             throw new TRPCError({
               code: 'BAD_REQUEST',
-              message: 'Parent category not found',
+              message: 'Circular reference detected',
             });
           }
-
-          // Check for circular reference
-          let currentParent = parent;
-          while (currentParent.parentId) {
-            if (currentParent.parentId === id) {
-              throw new TRPCError({
-                code: 'BAD_REQUEST',
-                message: 'Circular reference detected',
-              });
-            }
-            currentParent = await ctx.prisma.itemCategory.findUniqueOrThrow({
-              where: { id: currentParent.parentId },
-            });
-          }
+          currentParent = await ctx.prisma.itemCategory.findUniqueOrThrow({
+            where: { id: currentParent.parentId },
+          });
         }
       }
+    }
 
-      // Update category
-      const category = await ctx.prisma.itemCategory.update({
-        where: { id },
-        data,
-        include: {
-          parent: true,
-          _count: {
-            select: { items: true },
-          },
+    // Update category
+    const category = await ctx.prisma.itemCategory.update({
+      where: { id },
+      data,
+      include: {
+        parent: true,
+        _count: {
+          select: { items: true },
         },
-      });
+      },
+    });
 
-      // Create audit log
-      await ctx.prisma.auditLog.create({
-        data: {
-          tableName: 'item_categories',
-          recordPk: input.id,
-          action: 'UPDATE',
-          userId: ctx.user.id,
-          organizationId: ctx.user.organizationId!,
-          beforeData: existing,
-          afterData: category,
-        },
-      });
+    // Create audit log
+    await ctx.prisma.auditLog.create({
+      data: {
+        tableName: 'item_categories',
+        recordPk: input.id,
+        action: 'UPDATE',
+        userId: ctx.user.id,
+        organizationId: ctx.user.organizationId!,
+        beforeData: existing,
+        afterData: category,
+      },
+    });
 
-      return category;
-    }),
+    return category;
+  }),
 
   // Delete category
   delete: organizationProcedure
@@ -410,12 +396,7 @@ export const categoriesRouter = createTRPCRouter({
       }
 
       // Get statistics
-      const [
-        totalItems,
-        activeItems,
-        totalValue,
-        subcategories,
-      ] = await Promise.all([
+      const [totalItems, activeItems, totalValue, subcategories] = await Promise.all([
         ctx.prisma.item.count({
           where: {
             categoryId: input.id,

@@ -5,15 +5,28 @@ import { Card } from '@ventry/ui';
 
 export default function DebugPage() {
   const { data: authData, isLoading: authLoading, error: authError } = trpc.auth.debug.useQuery();
-  const { data: customerData, isLoading: customerLoading, error: customerError } = trpc.customers.debugCount.useQuery();
-  const { data: listData, isLoading: listLoading, error: listError } = trpc.customers.list.useQuery({
+  const {
+    data: customerData,
+    isLoading: customerLoading,
+    error: customerError,
+  } = trpc.customers.debugCount.useQuery();
+  const {
+    data: listData,
+    isLoading: listLoading,
+    error: listError,
+  } = trpc.customers.list.useQuery({
     limit: 100,
   });
-  const { data: receiptsData, isLoading: receiptsLoading, error: receiptsError } = trpc.receipts.list.useQuery({
+  const {
+    data: receiptsData,
+    isLoading: receiptsLoading,
+    error: receiptsError,
+  } = trpc.receipts.list.useQuery({
     limit: 100,
   });
 
-  if (authLoading || customerLoading || listLoading || receiptsLoading) return <div>Loading...</div>;
+  if (authLoading || customerLoading || listLoading || receiptsLoading)
+    return <div>Loading...</div>;
   if (authError) return <div>Auth Error: {authError.message}</div>;
   if (customerError) return <div>Customer Error: {customerError.message}</div>;
   if (listError) return <div>List Error: {listError.message}</div>;
@@ -22,7 +35,7 @@ export default function DebugPage() {
   return (
     <div className="p-8 space-y-4">
       <h1 className="text-2xl font-bold mb-4">Debug Information</h1>
-      
+
       <div>
         <h2 className="text-xl font-semibold mb-2">Auth Context</h2>
         <Card className="p-4">

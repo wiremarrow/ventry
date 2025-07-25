@@ -3,20 +3,21 @@ import type { GlobalOptions } from './types.js';
 
 export async function createPrismaClient(options: GlobalOptions): Promise<PrismaClient> {
   // Determine which database URL to use
-  const databaseUrl = options.user === 'admin' 
-    ? process.env.DATABASE_ADMIN_URL 
-    : process.env.DATABASE_URL;
+  const databaseUrl =
+    options.user === 'admin' ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-    throw new Error(`${options.user === 'admin' ? 'DATABASE_ADMIN_URL' : 'DATABASE_URL'} not found in environment`);
+    throw new Error(
+      `${options.user === 'admin' ? 'DATABASE_ADMIN_URL' : 'DATABASE_URL'} not found in environment`
+    );
   }
 
   // Create Prisma client with appropriate connection
   const prisma = new PrismaClient({
     datasources: {
-      db: { url: databaseUrl }
+      db: { url: databaseUrl },
     },
-    log: options.verbose ? ['query', 'info', 'warn', 'error'] : ['error']
+    log: options.verbose ? ['query', 'info', 'warn', 'error'] : ['error'],
   });
 
   // If using app user with auth, set up RLS context
@@ -34,10 +35,10 @@ async function setupAuthContext(prisma: PrismaClient, email: string): Promise<vo
     include: {
       organizations: {
         include: {
-          organization: true
-        }
-      }
-    }
+          organization: true,
+        },
+      },
+    },
   });
 
   if (!user) {
@@ -59,7 +60,9 @@ async function setupAuthContext(prisma: PrismaClient, email: string): Promise<vo
   await prisma.$executeRawUnsafe(`SET LOCAL app.current_organization_id = '${orgId}'`);
 
   if (process.env.NODE_ENV === 'development' || process.env.DEBUG) {
-    console.log(`🔐 Auth context set: ${email} (${user.role}) in ${user.organizations[0].organization.name}`);
+    console.log(
+      `🔐 Auth context set: ${email} (${user.role}) in ${user.organizations[0].organization.name}`
+    );
   }
 }
 
@@ -72,7 +75,7 @@ export async function compareAccess(
 
   for (const userEmail of users) {
     const prisma = await createPrismaClient({ ...options, user: 'app', auth: userEmail });
-    
+
     try {
       const tableInfo = (await import('./query-builder.js')).getTableInfo(tableName);
       const model = (prisma as any)[tableInfo.name];

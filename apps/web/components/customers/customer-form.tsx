@@ -7,7 +7,22 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Trash } from 'lucide-react';
 import { z } from 'zod';
 
-import { Button, Card, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Switch, Tabs, TabsContent, TabsList, TabsTrigger } from '@ventry/ui';
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@ventry/ui';
 
 import { toast } from '@/hooks/use-toast';
 import { trpc } from '@/lib/trpc';
@@ -53,7 +68,7 @@ interface CustomerFormProps {
 
 export default function CustomerForm({ customer, onSuccess }: CustomerFormProps) {
   const [addresses, setAddresses] = useState<AddressFormData[]>(
-    customer?.addresses?.map(addr => ({
+    customer?.addresses?.map((addr) => ({
       addressType: addr.addressType,
       line1: addr.line1,
       line2: addr.line2 || '',
@@ -66,7 +81,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
       isDefault: addr.isDefault,
     })) || []
   );
-  
+
   const {
     register,
     handleSubmit,
@@ -155,8 +170,8 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
   };
 
   const updateAddress = <K extends keyof AddressFormData>(
-    index: number, 
-    field: K, 
+    index: number,
+    field: K,
     value: AddressFormData[K]
   ) => {
     const updated = [...addresses];
@@ -182,11 +197,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="customerCode">Customer Code *</Label>
-              <Input
-                id="customerCode"
-                {...register('customerCode')}
-                placeholder="CUST001"
-              />
+              <Input id="customerCode" {...register('customerCode')} placeholder="CUST001" />
               {errors.customerCode && (
                 <p className="text-sm text-destructive mt-1">{errors.customerCode.message}</p>
               )}
@@ -194,20 +205,12 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
 
             <div>
               <Label htmlFor="companyName">Company Name</Label>
-              <Input
-                id="companyName"
-                {...register('companyName')}
-                placeholder="Acme Corporation"
-              />
+              <Input id="companyName" {...register('companyName')} placeholder="Acme Corporation" />
             </div>
 
             <div>
               <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                {...register('firstName')}
-                placeholder="John"
-              />
+              <Input id="firstName" {...register('firstName')} placeholder="John" />
               {errors.firstName && (
                 <p className="text-sm text-destructive mt-1">{errors.firstName.message}</p>
               )}
@@ -215,11 +218,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
 
             <div>
               <Label htmlFor="lastName">Last Name *</Label>
-              <Input
-                id="lastName"
-                {...register('lastName')}
-                placeholder="Doe"
-              />
+              <Input id="lastName" {...register('lastName')} placeholder="Doe" />
               {errors.lastName && (
                 <p className="text-sm text-destructive mt-1">{errors.lastName.message}</p>
               )}
@@ -240,20 +239,12 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
 
             <div>
               <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                {...register('phone')}
-                placeholder="+1 (555) 123-4567"
-              />
+              <Input id="phone" {...register('phone')} placeholder="+1 (555) 123-4567" />
             </div>
 
             <div>
               <Label htmlFor="taxId">Tax ID</Label>
-              <Input
-                id="taxId"
-                {...register('taxId')}
-                placeholder="12-3456789"
-              />
+              <Input id="taxId" {...register('taxId')} placeholder="12-3456789" />
             </div>
 
             <div>
@@ -285,11 +276,7 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
 
             <div className="col-span-2">
               <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                {...register('website')}
-                placeholder="https://example.com"
-              />
+              <Input id="website" {...register('website')} placeholder="https://example.com" />
               {errors.website && (
                 <p className="text-sm text-destructive mt-1">{errors.website.message}</p>
               )}
@@ -315,7 +302,13 @@ export default function CustomerForm({ customer, onSuccess }: CustomerFormProps)
                       <Label>Address Type</Label>
                       <Select
                         value={address.addressType}
-                        onValueChange={(value) => updateAddress(index, 'addressType', value as 'BILLING' | 'SHIPPING' | 'BOTH')}
+                        onValueChange={(value) =>
+                          updateAddress(
+                            index,
+                            'addressType',
+                            value as 'BILLING' | 'SHIPPING' | 'BOTH'
+                          )
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />

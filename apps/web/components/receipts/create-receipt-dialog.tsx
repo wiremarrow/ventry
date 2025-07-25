@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   Form,
   FormControl,
@@ -61,13 +61,9 @@ interface CreateReceiptDialogProps {
   onSuccess?: () => void;
 }
 
-export function CreateReceiptDialog({ 
-  open, 
-  onOpenChange,
-  onSuccess 
-}: CreateReceiptDialogProps) {
+export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateReceiptDialogProps) {
   const [selectedPoId, setSelectedPoId] = useState<string | null>(null);
-  
+
   const form = useForm<CreateReceiptFormData>({
     resolver: zodResolver(createReceiptSchema),
     defaultValues: {
@@ -112,7 +108,7 @@ export function CreateReceiptDialog({
   // Update form items when PO is selected
   useEffect(() => {
     if (selectedPo) {
-      const items = selectedPo.items.map(item => ({
+      const items = selectedPo.items.map((item) => ({
         poItemId: item.id,
         quantityReceived: item.qtyOrdered - item.qtyReceived,
         notes: '',
@@ -124,15 +120,15 @@ export function CreateReceiptDialog({
   const onSubmit = (data: CreateReceiptFormData) => {
     // Filter out items with 0 quantity
     const itemsToReceive = data.items
-      .filter(item => item.quantityReceived > 0)
-      .map(item => ({
+      .filter((item) => item.quantityReceived > 0)
+      .map((item) => ({
         poItemId: item.poItemId,
-        itemId: selectedPo?.items.find(i => i.id === item.poItemId)?.itemId || '',
+        itemId: selectedPo?.items.find((i) => i.id === item.poItemId)?.itemId || '',
         qtyReceived: item.quantityReceived,
         locationId: '', // TODO: Add location selection
         notes: item.notes,
       }));
-    
+
     if (itemsToReceive.length === 0) {
       toast({
         title: 'Error',
@@ -161,18 +157,17 @@ export function CreateReceiptDialog({
     form.setValue('items', items);
   };
 
-  const availablePOs = purchaseOrders?.purchaseOrders?.filter(
-    po => po.status === 'APPROVED' || po.status === 'PARTIAL'
-  ) || [];
+  const availablePOs =
+    purchaseOrders?.purchaseOrders?.filter(
+      (po) => po.status === 'APPROVED' || po.status === 'PARTIAL'
+    ) || [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Receipt</DialogTitle>
-          <DialogDescription>
-            Receive items from an approved purchase order
-          </DialogDescription>
+          <DialogDescription>Receive items from an approved purchase order</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -184,8 +179,8 @@ export function CreateReceiptDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Purchase Order</FormLabel>
-                  <Select 
-                    value={field.value} 
+                  <Select
+                    value={field.value}
                     onValueChange={(value) => {
                       field.onChange(value);
                       setSelectedPoId(value);
@@ -246,16 +241,16 @@ export function CreateReceiptDialog({
                     <div className="text-right">
                       <p className="text-sm text-muted-foreground">Expected Date</p>
                       <p className="font-medium">
-                        {selectedPo.expectedDate ? formatDate(selectedPo.expectedDate) : 'Not specified'}
+                        {selectedPo.expectedDate
+                          ? formatDate(selectedPo.expectedDate)
+                          : 'Not specified'}
                       </p>
                     </div>
                   </div>
                   {selectedPo.notes && (
                     <Alert>
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        PO Notes: {selectedPo.notes}
-                      </AlertDescription>
+                      <AlertDescription>PO Notes: {selectedPo.notes}</AlertDescription>
                     </Alert>
                   )}
                 </div>
@@ -280,12 +275,10 @@ export function CreateReceiptDialog({
                         {selectedPo.items.map((poItem, index) => {
                           const remaining = poItem.qtyOrdered - poItem.qtyReceived;
                           const formItem = form.watch(`items.${index}`);
-                          
+
                           return (
                             <TableRow key={poItem.id}>
-                              <TableCell className="font-medium">
-                                {poItem.item.name}
-                              </TableCell>
+                              <TableCell className="font-medium">{poItem.item.name}</TableCell>
                               <TableCell>{poItem.item.sku}</TableCell>
                               <TableCell className="text-right">{poItem.qtyOrdered}</TableCell>
                               <TableCell className="text-right">
@@ -301,7 +294,9 @@ export function CreateReceiptDialog({
                                   min="0"
                                   max={remaining}
                                   value={formItem?.quantityReceived || 0}
-                                  onChange={(e) => updateItemQuantity(index, parseInt(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateItemQuantity(index, parseInt(e.target.value) || 0)
+                                  }
                                   className="w-24 text-right"
                                 />
                               </TableCell>
@@ -331,7 +326,7 @@ export function CreateReceiptDialog({
                 <FormItem>
                   <FormLabel>Receipt Notes (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       {...field}
                       placeholder="Add any notes about this receipt..."
                       rows={3}
@@ -355,10 +350,7 @@ export function CreateReceiptDialog({
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={createMutation.isPending || !selectedPoId}
-              >
+              <Button type="submit" disabled={createMutation.isPending || !selectedPoId}>
                 {createMutation.isPending ? (
                   'Creating...'
                 ) : (

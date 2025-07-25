@@ -47,7 +47,7 @@ export const authRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const authService = createAuthService({ prisma: ctx.prisma });
       const result = await authService.login(input, ctx.res);
-      
+
       // Remove the token from the response (it's only for testing)
       const { token: _token, ...authResult } = result;
       return authResult;
@@ -59,39 +59,33 @@ export const authRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const authService = createAuthService({ prisma: ctx.prisma });
       const result = await authService.register(input, ctx.res);
-      
+
       // Remove the token from the response (it's only for testing)
       const { token: _token, ...authResult } = result;
       return authResult;
     }),
 
-  me: protectedProcedure
-    .output(userSchema)
-    .query(({ ctx }) => {
-      return ctx.user;
-    }),
+  me: protectedProcedure.output(userSchema).query(({ ctx }) => {
+    return ctx.user;
+  }),
 
-  logout: publicProcedure
-    .output(z.object({ success: z.boolean() }))
-    .mutation(async ({ ctx }) => {
-      const authService = createAuthService({ prisma: ctx.prisma });
-      await authService.logout(ctx.user?.id, ctx.res);
-      
-      return { 
-        success: true
-      };
-    }),
+  logout: publicProcedure.output(z.object({ success: z.boolean() })).mutation(async ({ ctx }) => {
+    const authService = createAuthService({ prisma: ctx.prisma });
+    await authService.logout(ctx.user?.id, ctx.res);
 
-  refreshToken: publicProcedure
-    .input(refreshTokenSchema)
-    .mutation(async ({ ctx, input }) => {
-      const authService = createAuthService({ prisma: ctx.prisma });
-      const result = await authService.refreshToken(input.refreshToken, ctx.res);
-      
-      // Remove the token from the response (it's only for testing)
-      const { token: _token, ...authResult } = result;
-      return authResult;
-    }),
+    return {
+      success: true,
+    };
+  }),
+
+  refreshToken: publicProcedure.input(refreshTokenSchema).mutation(async ({ ctx, input }) => {
+    const authService = createAuthService({ prisma: ctx.prisma });
+    const result = await authService.refreshToken(input.refreshToken, ctx.res);
+
+    // Remove the token from the response (it's only for testing)
+    const { token: _token, ...authResult } = result;
+    return authResult;
+  }),
 
   // Debug endpoint to check current context
   debug: protectedProcedure.query(({ ctx }) => {

@@ -45,8 +45,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       ItemWhereInput: {},
@@ -114,14 +114,14 @@ describe('Items Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and MANAGER role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -129,8 +129,8 @@ describe('Items Router', () => {
       organizationRole: 'ADMIN',
       role: 'MANAGER',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -222,13 +222,15 @@ describe('Items Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
       });
 
-      await expect(noOrgCaller.items.list({ page: 1, limit: 20 })).rejects.toThrow('No organization selected');
+      await expect(noOrgCaller.items.list({ page: 1, limit: 20 })).rejects.toThrow(
+        'No organization selected'
+      );
     });
   });
 
@@ -260,25 +262,23 @@ describe('Items Router', () => {
       expect(result.stockSummary).toEqual({
         onHand: 0,
         reserved: 0,
-        available: 0
+        available: 0,
       });
     });
 
     it('should throw NOT_FOUND when item does not exist', async () => {
       mockPrisma.item.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.items.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Item not found');
+      await expect(caller.items.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Item not found'
+      );
     });
 
     it('should throw FORBIDDEN when item belongs to different organization', async () => {
       // findFirst with organizationId filter won't return items from other orgs
       mockPrisma.item.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.items.get({ id: testId('item1') })
-      ).rejects.toThrow('Item not found');
+      await expect(caller.items.get({ id: testId('item1') })).rejects.toThrow('Item not found');
     });
   });
 
@@ -372,13 +372,13 @@ describe('Items Router', () => {
         categoryId: testId('nonexistent'),
         uomId: testId('uom1'),
       });
-      
+
       // The router doesn't validate category exists, relies on DB foreign key constraint
       expect(result.sku).toBe('ITEM001');
     });
 
     it('should require MANAGER role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -455,7 +455,7 @@ describe('Items Router', () => {
   describe('delete', () => {
     it('should delete an item', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -485,7 +485,7 @@ describe('Items Router', () => {
 
     it('should throw PRECONDITION_FAILED when item has inventory', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -497,13 +497,13 @@ describe('Items Router', () => {
 
       mockPrisma.item.findFirst.mockResolvedValue(mockItem);
       mockPrisma.inventory.findFirst.mockResolvedValue({
-        id: testId('inv1'), 
-        qtyOnHand: 10
+        id: testId('inv1'),
+        qtyOnHand: 10,
       });
 
-      await expect(
-        adminCaller.items.delete({ id: testId('item1') })
-      ).rejects.toThrow('Cannot delete item with active inventory');
+      await expect(adminCaller.items.delete({ id: testId('item1') })).rejects.toThrow(
+        'Cannot delete item with active inventory'
+      );
     });
 
     it('should require ADMIN role for delete', async () => {
@@ -515,16 +515,16 @@ describe('Items Router', () => {
       mockPrisma.item.findFirst.mockResolvedValue(mockItem);
       mockPrisma.inventory.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.items.delete({ id: testId('item1') })
-      ).rejects.toThrow('Only administrators can delete items');
+      await expect(caller.items.delete({ id: testId('item1') })).rejects.toThrow(
+        'Only administrators can delete items'
+      );
     });
   });
 
   describe('bulkImport', () => {
     it('should validate items without creating them', async () => {
       // Create caller with ADMIN role for bulkImport
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -545,8 +545,14 @@ describe('Items Router', () => {
       ];
 
       mockPrisma.item.findFirst.mockResolvedValue(null); // No duplicates
-      mockPrisma.itemCategory.findUnique.mockResolvedValue({ id: testId('cat1'), organizationId: testId('org') });
-      mockPrisma.unitOfMeasure.findUnique.mockResolvedValue({ id: testId('uom1'), organizationId: testId('org') });
+      mockPrisma.itemCategory.findUnique.mockResolvedValue({
+        id: testId('cat1'),
+        organizationId: testId('org'),
+      });
+      mockPrisma.unitOfMeasure.findUnique.mockResolvedValue({
+        id: testId('uom1'),
+        organizationId: testId('org'),
+      });
 
       const result = await adminCaller.items.bulkImport({
         items,
@@ -561,7 +567,7 @@ describe('Items Router', () => {
 
     it('should import valid items', async () => {
       // Create caller with ADMIN role for bulkImport
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -576,16 +582,22 @@ describe('Items Router', () => {
       ];
 
       mockPrisma.item.findFirst.mockResolvedValue(null);
-      mockPrisma.itemCategory.findUnique.mockResolvedValue({ id: testId('cat1'), organizationId: testId('org') });
-      mockPrisma.unitOfMeasure.findUnique.mockResolvedValue({ id: testId('uom1'), organizationId: testId('org') });
-      
+      mockPrisma.itemCategory.findUnique.mockResolvedValue({
+        id: testId('cat1'),
+        organizationId: testId('org'),
+      });
+      mockPrisma.unitOfMeasure.findUnique.mockResolvedValue({
+        id: testId('uom1'),
+        organizationId: testId('org'),
+      });
+
       const createdItem = {
         id: testId('newitem1'),
         sku: 'ITEM001',
         name: 'Item 1',
         organizationId: testId('org'),
       };
-      
+
       mockPrisma.item.create.mockResolvedValue(createdItem);
       mockPrisma.$transaction.mockImplementation(async (fn) => {
         const result = await fn(mockPrisma);
@@ -604,7 +616,7 @@ describe('Items Router', () => {
 
     it('should report validation errors', async () => {
       // Create caller with ADMIN role for bulkImport
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -634,11 +646,13 @@ describe('Items Router', () => {
     });
 
     it('should require ADMIN role for bulk import', async () => {
-      const items = [{ sku: 'ITEM001', name: 'Item 1', categoryId: testId('cat1'), uomId: testId('uom1') }];
-      
-      await expect(
-        caller.items.bulkImport({ items, validateOnly: true })
-      ).rejects.toThrow('Only administrators can bulk import items');
+      const items = [
+        { sku: 'ITEM001', name: 'Item 1', categoryId: testId('cat1'), uomId: testId('uom1') },
+      ];
+
+      await expect(caller.items.bulkImport({ items, validateOnly: true })).rejects.toThrow(
+        'Only administrators can bulk import items'
+      );
     });
   });
 
@@ -697,9 +711,9 @@ describe('Items Router', () => {
       expect(result.sku).toBe('ITEM001');
       expect(result.inventory).toHaveLength(2);
       expect(result.stockSummary).toEqual({
-        onHand: 100,  // 40 + 60
+        onHand: 100, // 40 + 60
         reserved: 15, // 10 + 5
-        available: 85 // (40-10) + (60-5) = 30 + 55
+        available: 85, // (40-10) + (60-5) = 30 + 55
       });
     });
   });

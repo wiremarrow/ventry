@@ -32,7 +32,7 @@ export function setCookie(
   options: CookieOptions = {}
 ) {
   const finalOptions = { ...DEFAULT_COOKIE_OPTIONS, ...options };
-  
+
   // Fastify's setCookie method from @fastify/cookie plugin
   reply.setCookie(name, value, {
     httpOnly: finalOptions.httpOnly,
@@ -48,11 +48,7 @@ export function setCookie(
 /**
  * Clear a cookie
  */
-export function clearCookie(
-  reply: FastifyReply,
-  name: string,
-  options: CookieOptions = {}
-) {
+export function clearCookie(reply: FastifyReply, name: string, options: CookieOptions = {}) {
   reply.clearCookie(name, {
     path: options.path || '/',
     domain: options.domain,

@@ -4,14 +4,19 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, Input, Label, Button, Tabs, TabsContent, TabsList, TabsTrigger, Badge, Skeleton } from '@ventry/ui';
-import { 
-  Building2, 
-  Calendar,
-  CreditCard,
-  AlertCircle,
-  Save
-} from 'lucide-react';
+import {
+  Card,
+  Input,
+  Label,
+  Button,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  Badge,
+  Skeleton,
+} from '@ventry/ui';
+import { Building2, Calendar, CreditCard, AlertCircle, Save } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
@@ -30,7 +35,11 @@ export default function OrganizationSettingsPage() {
   const _router = useRouter();
   const { currentOrganization } = useOrganization();
 
-  const { data: organization, isLoading, refetch } = trpc.organizations.get.useQuery(
+  const {
+    data: organization,
+    isLoading,
+    refetch,
+  } = trpc.organizations.get.useQuery(
     { id: currentOrganization?.organizationId || '' },
     { enabled: !!currentOrganization?.organizationId }
   );
@@ -73,7 +82,7 @@ export default function OrganizationSettingsPage() {
 
   const onSubmit = (data: OrganizationFormData) => {
     if (!currentOrganization?.organizationId) return;
-    
+
     updateMutation.mutate({
       id: currentOrganization.organizationId,
       ...data,
@@ -100,9 +109,7 @@ export default function OrganizationSettingsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Organization Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your organization details and preferences
-          </p>
+          <p className="text-muted-foreground">Manage your organization details and preferences</p>
         </div>
 
         <Tabs defaultValue="general" className="w-full">
@@ -131,12 +138,7 @@ export default function OrganizationSettingsPage() {
 
                   <div>
                     <Label htmlFor="slug">Organization Slug</Label>
-                    <Input
-                      id="slug"
-                      value={organization.slug}
-                      disabled
-                      className="mt-1"
-                    />
+                    <Input id="slug" value={organization.slug} disabled className="mt-1" />
                     <p className="text-sm text-muted-foreground mt-1">
                       This cannot be changed after creation
                     </p>
@@ -211,7 +213,7 @@ export default function OrganizationSettingsPage() {
           <TabsContent value="usage">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Usage & Limits</h3>
-              
+
               {usage && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -223,7 +225,7 @@ export default function OrganizationSettingsPage() {
                         </span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-primary h-2 rounded-full transition-all"
                           style={{ width: `${(usage.members / usage.limits.members) * 100}%` }}
                         />
@@ -238,7 +240,7 @@ export default function OrganizationSettingsPage() {
                         </span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-primary h-2 rounded-full transition-all"
                           style={{ width: `${(usage.items / usage.limits.items) * 100}%` }}
                         />
@@ -253,9 +255,11 @@ export default function OrganizationSettingsPage() {
                         </span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-primary h-2 rounded-full transition-all"
-                          style={{ width: `${(usage.warehouses / usage.limits.warehouses) * 100}%` }}
+                          style={{
+                            width: `${(usage.warehouses / usage.limits.warehouses) * 100}%`,
+                          }}
                         />
                       </div>
                     </div>
@@ -268,7 +272,7 @@ export default function OrganizationSettingsPage() {
                         </span>
                       </div>
                       <div className="w-full bg-secondary rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-primary h-2 rounded-full transition-all"
                           style={{ width: `${(usage.orders / usage.limits.orders) * 100}%` }}
                         />
@@ -292,7 +296,7 @@ export default function OrganizationSettingsPage() {
           <TabsContent value="billing">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Billing Information</h3>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div>
@@ -301,7 +305,9 @@ export default function OrganizationSettingsPage() {
                       {organization.subscriptionTier} Plan
                     </p>
                   </div>
-                  <Badge variant={organization.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
+                  <Badge
+                    variant={organization.subscriptionStatus === 'active' ? 'default' : 'secondary'}
+                  >
                     {organization.subscriptionStatus}
                   </Badge>
                 </div>

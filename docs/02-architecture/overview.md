@@ -29,6 +29,7 @@ Ventry is an AI-native inventory management system built with modern web technol
 ## Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15.3.5 with App Router
 - **Language**: TypeScript ^5
 - **Styling**: Tailwind CSS ^3.4.0
@@ -37,6 +38,7 @@ Ventry is an AI-native inventory management system built with modern web technol
 - **API Client**: tRPC React Query integration
 
 ### Backend
+
 - **Framework**: Fastify with tRPC adapter
 - **API Layer**: tRPC v11.4.3 for type-safe APIs
 - **ORM**: Prisma ^6.11.1
@@ -45,6 +47,7 @@ Ventry is an AI-native inventory management system built with modern web technol
 - **Validation**: Zod for runtime type checking
 
 ### Infrastructure
+
 - **Monorepo**: Turborepo + pnpm workspaces
 - **Testing**: Vitest (unit), PostgreSQL (integration), Playwright (E2E)
 - **CI/CD**: GitHub Actions with 9 main jobs
@@ -122,18 +125,21 @@ ventry_app: BYPASSRLS=false
 ## Scalability Considerations
 
 ### Horizontal Scaling
+
 - Stateless backend design
 - Database connection pooling
 - Redis for session/cache (future)
 - Load balancer ready
 
 ### Performance Optimization
+
 - Database indexes on all foreign keys
 - Optimistic UI updates
 - React Query caching
 - Code splitting
 
 ### Monitoring
+
 - Sentry error tracking
 - Performance monitoring
 - Custom metrics (future)
@@ -142,6 +148,7 @@ ventry_app: BYPASSRLS=false
 ## Development Architecture
 
 ### Monorepo Structure
+
 ```
 ventry/
 ├── apps/
@@ -155,6 +162,7 @@ ventry/
 ```
 
 ### Build Pipeline
+
 1. TypeScript compilation
 2. Prisma generation
 3. Next.js build
@@ -163,6 +171,7 @@ ventry/
 ## Future Architecture
 
 ### Planned Enhancements
+
 1. **AI Agents**: LLM integration for inventory insights
 2. **Real-time**: WebSocket for live updates
 3. **Analytics**: Time-series data for forecasting
@@ -170,6 +179,7 @@ ventry/
 5. **Microservices**: Service extraction as needed
 
 ### Migration Path
+
 - Current: Monolithic with modular structure
 - Next: Extract AI agents as services
 - Future: Full microservices as scale demands

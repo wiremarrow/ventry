@@ -1,8 +1,19 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { Card, Button, Badge, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
-import { 
+import {
+  Card,
+  Button,
+  Badge,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@ventry/ui';
+import {
   ArrowLeft,
   CheckCircle,
   Package,
@@ -12,7 +23,7 @@ import {
   User,
   Calendar,
   DollarSign,
-  AlertCircle
+  AlertCircle,
 } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
@@ -25,10 +36,11 @@ export default function OrderDetailPage() {
   const router = useRouter();
   const orderId = params.id as string;
 
-  const { data: order, isLoading, refetch } = trpc.orders.get.useQuery(
-    { id: orderId },
-    { enabled: !!orderId }
-  );
+  const {
+    data: order,
+    isLoading,
+    refetch,
+  } = trpc.orders.get.useQuery({ id: orderId }, { enabled: !!orderId });
 
   // Status mutations
   const updateStatusMutation = trpc.orders.updateStatus.useMutation({
@@ -85,11 +97,7 @@ export default function OrderDetailPage() {
         <DashboardLayout>
           <div className="text-center py-12">
             <p className="text-muted-foreground">Order not found</p>
-            <Button 
-              variant="link" 
-              onClick={() => router.push('/orders')}
-              className="mt-4"
-            >
+            <Button variant="link" onClick={() => router.push('/orders')} className="mt-4">
               Back to Orders
             </Button>
           </div>
@@ -99,7 +107,10 @@ export default function OrderDetailPage() {
   }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: 'outline' | 'secondary' | 'default' | 'destructive'; icon: typeof FileText | null }> = {
+    const variants: Record<
+      string,
+      { variant: 'outline' | 'secondary' | 'default' | 'destructive'; icon: typeof FileText | null }
+    > = {
       PENDING: { variant: 'secondary' as const, icon: null },
       CONFIRMED: { variant: 'default' as const, icon: CheckCircle },
       PICKING: { variant: 'secondary' as const, icon: Package },
@@ -139,11 +150,7 @@ export default function OrderDetailPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/orders')}
-              >
+              <Button variant="ghost" size="sm" onClick={() => router.push('/orders')}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -152,14 +159,12 @@ export default function OrderDetailPage() {
                   <h1 className="text-3xl font-bold">{order.orderNumber}</h1>
                   {getStatusBadge(order.status)}
                 </div>
-                <p className="text-muted-foreground">
-                  Ordered on {formatDate(order.orderDate)}
-                </p>
+                <p className="text-muted-foreground">Ordered on {formatDate(order.orderDate)}</p>
               </div>
             </div>
             <div className="flex gap-2">
               {order.status === 'PENDING' && (
-                <Button 
+                <Button
                   onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'CONFIRMED' })}
                   className="bg-green-600 hover:bg-green-700"
                 >
@@ -168,7 +173,7 @@ export default function OrderDetailPage() {
                 </Button>
               )}
               {order.status === 'CONFIRMED' && (
-                <Button 
+                <Button
                   onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'PICKING' })}
                 >
                   <Package className="h-4 w-4 mr-2" />
@@ -176,7 +181,7 @@ export default function OrderDetailPage() {
                 </Button>
               )}
               {order.status === 'PICKING' && (
-                <Button 
+                <Button
                   onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'PACKED' })}
                 >
                   <Package className="h-4 w-4 mr-2" />
@@ -184,7 +189,7 @@ export default function OrderDetailPage() {
                 </Button>
               )}
               {order.status === 'PACKED' && (
-                <Button 
+                <Button
                   onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'SHIPPED' })}
                 >
                   <Truck className="h-4 w-4 mr-2" />
@@ -192,10 +197,7 @@ export default function OrderDetailPage() {
                 </Button>
               )}
               {['PENDING', 'CONFIRMED', 'PICKING', 'PACKED'].includes(order.status) && (
-                <Button 
-                  variant="outline"
-                  onClick={handleCancel}
-                >
+                <Button variant="outline" onClick={handleCancel}>
                   Cancel Order
                 </Button>
               )}
@@ -213,17 +215,12 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="space-y-2">
                   <p className="font-medium">
-                    {order.customer.companyName || `${order.customer.firstName} ${order.customer.lastName}`}
+                    {order.customer.companyName ||
+                      `${order.customer.firstName} ${order.customer.lastName}`}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    {order.customer.customerCode}
-                  </p>
-                  {order.customer.email && (
-                    <p className="text-sm">{order.customer.email}</p>
-                  )}
-                  {order.customer.phone && (
-                    <p className="text-sm">{order.customer.phone}</p>
-                  )}
+                  <p className="text-sm text-muted-foreground">{order.customer.customerCode}</p>
+                  {order.customer.email && <p className="text-sm">{order.customer.email}</p>}
+                  {order.customer.phone && <p className="text-sm">{order.customer.phone}</p>}
                 </div>
               </div>
             </Card>
@@ -264,15 +261,21 @@ export default function OrderDetailPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Subtotal</span>
-                    <span className="font-medium">{formatCurrency(parseFloat(order.subtotal.toString()))}</span>
+                    <span className="font-medium">
+                      {formatCurrency(parseFloat(order.subtotal.toString()))}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Tax</span>
-                    <span className="font-medium">{formatCurrency(parseFloat(order.taxTotal.toString()))}</span>
+                    <span className="font-medium">
+                      {formatCurrency(parseFloat(order.taxTotal.toString()))}
+                    </span>
                   </div>
                   <div className="flex justify-between text-lg">
                     <span className="font-semibold">Total</span>
-                    <span className="font-bold">{formatCurrency(parseFloat(order.grandTotal.toString()))}</span>
+                    <span className="font-bold">
+                      {formatCurrency(parseFloat(order.grandTotal.toString()))}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -287,10 +290,12 @@ export default function OrderDetailPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Items Shipped</span>
-                    <span>{totalShipped} / {totalOrdered}</span>
+                    <span>
+                      {totalShipped} / {totalOrdered}
+                    </span>
                   </div>
                   <div className="w-full bg-secondary rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${fulfillmentPercentage}%` }}
                     />
@@ -324,9 +329,7 @@ export default function OrderDetailPage() {
               <TableBody>
                 {order.items.map((item) => (
                   <TableRow key={item.id}>
-                    <TableCell className="font-medium">
-                      {item.item.sku}
-                    </TableCell>
+                    <TableCell className="font-medium">{item.item.sku}</TableCell>
                     <TableCell>
                       <div>
                         <p>{item.item.name}</p>
@@ -383,11 +386,17 @@ export default function OrderDetailPage() {
                 <TableBody>
                   {order.shipments.map((shipment) => (
                     <TableRow key={shipment.id}>
-                      <TableCell>{shipment.shipDate ? formatDate(shipment.shipDate) : '-'}</TableCell>
+                      <TableCell>
+                        {shipment.shipDate ? formatDate(shipment.shipDate) : '-'}
+                      </TableCell>
                       <TableCell>{shipment.carrier?.name || '-'}</TableCell>
                       <TableCell>{shipment.trackingNumber || '-'}</TableCell>
                       <TableCell>{shipment.items?.length || 0} items</TableCell>
-                      <TableCell>{shipment.shippingCost ? formatCurrency(parseFloat(shipment.shippingCost.toString())) : '-'}</TableCell>
+                      <TableCell>
+                        {shipment.shippingCost
+                          ? formatCurrency(parseFloat(shipment.shippingCost.toString()))
+                          : '-'}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

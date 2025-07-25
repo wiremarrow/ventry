@@ -29,8 +29,8 @@ Row-Level Security (RLS) ensures that users can only access data belonging to th
 
 ```typescript
 // Two database users with different privileges
-const ADMIN_USER = 'ventry';           // BYPASSRLS for migrations
-const APP_USER = 'ventry_app';         // No BYPASSRLS, subject to RLS
+const ADMIN_USER = 'ventry'; // BYPASSRLS for migrations
+const APP_USER = 'ventry_app'; // No BYPASSRLS, subject to RLS
 ```
 
 ## Implementation
@@ -82,7 +82,7 @@ CREATE POLICY users_self_access ON users
 -- Create policy for organization members
 CREATE POLICY org_members_access ON organization_members
   USING (
-    organization_id = current_organization_id() 
+    organization_id = current_organization_id()
     AND user_id = current_user_id()
   );
 ```
@@ -93,7 +93,7 @@ CREATE POLICY org_members_access ON organization_members
 // Backend: Set RLS context for each request
 export async function createContext({ req, res }: CreateContextOptions) {
   const auth = await authenticateRequest(req);
-  
+
   if (auth) {
     // Set RLS context in database
     await prisma.$executeRawUnsafe(
@@ -102,7 +102,7 @@ export async function createContext({ req, res }: CreateContextOptions) {
       auth.organizationId
     );
   }
-  
+
   return {
     prisma,
     user: auth?.user,
@@ -132,9 +132,9 @@ CREATE POLICY table_org_isolation ON table_name
 -- For user profile data
 CREATE POLICY users_self_or_org ON users
   USING (
-    id = current_user_id() 
+    id = current_user_id()
     OR id IN (
-      SELECT user_id FROM organization_members 
+      SELECT user_id FROM organization_members
       WHERE organization_id = current_organization_id()
     )
   );
@@ -179,27 +179,19 @@ CREATE POLICY order_items_through_order ON order_items
 describe('RLS Policies', () => {
   it('should isolate data by organization', async () => {
     // Set context for org1
-    await prisma.$executeRawUnsafe(
-      'SELECT set_rls_context($1, $2)',
-      'user1',
-      'org1'
-    );
-    
+    await prisma.$executeRawUnsafe('SELECT set_rls_context($1, $2)', 'user1', 'org1');
+
     const org1Items = await prisma.item.findMany();
-    
+
     // Switch to org2
-    await prisma.$executeRawUnsafe(
-      'SELECT set_rls_context($1, $2)',
-      'user2',
-      'org2'
-    );
-    
+    await prisma.$executeRawUnsafe('SELECT set_rls_context($1, $2)', 'user2', 'org2');
+
     const org2Items = await prisma.item.findMany();
-    
+
     // Verify isolation
     expect(org1Items).not.toEqual(org2Items);
-    expect(org1Items.every(i => i.organizationId === 'org1')).toBe(true);
-    expect(org2Items.every(i => i.organizationId === 'org2')).toBe(true);
+    expect(org1Items.every((i) => i.organizationId === 'org1')).toBe(true);
+    expect(org2Items.every((i) => i.organizationId === 'org2')).toBe(true);
   });
 });
 ```
@@ -212,18 +204,14 @@ describe('Multi-tenant isolation', () => {
     // Create test data
     const org1Item = await createItemForOrg('org1');
     const org2Item = await createItemForOrg('org2');
-    
+
     // Login as org1 user
     const caller1 = await createCallerForOrg('org1');
     const items1 = await caller1.items.list();
-    
+
     // Should only see org1 items
-    expect(items1.items).toContainEqual(
-      expect.objectContaining({ id: org1Item.id })
-    );
-    expect(items1.items).not.toContainEqual(
-      expect.objectContaining({ id: org2Item.id })
-    );
+    expect(items1.items).toContainEqual(expect.objectContaining({ id: org1Item.id }));
+    expect(items1.items).not.toContainEqual(expect.objectContaining({ id: org2Item.id }));
   });
 });
 ```
@@ -251,6 +239,7 @@ SELECT COUNT(*) FROM items; -- Should be 0
 **Cause**: RLS enabled but no policies defined
 
 **Solution**:
+
 ```sql
 -- Always create at least one policy when enabling RLS
 ALTER TABLE items ENABLE ROW LEVEL SECURITY;
@@ -263,6 +252,7 @@ CREATE POLICY items_org_isolation ON items
 **Cause**: RLS context not set or incorrect
 
 **Solution**:
+
 ```typescript
 // Verify context is set
 const [context] = await prisma.$queryRaw`
@@ -276,6 +266,7 @@ console.log('Current context:', context);
 **Cause**: Using admin user with BYPASSRLS
 
 **Solution**:
+
 ```typescript
 // Use app user for runtime queries
 const APP_DATABASE_URL = process.env.DATABASE_URL.replace(
@@ -318,8 +309,8 @@ CREATE POLICY slow_policy ON items
 
 ```sql
 -- Check policy execution time
-EXPLAIN (ANALYZE, BUFFERS) 
-SELECT * FROM items 
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM items
 WHERE organization_id = 'org-id';
 
 -- Look for RLS filter in plan
@@ -345,7 +336,7 @@ WHERE organization_id = 'org-id';
 
 ```sql
 -- What context is currently set?
-SELECT 
+SELECT
   current_setting('app.current_user_id', true) as user_id,
   current_setting('app.current_organization_id', true) as org_id;
 ```

@@ -1,6 +1,5 @@
 'use client';
 
-
 import {
   Badge,
   Dialog,
@@ -58,9 +57,7 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Order {order.orderNumber}</DialogTitle>
-          <DialogDescription>
-            Order details and history
-          </DialogDescription>
+          <DialogDescription>Order details and history</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -68,7 +65,16 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Status</p>
-              <Badge variant={getStatusColor(order.status) as 'default' | 'secondary' | 'destructive' | 'warning'} className="mt-1">
+              <Badge
+                variant={
+                  getStatusColor(order.status) as
+                    | 'default'
+                    | 'secondary'
+                    | 'destructive'
+                    | 'warning'
+                }
+                className="mt-1"
+              >
                 {order.status}
               </Badge>
             </div>
@@ -88,7 +94,9 @@ export function ViewOrderDialog({ order, open, onOpenChange }: ViewOrderDialogPr
               </div>
               <div className="flex justify-between">
                 <span>Discount</span>
-                <span>-{formatCurrency(order.discountTotal ? Number(order.discountTotal) : 0)}</span>
+                <span>
+                  -{formatCurrency(order.discountTotal ? Number(order.discountTotal) : 0)}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Tax</span>

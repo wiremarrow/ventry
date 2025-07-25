@@ -110,7 +110,9 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
     }).format(new Date(date));
   };
 
-  const getStatusColor = (status: string): 'secondary' | 'warning' | 'info' | 'success' | 'destructive' => {
+  const getStatusColor = (
+    status: string
+  ): 'secondary' | 'warning' | 'info' | 'success' | 'destructive' => {
     const colors: Record<string, 'secondary' | 'warning' | 'info' | 'success' | 'destructive'> = {
       DRAFT: 'secondary',
       PENDING: 'warning',
@@ -175,7 +177,9 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                   <ShoppingCart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No orders found</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    {searchTerm || status ? 'Try adjusting your filters' : 'Start by creating your first order'}
+                    {searchTerm || status
+                      ? 'Try adjusting your filters'
+                      : 'Start by creating your first order'}
                   </p>
                 </TableCell>
               </TableRow>
@@ -191,19 +195,18 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium">{order.customer.companyName || `${order.customer.firstName} ${order.customer.lastName}`}</p>
+                      <p className="font-medium">
+                        {order.customer.companyName ||
+                          `${order.customer.firstName} ${order.customer.lastName}`}
+                      </p>
                       <p className="text-sm text-gray-600">{order.customer.email}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm">{formatDate(order.orderDate)}</span>
                   </TableCell>
-                  <TableCell className="text-right">
-                    {order._count.items}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {formatCurrency(order.total)}
-                  </TableCell>
+                  <TableCell className="text-right">{order._count.items}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(order.total)}</TableCell>
                   <TableCell>
                     <Badge variant={getStatusColor(order.status)}>
                       <span className="flex items-center gap-1">
@@ -233,7 +236,9 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
                         <DropdownMenuSeparator />
                         {order.status === 'PENDING' && (
                           <DropdownMenuItem
-                            onClick={() => updateStatusMutation.mutate({ id: order.id, status: 'CONFIRMED' })}
+                            onClick={() =>
+                              updateStatusMutation.mutate({ id: order.id, status: 'CONFIRMED' })
+                            }
                           >
                             <CheckCircle className="mr-2 h-4 w-4" />
                             Confirm Order
@@ -275,8 +280,8 @@ export function OrderList({ searchTerm, status }: OrderListProps) {
         {data && data.pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Showing {(page - 1) * limit + 1} to{' '}
-              {Math.min(page * limit, data.pagination.total)} of {data.pagination.total} orders
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.pagination.total)} of{' '}
+              {data.pagination.total} orders
             </p>
             <div className="flex gap-2">
               <Button

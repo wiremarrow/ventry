@@ -20,14 +20,11 @@ export const waitForWithAct = async (
   callback: () => void | Promise<void>,
   options?: Parameters<typeof waitFor>[1]
 ) => {
-  return waitFor(
-    async () => {
-      await act(async () => {
-        await callback();
-      });
-    },
-    options
-  );
+  return waitFor(async () => {
+    await act(async () => {
+      await callback();
+    });
+  }, options);
 };
 
 /**
@@ -83,13 +80,13 @@ export const selectOption = async (trigger: HTMLElement, optionText: string) => 
     // Click the trigger to open dropdown
     await user.click(trigger);
   });
-  
+
   // Wait for dropdown to open
   await waitFor(() => {
     const option = document.querySelector(`[role="option"]:has-text("${optionText}")`);
     if (!option) throw new Error(`Option "${optionText}" not found`);
   });
-  
+
   // Click the option
   const option = document.querySelector(`[role="option"]:has-text("${optionText}")`) as HTMLElement;
   await act(async () => {
@@ -102,9 +99,7 @@ export const selectOption = async (trigger: HTMLElement, optionText: string) => 
  */
 export const submitForm = async (form: HTMLFormElement) => {
   await act(async () => {
-    form.dispatchEvent(
-      new Event('submit', { cancelable: true, bubbles: true })
-    );
+    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
   });
 };
 
@@ -114,7 +109,9 @@ export const submitForm = async (form: HTMLFormElement) => {
 export const waitForLoadingToFinish = async () => {
   // Wait for any loading indicators to disappear
   await waitFor(() => {
-    const loadingElements = document.querySelectorAll('[data-testid*="loading"], [role="progressbar"], .animate-pulse');
+    const loadingElements = document.querySelectorAll(
+      '[data-testid*="loading"], [role="progressbar"], .animate-pulse'
+    );
     expect(loadingElements).toHaveLength(0);
   });
 };
@@ -145,7 +142,7 @@ export const closeDialog = async () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     });
   }
-  
+
   // Wait for dialog to close
   await waitFor(() => {
     const dialog = document.querySelector('[role="dialog"]');
@@ -171,17 +168,17 @@ export const waitForDialog = async (dialogText: string) => {
 export const suppressConsole = () => {
   const originalError = console.error;
   const originalWarn = console.warn;
-  
+
   beforeEach(() => {
     console.error = vi.fn();
     console.warn = vi.fn();
   });
-  
+
   afterEach(() => {
     console.error = originalError;
     console.warn = originalWarn;
   });
-  
+
   return {
     getErrorCalls: () => (console.error as ReturnType<typeof vi.fn>).mock.calls,
     getWarnCalls: () => (console.warn as ReturnType<typeof vi.fn>).mock.calls,

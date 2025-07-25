@@ -37,8 +37,13 @@ export default function WarehousesPage() {
   });
 
   const totalWarehouses = warehousesData?.length || 0;
-  const totalLocations = warehousesData?.reduce((sum, warehouse) => sum + (warehouse._count?.locations || 0), 0) || 0;
-  const totalCapacity = warehousesData?.reduce((sum, warehouse: WarehouseWithStats) => sum + (warehouse.stats?.totalCapacity || 0), 0) || 0;
+  const totalLocations =
+    warehousesData?.reduce((sum, warehouse) => sum + (warehouse._count?.locations || 0), 0) || 0;
+  const totalCapacity =
+    warehousesData?.reduce(
+      (sum, warehouse: WarehouseWithStats) => sum + (warehouse.stats?.totalCapacity || 0),
+      0
+    ) || 0;
 
   return (
     <ProtectedRoute>
@@ -90,7 +95,9 @@ export default function WarehousesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Capacity</p>
-                  <p className="text-2xl font-bold">{totalCapacity > 0 ? totalCapacity.toLocaleString() : 'Unlimited'}</p>
+                  <p className="text-2xl font-bold">
+                    {totalCapacity > 0 ? totalCapacity.toLocaleString() : 'Unlimited'}
+                  </p>
                 </div>
                 <Building2 className="h-8 w-8 text-purple-500" />
               </div>
@@ -115,10 +122,7 @@ export default function WarehousesPage() {
           <WarehouseList searchTerm={searchTerm} />
 
           {/* Create Warehouse Dialog */}
-          <CreateWarehouseDialog
-            open={createDialogOpen}
-            onOpenChange={setCreateDialogOpen}
-          />
+          <CreateWarehouseDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
         </div>
       </DashboardLayout>
     </ProtectedRoute>

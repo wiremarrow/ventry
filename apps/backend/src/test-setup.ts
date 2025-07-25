@@ -15,10 +15,14 @@ process.env.FRONTEND_URL = 'http://localhost:6061';
 // - Unit tests typically use mocked database, but some may need real connection
 if (!process.env.DATABASE_URL) {
   // Local development fallback - only used when DATABASE_URL is not provided by environment
-  process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
+  process.env.DATABASE_URL =
+    'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
   console.log('🔧 Unit Tests: Using local development database fallback');
 } else {
-  console.log('🚀 Unit Tests: Using environment-provided database:', process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@'));
+  console.log(
+    '🚀 Unit Tests: Using environment-provided database:',
+    process.env.DATABASE_URL.replace(/\/\/.*@/, '//***@')
+  );
 }
 
 // Suppress console logs during tests unless explicitly needed

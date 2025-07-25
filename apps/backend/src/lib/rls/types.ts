@@ -1,6 +1,6 @@
 /**
  * RLS (Row-Level Security) Type Definitions
- * 
+ *
  * This file contains all TypeScript types and interfaces for the RLS implementation,
  * including validation functions and type guards.
  */
@@ -11,11 +11,7 @@ import { CUID_REGEX, MAX_SESSION_VAR_LENGTH, RLS_ERRORS } from './constants.js';
 /**
  * Zod schema for validating CUID format
  */
-export const cuidSchema = z
-  .string()
-  .min(25)
-  .max(25)
-  .regex(CUID_REGEX, RLS_ERRORS.INVALID_ORG_ID);
+export const cuidSchema = z.string().min(25).max(25).regex(CUID_REGEX, RLS_ERRORS.INVALID_ORG_ID);
 
 /**
  * RLS Context containing user and organization information
@@ -86,9 +82,7 @@ export const rlsBypassContextSchema = z.object({
 /**
  * Type guard to check if context is validated
  */
-export function isValidatedContext(
-  context: AnyRLSContext
-): context is ValidatedRLSContext {
+export function isValidatedContext(context: AnyRLSContext): context is ValidatedRLSContext {
   return (
     !context.bypassRLS &&
     typeof context.organizationId === 'string' &&
@@ -99,29 +93,22 @@ export function isValidatedContext(
 /**
  * Type guard to check if context is bypass
  */
-export function isBypassContext(
-  context: AnyRLSContext
-): context is RLSBypassContext {
+export function isBypassContext(context: AnyRLSContext): context is RLSBypassContext {
   return (
-    context.bypassRLS === true &&
-    typeof (context as RLSBypassContext).bypassReason === 'string'
+    context.bypassRLS === true && typeof (context as RLSBypassContext).bypassReason === 'string'
   );
 }
 
 /**
  * Validates and sanitizes an RLS context
  */
-export function validateRLSContext(
-  context: RLSContext
-): ValidatedRLSContext | RLSBypassContext {
+export function validateRLSContext(context: RLSContext): ValidatedRLSContext | RLSBypassContext {
   // Handle bypass context
   if (context.bypassRLS) {
     const result = rlsBypassContextSchema.safeParse(context);
     if (!result.success) {
       throw new Error(
-        `Invalid RLS bypass context: ${result.error.errors
-          .map((e) => e.message)
-          .join(', ')}`
+        `Invalid RLS bypass context: ${result.error.errors.map((e) => e.message).join(', ')}`
       );
     }
     return result.data;
@@ -134,11 +121,7 @@ export function validateRLSContext(
 
   const result = validatedRLSContextSchema.safeParse(context);
   if (!result.success) {
-    throw new Error(
-      `Invalid RLS context: ${result.error.errors
-        .map((e) => e.message)
-        .join(', ')}`
-    );
+    throw new Error(`Invalid RLS context: ${result.error.errors.map((e) => e.message).join(', ')}`);
   }
 
   return result.data;
@@ -154,9 +137,7 @@ export function validateRLSContext(
 export function sanitizeSessionValue(value: string): string {
   // Ensure the value is not too long
   if (value.length > MAX_SESSION_VAR_LENGTH) {
-    throw new Error(
-      `Session variable value too long: ${value.length} > ${MAX_SESSION_VAR_LENGTH}`
-    );
+    throw new Error(`Session variable value too long: ${value.length} > ${MAX_SESSION_VAR_LENGTH}`);
   }
 
   // Ensure it's a valid CUID

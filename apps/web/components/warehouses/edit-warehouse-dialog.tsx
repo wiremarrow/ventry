@@ -12,14 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@ventry/ui';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@ventry/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@ventry/ui';
 import { Input } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Textarea } from '@ventry/ui';
@@ -111,9 +104,7 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Warehouse</DialogTitle>
-          <DialogDescription>
-            Update warehouse information and settings
-          </DialogDescription>
+          <DialogDescription>Update warehouse information and settings</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -144,10 +135,7 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter warehouse notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter warehouse notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,7 +144,7 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
 
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Location Details</h4>
-              
+
               <FormField
                 control={form.control}
                 name="line1"
@@ -246,7 +234,7 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
 
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Contact Information</h4>
-              
+
               <FormField
                 control={form.control}
                 name="phone"
@@ -263,11 +251,7 @@ export function EditWarehouseDialog({ warehouse, open, onOpenChange }: EditWareh
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>

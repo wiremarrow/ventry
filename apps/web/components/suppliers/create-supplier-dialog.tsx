@@ -125,9 +125,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Supplier</DialogTitle>
-          <DialogDescription>
-            Create a new supplier for procurement
-          </DialogDescription>
+          <DialogDescription>Create a new supplier for procurement</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -135,7 +133,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
             {/* Basic Information */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium">Basic Information</h4>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -253,7 +251,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
             {/* Address Information */}
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Address Information</h4>
-              
+
               <FormField
                 control={form.control}
                 name="address"
@@ -330,7 +328,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
             {/* Contact Information */}
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Primary Contact</h4>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -379,7 +377,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
             {/* Business Terms */}
             <div className="space-y-4 border-t pt-4">
               <h4 className="text-sm font-medium">Business Terms</h4>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -447,9 +445,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
                           onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Average delivery time
-                      </FormDescription>
+                      <FormDescription>Average delivery time</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -471,9 +467,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
                           onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Minimum order amount
-                      </FormDescription>
+                      <FormDescription>Minimum order amount</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -488,10 +482,7 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Add any supplier notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Add any supplier notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -505,26 +496,17 @@ export function CreateSupplierDialog({ open, onOpenChange }: CreateSupplierDialo
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
                   <div className="space-y-0.5">
                     <FormLabel>Active</FormLabel>
-                    <FormDescription>
-                      Supplier is available for new purchase orders
-                    </FormDescription>
+                    <FormDescription>Supplier is available for new purchase orders</FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

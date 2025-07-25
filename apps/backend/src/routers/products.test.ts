@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createDirectCaller } from '../test-utils/trpc-test-client.js';
-import { mockUser, mockAuthenticatedUser, mockItem, createMockItem } from '../test-utils/test-data.js';
+import {
+  mockUser,
+  mockAuthenticatedUser,
+  mockItem,
+  createMockItem,
+} from '../test-utils/test-data.js';
 
 // Mock @ventry/database
 vi.mock('@ventry/database', () => {
@@ -13,14 +18,14 @@ vi.mock('@ventry/database', () => {
       update: vi.fn(),
     },
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     OrganizationRole: {
       OWNER: 'OWNER',
       ADMIN: 'ADMIN',
-      MEMBER: 'MEMBER'
-    }
+      MEMBER: 'MEMBER',
+    },
   };
 });
 
@@ -40,9 +45,9 @@ describe('Products Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    caller = await createDirectCaller({ 
+    caller = await createDirectCaller({
       user: mockAuthenticatedUser,
-      prisma: mockPrisma as any 
+      prisma: mockPrisma as any,
     });
   });
 
@@ -116,7 +121,7 @@ describe('Products Router', () => {
 
       expect(result).toEqual(mockItem);
       expect(mockPrisma.item.findFirst).toHaveBeenCalledWith({
-        where: { 
+        where: {
           id: mockItem.id,
           organizationId: mockAuthenticatedUser.organizationId,
         },
@@ -141,9 +146,9 @@ describe('Products Router', () => {
     it('should throw error for non-existent product', async () => {
       mockPrisma.item.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.products.getById({ id: 'non-existent-id' })
-      ).rejects.toThrow('Item not found');
+      await expect(caller.products.getById({ id: 'non-existent-id' })).rejects.toThrow(
+        'Item not found'
+      );
     });
   });
 
@@ -207,7 +212,7 @@ describe('Products Router', () => {
   describe('update', () => {
     it('should update existing product', async () => {
       const updateData = { name: 'Updated Product', defaultPrice: 39.99 };
-      
+
       mockPrisma.item.findFirst.mockResolvedValue(mockItem);
       mockPrisma.item.update.mockResolvedValue({
         ...mockItem,
@@ -274,14 +279,12 @@ describe('Products Router', () => {
 
   describe('unauthorized access', () => {
     it('should throw error when not authenticated', async () => {
-      const unauthenticatedCaller = await createDirectCaller({ 
+      const unauthenticatedCaller = await createDirectCaller({
         user: null,
-        prisma: mockPrisma as any 
+        prisma: mockPrisma as any,
       });
 
-      await expect(
-        unauthenticatedCaller.products.list({})
-      ).rejects.toThrow('UNAUTHORIZED');
+      await expect(unauthenticatedCaller.products.list({})).rejects.toThrow('UNAUTHORIZED');
     });
   });
 });

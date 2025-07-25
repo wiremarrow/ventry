@@ -41,15 +41,26 @@ const reportExportSchema = z.object({
 export const reportsRouter = createTRPCRouter({
   // Inventory Valuation Report
   inventoryValuation: organizationProcedure
-    .input(z.object({
-      asOfDate: z.date().default(() => new Date()),
-      ...warehouseFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      valuationMethod: z.enum(['FIFO', 'LIFO', 'AVERAGE']).default('AVERAGE'),
-      groupBy: z.enum(['item', 'category', 'warehouse', 'location']).default('item'),
-    }))
+    .input(
+      z.object({
+        asOfDate: z.date().default(() => new Date()),
+        ...warehouseFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        valuationMethod: z.enum(['FIFO', 'LIFO', 'AVERAGE']).default('AVERAGE'),
+        groupBy: z.enum(['item', 'category', 'warehouse', 'location']).default('item'),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { asOfDate, warehouseIds, includeAllWarehouses, itemIds, categoryIds, includeInactive, valuationMethod, groupBy } = input;
+      const {
+        asOfDate,
+        warehouseIds,
+        includeAllWarehouses,
+        itemIds,
+        categoryIds,
+        includeInactive,
+        valuationMethod,
+        groupBy,
+      } = input;
 
       // Build filters
       const inventoryWhere: Prisma.InventoryWhereInput = {
@@ -96,105 +107,108 @@ export const reportsRouter = createTRPCRouter({
       });
 
       // Calculate valuation based on method
-      const valuationData = await Promise.all(inventory.map(async (inv) => {
-        let unitCost = 0;
+      const valuationData = await Promise.all(
+        inventory.map(async (inv) => {
+          let unitCost = 0;
 
-        if (valuationMethod === 'AVERAGE') {
-          // Get average cost from recent receipts
-          const recentReceipts = await ctx.prisma.receiptItem.findMany({
-            where: {
-              itemId: inv.itemId,
-              receipt: {
-                receivedDate: { lte: asOfDate },
-                purchaseOrder: {
-                  organizationId: ctx.user.organizationId,
+          if (valuationMethod === 'AVERAGE') {
+            // Get average cost from recent receipts
+            const recentReceipts = await ctx.prisma.receiptItem.findMany({
+              where: {
+                itemId: inv.itemId,
+                receipt: {
+                  receivedDate: { lte: asOfDate },
+                  purchaseOrder: {
+                    organizationId: ctx.user.organizationId,
+                  },
                 },
               },
-            },
-            orderBy: { receipt: { receivedDate: 'desc' } },
-            take: 10,
-          });
+              orderBy: { receipt: { receivedDate: 'desc' } },
+              take: 10,
+            });
 
-          if (recentReceipts.length > 0) {
-            const totalCost = recentReceipts.reduce((sum, r) => 
-              sum + Number(r.unitCost) * r.qtyReceived, 0
-            );
-            const totalQty = recentReceipts.reduce((sum, r) => sum + r.qtyReceived, 0);
-            unitCost = totalQty > 0 ? totalCost / totalQty : 0;
-          }
-        } else if (valuationMethod === 'FIFO') {
-          // Get oldest receipts first
-          const receipts = await ctx.prisma.receiptItem.findMany({
-            where: {
-              itemId: inv.itemId,
-              receipt: {
-                receivedDate: { lte: asOfDate },
-                purchaseOrder: {
-                  organizationId: ctx.user.organizationId,
+            if (recentReceipts.length > 0) {
+              const totalCost = recentReceipts.reduce(
+                (sum, r) => sum + Number(r.unitCost) * r.qtyReceived,
+                0
+              );
+              const totalQty = recentReceipts.reduce((sum, r) => sum + r.qtyReceived, 0);
+              unitCost = totalQty > 0 ? totalCost / totalQty : 0;
+            }
+          } else if (valuationMethod === 'FIFO') {
+            // Get oldest receipts first
+            const receipts = await ctx.prisma.receiptItem.findMany({
+              where: {
+                itemId: inv.itemId,
+                receipt: {
+                  receivedDate: { lte: asOfDate },
+                  purchaseOrder: {
+                    organizationId: ctx.user.organizationId,
+                  },
                 },
               },
-            },
-            orderBy: { receipt: { receivedDate: 'asc' } },
-          });
+              orderBy: { receipt: { receivedDate: 'asc' } },
+            });
 
-          let remainingQty = inv.qtyOnHand;
-          let totalValue = 0;
+            let remainingQty = inv.qtyOnHand;
+            let totalValue = 0;
 
-          for (const receipt of receipts) {
-            if (remainingQty <= 0) break;
-            const qtyToUse = Math.min(remainingQty, receipt.qtyReceived);
-            totalValue += qtyToUse * Number(receipt.unitCost);
-            remainingQty -= qtyToUse;
-          }
+            for (const receipt of receipts) {
+              if (remainingQty <= 0) break;
+              const qtyToUse = Math.min(remainingQty, receipt.qtyReceived);
+              totalValue += qtyToUse * Number(receipt.unitCost);
+              remainingQty -= qtyToUse;
+            }
 
-          unitCost = inv.qtyOnHand > 0 ? totalValue / inv.qtyOnHand : 0;
-        } else if (valuationMethod === 'LIFO') {
-          // Get newest receipts first
-          const receipts = await ctx.prisma.receiptItem.findMany({
-            where: {
-              itemId: inv.itemId,
-              receipt: {
-                receivedDate: { lte: asOfDate },
-                purchaseOrder: {
-                  organizationId: ctx.user.organizationId,
+            unitCost = inv.qtyOnHand > 0 ? totalValue / inv.qtyOnHand : 0;
+          } else if (valuationMethod === 'LIFO') {
+            // Get newest receipts first
+            const receipts = await ctx.prisma.receiptItem.findMany({
+              where: {
+                itemId: inv.itemId,
+                receipt: {
+                  receivedDate: { lte: asOfDate },
+                  purchaseOrder: {
+                    organizationId: ctx.user.organizationId,
+                  },
                 },
               },
-            },
-            orderBy: { receipt: { receivedDate: 'desc' } },
-          });
+              orderBy: { receipt: { receivedDate: 'desc' } },
+            });
 
-          let remainingQty = inv.qtyOnHand;
-          let totalValue = 0;
+            let remainingQty = inv.qtyOnHand;
+            let totalValue = 0;
 
-          for (const receipt of receipts) {
-            if (remainingQty <= 0) break;
-            const qtyToUse = Math.min(remainingQty, receipt.qtyReceived);
-            totalValue += qtyToUse * Number(receipt.unitCost);
-            remainingQty -= qtyToUse;
+            for (const receipt of receipts) {
+              if (remainingQty <= 0) break;
+              const qtyToUse = Math.min(remainingQty, receipt.qtyReceived);
+              totalValue += qtyToUse * Number(receipt.unitCost);
+              remainingQty -= qtyToUse;
+            }
+
+            unitCost = inv.qtyOnHand > 0 ? totalValue / inv.qtyOnHand : 0;
           }
 
-          unitCost = inv.qtyOnHand > 0 ? totalValue / inv.qtyOnHand : 0;
-        }
+          // Use default cost if no cost found
+          if (unitCost === 0) {
+            unitCost = Number(inv.item.defaultCost) || 0;
+          }
 
-        // Use default cost if no cost found
-        if (unitCost === 0) {
-          unitCost = Number(inv.item.defaultCost) || 0;
-        }
-
-        return {
-          itemId: inv.itemId,
-          itemSku: inv.item.sku,
-          itemName: inv.item.name,
-          categoryName: inv.item.category?.name || 'Uncategorized',
-          warehouseName: inv.location.warehouse?.name || 'Unknown',
-          locationName: inv.location.code,
-          quantityOnHand: inv.qtyOnHand,
-          unitCost,
-          totalValue: inv.qtyOnHand * unitCost,
-          lotNumber: inv.lot?.lotNumber || null,
-          expirationDate: inv.lot?.expirationDate || null,
-        };
-      }));
+          return {
+            itemId: inv.itemId,
+            itemSku: inv.item.sku,
+            itemName: inv.item.name,
+            categoryName: inv.item.category?.name || 'Uncategorized',
+            warehouseName: inv.location.warehouse?.name || 'Unknown',
+            locationName: inv.location.code,
+            quantityOnHand: inv.qtyOnHand,
+            unitCost,
+            totalValue: inv.qtyOnHand * unitCost,
+            lotNumber: inv.lot?.lotNumber || null,
+            expirationDate: inv.lot?.expirationDate || null,
+          };
+        })
+      );
 
       // Group data based on groupBy parameter
       let groupedData: any[] = [];
@@ -205,38 +219,44 @@ export const reportsRouter = createTRPCRouter({
       };
 
       if (groupBy === 'category') {
-        const grouped = valuationData.reduce((acc, item) => {
-          const key = item.categoryName;
-          if (!acc[key]) {
-            acc[key] = {
-              category: key,
-              items: [],
-              totalValue: 0,
-              totalQuantity: 0,
-            };
-          }
-          acc[key].items.push(item);
-          acc[key].totalValue += item.totalValue;
-          acc[key].totalQuantity += item.quantityOnHand;
-          return acc;
-        }, {} as Record<string, any>);
+        const grouped = valuationData.reduce(
+          (acc, item) => {
+            const key = item.categoryName;
+            if (!acc[key]) {
+              acc[key] = {
+                category: key,
+                items: [],
+                totalValue: 0,
+                totalQuantity: 0,
+              };
+            }
+            acc[key].items.push(item);
+            acc[key].totalValue += item.totalValue;
+            acc[key].totalQuantity += item.quantityOnHand;
+            return acc;
+          },
+          {} as Record<string, any>
+        );
         groupedData = Object.values(grouped);
       } else if (groupBy === 'warehouse') {
-        const grouped = valuationData.reduce((acc, item) => {
-          const key = item.warehouseName;
-          if (!acc[key]) {
-            acc[key] = {
-              warehouse: key,
-              items: [],
-              totalValue: 0,
-              totalQuantity: 0,
-            };
-          }
-          acc[key].items.push(item);
-          acc[key].totalValue += item.totalValue;
-          acc[key].totalQuantity += item.quantityOnHand;
-          return acc;
-        }, {} as Record<string, any>);
+        const grouped = valuationData.reduce(
+          (acc, item) => {
+            const key = item.warehouseName;
+            if (!acc[key]) {
+              acc[key] = {
+                warehouse: key,
+                items: [],
+                totalValue: 0,
+                totalQuantity: 0,
+              };
+            }
+            acc[key].items.push(item);
+            acc[key].totalValue += item.totalValue;
+            acc[key].totalQuantity += item.quantityOnHand;
+            return acc;
+          },
+          {} as Record<string, any>
+        );
         groupedData = Object.values(grouped);
       } else {
         groupedData = valuationData;
@@ -252,15 +272,31 @@ export const reportsRouter = createTRPCRouter({
 
   // Stock Movement Report
   stockMovement: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...warehouseFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      movementTypes: z.array(z.enum(['INBOUND', 'OUTBOUND', 'ADJUSTMENT', 'TRANSFER', 'RETURN', 'DAMAGE', 'LOSS'])).optional(),
-      includeDetails: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...warehouseFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        movementTypes: z
+          .array(
+            z.enum(['INBOUND', 'OUTBOUND', 'ADJUSTMENT', 'TRANSFER', 'RETURN', 'DAMAGE', 'LOSS'])
+          )
+          .optional(),
+        includeDetails: z.boolean().default(false),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { dateFrom, dateTo, groupBy, warehouseIds, includeAllWarehouses, itemIds: filterItemIds, categoryIds, movementTypes, includeDetails } = input;
+      const {
+        dateFrom,
+        dateTo,
+        groupBy,
+        warehouseIds,
+        includeAllWarehouses,
+        itemIds: filterItemIds,
+        categoryIds,
+        movementTypes,
+        includeDetails,
+      } = input;
 
       // Build filters
       const movementWhere: Prisma.StockMovementWhereInput = {
@@ -297,7 +333,7 @@ export const reportsRouter = createTRPCRouter({
           },
           select: { id: true },
         });
-        const itemIdsInCategories = itemsInCategories.map(i => i.id);
+        const itemIdsInCategories = itemsInCategories.map((i) => i.id);
         movementWhere.itemId = { in: itemIdsInCategories };
       }
 
@@ -321,73 +357,79 @@ export const reportsRouter = createTRPCRouter({
       });
 
       // Get item details for movements
-      const movementItemIds = [...new Set(movements.map(m => m.itemId))];
+      const movementItemIds = [...new Set(movements.map((m) => m.itemId))];
       const items = await ctx.prisma.item.findMany({
         where: { id: { in: movementItemIds } },
         include: { category: true },
       });
-      const itemMap = new Map(items.map(i => [i.id, i]));
+      const itemMap = new Map(items.map((i) => [i.id, i]));
 
       // Calculate summary by movement type
-      const summaryByType = movements.reduce((acc, movement) => {
-        if (!acc[movement.movementType]) {
-          acc[movement.movementType] = {
-            type: movement.movementType,
-            count: 0,
-            totalQuantity: 0,
-          };
-        }
-        acc[movement.movementType].count++;
-        acc[movement.movementType].totalQuantity += movement.qty;
-        return acc;
-      }, {} as Record<string, any>);
+      const summaryByType = movements.reduce(
+        (acc, movement) => {
+          if (!acc[movement.movementType]) {
+            acc[movement.movementType] = {
+              type: movement.movementType,
+              count: 0,
+              totalQuantity: 0,
+            };
+          }
+          acc[movement.movementType].count++;
+          acc[movement.movementType].totalQuantity += movement.qty;
+          return acc;
+        },
+        {} as Record<string, any>
+      );
 
       // Calculate item movements
-      const itemMovements = movements.reduce((acc, movement) => {
-        const key = movement.itemId;
-        if (!acc[key]) {
-          const item = itemMap.get(movement.itemId);
-          acc[key] = {
-            item: {
-              id: item?.id || movement.itemId,
-              sku: item?.sku || 'Unknown',
-              name: item?.name || 'Unknown',
-              category: item?.category?.name || 'Unknown',
-            },
-            receipts: 0,
-            shipments: 0,
-            adjustments: 0,
-            transfers: 0,
-            returns: 0,
-            netChange: 0,
-          };
-        }
+      const itemMovements = movements.reduce(
+        (acc, movement) => {
+          const key = movement.itemId;
+          if (!acc[key]) {
+            const item = itemMap.get(movement.itemId);
+            acc[key] = {
+              item: {
+                id: item?.id || movement.itemId,
+                sku: item?.sku || 'Unknown',
+                name: item?.name || 'Unknown',
+                category: item?.category?.name || 'Unknown',
+              },
+              receipts: 0,
+              shipments: 0,
+              adjustments: 0,
+              transfers: 0,
+              returns: 0,
+              netChange: 0,
+            };
+          }
 
-        switch (movement.movementType) {
-          case 'INBOUND':
-            acc[key].receipts += movement.qty;
-            acc[key].netChange += movement.qty;
-            break;
-          case 'OUTBOUND':
-            acc[key].shipments += movement.qty;
-            acc[key].netChange -= movement.qty;
-            break;
-          case 'ADJUSTMENT':
-            acc[key].adjustments += movement.qty;
-            acc[key].netChange += movement.qty;
-            break;
-          case 'TRANSFER':
-            acc[key].transfers += movement.qty;
-            // Net change is 0 for transfers (moves between locations)
-            break;
-          case 'RETURN':
-            acc[key].returns += movement.qty;
-            acc[key].netChange += movement.qty;
-            break;
-        }
+          switch (movement.movementType) {
+            case 'INBOUND':
+              acc[key].receipts += movement.qty;
+              acc[key].netChange += movement.qty;
+              break;
+            case 'OUTBOUND':
+              acc[key].shipments += movement.qty;
+              acc[key].netChange -= movement.qty;
+              break;
+            case 'ADJUSTMENT':
+              acc[key].adjustments += movement.qty;
+              acc[key].netChange += movement.qty;
+              break;
+            case 'TRANSFER':
+              acc[key].transfers += movement.qty;
+              // Net change is 0 for transfers (moves between locations)
+              break;
+            case 'RETURN':
+              acc[key].returns += movement.qty;
+              acc[key].netChange += movement.qty;
+              break;
+          }
 
-        return acc;
-      }, {} as Record<string, any>);
+          return acc;
+        },
+        {} as Record<string, any>
+      );
 
       // Get opening and closing balances
       const itemIdsList = Object.keys(itemMovements);
@@ -417,9 +459,9 @@ export const reportsRouter = createTRPCRouter({
 
       // Enhance item movements with balances
       Object.values(itemMovements).forEach((item: any) => {
-        const opening = openingBalances.find(b => b.itemId === item.item.id);
-        const current = currentInventory.find(i => i.itemId === item.item.id);
-        
+        const opening = openingBalances.find((b) => b.itemId === item.item.id);
+        const current = currentInventory.find((i) => i.itemId === item.item.id);
+
         item.openingBalance = opening?._sum.qty || 0;
         item.closingBalance = current?._sum.qtyOnHand || 0;
       });
@@ -440,14 +482,24 @@ export const reportsRouter = createTRPCRouter({
 
   // Low Stock Alert Report
   lowStockAlert: organizationProcedure
-    .input(z.object({
-      ...warehouseFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      includeSufficientStock: z.boolean().default(false),
-      daysOfSupply: z.number().int().min(1).default(30),
-    }))
+    .input(
+      z.object({
+        ...warehouseFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        includeSufficientStock: z.boolean().default(false),
+        daysOfSupply: z.number().int().min(1).default(30),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { warehouseIds, includeAllWarehouses, itemIds, categoryIds, includeInactive, includeSufficientStock, daysOfSupply } = input;
+      const {
+        warehouseIds,
+        includeAllWarehouses,
+        itemIds,
+        categoryIds,
+        includeInactive,
+        includeSufficientStock,
+        daysOfSupply,
+      } = input;
 
       // Build filters
       const itemWhere: Prisma.ItemWhereInput = {
@@ -470,11 +522,13 @@ export const reportsRouter = createTRPCRouter({
           category: true,
           inventory: {
             where: {
-              ...(includeAllWarehouses ? {} : {
-                location: {
-                  warehouseId: { in: warehouseIds || [] },
-                },
-              }),
+              ...(includeAllWarehouses
+                ? {}
+                : {
+                    location: {
+                      warehouseId: { in: warehouseIds || [] },
+                    },
+                  }),
             },
             include: {
               location: {
@@ -491,100 +545,117 @@ export const reportsRouter = createTRPCRouter({
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const stockAnalysis = await Promise.all(items.map(async (item) => {
-        // Get shipments in last 30 days
-        const recentShipments = await ctx.prisma.stockMovement.aggregate({
-          where: {
-            itemId: item.id,
-            movementType: 'OUTBOUND',
-            movedAt: { gte: thirtyDaysAgo },
-          },
-          _sum: {
-            qty: true,
-          },
-          _count: true,
-        });
-
-        const avgDailyUsage = (recentShipments._sum.qty || 0) / 30;
-        const totalOnHand = item.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
-        const totalAvailable = item.inventory.reduce((sum, inv) => sum + (inv.qtyOnHand - inv.qtyReserved), 0);
-        const daysRemaining = avgDailyUsage > 0 ? totalAvailable / avgDailyUsage : Infinity;
-
-        // Get pending orders
-        const pendingOrders = await ctx.prisma.purchaseOrderItem.aggregate({
-          where: {
-            itemId: item.id,
-            purchaseOrder: {
-              status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
-              organizationId: ctx.user.organizationId,
+      const stockAnalysis = await Promise.all(
+        items.map(async (item) => {
+          // Get shipments in last 30 days
+          const recentShipments = await ctx.prisma.stockMovement.aggregate({
+            where: {
+              itemId: item.id,
+              movementType: 'OUTBOUND',
+              movedAt: { gte: thirtyDaysAgo },
             },
-          },
-          _sum: {
-            qtyOrdered: true,
-          },
-        });
+            _sum: {
+              qty: true,
+            },
+            _count: true,
+          });
 
-        const stockStatus = 
-          daysRemaining === 0 ? 'OUT_OF_STOCK' :
-          daysRemaining < 7 ? 'CRITICAL' :
-          daysRemaining < daysOfSupply ? 'LOW' :
-          'SUFFICIENT';
+          const avgDailyUsage = (recentShipments._sum.qty || 0) / 30;
+          const totalOnHand = item.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
+          const totalAvailable = item.inventory.reduce(
+            (sum, inv) => sum + (inv.qtyOnHand - inv.qtyReserved),
+            0
+          );
+          const daysRemaining = avgDailyUsage > 0 ? totalAvailable / avgDailyUsage : Infinity;
 
-        return {
-          item: {
-            id: item.id,
-            sku: item.sku,
-            name: item.name,
-            category: item.category?.name,
-            reorderPoint: item.reorderPoint,
-            reorderQty: item.reorderQty,
-          },
-          inventory: {
-            totalOnHand,
-            totalAvailable,
-            totalAllocated: totalOnHand - totalAvailable,
-            byWarehouse: item.inventory.map(inv => ({
-              warehouse: inv.location.warehouse?.name || 'Unknown',
-              location: inv.location.code,
-              onHand: inv.qtyOnHand,
-              available: inv.qtyOnHand - inv.qtyReserved,
-            })),
-          },
-          usage: {
-            avgDailyUsage: Math.round(avgDailyUsage * 10) / 10,
-            last30DaysTotal: recentShipments._sum.qty || 0,
-            daysOfSupplyRemaining: Math.round(daysRemaining),
-          },
-          ordering: {
-            pendingQuantity: pendingOrders._sum.qtyOrdered || 0,
-            suggestedReorderQty: Math.max(
-              item.reorderQty || 0,
-              Math.ceil(avgDailyUsage * daysOfSupply) - totalAvailable - (pendingOrders._sum.qtyOrdered || 0)
-            ),
-          },
-          status: stockStatus,
-        };
-      }));
+          // Get pending orders
+          const pendingOrders = await ctx.prisma.purchaseOrderItem.aggregate({
+            where: {
+              itemId: item.id,
+              purchaseOrder: {
+                status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
+                organizationId: ctx.user.organizationId,
+              },
+            },
+            _sum: {
+              qtyOrdered: true,
+            },
+          });
+
+          const stockStatus =
+            daysRemaining === 0
+              ? 'OUT_OF_STOCK'
+              : daysRemaining < 7
+                ? 'CRITICAL'
+                : daysRemaining < daysOfSupply
+                  ? 'LOW'
+                  : 'SUFFICIENT';
+
+          return {
+            item: {
+              id: item.id,
+              sku: item.sku,
+              name: item.name,
+              category: item.category?.name,
+              reorderPoint: item.reorderPoint,
+              reorderQty: item.reorderQty,
+            },
+            inventory: {
+              totalOnHand,
+              totalAvailable,
+              totalAllocated: totalOnHand - totalAvailable,
+              byWarehouse: item.inventory.map((inv) => ({
+                warehouse: inv.location.warehouse?.name || 'Unknown',
+                location: inv.location.code,
+                onHand: inv.qtyOnHand,
+                available: inv.qtyOnHand - inv.qtyReserved,
+              })),
+            },
+            usage: {
+              avgDailyUsage: Math.round(avgDailyUsage * 10) / 10,
+              last30DaysTotal: recentShipments._sum.qty || 0,
+              daysOfSupplyRemaining: Math.round(daysRemaining),
+            },
+            ordering: {
+              pendingQuantity: pendingOrders._sum.qtyOrdered || 0,
+              suggestedReorderQty: Math.max(
+                item.reorderQty || 0,
+                Math.ceil(avgDailyUsage * daysOfSupply) -
+                  totalAvailable -
+                  (pendingOrders._sum.qtyOrdered || 0)
+              ),
+            },
+            status: stockStatus,
+          };
+        })
+      );
 
       // Filter based on includeSufficientStock
-      const filteredAnalysis = includeSufficientStock 
-        ? stockAnalysis 
-        : stockAnalysis.filter(a => a.status !== 'SUFFICIENT');
+      const filteredAnalysis = includeSufficientStock
+        ? stockAnalysis
+        : stockAnalysis.filter((a) => a.status !== 'SUFFICIENT');
 
       // Sort by urgency
       filteredAnalysis.sort((a, b) => {
-        const statusOrder: Record<string, number> = { 'OUT_OF_STOCK': 0, 'CRITICAL': 1, 'LOW': 2, 'SUFFICIENT': 3 };
-        return (statusOrder[a.status] || 999) - (statusOrder[b.status] || 999) || 
-               a.usage.daysOfSupplyRemaining - b.usage.daysOfSupplyRemaining;
+        const statusOrder: Record<string, number> = {
+          OUT_OF_STOCK: 0,
+          CRITICAL: 1,
+          LOW: 2,
+          SUFFICIENT: 3,
+        };
+        return (
+          (statusOrder[a.status] || 999) - (statusOrder[b.status] || 999) ||
+          a.usage.daysOfSupplyRemaining - b.usage.daysOfSupplyRemaining
+        );
       });
 
       // Calculate summary
       const summary = {
         totalItems: filteredAnalysis.length,
-        outOfStock: filteredAnalysis.filter(a => a.status === 'OUT_OF_STOCK').length,
-        critical: filteredAnalysis.filter(a => a.status === 'CRITICAL').length,
-        low: filteredAnalysis.filter(a => a.status === 'LOW').length,
-        sufficient: filteredAnalysis.filter(a => a.status === 'SUFFICIENT').length,
+        outOfStock: filteredAnalysis.filter((a) => a.status === 'OUT_OF_STOCK').length,
+        critical: filteredAnalysis.filter((a) => a.status === 'CRITICAL').length,
+        low: filteredAnalysis.filter((a) => a.status === 'LOW').length,
+        sufficient: filteredAnalysis.filter((a) => a.status === 'SUFFICIENT').length,
       };
 
       return {
@@ -599,14 +670,23 @@ export const reportsRouter = createTRPCRouter({
 
   // Expiring Items Report
   expiringItems: organizationProcedure
-    .input(z.object({
-      ...warehouseFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      daysAhead: z.number().int().min(1).default(90),
-      includeExpired: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        ...warehouseFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        daysAhead: z.number().int().min(1).default(90),
+        includeExpired: z.boolean().default(true),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { warehouseIds, includeAllWarehouses, itemIds, categoryIds, daysAhead, includeExpired } = input;
+      const {
+        warehouseIds,
+        includeAllWarehouses,
+        itemIds,
+        categoryIds,
+        daysAhead,
+        includeExpired,
+      } = input;
 
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + daysAhead);
@@ -614,7 +694,7 @@ export const reportsRouter = createTRPCRouter({
       // Build filters
       const inventoryWhere: Prisma.InventoryWhereInput = {
         lot: {
-          expirationDate: includeExpired 
+          expirationDate: includeExpired
             ? { lte: expirationDate }
             : { lte: expirationDate, gte: new Date() },
         },
@@ -673,8 +753,8 @@ export const reportsRouter = createTRPCRouter({
       const sixtyDays = new Date();
       sixtyDays.setDate(sixtyDays.getDate() + 60);
 
-      const grouped = expiringInventory.map(inv => {
-        const daysUntilExpiry = inv.lot?.expirationDate 
+      const grouped = expiringInventory.map((inv) => {
+        const daysUntilExpiry = inv.lot?.expirationDate
           ? Math.ceil((inv.lot.expirationDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
           : null;
 
@@ -726,9 +806,9 @@ export const reportsRouter = createTRPCRouter({
       // Calculate summary
       const summary = {
         totalItems: grouped.length,
-        expired: grouped.filter(g => g.inventory.status === 'EXPIRED').length,
-        expiringSoon: grouped.filter(g => g.inventory.status === 'EXPIRING_SOON').length,
-        expiring: grouped.filter(g => g.inventory.status === 'EXPIRING').length,
+        expired: grouped.filter((g) => g.inventory.status === 'EXPIRED').length,
+        expiringSoon: grouped.filter((g) => g.inventory.status === 'EXPIRING_SOON').length,
+        expiring: grouped.filter((g) => g.inventory.status === 'EXPIRING').length,
         totalValue: grouped.reduce((sum, g) => sum + g.value.totalValue, 0),
         totalQuantity: grouped.reduce((sum, g) => sum + g.quantities.onHand, 0),
       };
@@ -745,16 +825,29 @@ export const reportsRouter = createTRPCRouter({
 
   // Sales Analysis Report
   salesAnalysis: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...customerFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      groupByCustomer: z.boolean().default(false),
-      groupByItem: z.boolean().default(true),
-      includeReturns: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...customerFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        groupByCustomer: z.boolean().default(false),
+        groupByItem: z.boolean().default(true),
+        includeReturns: z.boolean().default(true),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { dateFrom, dateTo, groupBy, customerIds, customerTypes, itemIds, categoryIds, groupByCustomer, groupByItem, includeReturns } = input;
+      const {
+        dateFrom,
+        dateTo,
+        groupBy,
+        customerIds,
+        customerTypes,
+        itemIds,
+        categoryIds,
+        groupByCustomer,
+        groupByItem,
+        includeReturns,
+      } = input;
 
       // Build filters
       const orderWhere: Prisma.OrderWhereInput = {
@@ -823,13 +916,13 @@ export const reportsRouter = createTRPCRouter({
 
       // Calculate sales data
       const salesData: any[] = [];
-      
+
       if (groupByItem) {
         const itemSales = new Map<string, any>();
 
         // Process orders
-        orders.forEach(order => {
-          order.items.forEach(orderItem => {
+        orders.forEach((order) => {
+          order.items.forEach((orderItem) => {
             const key = orderItem.itemId;
             if (!itemSales.has(key)) {
               itemSales.set(key, {
@@ -863,7 +956,7 @@ export const reportsRouter = createTRPCRouter({
         });
 
         // Process returns
-        returns.forEach(ret => {
+        returns.forEach((ret) => {
           ret.items.forEach((returnItem: any) => {
             const itemData = itemSales.get(returnItem.itemId);
             if (itemData) {
@@ -879,7 +972,8 @@ export const reportsRouter = createTRPCRouter({
         itemSales.forEach((data, key) => {
           data.customerCount = data.customerCount.size;
           data.avgOrderValue = data.netRevenue / data.orderCount;
-          data.returnRate = data.quantitySold > 0 ? (data.returnQuantity / data.quantitySold) * 100 : 0;
+          data.returnRate =
+            data.quantitySold > 0 ? (data.returnQuantity / data.quantitySold) * 100 : 0;
           salesData.push(data);
         });
       }
@@ -888,13 +982,16 @@ export const reportsRouter = createTRPCRouter({
         const customerSales = new Map<string, any>();
 
         // Process orders
-        orders.forEach(order => {
+        orders.forEach((order) => {
           const key = order.customerId;
           if (!customerSales.has(key)) {
             customerSales.set(key, {
               customer: {
                 id: order.customer.id,
-                name: order.customer.companyName || `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() || 'Unnamed',
+                name:
+                  order.customer.companyName ||
+                  `${order.customer.firstName || ''} ${order.customer.lastName || ''}`.trim() ||
+                  'Unnamed',
                 email: order.customer.email || '',
               },
               orderCount: 0,
@@ -916,7 +1013,7 @@ export const reportsRouter = createTRPCRouter({
         });
 
         // Process returns
-        returns.forEach(ret => {
+        returns.forEach((ret) => {
           const customerData = customerSales.get(ret.customerId);
           if (customerData) {
             customerData.returnCount++;
@@ -939,15 +1036,18 @@ export const reportsRouter = createTRPCRouter({
       // Calculate period summary
       const summary = {
         totalOrders: orders.length,
-        totalCustomers: new Set(orders.map(o => o.customerId)).size,
-        totalQuantity: orders.reduce((sum, o) => 
-          sum + o.items.reduce((s, oi) => s + oi.qtyOrdered, 0), 0
+        totalCustomers: new Set(orders.map((o) => o.customerId)).size,
+        totalQuantity: orders.reduce(
+          (sum, o) => sum + o.items.reduce((s, oi) => s + oi.qtyOrdered, 0),
+          0
         ),
         grossRevenue: orders.reduce((sum, o) => sum + Number(o.subtotal), 0),
         totalDiscounts: orders.reduce((sum, o) => sum + Number(o.discountTotal || 0), 0),
         netRevenue: orders.reduce((sum, o) => sum + Number(o.grandTotal), 0),
-        avgOrderValue: orders.length > 0 ? 
-          orders.reduce((sum, o) => sum + Number(o.grandTotal), 0) / orders.length : 0,
+        avgOrderValue:
+          orders.length > 0
+            ? orders.reduce((sum, o) => sum + Number(o.grandTotal), 0) / orders.length
+            : 0,
         returnCount: returns.length,
         returnRate: orders.length > 0 ? (returns.length / orders.length) * 100 : 0,
       };
@@ -967,16 +1067,28 @@ export const reportsRouter = createTRPCRouter({
 
   // Purchase Analysis Report
   purchaseAnalysis: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...supplierFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      groupBySupplier: z.boolean().default(true),
-      groupByItem: z.boolean().default(false),
-      includeReturns: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...supplierFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        groupBySupplier: z.boolean().default(true),
+        groupByItem: z.boolean().default(false),
+        includeReturns: z.boolean().default(true),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { dateFrom, dateTo, supplierIds, includeInactive, itemIds, categoryIds, groupBySupplier, groupByItem, includeReturns } = input;
+      const {
+        dateFrom,
+        dateTo,
+        supplierIds,
+        includeInactive,
+        itemIds,
+        categoryIds,
+        groupBySupplier,
+        groupByItem,
+        includeReturns,
+      } = input;
 
       // Build filters
       const poWhere: Prisma.PurchaseOrderWhereInput = {
@@ -1039,7 +1151,7 @@ export const reportsRouter = createTRPCRouter({
         const supplierPurchases = new Map<string, any>();
 
         // Process purchase orders
-        purchaseOrders.forEach(po => {
+        purchaseOrders.forEach((po) => {
           const key = po.supplierId;
           if (!supplierPurchases.has(key)) {
             supplierPurchases.set(key, {
@@ -1067,7 +1179,7 @@ export const reportsRouter = createTRPCRouter({
           supplierData.totalAmount += Number(po.total);
 
           // Calculate received quantities and delivery performance
-          po.receipts.forEach(receipt => {
+          po.receipts.forEach((receipt) => {
             const receivedQty = receipt.items.reduce((sum, ri) => sum + ri.qtyReceived, 0);
             supplierData.receivedQuantity += receivedQty;
 
@@ -1086,12 +1198,14 @@ export const reportsRouter = createTRPCRouter({
 
         // Convert to array and calculate metrics
         supplierPurchases.forEach((data) => {
-          data.fulfillmentRate = data.orderedQuantity > 0 ? 
-            (data.receivedQuantity / data.orderedQuantity) * 100 : 0;
-          data.onTimeRate = (data.onTimeDeliveries + data.lateDeliveries) > 0 ?
-            (data.onTimeDeliveries / (data.onTimeDeliveries + data.lateDeliveries)) * 100 : 0;
-          data.returnRate = data.receivedQuantity > 0 ?
-            (data.returnQuantity / data.receivedQuantity) * 100 : 0;
+          data.fulfillmentRate =
+            data.orderedQuantity > 0 ? (data.receivedQuantity / data.orderedQuantity) * 100 : 0;
+          data.onTimeRate =
+            data.onTimeDeliveries + data.lateDeliveries > 0
+              ? (data.onTimeDeliveries / (data.onTimeDeliveries + data.lateDeliveries)) * 100
+              : 0;
+          data.returnRate =
+            data.receivedQuantity > 0 ? (data.returnQuantity / data.receivedQuantity) * 100 : 0;
           data.avgOrderValue = data.poCount > 0 ? data.totalAmount / data.poCount : 0;
           purchaseData.push(data);
         });
@@ -1101,8 +1215,8 @@ export const reportsRouter = createTRPCRouter({
         const itemPurchases = new Map<string, any>();
 
         // Process purchase orders
-        purchaseOrders.forEach(po => {
-          po.items.forEach(poItem => {
+        purchaseOrders.forEach((po) => {
+          po.items.forEach((poItem) => {
             const key = poItem.itemId;
             if (!itemPurchases.has(key)) {
               itemPurchases.set(key, {
@@ -1143,9 +1257,10 @@ export const reportsRouter = createTRPCRouter({
         // Convert to array and calculate metrics
         itemPurchases.forEach((data) => {
           data.supplierCount = data.supplierCount.size;
-          data.avgUnitPrice = data.orderedQuantity > 0 ? data.totalAmount / data.orderedQuantity : 0;
-          data.fulfillmentRate = data.orderedQuantity > 0 ?
-            (data.receivedQuantity / data.orderedQuantity) * 100 : 0;
+          data.avgUnitPrice =
+            data.orderedQuantity > 0 ? data.totalAmount / data.orderedQuantity : 0;
+          data.fulfillmentRate =
+            data.orderedQuantity > 0 ? (data.receivedQuantity / data.orderedQuantity) * 100 : 0;
           purchaseData.push(data);
         });
       }
@@ -1153,13 +1268,16 @@ export const reportsRouter = createTRPCRouter({
       // Calculate summary
       const summary = {
         totalPOs: purchaseOrders.length,
-        totalSuppliers: new Set(purchaseOrders.map(po => po.supplierId)).size,
-        totalItems: purchaseOrders.reduce((sum, po) => 
-          sum + new Set(po.items.map((i: any) => i.itemId)).size, 0
+        totalSuppliers: new Set(purchaseOrders.map((po) => po.supplierId)).size,
+        totalItems: purchaseOrders.reduce(
+          (sum, po) => sum + new Set(po.items.map((i: any) => i.itemId)).size,
+          0
         ),
         totalAmount: purchaseOrders.reduce((sum, po) => sum + Number(po.total), 0),
-        avgPOValue: purchaseOrders.length > 0 ?
-          purchaseOrders.reduce((sum, po) => sum + Number(po.total), 0) / purchaseOrders.length : 0,
+        avgPOValue:
+          purchaseOrders.length > 0
+            ? purchaseOrders.reduce((sum, po) => sum + Number(po.total), 0) / purchaseOrders.length
+            : 0,
         returnCount: returns.length,
       };
 
@@ -1178,15 +1296,25 @@ export const reportsRouter = createTRPCRouter({
 
   // Profitability Report
   profitability: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...itemFilterSchema.shape,
-      ...customerFilterSchema.shape,
-      includeIndirectCosts: z.boolean().default(false),
-      indirectCostPercentage: z.number().min(0).max(100).default(15),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...itemFilterSchema.shape,
+        ...customerFilterSchema.shape,
+        includeIndirectCosts: z.boolean().default(false),
+        indirectCostPercentage: z.number().min(0).max(100).default(15),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { dateFrom, dateTo, itemIds, categoryIds, customerIds, includeIndirectCosts, indirectCostPercentage } = input;
+      const {
+        dateFrom,
+        dateTo,
+        itemIds,
+        categoryIds,
+        customerIds,
+        includeIndirectCosts,
+        indirectCostPercentage,
+      } = input;
 
       // Get sales data
       const orders = await ctx.prisma.order.findMany({
@@ -1223,26 +1351,32 @@ export const reportsRouter = createTRPCRouter({
       for (const order of orders) {
         for (const orderItem of order.items) {
           const key = orderItem.itemId;
-          
+
           if (!itemProfitability.has(key)) {
             // Get average cost for the item
-            const avgCost = await ctx.prisma.receiptItem.findMany({
-              where: {
-                itemId: orderItem.itemId,
-                receipt: {
-                  receivedDate: { lte: order.orderDate },
+            const avgCost = await ctx.prisma.receiptItem
+              .findMany({
+                where: {
+                  itemId: orderItem.itemId,
+                  receipt: {
+                    receivedDate: { lte: order.orderDate },
+                  },
                 },
-              },
-              orderBy: { receipt: { receivedDate: 'desc' } },
-              take: 5,
-            }).then(receipts => {
-              if (receipts.length === 0) return Number(orderItem.item.defaultCost || 0) || Number(orderItem.unitPrice) * 0.6; // Estimate 40% margin
-              const totalCost = receipts.reduce((sum, r) => 
-                sum + Number(r.unitCost) * r.qtyReceived, 0
-              );
-              const totalQty = receipts.reduce((sum, r) => sum + r.qtyReceived, 0);
-              return totalQty > 0 ? totalCost / totalQty : 0;
-            });
+                orderBy: { receipt: { receivedDate: 'desc' } },
+                take: 5,
+              })
+              .then((receipts) => {
+                if (receipts.length === 0)
+                  return (
+                    Number(orderItem.item.defaultCost || 0) || Number(orderItem.unitPrice) * 0.6
+                  ); // Estimate 40% margin
+                const totalCost = receipts.reduce(
+                  (sum, r) => sum + Number(r.unitCost) * r.qtyReceived,
+                  0
+                );
+                const totalQty = receipts.reduce((sum, r) => sum + r.qtyReceived, 0);
+                return totalQty > 0 ? totalCost / totalQty : 0;
+              });
 
             itemProfitability.set(key, {
               item: {
@@ -1268,8 +1402,9 @@ export const reportsRouter = createTRPCRouter({
           const itemCost = itemData.avgCost * orderItem.qtyOrdered;
           const itemRevenue = Number(orderItem.totalPrice);
           const itemGrossProfit = itemRevenue - itemCost;
-          const itemIndirectCost = includeIndirectCosts ? 
-            itemRevenue * (indirectCostPercentage / 100) : 0;
+          const itemIndirectCost = includeIndirectCosts
+            ? itemRevenue * (indirectCostPercentage / 100)
+            : 0;
 
           itemData.quantitySold += orderItem.qtyOrdered;
           itemData.revenue += itemRevenue;
@@ -1306,15 +1441,15 @@ export const reportsRouter = createTRPCRouter({
         avgNetMargin: 0,
       };
 
-      summary.avgGrossMargin = summary.totalRevenue > 0 ?
-        (summary.totalGrossProfit / summary.totalRevenue) * 100 : 0;
-      summary.avgNetMargin = summary.totalRevenue > 0 ?
-        (summary.totalNetProfit / summary.totalRevenue) * 100 : 0;
+      summary.avgGrossMargin =
+        summary.totalRevenue > 0 ? (summary.totalGrossProfit / summary.totalRevenue) * 100 : 0;
+      summary.avgNetMargin =
+        summary.totalRevenue > 0 ? (summary.totalNetProfit / summary.totalRevenue) * 100 : 0;
 
       // Get top and bottom performers
       const topPerformers = profitabilityData.slice(0, 10);
       const bottomPerformers = profitabilityData
-        .filter(p => p.netProfit < 0)
+        .filter((p) => p.netProfit < 0)
         .sort((a, b) => a.netProfit - b.netProfit)
         .slice(0, 10);
 
@@ -1336,17 +1471,30 @@ export const reportsRouter = createTRPCRouter({
 
   // Inventory Turnover Report
   inventoryTurnover: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...warehouseFilterSchema.shape,
-      ...itemFilterSchema.shape,
-      method: z.enum(['COGS', 'SALES']).default('COGS'),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...warehouseFilterSchema.shape,
+        ...itemFilterSchema.shape,
+        method: z.enum(['COGS', 'SALES']).default('COGS'),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      const { dateFrom, dateTo, warehouseIds, includeAllWarehouses, itemIds, categoryIds, includeInactive, method } = input;
+      const {
+        dateFrom,
+        dateTo,
+        warehouseIds,
+        includeAllWarehouses,
+        itemIds,
+        categoryIds,
+        includeInactive,
+        method,
+      } = input;
 
       // Calculate days in period
-      const daysInPeriod = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+      const daysInPeriod = Math.ceil(
+        (dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)
+      );
       const annualizationFactor = 365 / daysInPeriod;
 
       // Build filters
@@ -1364,132 +1512,136 @@ export const reportsRouter = createTRPCRouter({
           category: true,
           inventory: {
             where: {
-              ...(includeAllWarehouses ? {} : {
-                location: {
-                  warehouseId: { in: warehouseIds || [] },
-                },
-              }),
+              ...(includeAllWarehouses
+                ? {}
+                : {
+                    location: {
+                      warehouseId: { in: warehouseIds || [] },
+                    },
+                  }),
             },
           },
         },
       });
 
       // Calculate turnover for each item
-      const turnoverData = await Promise.all(items.map(async (item) => {
-        // Get current inventory value
-        const currentInventory = item.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
-        const avgUnitCost = Number(item.defaultCost || 0) || 10; // Use default cost or fallback
-        const currentInventoryValue = currentInventory * avgUnitCost;
+      const turnoverData = await Promise.all(
+        items.map(async (item) => {
+          // Get current inventory value
+          const currentInventory = item.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
+          const avgUnitCost = Number(item.defaultCost || 0) || 10; // Use default cost or fallback
+          const currentInventoryValue = currentInventory * avgUnitCost;
 
-        // Get beginning inventory (estimate from movements)
-        const beginningMovement = await ctx.prisma.stockMovement.aggregate({
-          where: {
-            itemId: item.id,
-            movedAt: { lt: dateFrom },
-          },
-          _sum: {
-            qty: true,
-          },
-        });
-
-        const beginningInventory = beginningMovement._sum.qty || currentInventory;
-        const avgInventory = (beginningInventory + currentInventory) / 2;
-        const avgInventoryValue = avgInventory * avgUnitCost;
-
-        let turnoverRate = 0;
-        let daysOnHand = 0;
-
-        if (method === 'COGS') {
-          // Get COGS from shipments
-          const shipments = await ctx.prisma.stockMovement.aggregate({
+          // Get beginning inventory (estimate from movements)
+          const beginningMovement = await ctx.prisma.stockMovement.aggregate({
             where: {
               itemId: item.id,
-              movementType: 'OUTBOUND',
-              movedAt: {
-                gte: dateFrom,
-                lte: dateTo,
-              },
+              movedAt: { lt: dateFrom },
             },
             _sum: {
               qty: true,
             },
           });
 
-          const cogs = (shipments._sum.qty || 0) * avgUnitCost;
-          const annualizedCOGS = cogs * annualizationFactor;
-          
-          if (avgInventoryValue > 0) {
-            turnoverRate = annualizedCOGS / avgInventoryValue;
-            daysOnHand = turnoverRate > 0 ? 365 / turnoverRate : 365;
-          }
-        } else {
-          // Get sales value
-          const sales = await ctx.prisma.orderItem.aggregate({
-            where: {
-              itemId: item.id,
-              order: {
-                orderDate: {
+          const beginningInventory = beginningMovement._sum.qty || currentInventory;
+          const avgInventory = (beginningInventory + currentInventory) / 2;
+          const avgInventoryValue = avgInventory * avgUnitCost;
+
+          let turnoverRate = 0;
+          let daysOnHand = 0;
+
+          if (method === 'COGS') {
+            // Get COGS from shipments
+            const shipments = await ctx.prisma.stockMovement.aggregate({
+              where: {
+                itemId: item.id,
+                movementType: 'OUTBOUND',
+                movedAt: {
                   gte: dateFrom,
                   lte: dateTo,
                 },
-                status: { in: ['CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'] },
               },
-            },
-            _sum: {
-              totalPrice: true,
-              qtyOrdered: true,
-            },
-          });
+              _sum: {
+                qty: true,
+              },
+            });
 
-          const salesValue = Number(sales._sum.totalPrice || 0);
-          const annualizedSales = salesValue * annualizationFactor;
-          
-          // For sales method, use retail value of inventory
-          const avgInventoryRetailValue = avgInventory * Number(item.defaultCost || 10) * 1.67; // Estimate retail markup
-          
-          if (avgInventoryRetailValue > 0) {
-            turnoverRate = Number(annualizedSales) / avgInventoryRetailValue;
-            daysOnHand = turnoverRate > 0 ? 365 / turnoverRate : 365;
+            const cogs = (shipments._sum.qty || 0) * avgUnitCost;
+            const annualizedCOGS = cogs * annualizationFactor;
+
+            if (avgInventoryValue > 0) {
+              turnoverRate = annualizedCOGS / avgInventoryValue;
+              daysOnHand = turnoverRate > 0 ? 365 / turnoverRate : 365;
+            }
+          } else {
+            // Get sales value
+            const sales = await ctx.prisma.orderItem.aggregate({
+              where: {
+                itemId: item.id,
+                order: {
+                  orderDate: {
+                    gte: dateFrom,
+                    lte: dateTo,
+                  },
+                  status: { in: ['CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'] },
+                },
+              },
+              _sum: {
+                totalPrice: true,
+                qtyOrdered: true,
+              },
+            });
+
+            const salesValue = Number(sales._sum.totalPrice || 0);
+            const annualizedSales = salesValue * annualizationFactor;
+
+            // For sales method, use retail value of inventory
+            const avgInventoryRetailValue = avgInventory * Number(item.defaultCost || 10) * 1.67; // Estimate retail markup
+
+            if (avgInventoryRetailValue > 0) {
+              turnoverRate = Number(annualizedSales) / avgInventoryRetailValue;
+              daysOnHand = turnoverRate > 0 ? 365 / turnoverRate : 365;
+            }
           }
-        }
 
-        // Classify turnover performance
-        let performance: string;
-        if (turnoverRate === 0) {
-          performance = 'NO_MOVEMENT';
-        } else if (turnoverRate < 2) {
-          performance = 'SLOW_MOVING';
-        } else if (turnoverRate < 6) {
-          performance = 'MODERATE';
-        } else if (turnoverRate < 12) {
-          performance = 'FAST_MOVING';
-        } else {
-          performance = 'VERY_FAST';
-        }
+          // Classify turnover performance
+          let performance: string;
+          if (turnoverRate === 0) {
+            performance = 'NO_MOVEMENT';
+          } else if (turnoverRate < 2) {
+            performance = 'SLOW_MOVING';
+          } else if (turnoverRate < 6) {
+            performance = 'MODERATE';
+          } else if (turnoverRate < 12) {
+            performance = 'FAST_MOVING';
+          } else {
+            performance = 'VERY_FAST';
+          }
 
-        return {
-          item: {
-            id: item.id,
-            sku: item.sku,
-            name: item.name,
-            category: item.category?.name,
-          },
-          inventory: {
-            beginning: beginningInventory,
-            ending: currentInventory,
-            average: Math.round(avgInventory),
-            value: avgInventoryValue,
-          },
-          turnover: {
-            rate: Math.round(turnoverRate * 100) / 100,
-            daysOnHand: Math.round(daysOnHand),
-            performance,
-          },
-        };
-      }));
+          return {
+            item: {
+              id: item.id,
+              sku: item.sku,
+              name: item.name,
+              category: item.category?.name,
+            },
+            inventory: {
+              beginning: beginningInventory,
+              ending: currentInventory,
+              average: Math.round(avgInventory),
+              value: avgInventoryValue,
+            },
+            turnover: {
+              rate: Math.round(turnoverRate * 100) / 100,
+              daysOnHand: Math.round(daysOnHand),
+              performance,
+            },
+          };
+        })
+      );
 
       // Filter out items with no inventory
-      const filteredData = turnoverData.filter(d => d.inventory.average > 0);
+      const filteredData = turnoverData.filter((d) => d.inventory.average > 0);
 
       // Sort by turnover rate
       filteredData.sort((a, b) => b.turnover.rate - a.turnover.rate);
@@ -1497,14 +1649,16 @@ export const reportsRouter = createTRPCRouter({
       // Calculate summary
       const summary = {
         totalItems: filteredData.length,
-        avgTurnoverRate: filteredData.reduce((sum, d) => sum + d.turnover.rate, 0) / filteredData.length,
-        avgDaysOnHand: filteredData.reduce((sum, d) => sum + d.turnover.daysOnHand, 0) / filteredData.length,
+        avgTurnoverRate:
+          filteredData.reduce((sum, d) => sum + d.turnover.rate, 0) / filteredData.length,
+        avgDaysOnHand:
+          filteredData.reduce((sum, d) => sum + d.turnover.daysOnHand, 0) / filteredData.length,
         byPerformance: {
-          noMovement: filteredData.filter(d => d.turnover.performance === 'NO_MOVEMENT').length,
-          slowMoving: filteredData.filter(d => d.turnover.performance === 'SLOW_MOVING').length,
-          moderate: filteredData.filter(d => d.turnover.performance === 'MODERATE').length,
-          fastMoving: filteredData.filter(d => d.turnover.performance === 'FAST_MOVING').length,
-          veryFast: filteredData.filter(d => d.turnover.performance === 'VERY_FAST').length,
+          noMovement: filteredData.filter((d) => d.turnover.performance === 'NO_MOVEMENT').length,
+          slowMoving: filteredData.filter((d) => d.turnover.performance === 'SLOW_MOVING').length,
+          moderate: filteredData.filter((d) => d.turnover.performance === 'MODERATE').length,
+          fastMoving: filteredData.filter((d) => d.turnover.performance === 'FAST_MOVING').length,
+          veryFast: filteredData.filter((d) => d.turnover.performance === 'VERY_FAST').length,
         },
         totalInventoryValue: filteredData.reduce((sum, d) => sum + d.inventory.value, 0),
       };
@@ -1523,12 +1677,14 @@ export const reportsRouter = createTRPCRouter({
 
   // Forecast Accuracy Report
   forecast: organizationProcedure
-    .input(z.object({
-      ...dateRangeSchema.shape,
-      ...itemFilterSchema.shape,
-      forecastHorizon: z.number().int().min(1).max(365).default(30),
-      confidenceLevel: z.number().min(0.5).max(0.99).default(0.95),
-    }))
+    .input(
+      z.object({
+        ...dateRangeSchema.shape,
+        ...itemFilterSchema.shape,
+        forecastHorizon: z.number().int().min(1).max(365).default(30),
+        confidenceLevel: z.number().min(0.5).max(0.99).default(0.95),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const { dateFrom, dateTo, itemIds, categoryIds, forecastHorizon, confidenceLevel } = input;
 
@@ -1549,103 +1705,113 @@ export const reportsRouter = createTRPCRouter({
       });
 
       // Generate forecasts for each item
-      const forecasts = await Promise.all(items.map(async (item) => {
-        // Get historical sales data - need to aggregate differently since groupBy can't use nested fields
-        const orders = await ctx.prisma.order.findMany({
-          where: {
-            orderDate: {
-              gte: dateFrom,
-              lte: dateTo,
-            },
-            status: { in: ['CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'] },
-            organizationId: ctx.user.organizationId,
-            items: {
-              some: {
-                itemId: item.id,
+      const forecasts = await Promise.all(
+        items.map(async (item) => {
+          // Get historical sales data - need to aggregate differently since groupBy can't use nested fields
+          const orders = await ctx.prisma.order.findMany({
+            where: {
+              orderDate: {
+                gte: dateFrom,
+                lte: dateTo,
+              },
+              status: { in: ['CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'] },
+              organizationId: ctx.user.organizationId,
+              items: {
+                some: {
+                  itemId: item.id,
+                },
               },
             },
-          },
-          include: {
-            items: {
-              where: {
-                itemId: item.id,
+            include: {
+              items: {
+                where: {
+                  itemId: item.id,
+                },
               },
             },
-          },
-        });
+          });
 
-        // Group by date manually
-        const salesByDate = new Map<string, number>();
-        orders.forEach(order => {
-          const dateKey = order.orderDate.toISOString().split('T')[0];
-          const qty = order.items.reduce((sum: number, oi: any) => sum + oi.qtyOrdered, 0);
-          salesByDate.set(dateKey, (salesByDate.get(dateKey) || 0) + qty);
-        });
-        const salesHistory = Array.from(salesByDate.values());
+          // Group by date manually
+          const salesByDate = new Map<string, number>();
+          orders.forEach((order) => {
+            const dateKey = order.orderDate.toISOString().split('T')[0];
+            const qty = order.items.reduce((sum: number, oi: any) => sum + oi.qtyOrdered, 0);
+            salesByDate.set(dateKey, (salesByDate.get(dateKey) || 0) + qty);
+          });
+          const salesHistory = Array.from(salesByDate.values());
 
-        // Simple moving average forecast (in production, use proper time series methods)
-        const dailySales = salesHistory;
-        const avgDailySales = dailySales.length > 0 ?
-          dailySales.reduce((sum, q) => sum + q, 0) / dailySales.length : 0;
+          // Simple moving average forecast (in production, use proper time series methods)
+          const dailySales = salesHistory;
+          const avgDailySales =
+            dailySales.length > 0
+              ? dailySales.reduce((sum, q) => sum + q, 0) / dailySales.length
+              : 0;
 
-        // Calculate standard deviation for confidence intervals
-        const variance = dailySales.length > 0 ?
-          dailySales.reduce((sum, q) => sum + Math.pow(q - avgDailySales, 2), 0) / dailySales.length : 0;
-        const stdDev = Math.sqrt(variance);
+          // Calculate standard deviation for confidence intervals
+          const variance =
+            dailySales.length > 0
+              ? dailySales.reduce((sum, q) => sum + Math.pow(q - avgDailySales, 2), 0) /
+                dailySales.length
+              : 0;
+          const stdDev = Math.sqrt(variance);
 
-        // Z-score for confidence level (simplified)
-        const zScore = confidenceLevel === 0.95 ? 1.96 : confidenceLevel === 0.99 ? 2.576 : 1.645;
+          // Z-score for confidence level (simplified)
+          const zScore = confidenceLevel === 0.95 ? 1.96 : confidenceLevel === 0.99 ? 2.576 : 1.645;
 
-        // Generate forecast
-        const forecastDaily = avgDailySales;
-        const forecastTotal = forecastDaily * forecastHorizon;
-        const lowerBound = Math.max(0, forecastTotal - (zScore * stdDev * Math.sqrt(forecastHorizon)));
-        const upperBound = forecastTotal + (zScore * stdDev * Math.sqrt(forecastHorizon));
+          // Generate forecast
+          const forecastDaily = avgDailySales;
+          const forecastTotal = forecastDaily * forecastHorizon;
+          const lowerBound = Math.max(
+            0,
+            forecastTotal - zScore * stdDev * Math.sqrt(forecastHorizon)
+          );
+          const upperBound = forecastTotal + zScore * stdDev * Math.sqrt(forecastHorizon);
 
-        // Get current inventory
-        const currentInventory = await ctx.prisma.inventory.aggregate({
-          where: { itemId: item.id },
-          _sum: {
-            qtyOnHand: true,
-            qtyReserved: true,
-          },
-        });
+          // Get current inventory
+          const currentInventory = await ctx.prisma.inventory.aggregate({
+            where: { itemId: item.id },
+            _sum: {
+              qtyOnHand: true,
+              qtyReserved: true,
+            },
+          });
 
-        const qtyAvailable = (currentInventory._sum.qtyOnHand || 0) - (currentInventory._sum.qtyReserved || 0);
-        const daysOfSupply = forecastDaily > 0 ?
-          qtyAvailable / forecastDaily : Infinity;
+          const qtyAvailable =
+            (currentInventory._sum.qtyOnHand || 0) - (currentInventory._sum.qtyReserved || 0);
+          const daysOfSupply = forecastDaily > 0 ? qtyAvailable / forecastDaily : Infinity;
 
-        return {
-          item: {
-            id: item.id,
-            sku: item.sku,
-            name: item.name,
-            category: item.category?.name,
-          },
-          historical: {
-            avgDailySales: Math.round(avgDailySales * 10) / 10,
-            stdDeviation: Math.round(stdDev * 10) / 10,
-            dataPoints: dailySales.length,
-          },
-          forecast: {
-            daily: Math.round(forecastDaily * 10) / 10,
-            total: Math.round(forecastTotal),
-            lowerBound: Math.round(lowerBound),
-            upperBound: Math.round(upperBound),
-            confidenceLevel: confidenceLevel * 100,
-          },
-          inventory: {
-            current: currentInventory._sum.qtyOnHand || 0,
-            available: qtyAvailable,
-            daysOfSupply: Math.round(daysOfSupply),
-            stockoutRisk: daysOfSupply < forecastHorizon ? 'HIGH' : 'LOW',
-          },
-          recommendation: {
-            reorderNeeded: daysOfSupply < forecastHorizon,
-            suggestedQuantity: Math.max(0, Math.round(upperBound - qtyAvailable)),
-          },
-        };
-      }));
+          return {
+            item: {
+              id: item.id,
+              sku: item.sku,
+              name: item.name,
+              category: item.category?.name,
+            },
+            historical: {
+              avgDailySales: Math.round(avgDailySales * 10) / 10,
+              stdDeviation: Math.round(stdDev * 10) / 10,
+              dataPoints: dailySales.length,
+            },
+            forecast: {
+              daily: Math.round(forecastDaily * 10) / 10,
+              total: Math.round(forecastTotal),
+              lowerBound: Math.round(lowerBound),
+              upperBound: Math.round(upperBound),
+              confidenceLevel: confidenceLevel * 100,
+            },
+            inventory: {
+              current: currentInventory._sum.qtyOnHand || 0,
+              available: qtyAvailable,
+              daysOfSupply: Math.round(daysOfSupply),
+              stockoutRisk: daysOfSupply < forecastHorizon ? 'HIGH' : 'LOW',
+            },
+            recommendation: {
+              reorderNeeded: daysOfSupply < forecastHorizon,
+              suggestedQuantity: Math.max(0, Math.round(upperBound - qtyAvailable)),
+            },
+          };
+        })
+      );
 
       // Sort by stockout risk
       forecasts.sort((a, b) => {
@@ -1658,10 +1824,13 @@ export const reportsRouter = createTRPCRouter({
       // Calculate summary
       const summary = {
         totalItems: forecasts.length,
-        itemsAtRisk: forecasts.filter(f => f.inventory.stockoutRisk === 'HIGH').length,
+        itemsAtRisk: forecasts.filter((f) => f.inventory.stockoutRisk === 'HIGH').length,
         totalForecastDemand: forecasts.reduce((sum, f) => sum + f.forecast.total, 0),
         totalCurrentInventory: forecasts.reduce((sum, f) => sum + f.inventory.current, 0),
-        totalReorderQuantity: forecasts.reduce((sum, f) => sum + f.recommendation.suggestedQuantity, 0),
+        totalReorderQuantity: forecasts.reduce(
+          (sum, f) => sum + f.recommendation.suggestedQuantity,
+          0
+        ),
       };
 
       return {
@@ -1676,29 +1845,46 @@ export const reportsRouter = createTRPCRouter({
 
   // Custom Report Builder
   custom: organizationProcedure
-    .input(z.object({
-      name: z.string(),
-      description: z.string().optional(),
-      query: z.object({
-        table: z.enum(['items', 'inventory', 'orders', 'customers', 'suppliers', 'stockMovements']),
-        filters: z.record(z.any()).optional(),
-        groupBy: z.array(z.string()).optional(),
-        aggregations: z.array(z.object({
-          field: z.string(),
-          function: z.enum(['sum', 'avg', 'count', 'min', 'max']),
-          alias: z.string(),
-        })).optional(),
-        orderBy: z.array(z.object({
-          field: z.string(),
-          direction: z.enum(['asc', 'desc']),
-        })).optional(),
-        limit: z.number().int().min(1).max(1000).default(100),
-      }),
-    }))
+    .input(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        query: z.object({
+          table: z.enum([
+            'items',
+            'inventory',
+            'orders',
+            'customers',
+            'suppliers',
+            'stockMovements',
+          ]),
+          filters: z.record(z.any()).optional(),
+          groupBy: z.array(z.string()).optional(),
+          aggregations: z
+            .array(
+              z.object({
+                field: z.string(),
+                function: z.enum(['sum', 'avg', 'count', 'min', 'max']),
+                alias: z.string(),
+              })
+            )
+            .optional(),
+          orderBy: z
+            .array(
+              z.object({
+                field: z.string(),
+                direction: z.enum(['asc', 'desc']),
+              })
+            )
+            .optional(),
+          limit: z.number().int().min(1).max(1000).default(100),
+        }),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // This is a simplified custom report builder
       // In production, you'd want more sophisticated query building with proper validation
-      
+
       const { name, description, query } = input;
 
       // Security check - only allow specific fields
@@ -1739,33 +1925,40 @@ export const reportsRouter = createTRPCRouter({
       let processedResults = results;
       if (query.groupBy && query.aggregations) {
         // Simple grouping implementation
-        const grouped = results.reduce((acc: Record<string, any[]>, row: any) => {
-          const key = query.groupBy!.map(field => row[field]).join('-');
-          if (!acc[key]) {
-            acc[key] = [];
-          }
-          acc[key].push(row);
-          return acc;
-        }, {} as Record<string, any[]>);
+        const grouped = results.reduce(
+          (acc: Record<string, any[]>, row: any) => {
+            const key = query.groupBy!.map((field) => row[field]).join('-');
+            if (!acc[key]) {
+              acc[key] = [];
+            }
+            acc[key].push(row);
+            return acc;
+          },
+          {} as Record<string, any[]>
+        );
 
         processedResults = Object.entries(grouped).map(([key, rows]) => {
           const result: any = {};
-          
+
           // Add group keys
           query.groupBy!.forEach((field, index) => {
             result[field] = (rows as any[])[0][field];
           });
 
           // Apply aggregations
-          query.aggregations!.forEach(agg => {
-            const values = (rows as any[]).map((r: any) => r[agg.field]).filter((v: any) => v !== null);
+          query.aggregations!.forEach((agg) => {
+            const values = (rows as any[])
+              .map((r: any) => r[agg.field])
+              .filter((v: any) => v !== null);
             switch (agg.function) {
               case 'sum':
                 result[agg.alias] = values.reduce((sum: number, v: any) => sum + v, 0);
                 break;
               case 'avg':
-                result[agg.alias] = values.length > 0 ?
-                  values.reduce((sum: number, v: any) => sum + v, 0) / values.length : 0;
+                result[agg.alias] =
+                  values.length > 0
+                    ? values.reduce((sum: number, v: any) => sum + v, 0) / values.length
+                    : 0;
                 break;
               case 'count':
                 result[agg.alias] = values.length;
@@ -1797,11 +1990,13 @@ export const reportsRouter = createTRPCRouter({
 
   // Export report
   export: organizationProcedure
-    .input(z.object({
-      reportType: z.string(),
-      parameters: z.record(z.any()),
-      format: z.enum(['csv', 'json', 'pdf', 'excel']).default('csv'),
-    }))
+    .input(
+      z.object({
+        reportType: z.string(),
+        parameters: z.record(z.any()),
+        format: z.enum(['csv', 'json', 'pdf', 'excel']).default('csv'),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { reportType, parameters, format } = input;
 

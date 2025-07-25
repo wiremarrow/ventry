@@ -9,12 +9,12 @@ vi.mock('@ventry/database', () => {
     $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -39,19 +39,19 @@ describe('Health Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.$queryRaw.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Health check is public, so no user required
-    caller = await createDirectCaller({ 
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: null,
@@ -118,7 +118,7 @@ describe('Health Router', () => {
 
     it('should work with authenticated user as well', async () => {
       // Create authenticated caller
-      const authenticatedCaller = await createDirectCaller({ 
+      const authenticatedCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: mockAuthenticatedUser,

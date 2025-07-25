@@ -14,7 +14,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Skeleton
+  Skeleton,
 } from '@ventry/ui';
 
 import { useOrganization } from '@/hooks/use-organization';
@@ -34,7 +34,7 @@ export default function OrganizationSwitcher() {
       setIsOpen(false);
       return;
     }
-    
+
     try {
       await setOrganization(org.id);
       setIsOpen(false);
@@ -57,17 +57,17 @@ export default function OrganizationSwitcher() {
     return <Skeleton className="h-10 w-48" />;
   }
 
-  const currentOrg = data?.organizations?.find(org => org.id === currentOrganization?.organizationId) || data?.organizations?.[0];
+  const currentOrg =
+    data?.organizations?.find((org) => org.id === currentOrganization?.organizationId) ||
+    data?.organizations?.[0];
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full justify-between">
+        <Button variant="outline" className="w-full justify-between" data-testid="org-switcher">
           <div className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
-            <span className="truncate">
-              {currentOrg?.name || 'Select Organization'}
-            </span>
+            <span className="truncate">{currentOrg?.name || 'Select Organization'}</span>
           </div>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
@@ -75,7 +75,7 @@ export default function OrganizationSwitcher() {
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Organizations</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
+
         {data?.organizations?.map((org) => (
           <DropdownMenuItem
             key={org.id}
@@ -91,19 +91,17 @@ export default function OrganizationSwitcher() {
                 </span>
               </div>
             </div>
-            {org.id === currentOrganization?.organizationId && (
-              <Check className="h-4 w-4" />
-            )}
+            {org.id === currentOrganization?.organizationId && <Check className="h-4 w-4" />}
           </DropdownMenuItem>
         ))}
-        
+
         <DropdownMenuSeparator />
-        
+
         <DropdownMenuItem onClick={() => router.push('/organizations/new')}>
           <Plus className="mr-2 h-4 w-4" />
           Create Organization
         </DropdownMenuItem>
-        
+
         {currentOrg && ['OWNER', 'ADMIN'].includes(currentOrg.role) && (
           <>
             <DropdownMenuSeparator />

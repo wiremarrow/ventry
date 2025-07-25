@@ -48,8 +48,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       StockMovementWhereInput: {},
@@ -130,14 +130,14 @@ describe('StockMovements Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and WAREHOUSE role
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -145,8 +145,8 @@ describe('StockMovements Router', () => {
       organizationRole: 'ADMIN',
       role: 'WAREHOUSE', // Can manage stock movements
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -291,7 +291,7 @@ describe('StockMovements Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -368,9 +368,9 @@ describe('StockMovements Router', () => {
     it('should throw NOT_FOUND when movement does not exist', async () => {
       mockPrisma.stockMovement.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.stockMovements.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Stock movement not found');
+      await expect(caller.stockMovements.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Stock movement not found'
+      );
     });
   });
 
@@ -491,11 +491,13 @@ describe('StockMovements Router', () => {
 
       // Mock location validations
       mockPrisma.location.findFirst
-        .mockResolvedValueOnce({ // From location
+        .mockResolvedValueOnce({
+          // From location
           id: testId('loc1'),
           warehouse: { organizationId: testId('org') },
         })
-        .mockResolvedValueOnce({ // To location
+        .mockResolvedValueOnce({
+          // To location
           id: testId('loc2'),
           warehouse: { organizationId: testId('org') },
         });

@@ -83,10 +83,7 @@ export const logApiError = (endpoint: string, error: ApiError) => {
 /**
  * Performance tracking
  */
-export const measurePerformance = async <T,>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> => {
+export const measurePerformance = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
   if (!isDevelopment) return fn();
 
   const start = performance.now();

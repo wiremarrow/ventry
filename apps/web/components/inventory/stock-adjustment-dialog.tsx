@@ -99,7 +99,7 @@ export function StockAdjustmentDialog({
     if (!inventory) return;
 
     let adjustedQuantity = data.quantity;
-    
+
     if (data.type === 'REMOVE') {
       adjustedQuantity = -data.quantity;
     } else if (data.type === 'SET') {
@@ -122,9 +122,7 @@ export function StockAdjustmentDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Adjust Stock</DialogTitle>
-          <DialogDescription>
-            Make adjustments to inventory levels for this item
-          </DialogDescription>
+          <DialogDescription>Make adjustments to inventory levels for this item</DialogDescription>
         </DialogHeader>
 
         <div className="mb-4 p-4 bg-gray-50 rounded-lg">
@@ -238,10 +236,7 @@ export function StockAdjustmentDialog({
                 <FormItem>
                   <FormLabel>Reason</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Provide a reason for this adjustment..."
-                      {...field}
-                    />
+                    <Input placeholder="Provide a reason for this adjustment..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -255,10 +250,7 @@ export function StockAdjustmentDialog({
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Provide details about this adjustment..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Provide details about this adjustment..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -266,11 +258,7 @@ export function StockAdjustmentDialog({
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={adjustMutation.isPending}>

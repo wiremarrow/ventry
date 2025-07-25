@@ -1,6 +1,7 @@
 # Row-Level Security (RLS) Developer Guide
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Architecture](#architecture)
 3. [Usage Guide](#usage-guide)
@@ -14,6 +15,7 @@
 Row-Level Security (RLS) is a PostgreSQL feature that provides fine-grained access control at the database level. In Ventry, RLS ensures that users can only access data belonging to their organization, providing strong multi-tenant isolation.
 
 ### Key Benefits
+
 - **Database-level security**: Even if application code has bugs, the database enforces access control
 - **Performance**: PostgreSQL optimizes queries with RLS policies
 - **Transparency**: Application code doesn't need to manually filter by organization
@@ -67,11 +69,10 @@ The RLS system is automatically integrated with the tRPC context. When you use t
 ```typescript
 // In a tRPC router
 export const itemsRouter = createTRPCRouter({
-  list: organizationProcedure
-    .query(async ({ ctx }) => {
-      // This automatically filters by the user's organization
-      return ctx.prisma.item.findMany();
-    }),
+  list: organizationProcedure.query(async ({ ctx }) => {
+    // This automatically filters by the user's organization
+    return ctx.prisma.item.findMany();
+  }),
 });
 ```
 
@@ -131,22 +132,22 @@ import { createIntegrationContext } from '@/test-utils/trpc-test-client';
 describe('Items Router', () => {
   it('should only return organization items', async () => {
     const { ctx, organization } = await createIntegrationContext();
-    
+
     // Create items in different organizations
     await ctx.prisma.item.create({
-      data: { 
+      data: {
         name: 'Visible Item',
         organizationId: organization.id,
       },
     });
-    
+
     await ctx.prisma.item.create({
-      data: { 
+      data: {
         name: 'Invisible Item',
         organizationId: 'other-org-id',
       },
     });
-    
+
     // This should only return the visible item
     const items = await ctx.prisma.item.findMany();
     expect(items).toHaveLength(1);
@@ -178,6 +179,7 @@ const context = {
 ### Audit Logging
 
 All RLS operations are logged:
+
 - Context setting
 - Bypass requests
 - Validation failures
@@ -263,7 +265,7 @@ if (!ctx.organizationId) {
 
 ```sql
 -- Check if RLS is causing slow queries
-EXPLAIN (ANALYZE, BUFFERS) 
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM items WHERE organization_id = 'xxx';
 ```
 
@@ -308,6 +310,7 @@ import { createRLSProxy, withRLS } from '@/lib/rls';
 ```
 
 The API is mostly compatible, but the new version provides:
+
 - Better type safety (no `any` types)
 - Input validation
 - Audit logging
@@ -316,15 +319,17 @@ The API is mostly compatible, but the new version provides:
 ### Database Migration
 
 1. Apply the RLS migration:
+
 ```bash
 pnpm db:migrate deploy
 ```
 
 2. Verify RLS is enabled:
+
 ```sql
-SELECT relname, relrowsecurity 
-FROM pg_class 
-WHERE relkind = 'r' 
+SELECT relname, relrowsecurity
+FROM pg_class
+WHERE relkind = 'r'
 AND relnamespace = 'public'::regnamespace;
 ```
 

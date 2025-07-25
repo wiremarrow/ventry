@@ -50,10 +50,10 @@ describe('InventoryFilters', () => {
 
     // Check search input
     expect(screen.getByPlaceholderText('Search by SKU, name, or barcode...')).toBeInTheDocument();
-    
+
     // Check warehouse select
     expect(screen.getByText('All Warehouses')).toBeInTheDocument();
-    
+
     // Check low stock switch
     expect(screen.getByLabelText('Show low stock only')).toBeInTheDocument();
   });
@@ -62,7 +62,7 @@ describe('InventoryFilters', () => {
     render(<InventoryFilters {...defaultProps} />);
 
     const searchInput = screen.getByPlaceholderText('Search by SKU, name, or barcode...');
-    
+
     // Simulate typing by directly firing change event with final value
     fireEvent.change(searchInput, { target: { value: 'test product' } });
 

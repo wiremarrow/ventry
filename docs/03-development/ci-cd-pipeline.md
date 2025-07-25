@@ -5,6 +5,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ## Pipeline Overview
 
 ### Trigger Events
+
 - **Push to main**: Full pipeline execution
 - **Pull Requests**: All checks required
 - **Manual dispatch**: For special deployments
@@ -15,47 +16,48 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ┌─────────────────┐
 │ Trigger Event   │
 └────────┬────────┘
-         │
-    ┌────▼────┐
-    │ Setup   │ (Checkout, Node.js, pnpm)
-    └────┬────┘
-         │
-    ┌────▼──────────────────────┐
-    │ Parallel Quality Checks    │
-    │ ┌────────┐ ┌────────────┐ │
-    │ │ Docs   │ │ Lint/Type  │ │
-    │ └────────┘ └────────────┘ │
-    └────┬──────────────────────┘
-         │
-    ┌────▼──────────────────────┐
-    │ Parallel Test Execution    │
-    │ ┌──────┐ ┌─────────────┐  │
-    │ │ Unit │ │ Integration │  │
-    │ └──────┘ └─────────────┘  │
-    └────┬──────────────────────┘
-         │
-    ┌────▼──────────────────────┐
-    │ E2E Tests (Matrix)         │
-    │ Chromium/Firefox/WebKit    │
-    │ 2 shards each = 6 jobs     │
-    └────┬──────────────────────┘
-         │
-    ┌────▼────┐
-    │ Build   │
-    └────┬────┘
-         │
-    ┌────▼────────┐
-    │ Coverage    │
-    └────┬────────┘
-         │
-    ┌────▼─────────┐
-    │ Deployment   │ (main branch only)
-    └──────────────┘
+│
+┌────▼────┐
+│ Setup   │ (Checkout, Node.js, pnpm)
+└────┬────┘
+│
+┌────▼──────────────────────┐
+│ Parallel Quality Checks    │
+│ ┌────────┐ ┌────────────┐ │
+│ │ Docs   │ │ Lint/Type  │ │
+│ └────────┘ └────────────┘ │
+└────┬──────────────────────┘
+│
+┌────▼──────────────────────┐
+│ Parallel Test Execution    │
+│ ┌──────┐ ┌─────────────┐  │
+│ │ Unit │ │ Integration │  │
+│ └──────┘ └─────────────┘  │
+└────┬──────────────────────┘
+│
+┌────▼──────────────────────┐
+│ E2E Tests (Matrix)         │
+│ Chromium/Firefox/WebKit    │
+│ 2 shards each = 6 jobs     │
+└────┬──────────────────────┘
+│
+┌────▼────┐
+│ Build   │
+└────┬────┘
+│
+┌────▼────────┐
+│ Coverage    │
+└────┬────────┘
+│
+┌────▼─────────┐
+│ Deployment   │ (main branch only)
+└──────────────┘
 ```
 
 ## Required Status Checks (9 Jobs)
 
 ### 1. Documentation Check
+
 **Purpose**: Ensures documentation stays current with code changes
 
 ```yaml
@@ -65,6 +67,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 2. Lint and Type Check
+
 **Purpose**: Code quality and type safety
 
 ```yaml
@@ -75,6 +78,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 3. Unit Tests
+
 **Purpose**: Fast feedback on business logic
 
 ```yaml
@@ -85,6 +89,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 4. PostgreSQL Integration Tests
+
 **Purpose**: Database operation validation
 
 ```yaml
@@ -95,6 +100,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 5-7. E2E Tests (Browser Matrix)
+
 **Purpose**: Cross-browser compatibility
 
 ```yaml
@@ -106,6 +112,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 8. Build
+
 **Purpose**: Production build validation
 
 ```yaml
@@ -116,6 +123,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ```
 
 ### 9. Coverage Gate
+
 **Purpose**: Maintain test coverage standards
 
 ```yaml
@@ -127,6 +135,7 @@ Ventry uses GitHub Actions for continuous integration and deployment with strict
 ## Optional Checks
 
 ### Docker Build
+
 - **Triggers**: Only when Dockerfile changes
 - **Purpose**: Container build validation
 - **Not blocking**: Advisory only
@@ -159,6 +168,7 @@ SLACK_WEBHOOK_URL
 ### Database Configuration
 
 Each job gets isolated database:
+
 - Unit tests: Mocked or in-memory
 - Integration: `ventry_integration_test`
 - E2E: `ventry_e2e_test`
@@ -166,6 +176,7 @@ Each job gets isolated database:
 ## Performance Optimization
 
 ### Caching Strategy
+
 ```yaml
 - uses: actions/cache@v3
   with:
@@ -176,11 +187,13 @@ Each job gets isolated database:
 ```
 
 ### Parallel Execution
+
 - Independent jobs run concurrently
 - Matrix strategy for E2E tests
 - Sharding for test distribution
 
 ### Turborepo Remote Caching
+
 - Shared build cache
 - Skip unchanged packages
 - Significant time savings
@@ -188,22 +201,22 @@ Each job gets isolated database:
 ## Deployment Pipeline
 
 ### Staging (PR Preview)
+
 ```yaml
 on:
   pull_request:
     types: [opened, synchronize]
-
 # Vercel preview deployment
 # Database migration dry-run
 # E2E tests against preview
 ```
 
 ### Production (Main Branch)
+
 ```yaml
 on:
   push:
     branches: [main]
-
 # Full test suite
 # Production build
 # Database migrations
@@ -214,16 +227,19 @@ on:
 ## Monitoring & Alerts
 
 ### Build Status
+
 - GitHub commit status
 - PR checks tab
 - Branch protection enforcement
 
 ### Notifications
+
 - GitHub notifications (default)
 - Slack webhooks (optional)
 - Email alerts (optional)
 
 ### Metrics Tracked
+
 - Build duration
 - Test execution time
 - Success/failure rates
@@ -234,6 +250,7 @@ on:
 ### Common Issues
 
 #### 1. Flaky E2E Tests
+
 ```bash
 # Re-run specific test locally
 pnpm test:e2e -- --grep "test name"
@@ -243,6 +260,7 @@ pnpm test:e2e:debug
 ```
 
 #### 2. Database Connection Errors
+
 ```yaml
 # Check service health
 - name: Check PostgreSQL
@@ -250,6 +268,7 @@ pnpm test:e2e:debug
 ```
 
 #### 3. Out of Memory
+
 ```yaml
 # Increase Node.js memory
 env:
@@ -272,18 +291,21 @@ pnpm test
 ## Best Practices
 
 ### 1. Keep CI Fast
+
 - Use caching effectively
 - Parallelize where possible
 - Skip unchanged code
 - Optimize test suites
 
 ### 2. Fix Immediately
+
 - Don't ignore failing tests
 - Fix flaky tests
 - Keep main branch green
 - Quick rollback if needed
 
 ### 3. Security
+
 - Rotate secrets regularly
 - Use environment protection
 - Audit dependencies
@@ -292,6 +314,7 @@ pnpm test
 ## CI Configuration Files
 
 ### Main Workflow
+
 ```yaml
 # .github/workflows/ci.yml
 name: CI
@@ -307,25 +330,28 @@ jobs:
 ```
 
 ### Dependabot
+
 ```yaml
 # .github/dependabot.yml
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
 ```
 
 ## Maintenance
 
 ### Weekly Tasks
+
 - Review CI performance
 - Update dependencies
 - Check secret expiration
 - Clear old artifacts
 
 ### Monthly Tasks
+
 - Audit workflow permissions
 - Review caching effectiveness
 - Update runner versions

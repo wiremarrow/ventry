@@ -27,7 +27,7 @@ export const createMiddleware = (t: TRPCInstance) => {
     }
 
     if (!ctx.user.organizationId) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'No organization selected. Please select an organization to continue.',
       });
@@ -46,14 +46,14 @@ export const createMiddleware = (t: TRPCInstance) => {
     }
 
     if (!ctx.user.organizationId) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'No organization selected',
       });
     }
 
     if (!['OWNER', 'ADMIN'].includes(ctx.user.organizationRole || '')) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You must be an organization admin to perform this action',
       });
@@ -61,7 +61,10 @@ export const createMiddleware = (t: TRPCInstance) => {
 
     return next({
       ctx: {
-        user: ctx.user as typeof ctx.user & { organizationId: string; organizationRole: 'OWNER' | 'ADMIN' },
+        user: ctx.user as typeof ctx.user & {
+          organizationId: string;
+          organizationRole: 'OWNER' | 'ADMIN';
+        },
       },
     });
   });
@@ -72,14 +75,14 @@ export const createMiddleware = (t: TRPCInstance) => {
     }
 
     if (!ctx.user.organizationId) {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'No organization selected',
       });
     }
 
     if (ctx.user.organizationRole !== 'OWNER') {
-      throw new TRPCError({ 
+      throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You must be the organization owner to perform this action',
       });

@@ -18,13 +18,17 @@ export class SupabaseAuthService {
     this.client = isServer ? createServiceClient() : createBrowserClient();
   }
 
-  async signUp(email: string, password: string, metadata: {
-    username: string;
-    firstName: string;
-    lastName: string;
-    role?: string;
-    organizationId?: string;
-  }) {
+  async signUp(
+    email: string,
+    password: string,
+    metadata: {
+      username: string;
+      firstName: string;
+      lastName: string;
+      role?: string;
+      organizationId?: string;
+    }
+  ) {
     const { data, error } = await this.client.auth.signUp({
       email,
       password,
@@ -53,24 +57,26 @@ export class SupabaseAuthService {
   }
 
   async getUser() {
-    const { data: { user }, error } = await this.client.auth.getUser();
+    const {
+      data: { user },
+      error,
+    } = await this.client.auth.getUser();
     if (error) throw error;
     return user as SupabaseAuthUser | null;
   }
 
   async refreshSession() {
-    const { data: { session }, error } = await this.client.auth.refreshSession();
+    const {
+      data: { session },
+      error,
+    } = await this.client.auth.refreshSession();
     if (error) throw error;
     return session;
   }
 
   // Helper to sync with existing JWT system during migration
   async syncWithJWT(jwtUserId: string) {
-    const { data: user } = await this.client
-      .from('users')
-      .select('*')
-      .eq('id', jwtUserId)
-      .single();
+    const { data: user } = await this.client.from('users').select('*').eq('id', jwtUserId).single();
 
     return user;
   }

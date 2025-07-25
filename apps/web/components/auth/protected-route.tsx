@@ -18,8 +18,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     // Use a timeout to prevent infinite loading if hydration fails
     const checkAuth = async () => {
       // Give Zustand time to hydrate from localStorage
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       // Check authentication status
       const authState = useAuthStore.getState();
       if (!authState.isAuthenticated || !authState.user) {

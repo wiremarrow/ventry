@@ -48,10 +48,10 @@ const sanitizedHtml = DOMPurify.sanitize(userInput, {
 ```typescript
 // GOOD: Using Prisma (automatically parameterized)
 const items = await prisma.item.findMany({
-  where: { 
+  where: {
     name: { contains: searchTerm },
     organizationId: ctx.organizationId,
-  }
+  },
 });
 
 // GOOD: Using raw SQL with parameters
@@ -62,9 +62,7 @@ const result = await prisma.$queryRaw`
 `;
 
 // BAD: Never do this
-const result = await prisma.$queryRawUnsafe(
-  `SELECT * FROM items WHERE name = '${searchTerm}'`
-);
+const result = await prisma.$queryRawUnsafe(`SELECT * FROM items WHERE name = '${searchTerm}'`);
 ```
 
 ### 1.3 XSS Prevention
@@ -112,6 +110,7 @@ snyk monitor
 ```
 
 **Lock file integrity:**
+
 ```json
 // .npmrc
 package-lock=true
@@ -133,7 +132,8 @@ import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import zxcvbn from 'zxcvbn';
 
-const passwordSchema = z.string()
+const passwordSchema = z
+  .string()
   .min(12, 'Password must be at least 12 characters')
   .regex(/[A-Z]/, 'Password must contain uppercase letter')
   .regex(/[a-z]/, 'Password must contain lowercase letter')
@@ -149,10 +149,7 @@ export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(validPassword, 12);
 }
 
-export async function verifyPassword(
-  password: string, 
-  hash: string
-): Promise<boolean> {
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
 ```
@@ -257,7 +254,7 @@ export async function invalidateSession(sessionId: string) {
   await redis.del(`session:${sessionId}`);
   await prisma.session.update({
     where: { id: sessionId },
-    data: { 
+    data: {
       invalidatedAt: new Date(),
       invalidationReason: 'user_logout',
     },
@@ -298,9 +295,7 @@ export function verifyMFAToken(token: string, secret: string): boolean {
 
 // Backup codes
 export function generateBackupCodes(): string[] {
-  return Array.from({ length: 10 }, () => 
-    randomBytes(4).toString('hex').toUpperCase()
-  );
+  return Array.from({ length: 10 }, () => randomBytes(4).toString('hex').toUpperCase());
 }
 ```
 
@@ -323,7 +318,7 @@ const rateLimiters = {
     points: 1000,
     duration: 60,
   }),
-  
+
   auth: new RateLimiterRedis({
     storeClient: redisClient,
     keyPrefix: 'rl:auth',
@@ -331,14 +326,14 @@ const rateLimiters = {
     duration: 900, // 15 minutes
     blockDuration: 900,
   }),
-  
+
   api: new RateLimiterRedis({
     storeClient: redisClient,
     keyPrefix: 'rl:api',
     points: 100,
     duration: 60,
   }),
-  
+
   export: new RateLimiterRedis({
     storeClient: redisClient,
     keyPrefix: 'rl:export',
@@ -350,7 +345,7 @@ const rateLimiters = {
 export async function rateLimitMiddleware(req: FastifyRequest, reply: FastifyReply) {
   const limiter = rateLimiters[req.routeConfig.rateLimit || 'api'];
   const key = req.user?.id || req.ip;
-  
+
   try {
     await limiter.consume(key);
   } catch (rejRes) {
@@ -358,7 +353,7 @@ export async function rateLimitMiddleware(req: FastifyRequest, reply: FastifyRep
     reply.header('X-RateLimit-Limit', limiter.points);
     reply.header('X-RateLimit-Remaining', rejRes.remainingPoints || 0);
     reply.header('X-RateLimit-Reset', new Date(Date.now() + rejRes.msBeforeNext).toISOString());
-    
+
     throw new TRPCError({
       code: 'TOO_MANY_REQUESTS',
       message: 'Rate limit exceeded',
@@ -376,28 +371,28 @@ export async function rateLimitMiddleware(req: FastifyRequest, reply: FastifyRep
 export const corsOptions = {
   origin: (origin: string, callback: Function) => {
     const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-    
+
     // Allow requests with no origin (mobile apps, Postman)
     if (!origin) return callback(null, true);
-    
+
     // Check exact match
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-    
+
     // Check wildcard subdomains
-    const wildcardMatch = allowedOrigins.some(allowed => {
+    const wildcardMatch = allowedOrigins.some((allowed) => {
       if (allowed.startsWith('*.')) {
         const domain = allowed.slice(2);
         return origin.endsWith(domain);
       }
       return false;
     });
-    
+
     if (wildcardMatch) {
       return callback(null, true);
     }
-    
+
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -421,35 +416,35 @@ export function generateApiKey(): { key: string; hash: string } {
   const prefix = 'vk_live';
   const random = randomBytes(32).toString('base64url');
   const key = `${prefix}_${random}`;
-  
+
   // Store only hash
   const hash = createHash('sha256').update(key).digest('hex');
-  
+
   return { key, hash };
 }
 
 export async function validateApiKey(key: string) {
   const hash = createHash('sha256').update(key).digest('hex');
-  
+
   const apiKey = await prisma.apiKey.findFirst({
-    where: { 
+    where: {
       keyHash: hash,
       revokedAt: null,
       expiresAt: { gt: new Date() },
     },
     include: { organization: true },
   });
-  
+
   if (!apiKey) {
     throw new Error('Invalid API key');
   }
-  
+
   // Update last used
   await prisma.apiKey.update({
     where: { id: apiKey.id },
     data: { lastUsedAt: new Date() },
   });
-  
+
   return apiKey;
 }
 ```
@@ -465,20 +460,20 @@ export const validationMiddleware = async (req: FastifyRequest, reply: FastifyRe
   if (!req.headers['x-request-id']) {
     req.headers['x-request-id'] = randomUUID();
   }
-  
+
   // Validate content type
   if (req.method !== 'GET' && req.method !== 'DELETE') {
     if (!req.headers['content-type']?.includes('application/json')) {
       throw new Error('Content-Type must be application/json');
     }
   }
-  
+
   // Validate request size
   const maxSize = 10 * 1024 * 1024; // 10MB
   if (req.headers['content-length'] && parseInt(req.headers['content-length']) > maxSize) {
     throw new Error('Request too large');
   }
-  
+
   // Validate organization context
   if (req.url.includes('/api/') && !req.url.includes('/auth/')) {
     if (!req.headers['x-organization-id']) {
@@ -550,12 +545,12 @@ const key = Buffer.from(process.env.ENCRYPTION_KEY!, 'hex');
 export function encrypt(text: string): string {
   const iv = randomBytes(16);
   const cipher = createCipheriv(algorithm, key, iv);
-  
+
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
+
   const authTag = cipher.getAuthTag();
-  
+
   return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
 }
 
@@ -564,13 +559,13 @@ export function decrypt(encryptedData: string): string {
   const iv = Buffer.from(parts[0], 'hex');
   const authTag = Buffer.from(parts[1], 'hex');
   const encrypted = parts[2];
-  
+
   const decipher = createDecipheriv(algorithm, key, iv);
   decipher.setAuthTag(authTag);
-  
+
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
   decrypted += decipher.final('utf8');
-  
+
   return decrypted;
 }
 
@@ -591,40 +586,49 @@ export const queryMonitor = Prisma.defineExtension({
   query: {
     async $allOperations({ operation, model, args, query }) {
       const start = Date.now();
-      
+
       // Check for suspicious patterns
       if (args.where && JSON.stringify(args.where).includes('$ne')) {
-        logger.warn({
-          operation,
-          model,
-          query: args,
-        }, 'Suspicious query pattern detected');
-      }
-      
-      // Check for missing organization filter
-      if (model && !['User', 'Organization'].includes(model)) {
-        if (!args.where?.organizationId) {
-          logger.error({
+        logger.warn(
+          {
             operation,
             model,
             query: args,
-          }, 'Missing organization filter');
+          },
+          'Suspicious query pattern detected'
+        );
+      }
+
+      // Check for missing organization filter
+      if (model && !['User', 'Organization'].includes(model)) {
+        if (!args.where?.organizationId) {
+          logger.error(
+            {
+              operation,
+              model,
+              query: args,
+            },
+            'Missing organization filter'
+          );
         }
       }
-      
+
       const result = await query(args);
       const duration = Date.now() - start;
-      
+
       // Log slow queries
       if (duration > 1000) {
-        logger.warn({
-          operation,
-          model,
-          duration,
-          query: args,
-        }, 'Slow query detected');
+        logger.warn(
+          {
+            operation,
+            model,
+            duration,
+            query: args,
+          },
+          'Slow query detected'
+        );
       }
-      
+
       return result;
     },
   },
@@ -861,20 +865,17 @@ export async function rotateSecret(path: string, newValue: string): Promise<void
 // Auto-rotate database credentials
 export async function rotateDatabaseCredentials() {
   const newPassword = randomBytes(32).toString('base64');
-  
+
   // Update in database
   await prisma.$executeRaw`
     ALTER USER ventry_app WITH PASSWORD ${newPassword}
   `;
-  
+
   // Update in Vault
   await rotateSecret('database/password', newPassword);
-  
+
   // Update application
-  process.env.DATABASE_URL = process.env.DATABASE_URL.replace(
-    /:[^:]+@/,
-    `:${newPassword}@`
-  );
+  process.env.DATABASE_URL = process.env.DATABASE_URL.replace(/:[^:]+@/, `:${newPassword}@`);
 }
 ```
 
@@ -892,12 +893,12 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().min(32),
   ENCRYPTION_KEY: z.string().length(64),
   DATABASE_URL: z.string().url(),
-  
+
   // API Keys
   SENTRY_DSN: z.string().url().optional(),
   AWS_ACCESS_KEY_ID: z.string().optional(),
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
-  
+
   // Feature flags
   ENABLE_MFA: z.boolean().default(true),
   ENABLE_AUDIT_LOG: z.boolean().default(true),
@@ -919,47 +920,47 @@ export class KeyRotationService {
   async rotateJWTSecret() {
     const newSecret = randomBytes(32).toString('base64');
     const oldSecret = env.JWT_SECRET;
-    
+
     // Update secret in vault
     await rotateSecret('jwt/secret', newSecret);
-    
+
     // Grace period for old tokens
     const gracePeriod = 15 * 60 * 1000; // 15 minutes
-    
+
     // Verify with both secrets during grace period
     setTimeout(() => {
       env.JWT_SECRET = newSecret;
     }, gracePeriod);
-    
+
     // Log rotation
     auditLog('jwt_secret_rotated', 'system', {
       rotatedAt: new Date().toISOString(),
     });
   }
-  
+
   async rotateCookieSecret() {
     // Similar implementation
   }
-  
+
   async rotateEncryptionKey() {
     // Re-encrypt all sensitive data with new key
     const newKey = randomBytes(32).toString('hex');
-    
+
     // Batch re-encryption
     const sensitiveRecords = await prisma.user.findMany({
       select: { id: true, encryptedEmail: true },
     });
-    
+
     for (const record of sensitiveRecords) {
       const decrypted = decrypt(record.encryptedEmail, env.ENCRYPTION_KEY);
       const reencrypted = encrypt(decrypted, newKey);
-      
+
       await prisma.user.update({
         where: { id: record.id },
         data: { encryptedEmail: reencrypted },
       });
     }
-    
+
     env.ENCRYPTION_KEY = newKey;
   }
 }
@@ -982,7 +983,7 @@ export class SecurityMonitor {
     slowQueries: 50,
     suspiciousPatterns: 10,
   };
-  
+
   async checkFailedLogins() {
     const count = await redis.get('security:failed_logins:count');
     if (parseInt(count) > this.alertThresholds.failedLogins) {
@@ -992,7 +993,7 @@ export class SecurityMonitor {
       });
     }
   }
-  
+
   async detectAnomalies() {
     // Check for unusual access patterns
     const accessPatterns = await prisma.auditLog.groupBy({
@@ -1002,7 +1003,7 @@ export class SecurityMonitor {
       },
       _count: true,
     });
-    
+
     for (const pattern of accessPatterns) {
       if (pattern._count > 1000) {
         await this.sendAlert('Unusual access pattern detected', {
@@ -1013,7 +1014,7 @@ export class SecurityMonitor {
       }
     }
   }
-  
+
   private async sendAlert(message: string, data: any) {
     // Send to security team
     await emailService.send({
@@ -1022,10 +1023,10 @@ export class SecurityMonitor {
       template: 'security-alert',
       data,
     });
-    
+
     // Log to SIEM
     logger.error({ security: true, ...data }, message);
-    
+
     // Create incident
     await prisma.securityIncident.create({
       data: {
@@ -1056,33 +1057,33 @@ export class IncidentResponse {
         status: 'open',
       },
     });
-    
+
     // Immediate actions based on type
     switch (type) {
       case 'brute_force_attack':
         await this.blockIpAddresses(data.sourceIps);
         await this.enforcePasswordReset(data.targetUsers);
         break;
-        
+
       case 'data_breach':
         await this.enableMaintenanceMode();
         await this.revokeAllSessions();
         await this.notifyAffectedUsers(data.affectedUsers);
         break;
-        
+
       case 'suspicious_api_usage':
         await this.revokeApiKey(data.apiKeyId);
         await this.increaseRateLimits(data.userId);
         break;
     }
-    
+
     // Notify incident response team
     await this.notifyResponseTeam(incident);
-    
+
     // Start forensics collection
     await this.collectForensics(incident.id);
   }
-  
+
   private async collectForensics(incidentId: string) {
     // Collect relevant logs
     const logs = await prisma.auditLog.findMany({
@@ -1092,14 +1093,16 @@ export class IncidentResponse {
         },
       },
     });
-    
+
     // Store in secure location
-    await s3.putObject({
-      Bucket: 'ventry-forensics',
-      Key: `incidents/${incidentId}/audit-logs.json`,
-      Body: JSON.stringify(logs),
-      ServerSideEncryption: 'AES256',
-    }).promise();
+    await s3
+      .putObject({
+        Bucket: 'ventry-forensics',
+        Key: `incidents/${incidentId}/audit-logs.json`,
+        Body: JSON.stringify(logs),
+        ServerSideEncryption: 'AES256',
+      })
+      .promise();
   }
 }
 ```
@@ -1110,11 +1113,7 @@ export class IncidentResponse {
 
 ```typescript
 // apps/backend/src/lib/audit.ts
-export async function auditLog(
-  action: string,
-  userId: string,
-  metadata?: any
-) {
+export async function auditLog(action: string, userId: string, metadata?: any) {
   const log = await prisma.auditLog.create({
     data: {
       action,
@@ -1128,12 +1127,12 @@ export async function auditLog(
       timestamp: new Date(),
     },
   });
-  
+
   // Real-time processing for security events
   if (isSecurityEvent(action)) {
     await redis.publish('security:events', JSON.stringify(log));
   }
-  
+
   return log;
 }
 
@@ -1170,21 +1169,23 @@ export class PrivacyService {
       auditLogs: await prisma.auditLog.findMany({ where: { userId } }),
       // ... all related data
     };
-    
+
     // Encrypt export
     const encrypted = encrypt(JSON.stringify(data));
-    
+
     // Store temporarily
-    await s3.putObject({
-      Bucket: 'ventry-gdpr-exports',
-      Key: `${userId}/export-${Date.now()}.enc`,
-      Body: encrypted,
-      Expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    }).promise();
-    
+    await s3
+      .putObject({
+        Bucket: 'ventry-gdpr-exports',
+        Key: `${userId}/export-${Date.now()}.enc`,
+        Body: encrypted,
+        Expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      })
+      .promise();
+
     return `${userId}/export-${Date.now()}.enc`;
   }
-  
+
   async deleteUserData(userId: string) {
     // Soft delete with anonymization
     await prisma.user.update({
@@ -1196,7 +1197,7 @@ export class PrivacyService {
         deletedAt: new Date(),
       },
     });
-    
+
     // Anonymize related data
     await prisma.order.updateMany({
       where: { userId },
@@ -1220,14 +1221,14 @@ export class SOC2Compliance {
   // Access control
   async enforceAccessControl(userId: string, resource: string, action: string) {
     const hasAccess = await this.checkPermission(userId, resource, action);
-    
+
     // Log all access attempts
     await auditLog('access_attempt', userId, {
       resource,
       action,
       granted: hasAccess,
     });
-    
+
     if (!hasAccess) {
       throw new TRPCError({
         code: 'FORBIDDEN',
@@ -1235,7 +1236,7 @@ export class SOC2Compliance {
       });
     }
   }
-  
+
   // Change management
   async trackChange(change: any) {
     await prisma.changeLog.create({
@@ -1249,17 +1250,13 @@ export class SOC2Compliance {
       },
     });
   }
-  
+
   // Availability monitoring
   async checkAvailability() {
-    const checks = await Promise.all([
-      this.checkDatabase(),
-      this.checkRedis(),
-      this.checkAPI(),
-    ]);
-    
-    const availability = checks.filter(c => c).length / checks.length;
-    
+    const checks = await Promise.all([this.checkDatabase(), this.checkRedis(), this.checkAPI()]);
+
+    const availability = checks.filter((c) => c).length / checks.length;
+
     await prisma.availabilityMetric.create({
       data: {
         timestamp: new Date(),
@@ -1287,10 +1284,10 @@ export class PCICompliance {
         // ... other card details
       },
     });
-    
+
     return token.id;
   }
-  
+
   // Mask card numbers in logs
   maskCardNumber(text: string): string {
     return text.replace(
@@ -1298,7 +1295,7 @@ export class PCICompliance {
       (match) => match.slice(0, 6) + '******' + match.slice(-4)
     );
   }
-  
+
   // Secure card data transmission
   async processPayment(token: string, amount: number) {
     // Use TLS 1.2+
@@ -1310,14 +1307,14 @@ export class PCICompliance {
         environment: process.env.NODE_ENV,
       },
     });
-    
+
     // Log without sensitive data
     auditLog('payment_processed', 'system', {
       paymentId: payment.id,
       amount: payment.amount,
       status: payment.status,
     });
-    
+
     return payment;
   }
 }
@@ -1328,6 +1325,7 @@ export class PCICompliance {
 ## Security Checklist
 
 ### Pre-Production
+
 - [ ] All secrets rotated and stored in Vault
 - [ ] RLS policies implemented and tested
 - [ ] Rate limiting configured
@@ -1340,6 +1338,7 @@ export class PCICompliance {
 - [ ] Security training completed
 
 ### Ongoing
+
 - [ ] Weekly dependency updates
 - [ ] Monthly security audits
 - [ ] Quarterly penetration tests
@@ -1350,6 +1349,7 @@ export class PCICompliance {
 - [ ] Vulnerability disclosure program
 
 ### Incident Response Contacts
+
 - Security Team: security@ventry.com
 - On-Call: +1-xxx-xxx-xxxx
 - CISO: ciso@ventry.com

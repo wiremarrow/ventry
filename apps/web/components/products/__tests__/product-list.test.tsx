@@ -40,7 +40,7 @@ vi.mock('sonner', () => ({
 
 // Mock the edit dialog
 vi.mock('../edit-product-dialog', () => ({
-  EditProductDialog: ({ open }: { open: boolean }) => 
+  EditProductDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="edit-dialog">Edit Dialog</div> : null,
 }));
 
@@ -200,16 +200,16 @@ describe('ProductList', () => {
     // Open dropdown and click duplicate
     const dropdownButtons = screen.getAllByText('Open menu');
     await user.click(dropdownButtons[0]);
-    
+
     await waitFor(async () => {
       const duplicateOption = screen.getByText('Duplicate');
       await user.click(duplicateOption);
     });
 
-    expect(mockDuplicate).toHaveBeenCalledWith({ 
+    expect(mockDuplicate).toHaveBeenCalledWith({
       itemId: '1',
       newSku: 'PRD-001-COPY',
-      newName: 'Test Product 1 (Copy)'
+      newName: 'Test Product 1 (Copy)',
     });
   });
 
@@ -231,7 +231,7 @@ describe('ProductList', () => {
     // Open dropdown and click archive
     const dropdownButtons = screen.getAllByText('Open menu');
     await user.click(dropdownButtons[0]);
-    
+
     await waitFor(async () => {
       const archiveOption = screen.getByText('Archive');
       await user.click(archiveOption);
@@ -256,7 +256,7 @@ describe('ProductList', () => {
     // Open dropdown and click edit
     const dropdownButtons = screen.getAllByText('Open menu');
     await user.click(dropdownButtons[0]);
-    
+
     await waitFor(async () => {
       const editOption = screen.getByText('Edit');
       await user.click(editOption);
@@ -284,7 +284,12 @@ describe('ProductList', () => {
 
     // Check pagination text for page 1
     const paginationText = screen.getByText((content, _element) => {
-      return content.includes('Showing') && content.includes('1') && content.includes('20') && content.includes('50');
+      return (
+        content.includes('Showing') &&
+        content.includes('1') &&
+        content.includes('20') &&
+        content.includes('50')
+      );
     });
     expect(paginationText).toBeInTheDocument();
 
@@ -318,7 +323,7 @@ describe('ProductList', () => {
     // Previous should be disabled on first page
     const prevButton = screen.getByText('Previous').closest('button');
     const nextButton = screen.getByText('Next').closest('button');
-    
+
     expect(prevButton).toBeDisabled();
     expect(nextButton).not.toBeDisabled();
   });

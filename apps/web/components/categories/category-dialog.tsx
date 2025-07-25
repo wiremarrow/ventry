@@ -4,12 +4,12 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
   Button,
   Input,
@@ -41,7 +41,7 @@ interface CategoryDialogProps {
 
 export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: CategoryDialogProps) {
   const utils = trpc.useUtils();
-  
+
   // Fetch category data if editing
   const { data: category } = trpc.categories.getById.useQuery(
     { id: categoryId! },
@@ -135,7 +135,7 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
     if (!categoriesData?.categories) return [];
     if (!categoryId) return categoriesData.categories;
 
-    const currentCategory = categoriesData.categories.find(c => c.id === categoryId);
+    const currentCategory = categoriesData.categories.find((c) => c.id === categoryId);
     if (!currentCategory) return categoriesData.categories;
 
     // Get all descendant IDs
@@ -151,7 +151,7 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
     };
 
     const excludeIds = getDescendantIds(currentCategory);
-    return categoriesData.categories.filter(c => !excludeIds.includes(c.id));
+    return categoriesData.categories.filter((c) => !excludeIds.includes(c.id));
   };
 
   return (
@@ -161,7 +161,9 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
           <DialogHeader>
             <DialogTitle>{categoryId ? 'Edit Category' : 'Create Category'}</DialogTitle>
             <DialogDescription>
-              {categoryId ? 'Update category information' : 'Add a new category to organize your inventory'}
+              {categoryId
+                ? 'Update category information'
+                : 'Add a new category to organize your inventory'}
             </DialogDescription>
           </DialogHeader>
 
@@ -173,9 +175,7 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
                 {...register('name')}
                 placeholder="e.g., Electronics, Office Supplies"
               />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name.message}</p>
-              )}
+              {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -192,7 +192,9 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
               <Label htmlFor="parentId">Parent Category</Label>
               <Select
                 value={watch('parentId') || 'none'}
-                onValueChange={(value) => setValue('parentId', value === 'none' ? undefined : value)}
+                onValueChange={(value) =>
+                  setValue('parentId', value === 'none' ? undefined : value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a parent category" />
@@ -201,7 +203,8 @@ export function CategoryDialog({ open, onOpenChange, categoryId, onSuccess }: Ca
                   <SelectItem value="none">No parent (root category)</SelectItem>
                   {getAvailableParents().map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
-                      {cat.parent && '— '}{cat.name}
+                      {cat.parent && '— '}
+                      {cat.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

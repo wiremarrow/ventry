@@ -1,8 +1,24 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Badge, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, MoreHorizontal, Edit, Trash, AlertCircle } from 'lucide-react';
+import {
+  Button,
+  Badge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FolderOpen,
+  MoreHorizontal,
+  Edit,
+  Trash,
+  AlertCircle,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 
@@ -33,7 +49,7 @@ export function CategoryTreeItem({
 }: CategoryTreeItemProps) {
   const isExpanded = expandedCategories.has(category.id);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   const deleteMutation = trpc.categories.delete.useMutation({
     onSuccess: () => {
       toast({
@@ -64,7 +80,7 @@ export function CategoryTreeItem({
       return;
     }
 
-    if (category.children?.length > 0) {
+    if ((category.children?.length ?? 0) > 0) {
       toast({
         title: 'Cannot delete',
         description: 'This category has subcategories and cannot be deleted',
@@ -103,9 +119,9 @@ export function CategoryTreeItem({
             <div className="h-4 w-4" />
           )}
         </button>
-        
+
         <Icon className="h-4 w-4 text-muted-foreground" />
-        
+
         <div className="flex-1 flex items-center gap-2">
           <span className="font-medium">{category.name}</span>
           {category.description && (
@@ -135,11 +151,11 @@ export function CategoryTreeItem({
             <DropdownMenuItem
               onClick={handleDelete}
               className="text-destructive"
-              disabled={category._count?.items > 0 || category.children?.length > 0}
+              disabled={(category._count?.items ?? 0) > 0 || (category.children?.length ?? 0) > 0}
             >
               <Trash className="mr-2 h-4 w-4" />
               Delete
-              {(category._count?.items > 0 || category.children?.length > 0) && (
+              {((category._count?.items ?? 0) > 0 || (category.children?.length ?? 0) > 0) && (
                 <AlertCircle className="ml-auto h-4 w-4" />
               )}
             </DropdownMenuItem>
@@ -147,7 +163,7 @@ export function CategoryTreeItem({
         </DropdownMenu>
       </div>
 
-      {isExpanded && hasChildren && (
+      {isExpanded && hasChildren && category.children && (
         <div>
           {category.children.map((child) => (
             <CategoryTreeItem

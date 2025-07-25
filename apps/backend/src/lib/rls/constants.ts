@@ -1,6 +1,6 @@
 /**
  * RLS (Row-Level Security) Constants
- * 
+ *
  * This file contains all constants used in the RLS implementation
  * to ensure consistency and prevent magic strings throughout the codebase.
  */

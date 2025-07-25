@@ -1,15 +1,19 @@
 # Ventry AI-Native Inventory Management System - Implementation TODO
 
 ## 🎯 Project Overview
+
 This TODO outlines the complete implementation roadmap for Ventry, an AI-native inventory management system built with **tRPC + Fastify** backend, Next.js frontend, and AI agents for intelligent automation.
 
 ## 📊 Current Status
+
 ✅ **Phase 0 COMPLETE** - Foundation & CI/CD Setup (2024-01-04)
+
 - All foundation tasks completed
 - Monorepo with Turborepo configured
 - CI/CD pipelines ready
 
 ✅ **Stack Enhancement COMPLETE** - Lightweight Development Stack (2024-07-04)
+
 - Playwright E2E testing configured with sharding
 - SQLite for zero-setup development
 - Vercel deployment for Next.js
@@ -18,6 +22,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - Comprehensive testing and deployment documentation
 
 ✅ **CI/CD Unification COMPLETE** - Comprehensive Quality Pipeline (2024-07-04)
+
 - Unified CI workflow combining best practices from all sources
 - 13 required status checks enforcing enterprise-grade quality
 - Advanced E2E testing with browser matrix (chromium, firefox, webkit) and sharding
@@ -28,6 +33,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - Production-ready build validation with Sentry integration
 
 ✅ **CI/CD Automation COMPLETE** - 90% Automated Setup (2025-07-04)
+
 - Automated branch protection with all 13 required status checks
 - Security features automation (Dependabot, vulnerability alerts, secret scanning)
 - Environment creation with protection rules
@@ -55,6 +61,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ✅ **E2E Test Enhancements COMPLETE** - RLS Isolation & React Hydration Fix (2025-07-21)
 ✅ **Backend Test Coverage 100% COMPLETE** - All 22 Routers Fully Tested (2025-01-22)
 ✅ **Database Verification Tool & UI Fixes COMPLETE** - Enhanced Database Inspection & Bug Fixes (2025-07-23)
+
 - **Achieved 100% router test coverage**: Added comprehensive tests for remaining 6 routers
   - unitsOfMeasure (23 tests), analytics (21 tests), health (8 tests)
   - organizations (29 tests), reports (30 tests), returns (21 tests), shipments (21 tests)
@@ -66,7 +73,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - rls-service.test.ts: Migrated from $executeRawUnsafe to secure $executeRaw
 - **Test count**: 591 unit tests all passing (0 failures, 1 skipped)
 - **Security improvements**: Fixed categories router missing organizationId vulnerability
-✅ **Low Stock Filter Bug Fix COMPLETE** - Zero Quantity Items Now Included (2025-01-22)
+  ✅ **Low Stock Filter Bug Fix COMPLETE** - Zero Quantity Items Now Included (2025-01-22)
 - **Root Cause**: Inventory list procedure was excluding items with `qtyOnHand = 0` when `includeZeroQuantity` was false
 - **Solution**: Updated filter logic to skip zero quantity filtering when `lowStock` filter is active
 - **Technical Details**: Modified `inventory.ts` line 122 to check `if (!includeZeroQuantity && !lowStock)`
@@ -127,7 +134,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **JWT authentication with role-based access control** (Admin/Manager/User) via tRPC procedures
 - **Centralized AuthService** handling all authentication logic (login/logout/register)
 - **CookieService** for consistent signed cookie management with error handling
-- **Zustand-based organization store** replacing window.__organizationId anti-pattern
+- **Zustand-based organization store** replacing window.\_\_organizationId anti-pattern
 - **Organization switching** via tRPC mutation with persistent state
 - **Item Categories Router** with hierarchical category management and validation
 - **Units of Measure Router** with base unit enforcement and conversion factors
@@ -159,7 +166,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **Code Quality**: ESLint 9 + TypeScript ESLint v8 compatibility resolved
 - **CI/CD Pipeline**: 13 mandatory status checks validated and production-ready
 - **Technical Issues Resolved**: Turbopack compatibility, environment variable loading, Tailwind CSS v4 configuration
-- **Authentication Issues Fixed**: 
+- **Authentication Issues Fixed**:
   - Login redirect loop resolved with Next.js middleware
   - Protected route components for authenticated pages
   - Token persistence in Zustand store and cookies
@@ -212,13 +219,13 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Build Reliability**: Resolved 85+ TypeScript compilation errors from missing Prisma types
 - **Enterprise Database Strategy Complete (2025-07-07)**:
   - **Migration-First Approach**: Replaced db:push with migrate:deploy for CI/production readiness
-  - **Dynamic Database Creation**: Unique test databases per CI job (ventry_integration_${GITHUB_RUN_ID}, ventry_e2e_${GITHUB_RUN_ID}) for true isolation
+  - **Dynamic Database Creation**: Unique test databases per CI job (ventry*integration*${GITHUB_RUN_ID}, ventry_e2e_${GITHUB_RUN_ID}) for true isolation
   - **Test Coverage Command Fix**: Corrected unit test coverage syntax from `pnpm test -- --coverage` to `pnpm test:cov`
   - **Package.json Scripts**: Added db:migrate:deploy commands to root, backend, and database packages
   - **Turbo.json Pipeline**: Added test:cov and db:migrate:deploy task configurations with proper dependencies
   - **Scalable Pattern**: Enterprise-grade database management suitable for large PostgreSQL setups and startup growth
-✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
-✅ **Authentication Password Fix Complete (2025-07-14)**:
+    ✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
+    ✅ **Authentication Password Fix Complete (2025-07-14)**:
   - **Root Cause**: Login page displayed incorrect demo passwords (admin123, manager123, user123) while comprehensive seed script uses "password123" for all accounts
   - **Solution**: Updated login form to show correct password "password123" for all demo accounts
   - **Implementation**:
@@ -229,55 +236,61 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Results**: Users can now login successfully with documented credentials
 
 ✅ **Dashboard Live Data Integration Complete (2025-07-15)**:
-  - **Implementation**: Connected dashboard info cards to live tRPC analytics endpoints
-  - **Auto-refresh**: Added 30-second auto-refresh with user toggle controls
-  - **Real-time Health**: Integrated API and database status monitoring
-  - **User Controls**: Manual refresh button and auto-refresh toggle
-  - **Data Sources**: 
-    - `trpc.analytics.dashboard.useQuery()` for inventory metrics
-    - `trpc.warehouses.list.useQuery()` for location counts  
-    - `trpc.health.check.useQuery()` for system status
-  - **UI Enhancements**: Loading states, error handling, and refresh indicators
-  - **Results**: Dashboard displays live data with automatic updates every 30 seconds
+
+- **Implementation**: Connected dashboard info cards to live tRPC analytics endpoints
+- **Auto-refresh**: Added 30-second auto-refresh with user toggle controls
+- **Real-time Health**: Integrated API and database status monitoring
+- **User Controls**: Manual refresh button and auto-refresh toggle
+- **Data Sources**:
+  - `trpc.analytics.dashboard.useQuery()` for inventory metrics
+  - `trpc.warehouses.list.useQuery()` for location counts
+  - `trpc.health.check.useQuery()` for system status
+- **UI Enhancements**: Loading states, error handling, and refresh indicators
+- **Results**: Dashboard displays live data with automatic updates every 30 seconds
 
 ✅ **Enterprise Row-Level Security Implementation Complete (2025-01-15)**:
-  - **Database Functions**: SECURITY DEFINER functions for SQL injection prevention
-    - `set_rls_context()` - Validates CUIDs and sets session variables
-    - `clear_rls_context()` - Clears session variables
-    - `get_rls_context()` - Returns current context for debugging
-  - **Application Integration**: One canonical `withRLS()` wrapper pattern
-  - **Database Policies**: RLS enabled on all 26 tenant-scoped tables
-  - **Quality Assurance**: pgTAP test ensures no table ships without RLS
-  - **Documentation**: [RLS Guide](./docs/RLS_GUIDE.md) for developers
-  - **Results**: Enterprise-grade multi-tenant isolation with zero application code
+
+- **Database Functions**: SECURITY DEFINER functions for SQL injection prevention
+  - `set_rls_context()` - Validates CUIDs and sets session variables
+  - `clear_rls_context()` - Clears session variables
+  - `get_rls_context()` - Returns current context for debugging
+- **Application Integration**: One canonical `withRLS()` wrapper pattern
+- **Database Policies**: RLS enabled on all 26 tenant-scoped tables
+- **Quality Assurance**: pgTAP test ensures no table ships without RLS
+- **Documentation**: [RLS Guide](./docs/RLS_GUIDE.md) for developers
+- **Results**: Enterprise-grade multi-tenant isolation with zero application code
 
 ✅ **RLS Test Migration & Cleanup Complete (2025-07-17)**:
-  - **Test Migration**: All RLS integration tests updated to use dual-connection pattern
-  - **Production Module**: Migrated to canonical RLS implementation in `/lib/rls/`
-  - **Cleanup**: Removed deprecated `rls-middleware-v2.ts` and `rls-v2.integration.spec.ts`
-  - **ID Format**: Enforcing CUID format (25 lowercase alphanumeric) at database level
-  - **Test Status**: All RLS tests passing with proper tenant isolation
-  - **Documentation**: Updated [RLS Implementation Guide](./RLS_IMPLEMENTATION_GUIDE.md)
+
+- **Test Migration**: All RLS integration tests updated to use dual-connection pattern
+- **Production Module**: Migrated to canonical RLS implementation in `/lib/rls/`
+- **Cleanup**: Removed deprecated `rls-middleware-v2.ts` and `rls-v2.integration.spec.ts`
+- **ID Format**: Enforcing CUID format (25 lowercase alphanumeric) at database level
+- **Test Status**: All RLS tests passing with proper tenant isolation
+- **Documentation**: Updated [RLS Implementation Guide](./RLS_IMPLEMENTATION_GUIDE.md)
 
 ✅ **Frontend Import Path Fix Complete (2025-07-14)**:
-  - **Root Cause**: Systematic import path inconsistencies preventing build compilation across 23 frontend files
-  - **Analysis**: 4 major root causes identified through comprehensive codebase review
-  - **Implementation**: 
-    - Fixed UI component imports: `@/components/ui/*` → `@ventry/ui` (11 files)
-    - Fixed tRPC client imports: `@/lib/trpc/client` → `@/lib/trpc` (11 files)
-    - Fixed ProtectedRoute imports: default → named import pattern (10 files)
-    - Fixed legacy Supabase import paths in hooks (1 file)
-    - Cleaned up linting issues: removed unused imports/variables, consolidated imports
-  - **Results**: Build compilation successful, all warehouse tests passing (9/9), zero TypeScript errors
+
+- **Root Cause**: Systematic import path inconsistencies preventing build compilation across 23 frontend files
+- **Analysis**: 4 major root causes identified through comprehensive codebase review
+- **Implementation**:
+  - Fixed UI component imports: `@/components/ui/*` → `@ventry/ui` (11 files)
+  - Fixed tRPC client imports: `@/lib/trpc/client` → `@/lib/trpc` (11 files)
+  - Fixed ProtectedRoute imports: default → named import pattern (10 files)
+  - Fixed legacy Supabase import paths in hooks (1 file)
+  - Cleaned up linting issues: removed unused imports/variables, consolidated imports
+- **Results**: Build compilation successful, all warehouse tests passing (9/9), zero TypeScript errors
 
 ## 📊 Test Coverage Progress (COMPLETED - 2025-01-22)
 
 ### ✅ Backend Unit Test Coverage Complete!
+
 - **Status**: 100% of backend routers now have comprehensive unit tests (22 of 22)
 - **Tests Added**: 550+ unit tests across 22 routers (up from 148)
 - **Testing Infrastructure**: Established comprehensive patterns for tRPC testing
 
 ### ✅ Completed Test Suites:
+
 1. **auth.test.ts** (17 tests) - Authentication flows, JWT handling, cookie management
 2. **users.test.ts** (17 tests) - User CRUD operations, role management, organization context
 3. **orders.test.ts** (33 tests) - Order lifecycle, allocations, shipments, returns
@@ -302,6 +315,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 22. **app.test.ts** (existing) - Application router composition and middleware
 
 ### Testing Patterns Established:
+
 - **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
 - **Auth Testing**: Response object mocks with setCookie/clearCookie methods
 - **ID Generation**: CUID helper function for valid test identifiers
@@ -312,6 +326,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 - **Hierarchical Data**: Testing tree structures and parent-child relationships
 
 ### ⚠️ Implementation Issues Discovered & Fixed:
+
 - **categories router**: ✅ FIXED - Added missing organizationId checks in findFirst queries (security vulnerability)
 - **itemCategories router**: Already properly implemented organization-scoped queries throughout
 - **unitsOfMeasure router**: ✅ Added CUID validation to id fields in schemas
@@ -321,12 +336,14 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 ## 🔒 Production Readiness Progress (NEW - 2025-01-15)
 
 ### Comprehensive Security & Performance Audit Completed
+
 - **Audit Report**: [Production Readiness Audit](./docs/PRODUCTION_READINESS_AUDIT.md)
 - **Status**: 6/10 Production Ready (RLS v2 completed, database config required)
 
 ### ✅ Completed Security Improvements:
+
 1. **Fixed Hardcoded Secrets**: JWT and cookie secrets now require environment variables
-2. **Structured Logging**: Implemented Pino logger, removed 100+ console.log statements  
+2. **Structured Logging**: Implemented Pino logger, removed 100+ console.log statements
 3. **Cookie Security**: Created secure cookie utilities with proper configuration
 4. **Database Indexes**: Added 50+ performance indexes for all critical queries
 5. **Environment Validation**: Application refuses to start without required security config
@@ -340,6 +357,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
    - **CRITICAL**: Requires non-superuser database role for production
 
 ### 🚨 Critical Tasks Remaining:
+
 1. **Database Configuration**: Must use non-superuser role (current user bypasses RLS)
 2. **Test Coverage Improvement**: ✅ COMPLETE - 22 of 22 backend routers now have comprehensive unit tests (100% covered)
    - 550+ tests written across all routers
@@ -350,6 +368,7 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
 5. **Production Config**: Missing connection pooling, backups, monitoring
 
 ### 📚 New Documentation Created:
+
 - [Production Readiness TODO](./docs/PRODUCTION_READINESS_TODO.md) - 200+ detailed tasks
 - [Security Hardening Guide](./docs/SECURITY_HARDENING_GUIDE.md) - OWASP compliance
 - [Database Migration Strategy](./docs/DATABASE_MIGRATION_STRATEGY.md) - Zero-downtime procedures
@@ -364,6 +383,7 @@ See the [full audit report](./docs/PRODUCTION_READINESS_AUDIT.md) for detailed f
 ### ✅ All Major UI Pages Complete (2025-01-21)
 
 All 13 major pages have been implemented with consistent patterns:
+
 - **ProtectedRoute and DashboardLayout wrappers** for proper authentication and navigation
 - **Dialog-based CRUD operations** for better UX
 - **Card components for stats** displaying key metrics
@@ -371,11 +391,13 @@ All 13 major pages have been implemented with consistent patterns:
 - **Consistent styling** with muted-foreground for secondary text
 
 #### ✅ Phase 1: Core Pages (COMPLETE)
+
 - **Inventory Page**: Full tRPC integration with stock adjustments and filtering
 - **Products/Items Page**: Complete CRUD operations with categories and units of measure
 - **Warehouses Page**: Location hierarchy, capacity tracking, and analytics
 
-#### ✅ Phase 2: Business Operations (COMPLETE) 
+#### ✅ Phase 2: Business Operations (COMPLETE)
+
 - **Purchase Orders Page**: Full workflow with create, list, detail views and approval actions
 - **Customers Page**: Complete CRUD with credit limits and detail views
 - **Orders Page**: List and detail pages with order workflow and fulfillment tracking
@@ -383,6 +405,7 @@ All 13 major pages have been implemented with consistent patterns:
 - **Users Page**: User management with role-based permissions and status control
 
 #### ✅ Phase 3: Additional Features (COMPLETE)
+
 - **Categories Page**: Hierarchical tree view with parent-child relationships
 - **Locations Page**: Consolidated warehouse/location management
 - **Movements Page**: Comprehensive stock movement tracking with filters
@@ -390,32 +413,35 @@ All 13 major pages have been implemented with consistent patterns:
 - **Analytics Dashboard**: Live data integration with auto-refresh
 
 ✅ **E2E Cookie Authentication Fix Complete (2025-07-09)**:
-  - **Root Cause**: Cross-origin cookie restrictions between backend (localhost:6060) and frontend (localhost:6061) ports preventing httpOnly cookies from being stored/sent
-  - **Browser Behavior**: Modern browsers treat different ports as different origins, blocking cookie sharing even with Domain=localhost
-  - **Solution**: Next.js proxy configuration routing `/api/trpc/*` to backend, making all requests appear same-origin
-  - **Implementation**: 
-    - Added rewrites to next.config.ts: `/api/trpc/:path*` → `http://localhost:6060/trpc/:path*`
-    - Updated E2E playwright.config.ts NEXT_PUBLIC_API_URL from `http://localhost:6060/trpc` to `/api/trpc`
-    - Removed Domain=localhost from cookies (no longer needed with proxy)
-    - Fixed test error handling that was masking the real authentication issue
-    - Removed problematic clearCookies() calls on closing browser contexts
-  - **Results**: All 9 auth E2E tests now passing consistently across all browsers
-  - **Performance**: E2E tests execute reliably without timeout issues
-  - **Lessons**: 
-    - Browser security prevents cookie sharing across ports even with same domain
-    - Playwright browser contexts automatically clean up cookies when closed
-    - Proxy pattern is the proper solution for cookie-based auth in development
+
+- **Root Cause**: Cross-origin cookie restrictions between backend (localhost:6060) and frontend (localhost:6061) ports preventing httpOnly cookies from being stored/sent
+- **Browser Behavior**: Modern browsers treat different ports as different origins, blocking cookie sharing even with Domain=localhost
+- **Solution**: Next.js proxy configuration routing `/api/trpc/*` to backend, making all requests appear same-origin
+- **Implementation**:
+  - Added rewrites to next.config.ts: `/api/trpc/:path*` → `http://localhost:6060/trpc/:path*`
+  - Updated E2E playwright.config.ts NEXT_PUBLIC_API_URL from `http://localhost:6060/trpc` to `/api/trpc`
+  - Removed Domain=localhost from cookies (no longer needed with proxy)
+  - Fixed test error handling that was masking the real authentication issue
+  - Removed problematic clearCookies() calls on closing browser contexts
+- **Results**: All 9 auth E2E tests now passing consistently across all browsers
+- **Performance**: E2E tests execute reliably without timeout issues
+- **Lessons**:
+  - Browser security prevents cookie sharing across ports even with same domain
+  - Playwright browser contexts automatically clean up cookies when closed
+  - Proxy pattern is the proper solution for cookie-based auth in development
 
 ✅ **Phase 1.1 UI Connection Complete (2025-07-14)**:
-  - **Inventory Page Connected**: Successfully connected inventory page to tRPC router
-  - **Stock Adjustment Dialog**: Implemented functional stock adjustment with real-time updates
-  - **Organization Context**: Added multi-tenant support with organization switcher
-  - **Sonner Toast Integration**: Modern toast notifications for user feedback
-  - **Database Seeding**: Comprehensive seed script creates demo data (50 items, 3 warehouses, organizations)
-  - **Authentication Flow**: Fixed JWT to include organizationId for proper context
-  - **UI State Management**: Integrated Zustand store with tRPC queries
+
+- **Inventory Page Connected**: Successfully connected inventory page to tRPC router
+- **Stock Adjustment Dialog**: Implemented functional stock adjustment with real-time updates
+- **Organization Context**: Added multi-tenant support with organization switcher
+- **Sonner Toast Integration**: Modern toast notifications for user feedback
+- **Database Seeding**: Comprehensive seed script creates demo data (50 items, 3 warehouses, organizations)
+- **Authentication Flow**: Fixed JWT to include organizationId for proper context
+- **UI State Management**: Integrated Zustand store with tRPC queries
 
 ✅ **Phase 1.2 & 1.3 Complete (2025-07-14)**:
+
 - [x] Connected Products/Items page to items router with full CRUD operations
 - [x] Connected Warehouses page to warehouses router with management UI
 - [x] Comprehensive test coverage for all implemented pages
@@ -423,6 +449,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] All 12 status checks passing in CI/CD pipeline
 
 ✅ **Phase 1.4 Dashboard Enhancement Complete (2025-07-15)**:
+
 - [x] Connect dashboard info cards to live backend analytics data via tRPC
 - [x] Implement auto-refresh functionality with 30-second intervals
 - [x] Add manual refresh controls and auto-refresh toggle
@@ -432,6 +459,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Include EMPLOYEE role support in AuthenticatedUser type definition
 
 ✅ **TypeScript Migration Complete (2025-07-15)**:
+
 - [x] Resolved all tRPC type inference issues by removing problematic type annotations
 - [x] Configured backend as internal service with `noEmit: true` to eliminate TS2742 errors
 - [x] Updated build configuration to use `tsx` for runtime execution
@@ -439,6 +467,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Maintained full type safety and tRPC inference capabilities
 
 ✅ **Database Column Naming Convention Fix Complete (2025-07-15)**:
+
 - [x] Added @map directives to all camelCase fields in Prisma schema for snake_case database columns
 - [x] Updated all raw SQL queries to use snake_case column names
 - [x] Fixed Prisma client generation issue causing integration test failures
@@ -447,6 +476,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Maintained PostgreSQL best practice: snake_case in database, camelCase in TypeScript/JavaScript
 
 ✅ **Build Compilation Fixes Complete (2025-07-15)**:
+
 - [x] Fixed React Query v5 migration issues (isLoading → isPending) in customer-form and organization pages
 - [x] Added required fields to customer form schema: customerCode, firstName, lastName, email
 - [x] Fixed Prisma Decimal type conversions using parseFloat(value.toString())
@@ -458,6 +488,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Build now compiles successfully with only ESLint warnings about `any` types
 
 ✅ **ESLint Type Safety Improvements Complete (2025-07-15)**:
+
 - [x] Fixed `any` type warnings in all production code (non-test files)
 - [x] Used proper type inference with `typeof` for tRPC query results
 - [x] Imported database model types from `@ventry/database` package
@@ -467,6 +498,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Test files retain `as any` casts for mocks (standard practice)
 
 ✅ **Code Style Standardization Complete (2025-07-15)**:
+
 - [x] **Import Ordering**: Implemented ESLint-enforced import ordering across entire codebase
   - React/Next.js → External packages → Workspace → Absolute → Relative → Type imports
   - Updated ~50 files to follow consistent import patterns
@@ -479,7 +511,7 @@ All 13 major pages have been implemented with consistent patterns:
   - tRPC router patterns
   - Error handling conventions
   - Testing patterns
-- [x] **File Standardization**: 
+- [x] **File Standardization**:
   - Renamed test files from `.spec.ts` to `.test.ts`
   - Removed explicit type annotations from tRPC routers
   - Fixed type-only imports across codebase
@@ -489,6 +521,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Enhanced readability and maintainability
 
 ✅ **Phase 2: Authentication & Organization Context (2025-01-18)**:
+
 - [x] Fixed React Hook usage violation in organization switching (useUtils must be at component level)
 - [x] Implemented automatic active-organization cookie setting on login
 - [x] Enhanced AuthService to set both auth-token and active-organization cookies
@@ -497,6 +530,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Fixed organization switching functionality
 
 ✅ **Phase 2.1: Warehouse & Location Management Complete (2025-01-20)**:
+
 - [x] Verified warehouses tRPC router exists with comprehensive functionality
 - [x] Confirmed warehouse UI pages already implemented (list, create, edit, details)
 - [x] Validated location sub-router within warehouses for storage hierarchy
@@ -505,6 +539,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Capacity tracking, utilization analytics, and activity monitoring implemented
 
 ✅ **Phase 2.2: Supplier Management Complete (2025-01-20)**:
+
 - [x] Enhanced suppliers router with archive and getStats methods
 - [x] Connected suppliers page to live statistics display
 - [x] Fixed supplier list component with proper type safety
@@ -514,13 +549,14 @@ All 13 major pages have been implemented with consistent patterns:
 - [x] Improved display to match app patterns (warehouse/product pages)
 
 ✅ **Phase 2.3 Complete**: Purchase Orders & Customer Management (2025-01-21)
+
 - [x] **Priority 2**: Create Purchase Orders page UI ✅ COMPLETE
   - Connected to purchaseOrders router
   - Built PO creation workflow with supplier selection
   - Added approval process UI (approve/cancel/reject)
   - Implemented detail view with line items
 - [x] **Priority 3**: Create Customers page UI components ✅ COMPLETE
-  - Connected to customers router  
+  - Connected to customers router
   - Customer list and management with CRUD operations
   - Credit limit tracking and detail views
 - [x] **Priority 4**: Create Orders page with workflow ✅ COMPLETE
@@ -529,12 +565,14 @@ All 13 major pages have been implemented with consistent patterns:
   - Order workflow and fulfillment tracking
 
 ✅ **Additional Pages Completed**:
+
 - [x] Categories page with hierarchical tree view
 - [x] Locations page with consolidated warehouse management
 - [x] Movements page with comprehensive stock tracking
 - [x] Reports page layout fixed with sidebar navigation
 
 📅 **Remaining Tasks**:
+
 - [ ] Complete E2E tests for authentication flow and RLS isolation
 - [ ] Implement advanced analytics dashboards with additional charts
 - [ ] Add real-time notifications and updates
@@ -546,6 +584,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 0: Foundation & CI/CD Setup (Week 1-2) ✅ COMPLETED
 
 ### 0.1 Project Scaffolding & Monorepo Setup
+
 - [x] **0.1.1** Initialize Git repository with proper .gitignore
   - Add Node.js, TypeScript, Docker, and IDE-specific ignores
   - Include environment files, build outputs, and dependency directories
@@ -579,6 +618,7 @@ All 13 major pages have been implemented with consistent patterns:
   ```
 
 ### 0.2 Docker Development Environment
+
 - [x] **0.2.1** Create Docker Compose configuration
   - PostgreSQL 14+ service with persistent volumes
   - Redis service for caching and session management
@@ -598,6 +638,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Health check scripts for all services
 
 ### 0.3 Code Quality & Development Tools
+
 - [x] **0.3.1** ESLint configuration
   - Shared ESLint config in `packages/eslint-config`
   - TypeScript-specific rules for strict type checking
@@ -625,6 +666,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Workspace-specific TypeScript configs
 
 ### 0.4 GitHub Actions CI/CD Pipeline
+
 - [x] **0.4.1** Create CI workflow (`.github/workflows/ci.yml`)
   - Trigger on push to main and pull requests
   - Matrix strategy for Node.js versions (18, 20)
@@ -652,6 +694,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Dismiss stale reviews on new commits
 
 ### 0.5 Documentation & Project Setup
+
 - [x] **0.5.1** Create development documentation
   - `docs/DEVELOPMENT.md` with setup instructions
   - `docs/ARCHITECTURE.md` with system overview
@@ -675,6 +718,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 1: Core Backend Infrastructure ✅ COMPLETED
 
 ### 1.1 tRPC + Fastify Application Setup ✅ COMPLETED
+
 - [x] **1.1.1** Initialize tRPC + Fastify backend application
   - Created `apps/backend` with complete tRPC + Fastify application
   - Configured TypeScript with strict mode and ESM-only architecture
@@ -700,6 +744,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Automatic TypeScript type generation for frontend consumption
 
 ### 1.2 Database Setup with Prisma ✅ COMPLETED
+
 - [x] **1.2.1** Prisma configuration and setup
   - Initialized Prisma in `packages/database`
   - Configured PostgreSQL/SQLite dual compatibility
@@ -707,6 +752,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Database URL configuration for all environments
 
 - [x] **1.2.2** Core database schema design
+
   ```prisma
   // User management
   model User {
@@ -827,6 +873,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Database health monitoring endpoint
 
 ### 1.3 Authentication & Authorization ✅ COMPLETED
+
 - [x] **1.3.1** JWT authentication setup
   - Complete JWT strategy with jsonwebtoken
   - Token generation and validation
@@ -853,6 +900,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Secure authentication flow
 
 ### 1.4 tRPC API Development ✅ COMPLETED
+
 - [x] **1.4.1** Type-safe procedure implementation
   - Complete tRPC router with full type inference
   - Zod schemas for input/output validation
@@ -879,6 +927,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Complete workspace dependency integration for type sharing
 
 ### 1.5 Frontend Integration ✅ COMPLETED
+
 - [x] **1.5.1** Next.js 15 application setup
   - Complete Next.js 15 app with App Router
   - TypeScript configuration with workspace integration
@@ -910,6 +959,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Component documentation and usage
 
 ### 1.6 Testing Infrastructure ✅ COMPLETED
+
 - [x] **1.6.1** E2E test coverage update
   - Authentication flow testing (login, logout, validation)
   - Dashboard navigation and functionality testing
@@ -927,6 +977,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 2: Supabase Migration (Week 7-8) 🚧 IN PROGRESS
 
 ### 2.0.6 Test Infrastructure Improvements (2025-07-23) ✅ COMPLETE
+
 - [x] **Fixed 28 out of 30 failing unit tests**
   - Resolved React act() warnings with custom render utilities
   - Fixed product dialog tests (create/edit) with proper selectors
@@ -954,6 +1005,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Run and fix E2E tests across all browsers
 
 ### 2.0 Supabase Integration
+
 - [x] **2.0.1** Analyze Supabase feasibility and create migration plan
   - Documented comprehensive migration strategy
   - Created 40+ table schema for inventory management
@@ -1025,6 +1077,7 @@ All 13 major pages have been implemented with consistent patterns:
   - 📅 Reports builder and custom report generation pending
 
 ### 2.1 UI Implementation Phase (Week 9-11) 🚧 IN PROGRESS
+
 - [x] **2.1.1** Phase 1.1: Connect Inventory Page to tRPC router ✅ COMPLETE (2025-07-14)
   - ✅ Connected inventory list to backend with proper field mapping
   - ✅ Implemented search functionality
@@ -1042,7 +1095,7 @@ All 13 major pages have been implemented with consistent patterns:
 
 - [x] **2.1.4** Phase 2: Procurement Module ✅ COMPLETE
   - ✅ Connect Suppliers page to backend
-  - ✅ Connect Purchase Orders page 
+  - ✅ Connect Purchase Orders page
   - ✅ Create Receipts page
 
 - [x] **2.1.5** Phase 3: Sales Module ✅ MOSTLY COMPLETE
@@ -1053,6 +1106,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 3: AI Integration (Week 9-10)
 
 ### 3.1 AI Agent Foundation
+
 - [ ] **3.1.1** Agent infrastructure setup
   - Create AI agent base classes and interfaces
   - Implement agent execution framework
@@ -1078,6 +1132,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Integration with existing inventory monitoring
 
 ### 3.2 Conversational AI Interface
+
 - [ ] **3.2.1** Chat interface implementation
   - Real-time chat UI with streaming responses
   - Natural language query processing
@@ -1105,6 +1160,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Storybook setup for component development
 
 ### 3.3 State Management & Data Fetching
+
 - [ ] **3.3.1** React Context setup
   - Authentication context
   - Theme context for dark/light mode
@@ -1130,7 +1186,9 @@ All 13 major pages have been implemented with consistent patterns:
   - Error message handling
 
 ### 3.4 Routing & Navigation
+
 - [ ] **3.4.1** App Router structure
+
   ```
   app/
   ├── (auth)/
@@ -1165,6 +1223,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Sitemap generation
 
 ### 3.5 Real-time Features Foundation
+
 - [ ] **3.5.1** WebSocket client setup
   - Socket.io client configuration
   - Connection management
@@ -1194,6 +1253,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 4: Core Inventory Features (Week 11-12)
 
 ### 3.1 Products Management
+
 - [ ] **3.1.1** Product CRUD operations
   - `ProductsController` with full CRUD endpoints
   - `ProductsService` with business logic
@@ -1219,6 +1279,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Attribute validation and constraints
 
 ### 3.2 Stock Management
+
 - [ ] **3.2.1** Stock level tracking
   - Real-time stock level updates
   - Multi-location stock management
@@ -1244,6 +1305,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Reconciliation history tracking
 
 ### 3.3 Supplier Management
+
 - [ ] **3.3.1** Supplier CRUD operations
   - Supplier profile management
   - Contact information tracking
@@ -1269,6 +1331,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Contract and pricing management
 
 ### 3.4 Location Management
+
 - [ ] **3.4.1** Location hierarchy
   - Warehouse and zone management
   - Location-based stock tracking
@@ -1294,6 +1357,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Location-based forecasting
 
 ### 3.5 Dashboard & Analytics
+
 - [ ] **3.5.1** Real-time dashboard
   - Key performance indicators (KPIs)
   - Stock level overview
@@ -1323,6 +1387,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 5: AI Agent Implementation (Week 13-14)
 
 ### 4.1 LLM Service Infrastructure
+
 - [ ] **4.1.1** LLM service wrapper
   - `LLMService` as configurable provider
   - Support for OpenAI and Anthropic APIs
@@ -1348,7 +1413,9 @@ All 13 major pages have been implemented with consistent patterns:
   - Response caching strategies
 
 ### 4.2 Stock Advisor Agent
+
 - [ ] **4.2.1** Stock Advisor service implementation
+
   ```typescript
   @Injectable()
   export class StockAdvisorService {
@@ -1359,33 +1426,33 @@ All 13 major pages have been implemented with consistent patterns:
         include: {
           stockMovements: {
             where: { createdAt: { gte: sixMonthsAgo } },
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
           },
           stockLevels: true,
-          supplier: true
-        }
+          supplier: true,
+        },
       });
 
       // 2. Calculate key metrics
       const metrics = this.calculateMetrics(product);
-      
+
       // 3. Generate structured prompt
       const prompt = this.promptTemplates.stockAdvisor({
         product,
         metrics,
         currentStock: product.stockLevels.reduce((sum, level) => sum + level.quantity, 0),
-        salesHistory: product.stockMovements.filter(m => m.type === 'OUT')
+        salesHistory: product.stockMovements.filter((m) => m.type === 'OUT'),
       });
 
       // 4. Call LLM with chain-of-thought reasoning
       const response = await this.llmService.complete(prompt);
-      
+
       // 5. Parse and validate response
       const recommendation = this.parseRecommendation(response);
-      
+
       // 6. Log action to AgentLogs
       await this.logAgentAction('STOCK_ADVISOR', { productId }, recommendation);
-      
+
       return recommendation;
     }
   }
@@ -1410,6 +1477,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Business rule integration
 
 ### 4.3 Agent Logging & Monitoring
+
 - [ ] **4.3.1** Agent logging system
   - Structured logging for all agent actions
   - Request/response data storage
@@ -1435,6 +1503,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Data lineage for recommendations
 
 ### 4.4 Event-Driven Architecture
+
 - [ ] **4.4.1** Event system implementation
   - Event emitter service
   - Event handler registration
@@ -1460,6 +1529,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Workflow performance tracking
 
 ### 4.5 AI Security & Compliance
+
 - [ ] **4.5.1** Input validation and sanitization
   - Prompt injection prevention
   - Input length and content validation
@@ -1489,6 +1559,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## Phase 6: Advanced Features & Testing (Week 15-16)
 
 ### 5.1 Forecast Agent Implementation
+
 - [ ] **5.1.1** Time-series forecasting service
   - Historical data preparation
   - Statistical forecasting models
@@ -1514,6 +1585,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Model retraining triggers
 
 ### 5.2 Anomaly Detection Agent
+
 - [ ] **5.2.1** Anomaly detection algorithms
   - Statistical anomaly detection
   - Machine learning-based detection
@@ -1539,6 +1611,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Impact assessment
 
 ### 5.3 Conversational Agent
+
 - [ ] **5.3.1** Chat interface backend
   - WebSocket server for real-time chat
   - Message processing pipeline
@@ -1564,6 +1637,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Conversation analytics
 
 ### 5.4 Comprehensive Testing Suite
+
 - [ ] **5.4.1** Backend testing
   - Unit tests for all services
   - Integration tests for APIs
@@ -1589,6 +1663,7 @@ All 13 major pages have been implemented with consistent patterns:
   - Real-time feature testing
 
 ### 5.5 Performance Optimization
+
 - [ ] **5.5.1** Backend optimization
   - Database query optimization
   - API response caching
@@ -1618,36 +1693,42 @@ All 13 major pages have been implemented with consistent patterns:
 ## 📊 Success Metrics & Acceptance Criteria
 
 ### Phase 0 Success Metrics
+
 - [ ] CI/CD pipeline successfully builds and deploys
 - [ ] All code quality checks pass (lint, typecheck, test)
 - [ ] Docker environment starts without errors
 - [ ] Development setup completed in under 10 minutes
 
 ### Phase 1 Success Metrics
+
 - [ ] All API endpoints documented and tested
 - [ ] Database migrations execute successfully
 - [ ] Authentication system fully functional
 - [ ] API response time under 200ms for simple queries
 
 ### Phase 2 Success Metrics
+
 - [ ] Frontend application loads and navigates correctly
 - [ ] All UI components render properly
 - [ ] Real-time features work without lag
 - [ ] Mobile responsiveness achieved
 
 ### Phase 3 Success Metrics
+
 - [ ] All inventory operations complete successfully
 - [ ] Dashboard updates in real-time
 - [ ] Search and filtering work efficiently
 - [ ] Data export/import functions correctly
 
 ### Phase 4 Success Metrics
+
 - [ ] Stock Advisor provides accurate recommendations
 - [ ] LLM integration works reliably
 - [ ] Agent logging captures all actions
 - [ ] Event-driven workflows execute correctly
 
 ### Phase 5 Success Metrics
+
 - [ ] All AI agents function as specified
 - [ ] Test coverage exceeds 80%
 - [ ] Performance benchmarks met
@@ -1656,18 +1737,21 @@ All 13 major pages have been implemented with consistent patterns:
 ## 🔧 Technical Debt & Maintenance
 
 ### Regular Maintenance Tasks
+
 - [ ] **Weekly**: Dependency updates and security patches
 - [ ] **Monthly**: Performance monitoring and optimization
 - [ ] **Quarterly**: Security audit and penetration testing
 - [ ] **Annually**: Technology stack evaluation and updates
 
 ### Technical Debt Prevention
+
 - [ ] Code review requirements for all changes
 - [ ] Automated testing for new features
 - [ ] Documentation updates with code changes
 - [ ] Regular refactoring sessions
 
 ### Monitoring & Alerting
+
 - [ ] Application performance monitoring
 - [ ] Error tracking and alerting
 - [ ] Business metrics monitoring
@@ -1676,6 +1760,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## 📋 Implementation Notes for AI Coding Agents
 
 ### Code Style Guidelines
+
 - Use TypeScript with strict mode enabled
 - Follow ESLint and Prettier configurations
 - Use conventional commit messages
@@ -1683,6 +1768,7 @@ All 13 major pages have been implemented with consistent patterns:
 - Write comprehensive tests
 
 ### Architecture Patterns
+
 - Use dependency injection for services
 - Implement repository pattern for data access
 - Use event-driven architecture for loose coupling
@@ -1690,6 +1776,7 @@ All 13 major pages have been implemented with consistent patterns:
 - Implement proper logging and monitoring
 
 ### AI Integration Best Practices
+
 - Validate all LLM inputs and outputs
 - Implement proper rate limiting
 - Use structured prompts for consistency
@@ -1697,6 +1784,7 @@ All 13 major pages have been implemented with consistent patterns:
 - Implement fallback mechanisms
 
 ### Security Considerations
+
 - Sanitize all user inputs
 - Implement proper authentication/authorization
 - Use parameterized queries to prevent SQL injection
@@ -1704,6 +1792,7 @@ All 13 major pages have been implemented with consistent patterns:
 - Regular security audits and updates
 
 ### Performance Considerations
+
 - Use database indexes for frequently queried columns
 - Implement proper caching strategies
 - Use connection pooling for database connections
@@ -1715,6 +1804,7 @@ All 13 major pages have been implemented with consistent patterns:
 ## 🚀 Getting Started
 
 ### Prerequisites Checklist
+
 - [ ] Node.js 18+ installed
 - [ ] pnpm 8+ installed
 - [ ] Docker and Docker Compose installed
@@ -1722,6 +1812,7 @@ All 13 major pages have been implemented with consistent patterns:
 - [ ] IDE configured with recommended extensions
 
 ### First Steps
+
 1. Clone the repository
 2. Run `pnpm install` to install dependencies
 3. Copy `.env.example` to `.env` and configure
@@ -1729,6 +1820,7 @@ All 13 major pages have been implemented with consistent patterns:
 5. Run `pnpm dev` to start development servers
 
 ### Development Workflow
+
 1. Create feature branch from main
 2. Implement changes with tests
 3. Run quality checks locally

@@ -185,6 +185,7 @@ docker exec -it ventry-postgres psql -U ventry -d ventry_dev
 ```
 
 For GUI access, pgAdmin is included:
+
 - URL: http://localhost:5050
 - Email: admin@ventry.local
 - Password: pgadmin_dev_password
@@ -234,14 +235,13 @@ pnpm --filter @ventry/web build
 When developing new features:
 
 1. **Define Backend Procedure**:
+
    ```typescript
    // apps/backend/src/routers/items.ts
    export const itemsRouter = createTRPCRouter({
-     create: organizationProcedure
-       .input(itemCreateSchema)
-       .mutation(async ({ ctx, input }) => {
-         // Implementation
-       }),
+     create: organizationProcedure.input(itemCreateSchema).mutation(async ({ ctx, input }) => {
+       // Implementation
+     }),
    });
    ```
 
@@ -260,6 +260,7 @@ When developing new features:
 ### 2. Database Schema Changes
 
 1. **Modify Prisma Schema**:
+
    ```prisma
    // packages/database/prisma/schema.prisma
    model Item {
@@ -270,6 +271,7 @@ When developing new features:
    ```
 
 2. **Push Changes to Database**:
+
    ```bash
    pnpm --filter @ventry/database db:push
    ```
@@ -282,12 +284,14 @@ When developing new features:
 ### 3. Component Development
 
 1. **Create Component**:
+
    ```bash
    # Component files use kebab-case
    touch apps/web/components/inventory/stock-adjustment-dialog.tsx
    ```
 
 2. **Add shadcn/ui Components**:
+
    ```bash
    # Install from shadcn/ui registry
    pnpm --filter @ventry/ui add dialog
@@ -359,15 +363,17 @@ DATABASE_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_inte
 ### Adding New Features
 
 1. **Create Router** (Backend):
+
    ```bash
    touch apps/backend/src/routers/newFeature.ts
    ```
 
 2. **Add to Root Router**:
+
    ```typescript
    // apps/backend/src/routers/index.ts
    import { newFeatureRouter } from './newFeature.js';
-   
+
    export const appRouter = createTRPCRouter({
      // ... existing routers
      newFeature: newFeatureRouter,
@@ -375,6 +381,7 @@ DATABASE_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_inte
    ```
 
 3. **Create UI Components**:
+
    ```bash
    mkdir -p apps/web/components/new-feature
    touch apps/web/components/new-feature/list.tsx
@@ -390,43 +397,43 @@ DATABASE_URL="postgresql://ventry:ventry_dev_password@localhost:5487/ventry_inte
 
 ### Development Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start all development servers |
-| `pnpm dev:backend` | Start backend only |
-| `pnpm dev:frontend` | Start frontend only |
-| `pnpm build` | Build all packages |
-| `pnpm clean` | Clean all build artifacts |
-| `pnpm fresh` | Clean install (removes node_modules) |
+| Command             | Description                          |
+| ------------------- | ------------------------------------ |
+| `pnpm dev`          | Start all development servers        |
+| `pnpm dev:backend`  | Start backend only                   |
+| `pnpm dev:frontend` | Start frontend only                  |
+| `pnpm build`        | Build all packages                   |
+| `pnpm clean`        | Clean all build artifacts            |
+| `pnpm fresh`        | Clean install (removes node_modules) |
 
 ### Database Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm db:push` | Push schema to database |
-| `pnpm db:seed` | Seed with basic demo data |
-| `pnpm db:seed:comprehensive` | Seed with full demo data |
-| `pnpm db:migrate` | Run migrations (production) |
-| `pnpm db:studio` | Open Prisma Studio GUI |
+| Command                      | Description                 |
+| ---------------------------- | --------------------------- |
+| `pnpm db:push`               | Push schema to database     |
+| `pnpm db:seed`               | Seed with basic demo data   |
+| `pnpm db:seed:comprehensive` | Seed with full demo data    |
+| `pnpm db:migrate`            | Run migrations (production) |
+| `pnpm db:studio`             | Open Prisma Studio GUI      |
 
 ### Testing Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm test` | Run unit tests |
-| `pnpm test:integration` | Run integration tests |
-| `pnpm test:e2e` | Run E2E tests |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:cov` | Run tests with coverage |
+| Command                 | Description             |
+| ----------------------- | ----------------------- |
+| `pnpm test`             | Run unit tests          |
+| `pnpm test:integration` | Run integration tests   |
+| `pnpm test:e2e`         | Run E2E tests           |
+| `pnpm test:watch`       | Run tests in watch mode |
+| `pnpm test:cov`         | Run tests with coverage |
 
 ### Utility Scripts
 
-| Command | Description |
-|---------|-------------|
-| `./tools/scripts/dev-setup.sh` | Initial development setup |
+| Command                        | Description                |
+| ------------------------------ | -------------------------- |
+| `./tools/scripts/dev-setup.sh` | Initial development setup  |
 | `./tools/scripts/switch-db.sh` | Manage PostgreSQL database |
-| `./tools/scripts/reset-db.sh` | Reset database |
-| `./tools/scripts/backup-db.sh` | Backup database |
+| `./tools/scripts/reset-db.sh`  | Reset database             |
+| `./tools/scripts/backup-db.sh` | Backup database            |
 
 ### Working with Packages
 
@@ -527,6 +534,7 @@ docker logs ventry-postgres
 If you get "Invalid credentials" errors:
 
 1. Ensure database is seeded:
+
    ```bash
    pnpm --filter @ventry/database db:seed
    ```
@@ -534,6 +542,7 @@ If you get "Invalid credentials" errors:
 2. Clear browser cookies for localhost:6061
 
 3. Verify both frontend and backend are running:
+
    ```bash
    pnpm dev
    ```

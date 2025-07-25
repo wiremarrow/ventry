@@ -1,10 +1,10 @@
 'use client';
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
   DialogTitle,
   Button,
   Badge,
@@ -12,7 +12,16 @@ import {
   Alert,
   AlertDescription,
 } from '@ventry/ui';
-import { Package, MapPin, User, Calendar, AlertCircle, RotateCcw, Building2, Hash } from 'lucide-react';
+import {
+  Package,
+  MapPin,
+  User,
+  Calendar,
+  AlertCircle,
+  RotateCcw,
+  Building2,
+  Hash,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { MovementTypeBadge } from './movement-type-badge';
 import { toast } from '@/hooks/use-toast';
@@ -25,14 +34,14 @@ interface MovementDetailsDialogProps {
   onReversed?: () => void;
 }
 
-export function MovementDetailsDialog({ 
-  movementId, 
-  open, 
+export function MovementDetailsDialog({
+  movementId,
+  open,
   onOpenChange,
-  onReversed 
+  onReversed,
 }: MovementDetailsDialogProps) {
   const utils = trpc.useUtils();
-  
+
   const { data: movement, isLoading } = trpc.stockMovements.get.useQuery(
     { id: movementId! },
     { enabled: !!movementId }
@@ -63,7 +72,7 @@ export function MovementDetailsDialog({
 
   const handleReverse = () => {
     if (!movementId) return;
-    
+
     const reason = prompt('Please provide a reason for reversing this movement:');
     if (!reason) return;
 
@@ -91,9 +100,7 @@ export function MovementDetailsDialog({
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Movement Details</DialogTitle>
-          <DialogDescription>
-            Complete information about this stock movement
-          </DialogDescription>
+          <DialogDescription>Complete information about this stock movement</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -107,9 +114,7 @@ export function MovementDetailsDialog({
             {/* Movement Type and Status */}
             <div className="flex items-center justify-between">
               <MovementTypeBadge type={movement.movementType} showIcon />
-              <div className="text-sm text-muted-foreground">
-                ID: {movement.id}
-              </div>
+              <div className="text-sm text-muted-foreground">ID: {movement.id}</div>
             </div>
 
             {/* Item Information */}
@@ -133,7 +138,9 @@ export function MovementDetailsDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">Quantity</span>
-                  <span className="font-bold text-lg">{movement.qty} {movement.item.unitOfMeasure?.code}</span>
+                  <span className="font-bold text-lg">
+                    {movement.qty} {movement.item.unitOfMeasure?.code}
+                  </span>
                 </div>
               </div>
             </div>
@@ -200,7 +207,9 @@ export function MovementDetailsDialog({
                   <span className="text-sm text-muted-foreground">Moved By</span>
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4" />
-                    <span>{movement.movedBy.firstName} {movement.movedBy.lastName}</span>
+                    <span>
+                      {movement.movedBy.firstName} {movement.movedBy.lastName}
+                    </span>
                     <Badge variant="outline" className="text-xs">
                       {movement.movedBy.role}
                     </Badge>
@@ -234,7 +243,8 @@ export function MovementDetailsDialog({
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    This movement is part of a batch with {movement.relatedMovements.length} other movements.
+                    This movement is part of a batch with {movement.relatedMovements.length} other
+                    movements.
                   </AlertDescription>
                 </Alert>
               </div>

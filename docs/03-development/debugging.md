@@ -3,6 +3,7 @@
 This guide covers debugging techniques and tools for the Ventry application.
 
 ## Table of Contents
+
 1. [Frontend Debugging](#frontend-debugging)
 2. [Backend Debugging](#backend-debugging)
 3. [Database Debugging](#database-debugging)
@@ -15,6 +16,7 @@ This guide covers debugging techniques and tools for the Ventry application.
 ### Browser DevTools
 
 #### React Developer Tools
+
 1. Install React Developer Tools extension
 2. Use Components tab to inspect:
    - Component props and state
@@ -23,6 +25,7 @@ This guide covers debugging techniques and tools for the Ventry application.
    - Component performance
 
 #### Console Commands
+
 ```javascript
 // Check authentication state
 console.log(window.__clerk_db_jwt);
@@ -58,6 +61,7 @@ cleanup();
 ### Next.js Debugging
 
 #### Debug Mode
+
 ```bash
 # Enable debug mode
 NODE_OPTIONS='--inspect' pnpm dev
@@ -66,6 +70,7 @@ NODE_OPTIONS='--inspect' pnpm dev
 ```
 
 #### Source Maps
+
 - Automatically enabled in development
 - Use browser DevTools to set breakpoints in original source
 
@@ -81,6 +86,7 @@ NODE_OPTIONS='--inspect' pnpm dev
 ### tRPC Debugging
 
 #### Enable Debug Logging
+
 ```typescript
 // In development, tRPC logs all procedures
 export const createTRPCContext = async ({ req, res }: CreateContextOptions) => {
@@ -94,18 +100,19 @@ export const createTRPCContext = async ({ req, res }: CreateContextOptions) => {
 ```
 
 #### Procedure Debugging
+
 ```typescript
 .query(async ({ ctx, input }) => {
   console.log('Procedure input:', input);
   console.log('User context:', ctx.user);
   console.log('Organization:', ctx.organizationId);
-  
+
   // Add breakpoint here
   debugger;
-  
+
   const result = await ctx.prisma.item.findMany();
   console.log('Query result:', result);
-  
+
   return result;
 })
 ```
@@ -113,6 +120,7 @@ export const createTRPCContext = async ({ req, res }: CreateContextOptions) => {
 ### Fastify Debugging
 
 #### Request Logging
+
 ```typescript
 // Fastify automatically logs all requests
 // Check console for:
@@ -123,6 +131,7 @@ export const createTRPCContext = async ({ req, res }: CreateContextOptions) => {
 ```
 
 #### Custom Logging
+
 ```typescript
 server.log.info('Custom message', { data });
 server.log.error('Error occurred', error);
@@ -131,6 +140,7 @@ server.log.error('Error occurred', error);
 ### Node.js Debugging
 
 #### VS Code Launch Configuration
+
 ```json
 {
   "type": "node",
@@ -148,6 +158,7 @@ server.log.error('Error occurred', error);
 ### Query Logging
 
 #### Enable Prisma Query Logging
+
 ```typescript
 const prisma = new PrismaClient({
   log: ['query', 'info', 'warn', 'error'],
@@ -155,6 +166,7 @@ const prisma = new PrismaClient({
 ```
 
 #### Log Specific Queries
+
 ```typescript
 // In development
 const items = await ctx.prisma.item.findMany();
@@ -164,6 +176,7 @@ console.log('SQL:', ctx.prisma.$queryRaw`SELECT * FROM items`);
 ### Database Inspection
 
 #### Using psql
+
 ```bash
 # Connect to database
 psql $DATABASE_URL
@@ -176,6 +189,7 @@ EXPLAIN ANALYZE ...   # Query performance
 ```
 
 #### Using pgAdmin
+
 1. Open pgAdmin at http://localhost:5050
 2. Connect using credentials from docker-compose.yml
 3. Use Query Tool for debugging
@@ -183,12 +197,14 @@ EXPLAIN ANALYZE ...   # Query performance
 ### RLS Debugging
 
 #### Check Current Context
+
 ```sql
 SELECT current_setting('app.current_user_id', true);
 SELECT current_setting('app.current_organization_id', true);
 ```
 
 #### Test RLS Policies
+
 ```sql
 -- Set context
 SELECT set_rls_context('user-id', 'org-id');
@@ -205,6 +221,7 @@ SELECT clear_rls_context();
 ### Sentry Integration
 
 #### Local Sentry Debugging
+
 ```typescript
 // Force error to Sentry
 Sentry.captureException(new Error('Test error'));
@@ -234,6 +251,7 @@ logger.debug('Debug info', { data });
 ### Chrome Extensions
 
 Recommended extensions:
+
 - React Developer Tools
 - Redux DevTools (for Zustand)
 - Network Inspector
@@ -308,7 +326,7 @@ ORDER BY mean_exec_time DESC
 LIMIT 10;
 
 -- Analyze specific query
-EXPLAIN (ANALYZE, BUFFERS) 
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT * FROM items WHERE organization_id = 'xxx';
 ```
 

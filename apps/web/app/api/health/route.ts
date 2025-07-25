@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 /**
  * Health check endpoint for E2E tests
- * 
+ *
  * Verifies that:
  * 1. Next.js server is running
  * 2. tRPC client can reach backend
@@ -16,7 +16,7 @@ export async function GET() {
   try {
     // Direct backend health check URL
     const healthUrl = 'http://localhost:6060/health';
-    
+
     const response = await fetch(healthUrl, {
       method: 'GET',
       // Short timeout to avoid blocking
@@ -33,9 +33,7 @@ export async function GET() {
     services.backend = 'unreachable';
   }
 
-  const allHealthy = Object.values(services).every(
-    status => status === 'healthy'
-  );
+  const allHealthy = Object.values(services).every((status) => status === 'healthy');
 
   return NextResponse.json({
     status: allHealthy ? 'healthy' : 'degraded',

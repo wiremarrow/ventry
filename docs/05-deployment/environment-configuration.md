@@ -118,14 +118,17 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
   COOKIE_SECRET: z.string().min(32),
-  
+
   // Optional with defaults
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   RATE_LIMIT_MAX: z.string().transform(Number).default('100'),
   CORS_ORIGIN: z.string().default('http://localhost:6061'),
-  
+
   // Feature flags
-  FEATURE_AI_ASSISTANT: z.string().transform(v => v === 'true').default('false'),
+  FEATURE_AI_ASSISTANT: z
+    .string()
+    .transform((v) => v === 'true')
+    .default('false'),
 });
 
 // Validate on startup
@@ -145,12 +148,15 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().url(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
-  NEXT_PUBLIC_FEATURE_AI_ASSISTANT: z.string().transform(v => v === 'true'),
+  NEXT_PUBLIC_FEATURE_AI_ASSISTANT: z.string().transform((v) => v === 'true'),
 });
 
 const serverEnvSchema = z.object({
   SENTRY_AUTH_TOKEN: z.string().optional(),
-  ANALYZE: z.string().transform(v => v === 'true').optional(),
+  ANALYZE: z
+    .string()
+    .transform((v) => v === 'true')
+    .optional(),
 });
 
 // Validate based on environment
@@ -185,19 +191,19 @@ OPENAI_API_KEY=sk-development-key
 
 ```typescript
 // scripts/load-secrets.ts
-import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
+import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 
 async function loadSecrets() {
   const client = new SecretsManagerClient({ region: process.env.AWS_REGION });
-  
+
   try {
     const command = new GetSecretValueCommand({
       SecretId: `ventry/${process.env.NODE_ENV}/secrets`,
     });
-    
+
     const response = await client.send(command);
     const secrets = JSON.parse(response.SecretString || '{}');
-    
+
     // Merge with environment
     Object.assign(process.env, secrets);
   } catch (error) {
@@ -404,7 +410,7 @@ AWS_ACCESS_KEY_ID        # External service credential
 ```typescript
 /**
  * JWT_SECRET
- * 
+ *
  * Description: Secret key for signing JWT tokens
  * Type: string
  * Required: Yes
@@ -421,15 +427,19 @@ AWS_ACCESS_KEY_ID        # External service credential
 ### Common Issues
 
 1. **Missing Required Variable**
+
    ```
    Error: Missing required environment variable: JWT_SECRET
    ```
+
    Solution: Check `.env` files and ensure variable is set
 
 2. **Invalid Variable Format**
+
    ```
    Error: DATABASE_URL must be a valid URL
    ```
+
    Solution: Verify format matches expected pattern
 
 3. **Permission Denied**
@@ -468,21 +478,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-1
-      
+
       - name: Load production secrets
         run: |
           aws secretsmanager get-secret-value \
             --secret-id ventry/production/secrets \
             --query SecretString \
             --output text > .env.production
-      
+
       - name: Deploy
         run: |
           source .env.production
@@ -506,7 +516,7 @@ services:
       - DATABASE_URL=postgresql://postgres:password@db:5432/ventry
     depends_on:
       - db
-      
+
   db:
     image: postgres:16
     environment:

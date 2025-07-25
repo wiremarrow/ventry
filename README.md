@@ -14,6 +14,7 @@ Ventry is an ambitious AI-native inventory management system designed to revolut
 Recent security improvements include enterprise-grade Row-Level Security (RLS) implementation with PostgreSQL SECURITY DEFINER functions, preventing SQL injection at the database level. The lean implementation follows enterprise best practices while maintaining simplicity.
 
 **✅ Enterprise RLS Features**:
+
 - SECURITY DEFINER functions validate inputs at database level (CUID format enforced)
 - Transaction-scoped session variables (connection pool safe)
 - One canonical pattern: `withRLS()` wrapper with full TypeScript type safety
@@ -28,6 +29,7 @@ Recent security improvements include enterprise-grade Row-Level Security (RLS) i
 ## 🏗️ Architecture Overview
 
 ### Monorepo Structure
+
 ```
 ventry/
 ├── apps/
@@ -45,6 +47,7 @@ ventry/
 ```
 
 ### Technology Stack
+
 - **Package Management**: pnpm + Turborepo for monorepo management
 - **Backend**: **tRPC + Fastify + Prisma + PostgreSQL** for end-to-end type-safe API architecture
 - **Frontend**: Next.js 15 + React 18.3.1 + TypeScript + Tailwind CSS v3.4.0 + shadcn/ui for modern UI
@@ -59,7 +62,7 @@ ventry/
   - **Testing**: ✅ All unit tests (19/19) and integration tests (49/49) passing
   - **Architecture**: Clean tRPC factory pattern avoiding circular dependencies
   - **Column Naming**: ✅ PostgreSQL best practices with snake_case in database, camelCase in TypeScript via Prisma @map directives
-  - **UI Components**: 
+  - **UI Components**:
     - ✅ **Inventory Page**: Full tRPC integration with stock adjustments and filtering
     - ✅ **Products Page**: Complete CRUD operations with categories and units of measure
     - ✅ **Warehouses Page**: Complete location hierarchy, analytics, and warehouse management
@@ -78,7 +81,7 @@ ventry/
   - **Unit Tests**: **Vitest** with component testing for all UI components
   - **Integration Tests**: Real PostgreSQL database operations with proper isolation
   - **E2E Tests**: Dedicated `@ventry/e2e` workspace package with Playwright across 3 browsers
-  - **Test Coverage**: 
+  - **Test Coverage**:
     - ✅ Inventory components and router (100% coverage)
     - ✅ Products/Items components and router (100% coverage)
     - ✅ Auth flow and organization context
@@ -108,30 +111,35 @@ ventry/
 ### Core AI Agents
 
 #### 1. Stock Advisor Agent
+
 - **Purpose**: Intelligent reorder quantity recommendations
 - **Input**: Product ID, current stock levels, sales history
 - **Analysis**: Historical sales patterns, seasonality, lead times
 - **Output**: Actionable reorder suggestions with reasoning
 
 #### 2. Forecast Agent
+
 - **Purpose**: Demand prediction using time-series analysis
 - **Input**: SKU/location data, historical sales, external factors
 - **Analysis**: Time-series forecasting, trend analysis, seasonal patterns
 - **Output**: Demand forecasts with confidence intervals
 
 #### 3. Anomaly Detector
+
 - **Purpose**: Identify unexpected stock changes
 - **Input**: Stock movement patterns, historical baselines
 - **Analysis**: Statistical anomaly detection, pattern recognition
 - **Output**: Alerts for potential theft, miscounts, or data errors
 
 #### 4. Conversational Agent
+
 - **Purpose**: Natural language inventory queries and actions
 - **Input**: User questions via chat interface
 - **Analysis**: Intent recognition, query parsing, context understanding
 - **Output**: Conversational responses with actionable insights
 
 ### AI Integration Pattern
+
 ```typescript
 // tRPC Agent Procedure Pattern
 export const agentsRouter = createTRPCRouter({
@@ -142,9 +150,9 @@ export const agentsRouter = createTRPCRouter({
       // 1. Fetch historical data via Prisma
       const product = await ctx.prisma.product.findUnique({
         where: { id: input.productId },
-        include: { stockMovements: true, stockLevels: true }
+        include: { stockMovements: true, stockLevels: true },
       });
-      
+
       // 2. Apply business logic and context
       // 3. Generate structured prompt
       // 4. Call LLM with chain-of-thought reasoning
@@ -158,12 +166,14 @@ export const agentsRouter = createTRPCRouter({
 ## 🔄 Automated Workflows
 
 ### Event-Driven Architecture
+
 - **Stock Threshold Events**: Automatic draft purchase order creation
 - **Daily Summary Jobs**: Critical alerts via email
 - **Real-time Updates**: WebSocket connections for live dashboard updates
 - **Agent Orchestration**: Message bus for coordinating agent tasks
 
 ### Workflow Examples
+
 1. **Low Stock Detection**: Stock < threshold → Agent analysis → Draft PO → UI notification
 2. **Anomaly Response**: Unusual stock movement → Investigation → Alert → Human review
 3. **Forecast Updates**: Daily forecast refresh → Threshold adjustments → Proactive alerts
@@ -171,6 +181,7 @@ export const agentsRouter = createTRPCRouter({
 ## 📊 Core Functional Requirements
 
 ### 1. Inventory CRUD Operations
+
 - **Products**: SKU management, categorization, specifications
 - **Categories**: Hierarchical organization, custom attributes
 - **Locations**: Multi-warehouse support, location-specific stock
@@ -178,6 +189,7 @@ export const agentsRouter = createTRPCRouter({
 - **Suppliers**: Contact management, lead times, pricing
 
 ### 2. Real-time Stock Dashboard
+
 - **Live Analytics Integration**: Real-time data from tRPC analytics endpoints with auto-refresh
 - **Current Levels**: Live stock quantities across all locations with 30-second updates
 - **Low Stock Alerts**: Configurable thresholds with urgency levels and real-time monitoring
@@ -187,6 +199,7 @@ export const agentsRouter = createTRPCRouter({
 - **User Controls**: Manual refresh and auto-refresh toggle for customized experience
 
 ### 3. AI-Powered Insights
+
 - **Predictive Analytics**: Demand forecasting, seasonal adjustments
 - **Optimization**: Reorder point calculations, safety stock levels
 - **Anomaly Detection**: Automated variance analysis
@@ -214,9 +227,11 @@ model ChatSession { ... }
 ```
 
 ### tRPC Router Architecture
+
 All 22 routers are implemented and operational. The `agentsRouter` for AI agent orchestration is planned for Phase 3.
 
 ### Next.js App Router Structure
+
 ```
 app/
 ├── dashboard/           # Real-time analytics dashboard
@@ -230,6 +245,7 @@ app/
 ## 🎨 Frontend Architecture
 
 ### Component Library (shadcn/ui)
+
 - **UI Components**: Consistent design system
 - **Data Tables**: Advanced filtering, sorting, pagination
 - **Forms**: Type-safe form validation
@@ -237,6 +253,7 @@ app/
 - **Chat Interface**: Streaming AI responses
 
 ### State Management
+
 - **React Context**: Global app state
 - **SWR/TanStack Query**: Server state management
 - **Real-time Updates**: WebSocket integration
@@ -245,6 +262,7 @@ app/
 ## 🔐 Security & Permissions
 
 ### Authentication & Authorization
+
 - **Signed Cookie Authentication**: Secure httpOnly cookies with signatures
 - **JWT Tokens**: Stateless authentication with organization context
 - **Role-Based Access Control**: Granular permissions (USER, ADMIN, MANAGER, etc.)
@@ -257,12 +275,14 @@ app/
 - **Audit Logging**: Comprehensive action tracking
 
 ### AI Security
+
 - **Prompt Injection Protection**: Input sanitization
 - **Output Validation**: Response verification
 - **Rate Limiting**: LLM API usage controls
 - **Audit Trail**: All AI decisions logged
 
 ### Authentication Flow
+
 The system uses a centralized authentication architecture with secure signed cookies:
 
 1. **Login Process**:
@@ -293,6 +313,7 @@ The system uses a centralized authentication architecture with secure signed coo
 ## 📊 Project Status
 
 ### Current Phase: Supabase Migration (Phase 2)
+
 - ✅ **Phase 0**: Foundation & CI/CD Setup - Complete
 - ✅ **Phase 1**: Core Backend Infrastructure - Complete
   - tRPC + Fastify backend with full authentication
@@ -327,7 +348,7 @@ The system uses a centralized authentication architecture with secure signed coo
   - ✅ All backend routers completed!
   - ✅ All major UI components completed:
     - ✅ Inventory management page with stock adjustment
-    - ✅ Products management with CRUD operations  
+    - ✅ Products management with CRUD operations
     - ✅ Warehouses management with capacity tracking and location hierarchy
     - ✅ Suppliers management with contact tracking and performance metrics
     - ✅ Purchase orders with complete approval workflow
@@ -348,6 +369,7 @@ The system uses a centralized authentication architecture with secure signed coo
 - 📅 **Phase 6**: Advanced Features & Testing - Planned
 
 ### Key Achievements
+
 - **Enterprise-grade foundation** with tRPC + Fastify + Next.js 15
 - **Comprehensive testing** with 253 unit tests, 20 integration tests, and 135 E2E tests
 - **Production-ready authentication** with JWT and role-based access control
@@ -385,11 +407,12 @@ The system uses a centralized authentication architecture with secure signed coo
 ## 🏗️ tRPC Architecture Details
 
 ### **Workspace Dependencies**
+
 ```json
 // apps/web/package.json
 {
   "dependencies": {
-    "@ventry/backend": "workspace:*",  // Required for AppRouter types
+    "@ventry/backend": "workspace:*", // Required for AppRouter types
     "@trpc/client": "^11.4.3",
     "@trpc/react-query": "^11.4.3"
   }
@@ -397,12 +420,14 @@ The system uses a centralized authentication architecture with secure signed coo
 ```
 
 ### **Type-Safe API Flow**
+
 1. **Backend**: Define tRPC procedures with Zod schemas
 2. **Export**: AppRouter type automatically generated
 3. **Frontend**: Import AppRouter type for full inference
 4. **Client**: `trpc.auth.login.useMutation()` fully typed
 
 ### **ESM Architecture**
+
 - **Full ESM**: No CommonJS compatibility layer
 - **Build First**: Backend must build before frontend
 - **Type Generation**: Automatic .d.ts files for type inference
@@ -410,12 +435,14 @@ The system uses a centralized authentication architecture with secure signed coo
 ## 📦 Development Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - pnpm 8+
 - Docker & Docker Compose
 - PostgreSQL 14+
 
 ### Quick Start
+
 ```bash
 # Clone and install dependencies
 git clone <repo-url>
@@ -467,6 +494,7 @@ pnpm dev
 ```
 
 ### Supabase Migration Setup (Optional - Phase 2)
+
 ```bash
 # Set up Supabase for enhanced features
 ./tools/scripts/setup-supabase.sh
@@ -503,16 +531,19 @@ pnpm build
 **Enterprise-Grade Database Strategy**: All tests respect environment-provided `DATABASE_URL` for CI/CD compatibility while providing sensible local development fallbacks.
 
 **Integration Tests** (`pnpm test:integration`):
+
 - **CI Environment**: Uses dynamic database from `DATABASE_URL` environment variable
 - **Local Development**: Falls back to `postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev`
 - **Debugging**: Check console output for database connection details
 
 **Unit Tests** (`pnpm test` / `pnpm test:cov`):
+
 - **CI Environment**: Respects any environment-provided `DATABASE_URL`
 - **Local Development**: Falls back to local development database
 - **Architecture**: Most unit tests use mocked services, some may require real database
 
 **Environment Variable Precedence**:
+
 1. **CI-provided `DATABASE_URL`** (highest priority) - enables enterprise database strategy
 2. **Local `.env` files** - for development convenience
 3. **Test setup fallbacks** (lowest priority) - ensures tests always have a database URL
@@ -522,9 +553,11 @@ This pattern follows **12-Factor App principles** and ensures seamless operation
 ## 📚 Code Style Guide
 
 ### Overview
+
 Ventry follows strict code style conventions documented in `CLAUDE.md`. All code must adhere to these patterns for consistency and maintainability.
 
 ### Key Conventions
+
 - **Import Ordering**: Enforced by ESLint with specific group ordering
 - **File Naming**: Components use kebab-case, routers use camelCase
 - **TypeScript**: Interfaces for props, proper type imports, no explicit router types
@@ -556,12 +589,14 @@ Ventry uses **Tailwind CSS v3.4.0** for optimal shadcn/ui compatibility:
 ```
 
 **Key Features:**
+
 - Tailwind CSS v3 syntax optimized for shadcn/ui component compatibility
 - Professional shadcn/ui components with consistent design system
 - Responsive card-based login interface with proper hover effects
 - Full TypeScript integration with component props
 
 **Migration Notes:**
+
 - Downgraded from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility
 - React downgraded from 19.0.0 to 18.3.1 for @radix-ui/react-slot compatibility
 - All shadcn/ui components now render correctly with proper styling
@@ -569,11 +604,13 @@ Ventry uses **Tailwind CSS v3.4.0** for optimal shadcn/ui compatibility:
 ### Development Environment
 
 **Ports Configuration:**
+
 - **Frontend**: http://localhost:6061 (Next.js with Tailwind CSS v3.4.0)
 - **Backend**: http://localhost:6060 (tRPC + Fastify API)
 - **Database**: PostgreSQL on port 5487 (via Docker)
 
 **Known Issues & Workarounds:**
+
 - **Turbopack**: Disabled due to monorepo compatibility issues with pnpm workspaces
 - **ESLint 9**: Custom configuration for Next.js 15 compatibility
 - **Node.js Type Stripping**: Experimental warning (no functional impact)
@@ -583,6 +620,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 ### Authentication & Security Features
 
 **Authentication System:**
+
 - **httpOnly Cookie Authentication** with maximum security (XSS protection)
 - **Pure tRPC Architecture** - no legacy REST patterns for auth
 - Role-based access control (Admin, Manager, User)
@@ -591,6 +629,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Persistent user profile state with Zustand (tokens server-managed only)
 
 **Debugging & Monitoring:**
+
 - Enhanced debugging utilities in `lib/debug.ts`
 - **Sentry integration fully configured** for error tracking
   - Automatic error capture with stack traces
@@ -605,6 +644,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - Development-only debug logging
 
 **Recent Fixes (2025-07-05 to 2025-07-15):**
+
 - ✅ **Code Style Standardization (2025-07-15)**: Comprehensive codebase standardization
   - **Import Ordering**: Implemented mandatory import ordering across ~50 files with ESLint enforcement
   - **Style Guide**: Added comprehensive CODE STYLE GUIDE section to CLAUDE.md
@@ -615,7 +655,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **Testing Patterns**: Established consistent patterns for unit, integration, and E2E tests
 - ✅ **Login Authentication Bug**: Fixed infinite redirect loop on login
 - ✅ **shadcn/ui Button Component**: Fixed button click events not working
-- ✅ **CSS Framework Compatibility**: Migrated from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility  
+- ✅ **CSS Framework Compatibility**: Migrated from Tailwind CSS v4 to v3.4.0 for Radix UI compatibility
 - ✅ **React Version Compatibility**: Downgraded from React 19 to 18.3.1 for @radix-ui/react-slot compatibility
 - ✅ **Dashboard Loading Issue**: Fixed infinite loading spinner in ProtectedRoute component
 - ✅ **API Token Management**: Fixed axios interceptor to use Zustand auth store instead of localStorage
@@ -683,6 +723,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 ### Project Status
 
 ✅ **Phase 1 COMPLETE**: Core Backend Infrastructure + Professional UI (2025-07-05)
+
 - **Database**: Complete Prisma schema with PostgreSQL enums and inventory management models
 - **Backend**: Full-featured tRPC + Fastify API with comprehensive authentication system
 - **Frontend**: Next.js 15 + React 18 dashboard with professional shadcn/ui components and responsive design
@@ -699,6 +740,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **Technology Stack**: Modern stack with Next.js 15, React 18.3.1, tRPC + Fastify, PostgreSQL, Tailwind CSS v3.4.0
 
 ✅ **Phase 0 Complete**: Foundation & CI/CD Setup
+
 - Monorepo structure with Turborepo
 - Docker development environment (optional)
 - ESLint & Prettier configuration
@@ -708,6 +750,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **NEW**: Automated CI/CD setup scripts
 
 🚀 **Phase 2 Ready**: AI Integration Foundation
+
 - **Backend Infrastructure**: Complete tRPC API foundation ready for AI agent integration
 - **Database Schema**: Extensible design supports AI-specific tables (AgentLog, Forecast, AnomalyEvent)
 - **Authentication System**: Role-based access control ready for AI agent permissions
@@ -716,6 +759,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **Real-time Capabilities**: WebSocket infrastructure ready for AI agent real-time updates
 
 ✅ **Stack Enhancement Complete**: Lightweight Development Experience
+
 - **Testing**: Vitest for unit tests + Playwright for E2E tests
 - **Database**: PostgreSQL for all environments with Docker for development
 - **Deployment**: Vercel for Next.js frontend
@@ -723,6 +767,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **Development**: Docker-based PostgreSQL for consistent environments
 
 ### Environment Configuration
+
 ```env
 # Database
 DATABASE_URL="postgresql://..."
@@ -743,6 +788,7 @@ SMTP_CONFIG="..."
 ## 🧪 Testing Strategy
 
 ### Backend Testing
+
 - **Unit Tests**: Service layer, utilities, tRPC routers
   - **Current Coverage**: 100% of backend routers have comprehensive unit tests (22 of 22) ✅
   - **Completed Routers**: auth, users, orders, inventory, items, warehouses, customers, suppliers, purchaseOrders, receipts, stockMovements, products, categories, itemCategories, unitsOfMeasure, analytics, health, organizations, reports, returns, shipments
@@ -752,6 +798,7 @@ SMTP_CONFIG="..."
 - **AI Agent Tests**: Mock LLM responses, prompt validation
 
 ### Test Coverage Progress (2025-01-22)
+
 - **✅ auth.test.ts**: 17 tests - Authentication, JWT tokens, cookie management
 - **✅ users.test.ts**: 17 tests - User CRUD, role management, organization context
 - **✅ orders.test.ts**: 33 tests - Order lifecycle, allocations, shipments, returns
@@ -775,6 +822,7 @@ SMTP_CONFIG="..."
 - **✅ shipments.test.ts**: 21 tests - Shipment tracking, delivery management, package operations
 
 ### Testing Patterns Established
+
 - **Mock Infrastructure**: Comprehensive Prisma client mocking with transaction support
 - **Auth Testing**: Response object mocks with setCookie/clearCookie methods
 - **ID Generation**: CUID helper function for valid test identifiers
@@ -788,10 +836,12 @@ SMTP_CONFIG="..."
 - **tRPC Mock Factory**: Consistent mock data structures for frontend tests
 
 ### Implementation Issues Discovered Through Testing
+
 - **categories router**: Fixed missing organizationId checks in several findFirst queries, eliminating a security vulnerability where users could access categories from other organizations
 - **itemCategories router**: Properly implements organization-scoped queries throughout, serving as the correct pattern to follow
 
 ### Recent Test Infrastructure Updates (2025-01-22)
+
 - **Authentication Testing**: Updated transaction mocking to properly handle user registration flow with organization creation
 - **Cookie Service Integration**: Migrated all cookie handling tests to use CookieService for signed cookie management
 - **RLS Service Updates**: Updated tests to use secure `$executeRaw` tagged templates instead of `$executeRawUnsafe`
@@ -799,9 +849,10 @@ SMTP_CONFIG="..."
 - **Integration Test Fixes**: Resolved username length validation issues in user update tests
 
 ### Frontend Unit Test Fixes (2025-01-22)
+
 - **Fixed 4 failing unit tests**: Resolved React Testing Library issues in web package
 - **inventory-filters test**: Fixed search input handler to use fireEvent.change for controlled components
-- **create-product-dialog tests**: 
+- **create-product-dialog tests**:
   - Fixed validation test by simplifying to text input only (Select field validation requires interaction)
   - Fixed element selection using getAllByText and selecting last element for dropdown options
   - Handled number input field behavior where typing appends to default values
@@ -809,12 +860,14 @@ SMTP_CONFIG="..."
 - **Result**: All 103 unit tests now passing in web package
 
 ### Frontend Testing
+
 - **Component Tests**: UI component behavior
 - **Integration Tests**: User interactions, API calls
 - **E2E Tests**: Complete user journeys
 - **Visual Regression**: UI consistency
 
 ### Test Infrastructure Improvements (2025-07-23)
+
 - **Fixed 28/30 failing unit tests**: Resolved React act() warnings, updated component selectors
 - **Custom Test Utilities**: Created centralized render wrapper with providers
 - **Mock Factory Pattern**: Type-safe tRPC mocking for consistent test data
@@ -824,12 +877,14 @@ SMTP_CONFIG="..."
 ## 📈 Performance & Scalability
 
 ### Backend Optimization
+
 - **Database Indexing**: Query optimization
 - **Caching Strategy**: Redis for frequently accessed data
 - **Background Jobs**: Async processing for AI tasks
 - **Load Balancing**: Horizontal scaling support
 
 ### Frontend Performance
+
 - **Code Splitting**: Route-based chunking
 - **Image Optimization**: Next.js image optimization
 - **Caching**: Aggressive caching strategies
@@ -841,6 +896,7 @@ SMTP_CONFIG="..."
 ## 🚀 Deployment & DevOps
 
 ### Automated CI/CD Setup (NEW!)
+
 We provide automated scripts that configure ~90% of the GitHub CI/CD setup:
 
 ```bash
@@ -855,9 +911,11 @@ We provide automated scripts that configure ~90% of the GitHub CI/CD setup:
 ```
 
 ### Comprehensive CI/CD Pipeline
+
 Our unified CI/CD pipeline enforces rigorous quality standards through multiple validation stages:
 
 #### **Quality Gates & Required Status Checks**
+
 1. **Documentation Check**: Enforces README.md and TODO.md updates for feature PRs
 2. **Lint and Type Check**: ESLint + TypeScript strict mode validation
 3. **Unit Tests**: Vitest testing on Node.js 20 LTS with coverage reporting
@@ -872,6 +930,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 12. **Coverage Gate**: Validates test coverage thresholds
 
 #### **Advanced Testing Strategy**
+
 - **Browser Matrix**: Parallel E2E testing across 3 browsers × 2 shards = 6 test jobs (Chromium, Firefox, WebKit)
 - **E2E Reliability**: Fixed critical authentication error handling ensuring consistent cross-browser execution
 - **Database Testing**: PostgreSQL validation across all environments with isolated test databases
@@ -880,12 +939,14 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 - **Optional Docker Build**: Triggered only when Docker files change
 
 #### **Deployment Pipeline**
+
 - **Frontend**: Automatic Vercel deployment with preview environments
 - **Backend**: Containerized services with automated migrations
 - **Environment Promotion**: Staging → Production with approval gates
 - **Monitoring**: Sentry integration for error tracking and performance
 
 ### Monitoring & Observability
+
 - **Application Monitoring**: Error tracking, performance metrics
 - **AI Usage Tracking**: LLM API costs, response times
 - **Business Metrics**: Inventory accuracy, user engagement
@@ -894,6 +955,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 ## 🎯 Roadmap & Future Enhancements
 
 ### Phase 1: Core Foundation (Completed ✅)
+
 - [x] Monorepo setup with Turborepo
 - [x] Complete tRPC + Fastify backend with type-safe API
 - [x] Prisma database schema with inventory models
@@ -904,18 +966,21 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 - [x] Production-ready CI/CD pipeline
 
 ### Phase 2: AI Integration (Months 3-4)
+
 - [ ] Complete AI agent suite
 - [ ] Conversational interface
 - [ ] Automated workflows
 - [ ] Advanced analytics
 
 ### Phase 3: Advanced Features (Months 5-6)
+
 - [ ] Multi-tenant support
 - [ ] Advanced forecasting
 - [ ] Mobile applications
 - [ ] Third-party integrations
 
 ### Phase 4: Enterprise Features (Months 7+)
+
 - [ ] Custom AI model training
 - [ ] Advanced reporting suite
 - [ ] Workflow automation builder
@@ -924,12 +989,14 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 ## 🤝 Development Guidelines
 
 ### Code Quality
+
 - **TypeScript**: Strict type checking
 - **ESLint/Prettier**: Consistent formatting
 - **Husky**: Pre-commit hooks
 - **Conventional Commits**: Standardized commit messages
 
 ### Best Practices
+
 - **AI-First Design**: Prioritize intelligent automation
 - **Type Safety**: End-to-end type safety
 - **Performance**: Optimize for speed and efficiency
@@ -939,6 +1006,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 ## 🔍 Claude Code Integration Notes
 
 ### For Future Development Sessions
+
 1. **Agent Implementation**: Focus on chain-of-thought reasoning in prompts
 2. **Real-time Features**: Implement WebSocket connections for live updates
 3. **Type Safety**: Maintain strict TypeScript contracts between packages
@@ -947,6 +1015,7 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 6. **Security**: Implement proper input validation for AI interactions
 
 ### Key Commands
+
 ```bash
 # Development
 pnpm dev           # Start all services
@@ -982,9 +1051,11 @@ For comprehensive troubleshooting, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHO
 ### Authentication Issues
 
 #### "Invalid credentials" Error
+
 If you receive an "Invalid credentials" error when trying to login:
 
 1. **Verify Database Seeding**: Ensure you've run the comprehensive seed script:
+
    ```bash
    pnpm --filter @ventry/database db:seed-comprehensive
    ```
@@ -998,6 +1069,7 @@ If you receive an "Invalid credentials" error when trying to login:
 3. **Clear Browser Cache**: Sometimes old authentication cookies can interfere. Clear your browser's cookies for localhost:6061.
 
 4. **Verify Backend is Running**: Ensure both frontend and backend are running:
+
    ```bash
    pnpm dev  # Should start both services
    ```
@@ -1008,7 +1080,9 @@ If you receive an "Invalid credentials" error when trying to login:
    ```
 
 #### Organization Context Errors
+
 If you see "No organization selected" errors:
+
 - This is expected behavior for multi-tenant support
 - The login process automatically assigns your first organization
 - Use the organization switcher in the header to change organizations
@@ -1019,4 +1093,4 @@ This project emphasizes AI-native development with a focus on autonomous agents,
 
 ---
 
-*Built with ❤️ for the future of intelligent inventory management*
+_Built with ❤️ for the future of intelligent inventory management_

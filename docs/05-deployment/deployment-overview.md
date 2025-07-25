@@ -63,7 +63,7 @@ Perfect for zero-downtime deployments:
 frontend-blue.ventry.app → production
 api-blue.ventry.app → production
 
-# New (Green) Environment  
+# New (Green) Environment
 frontend-green.ventry.app → staging
 api-green.ventry.app → staging
 
@@ -137,15 +137,15 @@ resource "aws_db_instance" "postgres" {
   engine     = "postgres"
   engine_version = "16.1"
   instance_class = "db.r5.large"
-  
+
   allocated_storage = 100
   storage_encrypted = true
-  
+
   backup_retention_period = 30
   backup_window = "03:00-04:00"
-  
+
   multi_az = true
-  
+
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.main.name
 }
@@ -153,7 +153,7 @@ resource "aws_db_instance" "postgres" {
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
   name = "ventry-production"
-  
+
   setting {
     name  = "containerInsights"
     value = "enabled"
@@ -180,29 +180,29 @@ spec:
         app: ventry-backend
     spec:
       containers:
-      - name: backend
-        image: ventry/backend:latest
-        ports:
-        - containerPort: 4000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: ventry-secrets
-              key: database-url
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 4000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+        - name: backend
+          image: ventry/backend:latest
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ventry-secrets
+                  key: database-url
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
 ```
 
 ## CI/CD Pipeline
@@ -233,7 +233,7 @@ jobs:
         run: |
           docker build -t ventry/backend:${{ github.sha }} apps/backend
           docker push ventry/backend:${{ github.sha }}
-      
+
       - name: Deploy to Kubernetes
         run: |
           kubectl set image deployment/ventry-backend \
@@ -321,34 +321,36 @@ spec:
   minReplicas: 2
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 80
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
 ```
 
 ### Database Scaling
 
 1. **Read Replicas**
+
    ```sql
    -- Configure read-only endpoints
    readonly.db.ventry.app
    ```
 
 2. **Connection Pooling**
+
    ```typescript
    // PgBouncer configuration
-   pool_mode = transaction
-   max_client_conn = 1000
-   default_pool_size = 25
+   pool_mode = transaction;
+   max_client_conn = 1000;
+   default_pool_size = 25;
    ```
 
 3. **Partitioning**
@@ -396,7 +398,7 @@ spec:
 ```yaml
 # Start small, scale as needed
 Development: t3.small instances
-Staging: t3.medium instances  
+Staging: t3.medium instances
 Production: Start with t3.large, auto-scale
 ```
 

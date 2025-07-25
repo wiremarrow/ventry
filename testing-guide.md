@@ -3,6 +3,7 @@
 A comprehensive guide to testing philosophy, practices, and patterns for the Ventry inventory management system.
 
 ## Table of Contents
+
 - [Testing Philosophy](#testing-philosophy)
 - [Testing Stack](#testing-stack)
 - [Test Types & Strategy](#test-types--strategy)
@@ -27,14 +28,15 @@ Ventry follows a comprehensive testing strategy that emphasizes:
 
 ## Testing Stack
 
-| Test Type | Framework | Purpose | Speed |
-|-----------|-----------|---------|-------|
-| **Unit Tests** | Vitest + TypeScript | Test business logic in isolation | Fast (< 5s) |
-| **Integration Tests** | Vitest + PostgreSQL | Test database operations | Medium (< 30s) |
-| **E2E Tests** | Playwright | Test user workflows | Slow (< 5m per browser) |
-| **Coverage** | Vitest Coverage | Track test completeness | Automatic |
+| Test Type             | Framework           | Purpose                          | Speed                   |
+| --------------------- | ------------------- | -------------------------------- | ----------------------- |
+| **Unit Tests**        | Vitest + TypeScript | Test business logic in isolation | Fast (< 5s)             |
+| **Integration Tests** | Vitest + PostgreSQL | Test database operations         | Medium (< 30s)          |
+| **E2E Tests**         | Playwright          | Test user workflows              | Slow (< 5m per browser) |
+| **Coverage**          | Vitest Coverage     | Track test completeness          | Automatic               |
 
 ### Key Technologies
+
 - **Vitest**: Modern, fast test runner with native TypeScript support
 - **Playwright**: Cross-browser E2E testing with video recording
 - **PostgreSQL 16**: Real database for integration testing
@@ -44,45 +46,54 @@ Ventry follows a comprehensive testing strategy that emphasizes:
 ## Test Types & Strategy
 
 ### Unit Tests (`*.test.ts`)
+
 Test individual functions, components, and tRPC procedures in isolation.
 
 **When to Use:**
+
 - Testing pure functions and utilities
 - Testing tRPC procedures with mocked dependencies
 - Testing React components with mocked data
 - Testing business logic without external dependencies
 
 **Characteristics:**
+
 - Fast execution (milliseconds)
 - No database or network calls
 - Extensive use of mocks
 - Run frequently during development
 
 ### Integration Tests (`*.integration.test.ts`)
+
 Test interactions between components with real database operations.
 
 **When to Use:**
+
 - Testing tRPC procedures with real database
 - Testing complex queries and transactions
 - Testing data integrity and constraints
 - Testing multi-step workflows
 
 **Characteristics:**
+
 - Uses isolated `ventry_integration_test` database
 - Real PostgreSQL operations
 - Moderate execution time (seconds)
 - Clean database state between tests
 
 ### E2E Tests (`e2e/*.spec.ts`)
+
 Test complete user workflows through the browser.
 
 **When to Use:**
+
 - Testing critical user journeys
 - Testing authentication flows
 - Testing multi-page workflows
 - Testing browser-specific behavior
 
 **Characteristics:**
+
 - Real browser automation
 - Full application stack
 - Slowest execution time
@@ -132,12 +143,12 @@ ventry/
 
 ### Naming Conventions
 
-| File Type | Pattern | Example |
-|-----------|---------|---------|
-| Unit Tests | `*.test.ts(x)` | `auth-service.test.ts` |
-| Integration Tests | `*.integration.test.ts` | `items.integration.test.ts` |
-| E2E Tests | `*.spec.ts` | `inventory.spec.ts` |
-| Test Utilities | `test-*.ts` or `*-test-*.ts` | `test-data.ts`, `trpc-test-client.ts` |
+| File Type         | Pattern                      | Example                               |
+| ----------------- | ---------------------------- | ------------------------------------- |
+| Unit Tests        | `*.test.ts(x)`               | `auth-service.test.ts`                |
+| Integration Tests | `*.integration.test.ts`      | `items.integration.test.ts`           |
+| E2E Tests         | `*.spec.ts`                  | `inventory.spec.ts`                   |
+| Test Utilities    | `test-*.ts` or `*-test-*.ts` | `test-data.ts`, `trpc-test-client.ts` |
 
 ## Running Tests
 
@@ -221,7 +232,7 @@ describe('Items Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Setup mock Prisma
     mockPrisma = {
       item: {
@@ -236,8 +247,8 @@ describe('Items Router', () => {
 
     // Create authenticated caller
     caller = await createDirectCaller({
-      user: { 
-        id: 'user-1', 
+      user: {
+        id: 'user-1',
         email: 'test@example.com',
         organizationId: 'org-1',
       },
@@ -251,7 +262,7 @@ describe('Items Router', () => {
         { id: '1', name: 'Item 1', sku: 'SKU001' },
         { id: '2', name: 'Item 2', sku: 'SKU002' },
       ];
-      
+
       mockPrisma.item.findMany.mockResolvedValue(mockItems);
 
       const result = await caller.items.list({
@@ -322,9 +333,9 @@ describe('Items Router', () => {
         new Error('Unique constraint failed on the fields: (`sku`)')
       );
 
-      await expect(
-        caller.items.create({ name: 'Item', sku: 'EXISTING' })
-      ).rejects.toThrow('already exists');
+      await expect(caller.items.create({ name: 'Item', sku: 'EXISTING' })).rejects.toThrow(
+        'already exists'
+      );
     });
   });
 });
@@ -362,7 +373,7 @@ describe('Items Router - Integration', () => {
     // Create authenticated context
     const ctx = await createIntegrationContext();
     ctx.user = { id: user.id, email: user.email, organizationId: org.id };
-    
+
     const caller = appRouter.createCaller(ctx);
 
     // Create item
@@ -418,9 +429,7 @@ describe('Items Router - Integration', () => {
     ctx.user = { id: user2.id, email: user2.email, organizationId: org2.id };
     const caller = appRouter.createCaller(ctx);
 
-    await expect(
-      caller.items.getById({ id: item.id })
-    ).rejects.toThrow('not found');
+    await expect(caller.items.getById({ id: item.id })).rejects.toThrow('not found');
   });
 });
 ```
@@ -555,7 +564,7 @@ test.describe('Inventory Management', () => {
   test('should create new item', async ({ page }) => {
     // Navigate to items
     await page.goto('/inventory/items');
-    
+
     // Click add button
     await page.click('button:has-text("Add Item")');
 
@@ -563,7 +572,7 @@ test.describe('Inventory Management', () => {
     await page.fill('input[name="name"]', 'E2E Test Item');
     await page.fill('input[name="sku"]', 'E2E-001');
     await page.fill('textarea[name="description"]', 'Created by E2E test');
-    
+
     // Select category
     await page.click('[data-testid="category-select"]');
     await page.click('text=Electronics');
@@ -592,7 +601,7 @@ test.describe('Inventory Management', () => {
 
     // Clear search
     await page.fill('input[placeholder="Search items..."]', '');
-    
+
     // Filter by category
     await page.click('[data-testid="category-filter"]');
     await page.click('text=Electronics');
@@ -620,7 +629,7 @@ test.describe('Inventory Management', () => {
 
     // Verify success
     await expect(page.locator('text=Stock adjusted successfully')).toBeVisible();
-    
+
     // Verify new quantity is reflected
     await expect(page.locator('[data-testid="qty-on-hand"]')).toContainText('150');
   });
@@ -662,6 +671,7 @@ open coverage/index.html
 ### What to Test
 
 **High Priority (Must Test):**
+
 - Business logic and calculations
 - Data validation and transformation
 - Error handling and edge cases
@@ -669,12 +679,14 @@ open coverage/index.html
 - Critical user workflows
 
 **Medium Priority (Should Test):**
+
 - Data formatting and display logic
 - Complex UI interactions
 - API integrations
 - Performance-critical code
 
 **Low Priority (Nice to Have):**
+
 - Simple getters/setters
 - Trivial UI components
 - Third-party library wrappers
@@ -703,10 +715,10 @@ All 12 checks must pass before merging:
 
 ```yaml
 # Parallel execution matrix
-Unit Tests:         2 minutes
-Integration Tests:  3 minutes  
-E2E Tests:         6 jobs × 5 minutes = 10 minutes total
-Total CI Time:     ~10-12 minutes
+Unit Tests: 2 minutes
+Integration Tests: 3 minutes
+E2E Tests: 6 jobs × 5 minutes = 10 minutes total
+Total CI Time: ~10-12 minutes
 ```
 
 ### Test Artifacts
@@ -755,16 +767,19 @@ pnpm playwright show-trace trace.zip
 ### Common Debugging Techniques
 
 1. **Add Console Logs**
+
    ```typescript
    console.log('Current state:', { user, items });
    ```
 
 2. **Use Debugger Statements**
+
    ```typescript
    debugger; // Breaks when inspector attached
    ```
 
 3. **Increase Timeouts**
+
    ```typescript
    test('slow test', async () => {
      // Increase timeout for this test
@@ -781,6 +796,7 @@ pnpm playwright show-trace trace.zip
 ### Authentication Issues
 
 **Problem**: "Signed cookie string must be provided"
+
 ```typescript
 // ❌ Wrong - Reading signed cookie directly
 const token = request.cookies['auth-token'];
@@ -791,6 +807,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 ```
 
 **Problem**: E2E tests fail after login
+
 ```bash
 # Solution: Ensure proxy is configured
 # Check NEXT_PUBLIC_API_URL=/api/trpc in .env
@@ -800,6 +817,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 ### Database Issues
 
 **Problem**: "Authentication failed against database server"
+
 ```bash
 # Start PostgreSQL
 ./tools/scripts/switch-db.sh start
@@ -809,6 +827,7 @@ psql -h localhost -p 5487 -U ventry -d ventry_dev
 ```
 
 **Problem**: "Foreign key constraint violated"
+
 ```typescript
 // Ensure proper test data setup order
 const org = await prisma.organization.create(...);
@@ -819,6 +838,7 @@ const item = await prisma.item.create({ organizationId: org.id, ... });
 ### Test Isolation Issues
 
 **Problem**: Tests pass individually but fail together
+
 ```typescript
 // ✅ Clean database between tests
 beforeEach(async () => {
@@ -839,6 +859,7 @@ beforeEach(() => {
 ### Performance Issues
 
 **Problem**: Tests running slowly
+
 ```bash
 # Run tests in parallel
 pnpm vitest run --pool=threads --poolOptions.threads.singleThread=false
@@ -853,38 +874,42 @@ test.concurrent('test 2', async () => { ... });
 ### General Testing Principles
 
 1. **Test Behavior, Not Implementation**
+
    ```typescript
    // ❌ Testing implementation details
    expect(component.state.isLoading).toBe(true);
-   
+
    // ✅ Testing behavior
    expect(screen.getByTestId('loading-spinner')).toBeVisible();
    ```
 
 2. **Use Descriptive Test Names**
+
    ```typescript
    // ❌ Vague name
    it('should work', () => {});
-   
+
    // ✅ Descriptive name
    it('should return 404 when item does not exist', () => {});
    ```
 
 3. **Follow AAA Pattern**
+
    ```typescript
    it('should calculate total price', () => {
      // Arrange
      const items = [{ price: 10 }, { price: 20 }];
-     
+
      // Act
      const total = calculateTotal(items);
-     
+
      // Assert
      expect(total).toBe(30);
    });
    ```
 
 4. **Keep Tests Independent**
+
    ```typescript
    // ❌ Dependent on test order
    let sharedUser;
@@ -894,7 +919,7 @@ test.concurrent('test 2', async () => { ... });
    it('should update user', () => {
      updateUser(sharedUser); // Depends on previous test
    });
-   
+
    // ✅ Independent tests
    it('should update user', () => {
      const user = createUser();
@@ -931,6 +956,7 @@ test.concurrent('test 2', async () => { ... });
 ### Integration Testing Best Practices
 
 1. **Use Transactions for Cleanup**
+
    ```typescript
    beforeEach(async () => {
      await prisma.$transaction([
@@ -949,17 +975,18 @@ test.concurrent('test 2', async () => { ... });
    - Constraint violations
 
 3. **Verify Side Effects**
+
    ```typescript
    // Don't just check the return value
    const result = await caller.items.create(data);
-   
+
    // Also verify database state
    const dbItem = await prisma.item.findUnique({ where: { id: result.id } });
    expect(dbItem).toBeTruthy();
-   
+
    // And audit logs
    const auditLog = await prisma.auditLog.findFirst({
-     where: { entityId: result.id }
+     where: { entityId: result.id },
    });
    expect(auditLog?.action).toBe('CREATE');
    ```
@@ -967,24 +994,27 @@ test.concurrent('test 2', async () => { ... });
 ### E2E Testing Best Practices
 
 1. **Use Data Attributes**
+
    ```typescript
    // ❌ Brittle selector
    await page.click('.btn-primary:nth-child(2)');
-   
+
    // ✅ Stable selector
    await page.click('[data-testid="submit-button"]');
    ```
 
 2. **Wait for Elements Properly**
+
    ```typescript
    // ❌ Fixed timeout
    await page.waitForTimeout(2000);
-   
+
    // ✅ Wait for specific condition
    await page.waitForSelector('[data-testid="success-message"]');
    ```
 
 3. **Test User Journeys**
+
    ```typescript
    test('complete order workflow', async ({ page }) => {
      await login(page);
@@ -1010,12 +1040,13 @@ test.concurrent('test 2', async () => { ... });
 ### Performance Testing
 
 1. **Monitor Test Duration**
+
    ```typescript
    test('should load quickly', async () => {
      const start = performance.now();
      await loadDashboard();
      const duration = performance.now() - start;
-     
+
      expect(duration).toBeLessThan(1000); // 1 second
    });
    ```
@@ -1024,10 +1055,8 @@ test.concurrent('test 2', async () => { ... });
    ```typescript
    it('should handle large datasets', async () => {
      // Create 1000 items
-     const items = Array.from({ length: 1000 }, (_, i) => 
-       createTestItem({ id: `item-${i}` })
-     );
-     
+     const items = Array.from({ length: 1000 }, (_, i) => createTestItem({ id: `item-${i}` }));
+
      const result = await processItems(items);
      expect(result.duration).toBeLessThan(5000);
    });

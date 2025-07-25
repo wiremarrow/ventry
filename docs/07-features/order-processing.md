@@ -27,38 +27,38 @@ interface Order {
   orderNumber: string;
   type: 'SALES';
   status: OrderStatus;
-  
+
   // Customer information
   customerId: string;
   customer: Customer;
-  
+
   // Addresses
   billingAddress: Address;
   shippingAddress: Address;
-  
+
   // Order details
   orderDate: Date;
   requestedDate?: Date;
-  
+
   // Line items
   items: OrderItem[];
-  
+
   // Totals
   subtotal: number;
   taxAmount: number;
   shippingAmount: number;
   discountAmount: number;
   totalAmount: number;
-  
+
   // Payment
   paymentStatus: PaymentStatus;
   paymentMethod?: string;
   paymentReference?: string;
-  
+
   // Fulfillment
   fulfillmentStatus: FulfillmentStatus;
   shipments: Shipment[];
-  
+
   // Metadata
   source: OrderSource;
   channel?: string;
@@ -89,32 +89,32 @@ interface PurchaseOrder {
   poNumber: string;
   type: 'PURCHASE';
   status: POStatus;
-  
+
   // Supplier information
   supplierId: string;
   supplier: Supplier;
-  
+
   // Order details
   orderDate: Date;
   expectedDate?: Date;
-  
+
   // Line items
   items: PurchaseOrderItem[];
-  
+
   // Totals
   subtotal: number;
   taxAmount: number;
   shippingAmount: number;
   totalAmount: number;
-  
+
   // Receiving
   receivingStatus: ReceivingStatus;
   receipts: Receipt[];
-  
+
   // Terms
   paymentTerms?: string;
   shippingTerms?: string;
-  
+
   // Approval
   approvalStatus?: ApprovalStatus;
   approvedBy?: string;
@@ -142,48 +142,48 @@ enum POStatus {
 // POST /api/orders/create
 const createSalesOrder = async (orderData: CreateOrderInput) => {
   // Validate customer
-  const customer = await trpc.customers.get.query({ 
-    id: orderData.customerId 
+  const customer = await trpc.customers.get.query({
+    id: orderData.customerId,
   });
-  
+
   // Check inventory availability
   const availability = await trpc.inventory.checkBulkAvailability.query({
-    items: orderData.items.map(item => ({
+    items: orderData.items.map((item) => ({
       itemId: item.itemId,
       quantity: item.quantity,
       locationId: orderData.warehouseId,
     })),
   });
-  
+
   if (!availability.allAvailable) {
     return {
       error: 'Insufficient inventory',
       unavailableItems: availability.unavailable,
     };
   }
-  
+
   // Create order with reservation
   const order = await trpc.orders.create.mutate({
     ...orderData,
     reserveInventory: true,
   });
-  
+
   // Send order confirmation
   await sendOrderConfirmation(order);
-  
+
   return order;
 };
 
 // Bulk order import
 const importOrders = async (file: File) => {
   const orders = await parseOrderFile(file);
-  
+
   const results = await trpc.orders.bulkCreate.mutate({
     orders,
     validateOnly: false,
     continueOnError: true,
   });
-  
+
   return {
     created: results.successful.length,
     failed: results.failed.length,
@@ -198,7 +198,7 @@ const importOrders = async (file: File) => {
 // Process order through workflow
 const processOrder = async (orderId: string) => {
   const order = await trpc.orders.get.query({ id: orderId });
-  
+
   switch (order.status) {
     case 'PENDING':
       // Verify payment
@@ -206,33 +206,33 @@ const processOrder = async (orderId: string) => {
       if (!paymentVerified) {
         throw new Error('Payment verification failed');
       }
-      
+
       // Confirm order
       await trpc.orders.confirm.mutate({ id: orderId });
       break;
-      
+
     case 'CONFIRMED':
       // Allocate inventory
       await trpc.orders.allocateInventory.mutate({ id: orderId });
-      
+
       // Generate pick list
-      const pickList = await trpc.fulfillment.generatePickList.mutate({ 
-        orderId 
+      const pickList = await trpc.fulfillment.generatePickList.mutate({
+        orderId,
       });
-      
+
       // Update status
       await trpc.orders.updateStatus.mutate({
         id: orderId,
         status: 'PROCESSING',
       });
       break;
-      
+
     case 'PROCESSING':
       // Check if ready to ship
-      const fulfillment = await trpc.fulfillment.getStatus.query({ 
-        orderId 
+      const fulfillment = await trpc.fulfillment.getStatus.query({
+        orderId,
       });
-      
+
       if (fulfillment.packed) {
         await trpc.orders.readyToShip.mutate({ id: orderId });
       }
@@ -246,18 +246,18 @@ const processOrder = async (orderId: string) => {
 ```typescript
 // Pick process
 const pickOrder = async (pickListId: string) => {
-  const pickList = await trpc.fulfillment.getPickList.query({ 
-    id: pickListId 
+  const pickList = await trpc.fulfillment.getPickList.query({
+    id: pickListId,
   });
-  
+
   // Mobile app scanning
   for (const item of pickList.items) {
     // Scan location barcode
     await scanLocation(item.location);
-    
+
     // Scan item barcode
     await scanItem(item.itemCode);
-    
+
     // Confirm quantity
     await confirmPick({
       pickListId,
@@ -266,7 +266,7 @@ const pickOrder = async (pickListId: string) => {
       serialNumbers: item.serialNumbers,
     });
   }
-  
+
   // Complete picking
   await trpc.fulfillment.completePicking.mutate({ pickListId });
 };
@@ -274,14 +274,14 @@ const pickOrder = async (pickListId: string) => {
 // Pack process
 const packOrder = async (orderId: string) => {
   // Get packing suggestions
-  const suggestions = await trpc.fulfillment.getPackingSuggestions.query({ 
-    orderId 
+  const suggestions = await trpc.fulfillment.getPackingSuggestions.query({
+    orderId,
   });
-  
+
   // Create shipment
   const shipment = await trpc.shipments.create.mutate({
     orderId,
-    boxes: suggestions.boxes.map(box => ({
+    boxes: suggestions.boxes.map((box) => ({
       type: box.boxType,
       weight: box.weight,
       dimensions: box.dimensions,
@@ -290,33 +290,33 @@ const packOrder = async (orderId: string) => {
     carrier: suggestions.recommendedCarrier,
     service: suggestions.recommendedService,
   });
-  
+
   // Print shipping labels
-  const labels = await trpc.shipments.generateLabels.mutate({ 
-    shipmentId: shipment.id 
+  const labels = await trpc.shipments.generateLabels.mutate({
+    shipmentId: shipment.id,
   });
-  
+
   return { shipment, labels };
 };
 
 // Ship process
 const shipOrder = async (shipmentId: string) => {
   // Mark as shipped
-  const tracking = await trpc.shipments.ship.mutate({ 
+  const tracking = await trpc.shipments.ship.mutate({
     id: shipmentId,
     actualWeight: 5.2,
-    actualCost: 12.50,
+    actualCost: 12.5,
   });
-  
+
   // Update order status
   await trpc.orders.updateFulfillmentStatus.mutate({
     orderId: tracking.orderId,
     status: 'FULFILLED',
   });
-  
+
   // Send shipping notification
   await sendShippingNotification(tracking);
-  
+
   return tracking;
 };
 ```
@@ -328,28 +328,28 @@ const shipOrder = async (shipmentId: string) => {
 const createPurchaseOrder = async (items: POItem[]) => {
   // Group by supplier
   const itemsBySupplier = groupBy(items, 'supplierId');
-  
+
   const purchaseOrders = [];
-  
+
   for (const [supplierId, supplierItems] of Object.entries(itemsBySupplier)) {
     const po = await trpc.purchaseOrders.create.mutate({
       supplierId,
       items: supplierItems,
       expectedDate: calculateExpectedDate(supplierId),
     });
-    
+
     purchaseOrders.push(po);
   }
-  
+
   return purchaseOrders;
 };
 
 // Auto-generate from reorder points
 const generatePurchaseOrders = async () => {
   const needed = await trpc.inventory.getItemsBelowReorderPoint.query();
-  
+
   const suggestions = await trpc.purchaseOrders.generateSuggestions.query({
-    items: needed.map(item => ({
+    items: needed.map((item) => ({
       itemId: item.itemId,
       quantity: item.reorderQuantity,
       urgency: item.stockoutRisk,
@@ -357,13 +357,13 @@ const generatePurchaseOrders = async () => {
     consolidate: true,
     considerLeadTime: true,
   });
-  
+
   // Review and approve
   for (const suggestion of suggestions) {
     if (suggestion.totalAmount < 5000) {
       // Auto-approve small orders
-      await trpc.purchaseOrders.approve.mutate({ 
-        id: suggestion.id 
+      await trpc.purchaseOrders.approve.mutate({
+        id: suggestion.id,
       });
     } else {
       // Send for approval
@@ -377,7 +377,7 @@ const receivePurchaseOrder = async (poId: string, receipt: ReceiptData) => {
   // Create receipt
   const receiptRecord = await trpc.purchaseOrders.receive.mutate({
     purchaseOrderId: poId,
-    items: receipt.items.map(item => ({
+    items: receipt.items.map((item) => ({
       poItemId: item.poItemId,
       receivedQuantity: item.quantity,
       location: item.location,
@@ -387,7 +387,7 @@ const receivePurchaseOrder = async (poId: string, receipt: ReceiptData) => {
     })),
     packingSlipNumber: receipt.packingSlipNumber,
   });
-  
+
   // Quality check if required
   if (receipt.requiresQC) {
     await trpc.qualityControl.createInspection.mutate({
@@ -395,12 +395,12 @@ const receivePurchaseOrder = async (poId: string, receipt: ReceiptData) => {
       items: receipt.items,
     });
   }
-  
+
   // Update inventory
   await trpc.inventory.processReceipt.mutate({
     receiptId: receiptRecord.id,
   });
-  
+
   return receiptRecord;
 };
 ```
@@ -413,16 +413,14 @@ const receivePurchaseOrder = async (poId: string, receipt: ReceiptData) => {
 // Import orders from multiple channels
 const syncChannelOrders = async () => {
   const channels = ['shopify', 'amazon', 'ebay', 'website'];
-  
+
   for (const channel of channels) {
     const connector = getChannelConnector(channel);
     const orders = await connector.fetchNewOrders();
-    
+
     // Transform to Ventry format
-    const ventryOrders = orders.map(order => 
-      transformChannelOrder(channel, order)
-    );
-    
+    const ventryOrders = orders.map((order) => transformChannelOrder(channel, order));
+
     // Import orders
     await trpc.orders.importFromChannel.mutate({
       channel,
@@ -453,15 +451,13 @@ const channelRules = {
 // Create drop ship order
 const createDropShipOrder = async (order: Order) => {
   // Identify drop ship items
-  const dropShipItems = order.items.filter(item => 
-    item.fulfillmentMethod === 'DROP_SHIP'
-  );
-  
+  const dropShipItems = order.items.filter((item) => item.fulfillmentMethod === 'DROP_SHIP');
+
   if (dropShipItems.length === 0) return;
-  
+
   // Group by supplier
   const bySupplier = groupBy(dropShipItems, 'supplierId');
-  
+
   for (const [supplierId, items] of Object.entries(bySupplier)) {
     // Create supplier order
     const supplierOrder = await trpc.dropShip.createOrder.mutate({
@@ -475,7 +471,7 @@ const createDropShipOrder = async (order: Order) => {
         phone: order.customer.phone,
       },
     });
-    
+
     // Send to supplier
     await sendToSupplier(supplierOrder);
   }
@@ -483,10 +479,10 @@ const createDropShipOrder = async (order: Order) => {
 
 // Track drop ship fulfillment
 const trackDropShipment = async (supplierOrderId: string) => {
-  const tracking = await trpc.dropShip.getTracking.query({ 
-    id: supplierOrderId 
+  const tracking = await trpc.dropShip.getTracking.query({
+    id: supplierOrderId,
   });
-  
+
   // Update original order
   await trpc.orders.updateDropShipTracking.mutate({
     orderId: tracking.originalOrderId,
@@ -506,7 +502,7 @@ const processSubscriptions = async () => {
   const due = await trpc.subscriptions.getDue.query({
     date: new Date(),
   });
-  
+
   for (const subscription of due) {
     try {
       // Create order
@@ -516,14 +512,14 @@ const processSubscriptions = async () => {
         shippingAddress: subscription.shippingAddress,
         billingAddress: subscription.billingAddress,
       });
-      
+
       // Process payment
       const payment = await processSubscriptionPayment(subscription);
-      
+
       if (payment.success) {
         // Confirm order
         await trpc.orders.confirm.mutate({ id: order.id });
-        
+
         // Update next order date
         await trpc.subscriptions.updateNextDate.mutate({
           id: subscription.id,
@@ -544,39 +540,39 @@ const processSubscriptions = async () => {
 // Modify existing order
 const modifyOrder = async (orderId: string, changes: OrderChanges) => {
   const order = await trpc.orders.get.query({ id: orderId });
-  
+
   // Check if modification allowed
   if (!['PENDING', 'CONFIRMED'].includes(order.status)) {
     throw new Error('Order cannot be modified in current status');
   }
-  
+
   // Apply changes
   if (changes.items) {
     // Check inventory for new items
-    const newItems = changes.items.filter(i => i.action === 'ADD');
+    const newItems = changes.items.filter((i) => i.action === 'ADD');
     const availability = await checkAvailability(newItems);
-    
+
     if (!availability.allAvailable) {
       throw new Error('Some items are not available');
     }
-    
+
     // Update order
     await trpc.orders.modifyItems.mutate({
       orderId,
       changes: changes.items,
     });
   }
-  
+
   if (changes.shippingAddress) {
     await trpc.orders.updateShippingAddress.mutate({
       orderId,
       address: changes.shippingAddress,
     });
-    
+
     // Recalculate shipping
     await recalculateShipping(orderId);
   }
-  
+
   // Send modification notification
   await sendOrderModificationNotification(order, changes);
 };
@@ -584,28 +580,28 @@ const modifyOrder = async (orderId: string, changes: OrderChanges) => {
 // Cancel order
 const cancelOrder = async (orderId: string, reason: string) => {
   const order = await trpc.orders.get.query({ id: orderId });
-  
+
   // Check if cancellation allowed
   if (order.status === 'SHIPPED') {
     throw new Error('Cannot cancel shipped orders');
   }
-  
+
   // Release inventory reservations
   await trpc.inventory.releaseReservations.mutate({
     orderId,
   });
-  
+
   // Cancel order
   await trpc.orders.cancel.mutate({
     id: orderId,
     reason,
   });
-  
+
   // Process refund if paid
   if (order.paymentStatus === 'PAID') {
     await processRefund(order);
   }
-  
+
   // Notify customer
   await sendCancellationNotification(order, reason);
 };
@@ -624,7 +620,7 @@ const getSalesAnalysis = async (period: DateRange) => {
     groupBy: ['date', 'channel', 'customer_segment'],
     metrics: ['revenue', 'orders', 'units', 'avg_order_value'],
   });
-  
+
   return analysis;
 };
 
@@ -634,7 +630,7 @@ const getOrderStatusReport = async () => {
     includeAging: true,
     includeValue: true,
   });
-  
+
   return {
     summary: report.summary,
     aging: report.agingBuckets,
@@ -651,7 +647,7 @@ const getFulfillmentMetrics = async () => {
   const metrics = await trpc.reports.fulfillmentMetrics.query({
     period: 'LAST_30_DAYS',
   });
-  
+
   return {
     onTimeShipment: metrics.onTimeRate,
     averageFulfillmentTime: metrics.avgFulfillmentHours,
@@ -679,7 +675,7 @@ const getFulfillmentMetrics = async () => {
 const batchUpdateOrders = async (updates: OrderUpdate[]) => {
   // Group by operation type
   const grouped = groupBy(updates, 'operation');
-  
+
   // Execute in parallel where possible
   await Promise.all([
     trpc.orders.batchUpdateStatus.mutate(grouped.status),
@@ -714,7 +710,7 @@ const handleOrderWebhook = async (event: WebhookEvent) => {
   if (!verifyWebhookSignature(event)) {
     throw new Error('Invalid webhook signature');
   }
-  
+
   // Process based on event type
   switch (event.type) {
     case 'order.created':
@@ -727,7 +723,7 @@ const handleOrderWebhook = async (event: WebhookEvent) => {
       await processDelivery(event.data);
       break;
   }
-  
+
   // Acknowledge webhook
   return { received: true };
 };
@@ -756,7 +752,7 @@ const handleOrderWebhook = async (event: WebhookEvent) => {
 
 ```sql
 -- Orders stuck in processing
-SELECT 
+SELECT
   o.id,
   o.order_number,
   o.status,
@@ -768,7 +764,7 @@ WHERE o.status = 'PROCESSING'
 ORDER BY o.updated_at;
 
 -- Unfulfilled items
-SELECT 
+SELECT
   oi.order_id,
   oi.item_id,
   oi.quantity_ordered,

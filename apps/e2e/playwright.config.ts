@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * E2E Test Configuration for Ventry
- * 
+ *
  * This config runs tests from the dedicated @ventry/e2e package
  * with proper workspace dependency resolution and test isolation.
  */
@@ -91,9 +91,12 @@ export default defineConfig({
       timeout: 120 * 1000,
       env: {
         PORT: '6060',
-        DATABASE_URL: process.env.DATABASE_URL || 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev',
-        JWT_SECRET: 'test-secret-key',
+        DATABASE_URL:
+          process.env.DATABASE_URL ||
+          'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev',
+        JWT_SECRET: 'test-jwt-secret-key-for-e2e-tests-minimum-32-chars',
         NODE_ENV: 'test',
+        COOKIE_SECRET: 'test-cookie-secret-key-for-e2e-tests-minimum-32-chars',
       },
     },
     {

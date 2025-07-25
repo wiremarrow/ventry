@@ -5,7 +5,7 @@ Ventry uses a comprehensive testing strategy with Vitest for unit tests and Play
 ## Testing Stack
 
 - **Unit Tests**: Vitest with TypeScript support
-- **Integration Tests**: PostgreSQL service containers  
+- **Integration Tests**: PostgreSQL service containers
 - **E2E Tests**: Playwright with browser matrix and sharding
 - **Coverage**: Built-in with Vitest + threshold gates
 - **CI Integration**: Comprehensive 13-check pipeline on every PR
@@ -13,16 +13,19 @@ Ventry uses a comprehensive testing strategy with Vitest for unit tests and Play
 ## Advanced Testing Features
 
 ### Browser Matrix Testing
+
 - **Chromium**: Primary browser for modern web standards
 - **Firefox**: Gecko engine compatibility testing
 - **WebKit**: Safari/iOS compatibility testing
 
 ### Test Sharding
+
 - **Parallel Execution**: 2 shards per browser = 6 parallel E2E jobs
 - **Faster CI**: Reduces E2E test time by ~50%
 - **Artifact Management**: Test results and videos preserved per shard
 
 ### PostgreSQL Integration Testing
+
 - **Real Database**: PostgreSQL 16 service container in CI
 - **Health Checks**: Ensures database is ready before tests
 - **Migration Testing**: Validates schema changes work correctly
@@ -32,22 +35,26 @@ Ventry uses a comprehensive testing strategy with Vitest for unit tests and Play
 ### Root vs Package-Specific Commands
 
 **Root Level (via Turborepo)**
+
 - `pnpm test` - Runs unit tests across all packages (excludes integration tests)
 - `pnpm test:integration` - Runs integration tests with PostgreSQL
-- `pnpm lint` - Lints all packages 
+- `pnpm lint` - Lints all packages
 - `pnpm typecheck` - Type checks all packages
 
 **Backend Package Specific**
+
 - `pnpm test:cov` - Unit tests with coverage (excludes integration tests)
 - `pnpm test:integration` - Integration tests with PostgreSQL
 - `pnpm test:watch` - Watch mode for backend unit tests
 
 **Using Filters (from root)**
+
 - `pnpm --filter @ventry/backend test:cov` - Backend coverage from root
 - `pnpm --filter @ventry/backend test:integration` - Backend integration tests from root
 - `pnpm --filter @ventry/web test` - Frontend tests from root
 
 **💡 Pro Tips:**
+
 - Always run `pnpm test:integration` before committing to catch database issues
 - Use `pnpm test:cov` to ensure you meet the 80% coverage threshold
 - Run tests in this order for CI simulation: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:integration && pnpm build`
@@ -130,9 +137,9 @@ describe('Products Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    caller = await createDirectCaller({ 
+    caller = await createDirectCaller({
       user: { id: '1', email: 'test@example.com', role: 'ADMIN' },
-      prisma: mockPrisma as any 
+      prisma: mockPrisma as any,
     });
   });
 
@@ -140,7 +147,7 @@ describe('Products Router', () => {
     mockPrisma.product.findMany.mockResolvedValue(mockProducts);
 
     const result = await caller.products.list();
-    
+
     expect(result).toHaveLength(3);
     expect(result[0].name).toBe('Widget Pro');
   });
@@ -155,7 +162,7 @@ describe('Products Router', () => {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    
+
     mockPrisma.product.create.mockResolvedValue(newProduct);
 
     const result = await caller.products.create({
@@ -164,7 +171,7 @@ describe('Products Router', () => {
       price: 99.99,
       categoryId: '1',
     });
-    
+
     expect(result).toHaveProperty('id');
     expect(result.name).toBe('Test Product');
   });
@@ -197,7 +204,7 @@ test.describe('Product Management', () => {
     await page.fill('input[name="name"]', testProduct.name);
     await page.fill('input[name="sku"]', testProduct.sku);
     await page.fill('input[name="price"]', testProduct.price.toString());
-    
+
     // Submit
     await page.click('button[type="submit"]');
 
@@ -207,7 +214,7 @@ test.describe('Product Management', () => {
 
   test('should search for products', async ({ page }) => {
     await page.goto('/products');
-    
+
     // Search
     await page.fill('input[placeholder="Search products..."]', 'Test');
     await page.keyboard.press('Enter');
@@ -277,22 +284,24 @@ ventry/
 ### GitHub Actions
 
 Our unified CI pipeline runs comprehensive tests on:
+
 - Every push to `main`
 - Every pull request
 
 #### Required Status Checks (13 total)
+
 1. **Documentation Check** - Enforces README.md/TODO.md updates
 2. **Lint and Type Check** - ESLint + TypeScript validation
 3. **Unit Tests** - Vitest testing on Node.js 20 LTS
-5. **PostgreSQL Integration Tests** - Real database operations
-6. **E2E Tests - chromium (1)** - Browser testing, shard 1 of 2
-7. **E2E Tests - chromium (2)** - Browser testing, shard 2 of 2
-8. **E2E Tests - firefox (1)** - Browser testing, shard 1 of 2
-9. **E2E Tests - firefox (2)** - Browser testing, shard 2 of 2
-10. **E2E Tests - webkit (1)** - Browser testing, shard 1 of 2
-11. **E2E Tests - webkit (2)** - Browser testing, shard 2 of 2
-12. **Build** - Production build validation
-13. **Coverage Gate** - Test coverage threshold validation
+4. **PostgreSQL Integration Tests** - Real database operations
+5. **E2E Tests - chromium (1)** - Browser testing, shard 1 of 2
+6. **E2E Tests - chromium (2)** - Browser testing, shard 2 of 2
+7. **E2E Tests - firefox (1)** - Browser testing, shard 1 of 2
+8. **E2E Tests - firefox (2)** - Browser testing, shard 2 of 2
+9. **E2E Tests - webkit (1)** - Browser testing, shard 1 of 2
+10. **E2E Tests - webkit (2)** - Browser testing, shard 2 of 2
+11. **Build** - Production build validation
+12. **Coverage Gate** - Test coverage threshold validation
 
 ### Test Reports
 
@@ -345,13 +354,15 @@ test('should handle concurrent users', async ({ page }) => {
   const promises = Array.from({ length: 10 }, async (_, i) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    
+
     await page.goto('/products');
     await page.waitForLoadState('networkidle');
-    
-    const responseTime = await page.evaluate(() => performance.timing.loadEventEnd - performance.timing.navigationStart);
+
+    const responseTime = await page.evaluate(
+      () => performance.timing.loadEventEnd - performance.timing.navigationStart
+    );
     expect(responseTime).toBeLessThan(3000); // 3 seconds
-    
+
     await context.close();
   });
 
@@ -367,7 +378,8 @@ Integration tests use PostgreSQL for real database operations:
 
 ```typescript
 // In integration test setup (test-setup-integration.ts)
-process.env.DATABASE_URL = 'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
+process.env.DATABASE_URL =
+  'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev?schema=public';
 
 // Clean between tests
 beforeEach(async () => {
@@ -410,10 +422,10 @@ const testCategoryData = {
 beforeEach(async () => {
   // Clean database first
   await cleanDatabase();
-  
+
   // Create test user
   const user = await prisma.user.create({ data: testUserData });
-  
+
   // Create test category
   const category = await prisma.category.create({ data: testCategoryData });
 });
@@ -430,6 +442,7 @@ beforeEach(async () => {
 ### Test Performance
 
 Monitor test execution time:
+
 - Unit tests: < 5 minutes
 - E2E tests: < 15 minutes per shard
 - Total CI time: < 20 minutes
@@ -439,12 +452,14 @@ Monitor test execution time:
 ### Integration Test Failures
 
 **Issue**: `Authentication failed against database server`
+
 ```bash
 # Solution: Ensure PostgreSQL is running
 ./tools/scripts/switch-db.sh start
 ```
 
 **Issue**: `Foreign key constraint violated`
+
 ```bash
 # Solution: Tests are trying to create records with missing dependencies
 # Check test setup creates all required parent records (users, categories, locations)
@@ -453,17 +468,19 @@ Monitor test execution time:
 ### Unit vs Integration Test Confusion
 
 **Issue**: Tests run with wrong setup file
+
 ```bash
 # ✅ Correct: Unit tests exclude integration tests
 pnpm test                    # Uses test-setup.ts, excludes *.integration.spec.ts
 
-# ✅ Correct: Integration tests use separate config  
+# ✅ Correct: Integration tests use separate config
 pnpm test:integration        # Uses jest.integration.config.js and test-setup-integration.ts
 ```
 
 ### Performance Issues
 
 **Issue**: Tests running slowly
+
 ```bash
 # Solution: Run tests in parallel and use appropriate test type
 pnpm test                    # Fast unit tests (no database)
@@ -485,6 +502,7 @@ If E2E tests fail with authentication errors after login:
    - For direct backend access: `http://localhost:6060/trpc`
 
 3. **Verify Next.js rewrites are configured**
+
    ```typescript
    // next.config.ts
    async rewrites() {
@@ -503,6 +521,7 @@ If E2E tests fail with authentication errors after login:
 ### Context Cleanup Errors
 
 **Issue**: `Failed to find browser context` errors
+
 ```typescript
 // ❌ Wrong - Don't clear cookies on closing contexts
 await clearAuthState(page);
@@ -513,6 +532,7 @@ await context.close(); // This automatically cleans up all storage
 ```
 
 **Key Points**:
+
 - Closing a browser context automatically cleans up all storage including cookies
 - Don't perform operations on contexts that are about to be closed
 - Each test should create its own isolated context
@@ -520,15 +540,16 @@ await context.close(); // This automatically cleans up all storage
 ### Authentication Test Patterns
 
 **Successful Login Test**:
+
 ```typescript
 test('should successfully login', async ({ page }) => {
   await page.fill('input[type="email"]', testUser.email);
   await page.fill('input[type="password"]', testUser.password);
   await page.click('button:has-text("Sign In")');
-  
+
   // Wait for navigation instead of checking for errors
   await page.waitForURL(/.*dashboard/, { timeout: 10000 });
-  
+
   // Verify dashboard loaded
   await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
 });

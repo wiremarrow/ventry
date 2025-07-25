@@ -1,8 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Skeleton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@ventry/ui';
-import { Search, MoreHorizontal, Edit, UserCheck, UserX, Users as UsersIcon, Clock } from 'lucide-react';
+import {
+  Card,
+  Input,
+  Button,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ventry/ui';
+import {
+  Search,
+  MoreHorizontal,
+  Edit,
+  UserCheck,
+  UserX,
+  Users as UsersIcon,
+  Clock,
+} from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -20,7 +43,7 @@ export default function UsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { user: currentUser } = useAuthStore();
   const { currentOrganization } = useOrganization();
-  
+
   // Check if user is organization admin (OWNER or ADMIN role in the organization)
   const isOrgAdmin = currentOrganization && ['OWNER', 'ADMIN'].includes(currentOrganization.role);
 
@@ -63,22 +86,23 @@ export default function UsersPage() {
   });
 
   // Filter users by search term
-  const filteredUsers = users?.filter(user => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      user.email.toLowerCase().includes(search) ||
-      user.username.toLowerCase().includes(search) ||
-      user.firstName.toLowerCase().includes(search) ||
-      user.lastName.toLowerCase().includes(search)
-    );
-  }) || [];
+  const filteredUsers =
+    users?.filter((user) => {
+      if (!searchTerm) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        user.email.toLowerCase().includes(search) ||
+        user.username.toLowerCase().includes(search) ||
+        user.firstName.toLowerCase().includes(search) ||
+        user.lastName.toLowerCase().includes(search)
+      );
+    }) || [];
 
   // Calculate stats
   const stats = {
     total: users?.length || 0,
-    active: users?.filter(u => u.isActive).length || 0,
-    inactive: users?.filter(u => !u.isActive).length || 0,
+    active: users?.filter((u) => u.isActive).length || 0,
+    inactive: users?.filter((u) => !u.isActive).length || 0,
   };
 
   const handleEdit = (userId: string) => {
@@ -105,9 +129,7 @@ export default function UsersPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Organization Users</h1>
-              <p className="text-muted-foreground">
-                Manage users in your organization
-              </p>
+              <p className="text-muted-foreground">Manage users in your organization</p>
             </div>
           </div>
 
@@ -182,9 +204,7 @@ export default function UsersPage() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-8">
                       <p className="text-muted-foreground">
-                        {searchTerm 
-                          ? 'No users found matching your search' 
-                          : 'No users found'}
+                        {searchTerm ? 'No users found matching your search' : 'No users found'}
                       </p>
                     </TableCell>
                   </TableRow>
@@ -196,12 +216,8 @@ export default function UsersPage() {
                           {user.firstName} {user.lastName}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {user.email}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {user.username}
-                      </TableCell>
+                      <TableCell className="text-muted-foreground">{user.email}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.username}</TableCell>
                       <TableCell>
                         <UserRoleBadge role={user.role} />
                       </TableCell>
@@ -212,9 +228,7 @@ export default function UsersPage() {
                         {user.lastLoginAt ? (
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            <span className="text-sm">
-                              {formatDateTime(user.lastLoginAt)}
-                            </span>
+                            <span className="text-sm">{formatDateTime(user.lastLoginAt)}</span>
                           </div>
                         ) : (
                           <span className="text-sm">Never</span>
@@ -235,7 +249,7 @@ export default function UsersPage() {
                             {isOrgAdmin && user.id !== currentUser?.id && (
                               <>
                                 {user.isActive ? (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={() => handleDeactivate(user.id)}
                                     className="text-red-600"
                                   >
@@ -243,7 +257,7 @@ export default function UsersPage() {
                                     Deactivate
                                   </DropdownMenuItem>
                                 ) : (
-                                  <DropdownMenuItem 
+                                  <DropdownMenuItem
                                     onClick={() => handleActivate(user.id)}
                                     className="text-green-600"
                                   >

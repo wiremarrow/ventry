@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { appRouter } from './app.js';
-import { createIntegrationContext, createAuthenticatedIntegrationContext } from '../test-utils/trpc-test-client.js';
+import {
+  createIntegrationContext,
+  createAuthenticatedIntegrationContext,
+} from '../test-utils/trpc-test-client.js';
 import { prisma } from '@ventry/database/client';
 import { hash } from 'bcryptjs';
 import { signJWT } from '../auth/jwt.js';
@@ -13,10 +16,10 @@ describe('Users Router Integration', () => {
       await cleanupFn();
       cleanupFn = null;
     }
-    
+
     // Additional cleanup for any test data that might have been created
     await prisma.user.deleteMany({
-      where: { email: { contains: 'users.integration.test' } }
+      where: { email: { contains: 'users.integration.test' } },
     });
   });
 
@@ -34,9 +37,9 @@ describe('Users Router Integration', () => {
           firstName: 'User',
           lastName: 'Two',
           password: await hash('password123', 10),
-        }
+        },
       });
-      
+
       const user3 = await prisma.user.create({
         data: {
           email: 'user3@users.integration.test',
@@ -44,20 +47,20 @@ describe('Users Router Integration', () => {
           firstName: 'User',
           lastName: 'Three',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await prisma.organizationMember.createMany({
         data: [
           { organizationId: organization.id, userId: user2.id, role: 'MEMBER' },
           { organizationId: organization.id, userId: user3.id, role: 'VIEWER' },
-        ]
+        ],
       });
 
       const result = await caller.users.list();
 
       expect(result).toHaveLength(3); // Test user + 2 additional users
-      const emails = result.map(u => u.email);
+      const emails = result.map((u) => u.email);
       expect(emails).toContain(ctx.user!.email);
       expect(emails).toContain('user2@users.integration.test');
       expect(emails).toContain('user3@users.integration.test');
@@ -73,7 +76,7 @@ describe('Users Router Integration', () => {
         data: {
           name: 'Other Organization',
           slug: `other-org-${Date.now()}`,
-        }
+        },
       });
 
       const otherUser = await prisma.user.create({
@@ -83,7 +86,7 @@ describe('Users Router Integration', () => {
           firstName: 'Other',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -91,7 +94,7 @@ describe('Users Router Integration', () => {
           organizationId: otherOrg.id,
           userId: otherUser.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.users.list();
@@ -99,7 +102,7 @@ describe('Users Router Integration', () => {
       // Should only see users from the authenticated user's organization
       expect(result).toHaveLength(1);
       expect(result[0].email).toBe(ctx.user!.email);
-      
+
       // Clean up other org
       await prisma.organizationMember.deleteMany({ where: { organizationId: otherOrg.id } });
       await prisma.organization.delete({ where: { id: otherOrg.id } });
@@ -119,7 +122,7 @@ describe('Users Router Integration', () => {
           firstName: 'Target',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -127,7 +130,7 @@ describe('Users Router Integration', () => {
           organizationId: organization.id,
           userId: targetUser.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.users.getById({ id: targetUser.id });
@@ -151,12 +154,12 @@ describe('Users Router Integration', () => {
           firstName: 'Outside',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
-      await expect(
-        caller.users.getById({ id: outsideUser.id })
-      ).rejects.toThrow('User not found in organization');
+      await expect(caller.users.getById({ id: outsideUser.id })).rejects.toThrow(
+        'User not found in organization'
+      );
     });
   });
 
@@ -172,7 +175,7 @@ describe('Users Router Integration', () => {
           firstName: 'Updated',
           lastName: 'Name',
           username: `upd${Date.now()}`.slice(0, 20), // Ensure max 20 chars
-        }
+        },
       });
 
       expect(result.firstName).toBe('Updated');
@@ -189,12 +192,12 @@ describe('Users Router Integration', () => {
         id: user.id,
         data: {
           password: 'newpassword123',
-        }
+        },
       });
 
       // Verify password was hashed
       const updatedUser = await prisma.user.findUnique({
-        where: { id: user.id }
+        where: { id: user.id },
       });
       expect(updatedUser?.password).not.toBe('newpassword123');
       expect(updatedUser?.password).toContain('$2a$'); // bcrypt hash prefix
@@ -212,7 +215,7 @@ describe('Users Router Integration', () => {
           firstName: 'Target',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -220,7 +223,7 @@ describe('Users Router Integration', () => {
           organizationId: organization.id,
           userId: targetUser.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.users.update({
@@ -228,7 +231,7 @@ describe('Users Router Integration', () => {
         data: {
           firstName: 'Modified',
           lastName: 'ByAdmin',
-        }
+        },
       });
 
       expect(result.firstName).toBe('Modified');
@@ -248,7 +251,7 @@ describe('Users Router Integration', () => {
           firstName: 'Existing',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await expect(
@@ -256,7 +259,7 @@ describe('Users Router Integration', () => {
           id: ctx.user!.id,
           data: {
             username: 'existingusername',
-          }
+          },
         })
       ).rejects.toThrow('Username already taken');
     });
@@ -276,7 +279,7 @@ describe('Users Router Integration', () => {
           lastName: 'User',
           password: await hash('password123', 10),
           isActive: true,
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -284,16 +287,16 @@ describe('Users Router Integration', () => {
           organizationId: organization.id,
           userId: targetUser.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.users.deactivate({ id: targetUser.id });
 
       expect(result.isActive).toBe(false);
-      
+
       // Verify in database
       const updatedUser = await prisma.user.findUnique({
-        where: { id: targetUser.id }
+        where: { id: targetUser.id },
       });
       expect(updatedUser?.isActive).toBe(false);
     });
@@ -310,7 +313,7 @@ describe('Users Router Integration', () => {
           firstName: 'Owner',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -318,12 +321,12 @@ describe('Users Router Integration', () => {
           organizationId: organization.id,
           userId: ownerUser.id,
           role: 'OWNER',
-        }
+        },
       });
 
-      await expect(
-        caller.users.deactivate({ id: ownerUser.id })
-      ).rejects.toThrow('Cannot deactivate organization owner');
+      await expect(caller.users.deactivate({ id: ownerUser.id })).rejects.toThrow(
+        'Cannot deactivate organization owner'
+      );
     });
   });
 
@@ -341,7 +344,7 @@ describe('Users Router Integration', () => {
           lastName: 'User',
           password: await hash('password123', 10),
           isActive: false,
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -349,16 +352,16 @@ describe('Users Router Integration', () => {
           organizationId: organization.id,
           userId: targetUser.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.users.activate({ id: targetUser.id });
 
       expect(result.isActive).toBe(true);
-      
+
       // Verify in database
       const updatedUser = await prisma.user.findUnique({
-        where: { id: targetUser.id }
+        where: { id: targetUser.id },
       });
       expect(updatedUser?.isActive).toBe(true);
     });
@@ -382,7 +385,7 @@ describe('Users Router Integration', () => {
         data: {
           name: 'Test Org Member',
           slug: `test-org-member-${Date.now()}`,
-        }
+        },
       });
 
       const memberUser = await prisma.user.create({
@@ -393,7 +396,7 @@ describe('Users Router Integration', () => {
           lastName: 'User',
           password: await hash('password123', 10),
           role: 'USER',
-        }
+        },
       });
 
       await prisma.organizationMember.create({
@@ -401,26 +404,26 @@ describe('Users Router Integration', () => {
           organizationId: org.id,
           userId: memberUser.id,
           role: 'MEMBER', // Not admin
-        }
+        },
       });
 
-      const token = signJWT({ 
-        userId: memberUser.id, 
+      const token = signJWT({
+        userId: memberUser.id,
         organizationId: org.id,
         email: memberUser.email,
-        role: memberUser.role
+        role: memberUser.role,
       });
 
       const ctx = await createIntegrationContext(token);
       const caller = appRouter.createCaller(ctx);
 
-      await expect(
-        caller.users.deactivate({ id: 'any-id' })
-      ).rejects.toThrow('You must be an organization admin to perform this action');
+      await expect(caller.users.deactivate({ id: 'any-id' })).rejects.toThrow(
+        'You must be an organization admin to perform this action'
+      );
 
-      await expect(
-        caller.users.activate({ id: 'any-id' })
-      ).rejects.toThrow('You must be an organization admin to perform this action');
+      await expect(caller.users.activate({ id: 'any-id' })).rejects.toThrow(
+        'You must be an organization admin to perform this action'
+      );
 
       // Cleanup
       await prisma.organizationMember.deleteMany({ where: { organizationId: org.id } });

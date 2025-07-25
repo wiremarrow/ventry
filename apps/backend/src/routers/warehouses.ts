@@ -42,10 +42,12 @@ const locationUpdateSchema = locationCreateSchema.partial().extend({
 export const warehousesRouter = createTRPCRouter({
   // List warehouses
   list: organizationProcedure
-    .input(z.object({
-      includeInactive: z.boolean().default(false),
-      includeStats: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        includeInactive: z.boolean().default(false),
+        includeStats: z.boolean().default(false),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.WarehouseWhereInput = {
         organizationId: ctx.user.organizationId,
@@ -65,8 +67,8 @@ export const warehousesRouter = createTRPCRouter({
 
       // Get stats if requested
       if (input.includeStats) {
-        const warehouseIds = warehouses.map(w => w.id);
-        
+        const warehouseIds = warehouses.map((w) => w.id);
+
         const stats = await ctx.prisma.location.groupBy({
           by: ['warehouseId'],
           where: { warehouseId: { in: warehouseIds } },
@@ -85,54 +87,57 @@ export const warehousesRouter = createTRPCRouter({
         });
 
         // Get additional stats for each warehouse
-        const warehousesWithStats = await Promise.all(warehouses.map(async (warehouse) => {
-          const stat = stats.find(s => s.warehouseId === warehouse.id);
-          
-          // Get locations with inventory count
-          const locations = await ctx.prisma.location.findMany({
-            where: { warehouseId: warehouse.id },
-            include: {
-              _count: {
-                select: {
-                  inventory: true,
+        const warehousesWithStats = await Promise.all(
+          warehouses.map(async (warehouse) => {
+            const stat = stats.find((s) => s.warehouseId === warehouse.id);
+
+            // Get locations with inventory count
+            const locations = await ctx.prisma.location.findMany({
+              where: { warehouseId: warehouse.id },
+              include: {
+                _count: {
+                  select: {
+                    inventory: true,
+                  },
                 },
               },
-            },
-          });
-          
-          const occupiedLocations = locations.filter(l => l._count.inventory > 0).length;
-          
-          // Get inventory totals
-          const inventoryTotals = await ctx.prisma.inventory.aggregate({
-            where: {
-              location: {
-                warehouseId: warehouse.id,
+            });
+
+            const occupiedLocations = locations.filter((l) => l._count.inventory > 0).length;
+
+            // Get inventory totals
+            const inventoryTotals = await ctx.prisma.inventory.aggregate({
+              where: {
+                location: {
+                  warehouseId: warehouse.id,
+                },
               },
-            },
-            _sum: {
-              qtyOnHand: true,
-              qtyReserved: true,
-            },
-            _count: {
-              itemId: true,
-            },
-          });
-          
-          return {
-            ...warehouse,
-            stats: {
-              locationCount: stat?._count || 0,
-              totalCapacity: stat?._sum.maxCapacity || 0,
-              occupiedLocations,
-              inventoryCount: inventoryTotals._count.itemId || 0,
-              totalStock: inventoryTotals._sum.qtyOnHand || 0,
-              reservedStock: inventoryTotals._sum.qtyReserved || 0,
-              utilizationRate: locations.length > 0 
-                ? Math.round((occupiedLocations / locations.length) * 100)
-                : 0,
-            },
-          };
-        }));
+              _sum: {
+                qtyOnHand: true,
+                qtyReserved: true,
+              },
+              _count: {
+                itemId: true,
+              },
+            });
+
+            return {
+              ...warehouse,
+              stats: {
+                locationCount: stat?._count || 0,
+                totalCapacity: stat?._sum.maxCapacity || 0,
+                occupiedLocations,
+                inventoryCount: inventoryTotals._count.itemId || 0,
+                totalStock: inventoryTotals._sum.qtyOnHand || 0,
+                reservedStock: inventoryTotals._sum.qtyReserved || 0,
+                utilizationRate:
+                  locations.length > 0
+                    ? Math.round((occupiedLocations / locations.length) * 100)
+                    : 0,
+              },
+            };
+          })
+        );
 
         return warehousesWithStats;
       }
@@ -142,32 +147,31 @@ export const warehousesRouter = createTRPCRouter({
 
   // Get single warehouse with locations
   get: organizationProcedure
-    .input(z.object({ 
-      id: z.string().cuid(),
-      includeLocations: z.boolean().default(true),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        includeLocations: z.boolean().default(true),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const warehouse = await ctx.prisma.warehouse.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
         include: {
-          locations: input.includeLocations ? {
-            include: {
-              _count: {
-                select: {
-                  inventory: true,
+          locations: input.includeLocations
+            ? {
+                include: {
+                  _count: {
+                    select: {
+                      inventory: true,
+                    },
+                  },
                 },
-              },
-            },
-            orderBy: [
-              { zone: 'asc' },
-              { aisle: 'asc' },
-              { shelf: 'asc' },
-              { bin: 'asc' },
-            ],
-          } : false,
+                orderBy: [{ zone: 'asc' }, { aisle: 'asc' }, { shelf: 'asc' }, { bin: 'asc' }],
+              }
+            : false,
         },
       });
 
@@ -181,7 +185,7 @@ export const warehousesRouter = createTRPCRouter({
       // Calculate warehouse statistics
       if (input.includeLocations && warehouse.locations) {
         const totalCapacity = warehouse.locations.reduce(
-          (sum, loc) => sum + (loc.maxCapacity || 0), 
+          (sum, loc) => sum + (loc.maxCapacity || 0),
           0
         );
 
@@ -218,9 +222,10 @@ export const warehousesRouter = createTRPCRouter({
             inventoryCount,
             totalStock: totalStock._sum.qtyOnHand || 0,
             reservedStock: totalStock._sum.qtyReserved || 0,
-            utilizationRate: totalCapacity > 0 
-              ? Math.round((occupiedLocations / warehouse.locations.length) * 100)
-              : 0,
+            utilizationRate:
+              totalCapacity > 0
+                ? Math.round((occupiedLocations / warehouse.locations.length) * 100)
+                : 0,
           },
         };
       }
@@ -229,21 +234,89 @@ export const warehousesRouter = createTRPCRouter({
     }),
 
   // Create warehouse
-  create: organizationProcedure
-    .input(warehouseCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for role permissions
-      if (ctx.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators can create warehouses',
-        });
-      }
+  create: organizationProcedure.input(warehouseCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check for role permissions
+    if (ctx.user.role !== 'ADMIN') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators can create warehouses',
+      });
+    }
 
-      // Check for duplicate code
+    // Check for duplicate code
+    const existing = await ctx.prisma.warehouse.findFirst({
+      where: {
+        code: input.code,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (existing) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'A warehouse with this code already exists',
+      });
+    }
+
+    // Create warehouse with audit log
+    const warehouse = await ctx.prisma.$transaction(async (tx) => {
+      const newWarehouse = await tx.warehouse.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'warehouses',
+          recordPk: newWarehouse.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newWarehouse,
+        },
+      });
+
+      return newWarehouse;
+    });
+
+    return warehouse;
+  }),
+
+  // Update warehouse
+  update: organizationProcedure.input(warehouseUpdateSchema).mutation(async ({ ctx, input }) => {
+    // Check for role permissions
+    if (ctx.user.role !== 'ADMIN') {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators can update warehouses',
+      });
+    }
+
+    const { id, ...data } = input;
+
+    // Get current warehouse for audit
+    const currentWarehouse = await ctx.prisma.warehouse.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!currentWarehouse) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Warehouse not found',
+      });
+    }
+
+    // Check for code uniqueness if updating code
+    if (data.code && data.code !== currentWarehouse.code) {
       const existing = await ctx.prisma.warehouse.findFirst({
-        where: { 
-          code: input.code,
+        where: {
+          code: data.code,
           organizationId: ctx.user.organizationId,
         },
       });
@@ -254,105 +327,33 @@ export const warehousesRouter = createTRPCRouter({
           message: 'A warehouse with this code already exists',
         });
       }
+    }
 
-      // Create warehouse with audit log
-      const warehouse = await ctx.prisma.$transaction(async (tx) => {
-        const newWarehouse = await tx.warehouse.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'warehouses',
-            recordPk: newWarehouse.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newWarehouse,
-          },
-        });
-
-        return newWarehouse;
+    // Update warehouse with audit log
+    const updatedWarehouse = await ctx.prisma.$transaction(async (tx) => {
+      const updated = await tx.warehouse.update({
+        where: { id },
+        data,
       });
 
-      return warehouse;
-    }),
-
-  // Update warehouse
-  update: organizationProcedure
-    .input(warehouseUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for role permissions
-      if (ctx.user.role !== 'ADMIN') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators can update warehouses',
-        });
-      }
-
-      const { id, ...data } = input;
-
-      // Get current warehouse for audit
-      const currentWarehouse = await ctx.prisma.warehouse.findFirst({
-        where: { 
-          id,
-          organizationId: ctx.user.organizationId,
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'warehouses',
+          recordPk: id,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: currentWarehouse,
+          afterData: updated,
         },
       });
 
-      if (!currentWarehouse) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Warehouse not found',
-        });
-      }
+      return updated;
+    });
 
-      // Check for code uniqueness if updating code
-      if (data.code && data.code !== currentWarehouse.code) {
-        const existing = await ctx.prisma.warehouse.findFirst({
-          where: { 
-            code: data.code,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'A warehouse with this code already exists',
-          });
-        }
-      }
-
-      // Update warehouse with audit log
-      const updatedWarehouse = await ctx.prisma.$transaction(async (tx) => {
-        const updated = await tx.warehouse.update({
-          where: { id },
-          data,
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'warehouses',
-            recordPk: id,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: currentWarehouse,
-            afterData: updated,
-          },
-        });
-
-        return updated;
-      });
-
-      return updatedWarehouse;
-    }),
+    return updatedWarehouse;
+  }),
 
   // Delete warehouse (only if empty)
   delete: organizationProcedure
@@ -404,11 +405,13 @@ export const warehousesRouter = createTRPCRouter({
 
   // Get warehouse activity
   getActivity: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().cuid(),
-      days: z.number().int().min(1).max(90).default(7),
-      limit: z.number().int().min(1).max(100).default(50),
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().cuid(),
+        days: z.number().int().min(1).max(90).default(7),
+        limit: z.number().int().min(1).max(100).default(50),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const since = new Date();
       since.setDate(since.getDate() - input.days);
@@ -507,10 +510,12 @@ export const warehousesRouter = createTRPCRouter({
       const shipments = await ctx.prisma.shipment.findMany({
         where: {
           shippedFromLocationId: {
-            in: await ctx.prisma.location.findMany({
-              where: { warehouseId: input.warehouseId },
-              select: { id: true },
-            }).then(locs => locs.map(l => l.id)),
+            in: await ctx.prisma.location
+              .findMany({
+                where: { warehouseId: input.warehouseId },
+                select: { id: true },
+              })
+              .then((locs) => locs.map((l) => l.id)),
           },
           shipDate: { gte: since },
         },
@@ -583,9 +588,9 @@ export const warehousesRouter = createTRPCRouter({
       });
 
       const totalLocations = locations.length;
-      const occupiedLocations = locations.filter(l => l._count.inventory > 0).length;
+      const occupiedLocations = locations.filter((l) => l._count.inventory > 0).length;
       const emptyLocations = totalLocations - occupiedLocations;
-      const tempControlledLocations = locations.filter(l => l.isTempControlled).length;
+      const tempControlledLocations = locations.filter((l) => l.isTempControlled).length;
 
       // Get inventory statistics
       const inventory = await ctx.prisma.inventory.aggregate({
@@ -657,9 +662,8 @@ export const warehousesRouter = createTRPCRouter({
           occupied: occupiedLocations,
           empty: emptyLocations,
           tempControlled: tempControlledLocations,
-          utilizationRate: totalLocations > 0 
-            ? Math.round((occupiedLocations / totalLocations) * 100)
-            : 0,
+          utilizationRate:
+            totalLocations > 0 ? Math.round((occupiedLocations / totalLocations) * 100) : 0,
         },
         inventory: {
           totalItems: uniqueItems.length,
@@ -670,7 +674,7 @@ export const warehousesRouter = createTRPCRouter({
           totalValue: parseFloat(inventoryValue[0]?.totalValue || '0'),
         },
         movements: {
-          last30Days: movements.map(m => ({
+          last30Days: movements.map((m) => ({
             type: m.movementType,
             count: m._count,
             quantity: m._sum.qty || 0,
@@ -688,13 +692,15 @@ export const warehousesRouter = createTRPCRouter({
   locations: createTRPCRouter({
     // List locations for a warehouse
     list: organizationProcedure
-      .input(z.object({
-        warehouseId: z.string().cuid(),
-        zone: z.string().optional(),
-        onlyEmpty: z.boolean().default(false),
-        onlyOccupied: z.boolean().default(false),
-        tempControlled: z.boolean().optional(),
-      }))
+      .input(
+        z.object({
+          warehouseId: z.string().cuid(),
+          zone: z.string().optional(),
+          onlyEmpty: z.boolean().default(false),
+          onlyOccupied: z.boolean().default(false),
+          tempControlled: z.boolean().optional(),
+        })
+      )
       .query(async ({ ctx, input }) => {
         const where: Prisma.LocationWhereInput = {
           warehouseId: input.warehouseId,
@@ -722,29 +728,28 @@ export const warehousesRouter = createTRPCRouter({
               },
             },
           },
-          orderBy: [
-            { zone: 'asc' },
-            { aisle: 'asc' },
-            { shelf: 'asc' },
-            { bin: 'asc' },
-          ],
+          orderBy: [{ zone: 'asc' }, { aisle: 'asc' }, { shelf: 'asc' }, { bin: 'asc' }],
         });
 
         // Filter by occupancy if requested
         let filteredLocations = locations;
-        
+
         if (input.onlyEmpty) {
-          filteredLocations = locations.filter(loc => loc.inventory.length === 0);
+          filteredLocations = locations.filter((loc) => loc.inventory.length === 0);
         } else if (input.onlyOccupied) {
-          filteredLocations = locations.filter(loc => loc.inventory.length > 0);
+          filteredLocations = locations.filter((loc) => loc.inventory.length > 0);
         }
 
-        return filteredLocations.map(location => ({
+        return filteredLocations.map((location) => ({
           ...location,
           isOccupied: location.inventory.length > 0,
           occupancy: location.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0),
-          utilization: location.maxCapacity 
-            ? Math.round((location.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0) / location.maxCapacity) * 100)
+          utilization: location.maxCapacity
+            ? Math.round(
+                (location.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0) /
+                  location.maxCapacity) *
+                  100
+              )
             : 0,
         }));
       }),
@@ -778,20 +783,82 @@ export const warehousesRouter = createTRPCRouter({
       }),
 
     // Create location
-    create: organizationProcedure
-      .input(locationCreateSchema)
-      .mutation(async ({ ctx, input }) => {
-        // Check for role permissions
-        if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Only administrators and managers can create locations',
-          });
-        }
+    create: organizationProcedure.input(locationCreateSchema).mutation(async ({ ctx, input }) => {
+      // Check for role permissions
+      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only administrators and managers can create locations',
+        });
+      }
 
-        // Check for duplicate code
+      // Check for duplicate code
+      const existing = await ctx.prisma.location.findUnique({
+        where: { code: input.code },
+      });
+
+      if (existing) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: 'A location with this code already exists',
+        });
+      }
+
+      // Create location with audit log
+      const location = await ctx.prisma.$transaction(async (tx) => {
+        const newLocation = await tx.location.create({
+          data: {
+            ...input,
+            organizationId: ctx.user.organizationId!,
+          },
+        });
+
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            tableName: 'locations',
+            recordPk: newLocation.id,
+            action: 'CREATE',
+            userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
+            afterData: newLocation,
+          },
+        });
+
+        return newLocation;
+      });
+
+      return location;
+    }),
+
+    // Update location
+    update: organizationProcedure.input(locationUpdateSchema).mutation(async ({ ctx, input }) => {
+      // Check for role permissions
+      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only administrators and managers can update locations',
+        });
+      }
+
+      const { id, ...data } = input;
+
+      // Get current location for audit
+      const currentLocation = await ctx.prisma.location.findUnique({
+        where: { id },
+      });
+
+      if (!currentLocation) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Location not found',
+        });
+      }
+
+      // Check for code uniqueness if updating code
+      if (data.code && data.code !== currentLocation.code) {
         const existing = await ctx.prisma.location.findUnique({
-          where: { code: input.code },
+          where: { code: data.code },
         });
 
         if (existing) {
@@ -800,99 +867,33 @@ export const warehousesRouter = createTRPCRouter({
             message: 'A location with this code already exists',
           });
         }
+      }
 
-        // Create location with audit log
-        const location = await ctx.prisma.$transaction(async (tx) => {
-          const newLocation = await tx.location.create({
-            data: {
-              ...input,
-              organizationId: ctx.user.organizationId!,
-            },
-          });
-
-          // Create audit log
-          await tx.auditLog.create({
-            data: {
-              tableName: 'locations',
-              recordPk: newLocation.id,
-              action: 'CREATE',
-              userId: ctx.user.id,
-              organizationId: ctx.user.organizationId!,
-              afterData: newLocation,
-            },
-          });
-
-          return newLocation;
-        });
-
-        return location;
-      }),
-
-    // Update location
-    update: organizationProcedure
-      .input(locationUpdateSchema)
-      .mutation(async ({ ctx, input }) => {
-        // Check for role permissions
-        if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-          throw new TRPCError({
-            code: 'FORBIDDEN',
-            message: 'Only administrators and managers can update locations',
-          });
-        }
-
-        const { id, ...data } = input;
-
-        // Get current location for audit
-        const currentLocation = await ctx.prisma.location.findUnique({
+      // Update location with audit log
+      const updatedLocation = await ctx.prisma.$transaction(async (tx) => {
+        const updated = await tx.location.update({
           where: { id },
+          data,
         });
 
-        if (!currentLocation) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Location not found',
-          });
-        }
-
-        // Check for code uniqueness if updating code
-        if (data.code && data.code !== currentLocation.code) {
-          const existing = await ctx.prisma.location.findUnique({
-            where: { code: data.code },
-          });
-
-          if (existing) {
-            throw new TRPCError({
-              code: 'CONFLICT',
-              message: 'A location with this code already exists',
-            });
-          }
-        }
-
-        // Update location with audit log
-        const updatedLocation = await ctx.prisma.$transaction(async (tx) => {
-          const updated = await tx.location.update({
-            where: { id },
-            data,
-          });
-
-          // Create audit log
-          await tx.auditLog.create({
-            data: {
-              tableName: 'locations',
-              recordPk: id,
-              action: 'UPDATE',
-              userId: ctx.user.id,
-              organizationId: ctx.user.organizationId!,
-              beforeData: currentLocation,
-              afterData: updated,
-            },
-          });
-
-          return updated;
+        // Create audit log
+        await tx.auditLog.create({
+          data: {
+            tableName: 'locations',
+            recordPk: id,
+            action: 'UPDATE',
+            userId: ctx.user.id,
+            organizationId: ctx.user.organizationId!,
+            beforeData: currentLocation,
+            afterData: updated,
+          },
         });
 
-        return updatedLocation;
-      }),
+        return updated;
+      });
+
+      return updatedLocation;
+    }),
 
     // Delete location (only if empty)
     delete: organizationProcedure
@@ -908,7 +909,7 @@ export const warehousesRouter = createTRPCRouter({
 
         // Check if location has inventory
         const inventoryCount = await ctx.prisma.inventory.count({
-          where: { 
+          where: {
             locationId: input.id,
             qtyOnHand: { gt: 0 },
           },
@@ -961,16 +962,17 @@ export const warehousesRouter = createTRPCRouter({
             lot: true,
             serialNumber: true,
           },
-          orderBy: [
-            { item: { name: 'asc' } },
-          ],
+          orderBy: [{ item: { name: 'asc' } }],
         });
 
         const summary = {
           totalItems: inventory.length,
           totalQuantity: inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0),
           totalReserved: inventory.reduce((sum, inv) => sum + inv.qtyReserved, 0),
-          totalAvailable: inventory.reduce((sum, inv) => sum + (inv.qtyOnHand - inv.qtyReserved), 0),
+          totalAvailable: inventory.reduce(
+            (sum, inv) => sum + (inv.qtyOnHand - inv.qtyReserved),
+            0
+          ),
         };
 
         return {
@@ -1002,7 +1004,7 @@ export const warehousesRouter = createTRPCRouter({
         for (const location of underutilized) {
           const used = location.inventory.reduce((sum, inv) => sum + inv.qtyOnHand, 0);
           const utilization = location.maxCapacity ? (used / location.maxCapacity) * 100 : 0;
-          
+
           if (utilization < 20 && location.inventory.length > 0) {
             suggestions.push({
               type: 'CONSOLIDATE',
@@ -1036,8 +1038,8 @@ export const warehousesRouter = createTRPCRouter({
           summary: {
             total: suggestions.length,
             byType: {
-              CONSOLIDATE: suggestions.filter(s => s.type === 'CONSOLIDATE').length,
-              RELOCATE: suggestions.filter(s => s.type === 'RELOCATE').length,
+              CONSOLIDATE: suggestions.filter((s) => s.type === 'CONSOLIDATE').length,
+              RELOCATE: suggestions.filter((s) => s.type === 'RELOCATE').length,
             },
           },
         };
@@ -1046,14 +1048,16 @@ export const warehousesRouter = createTRPCRouter({
 
   // List all locations across all warehouses
   listAllLocations: organizationProcedure
-    .input(z.object({
-      search: z.string().optional(),
-      warehouseId: z.string().optional(),
-      zone: z.string().optional(),
-      tempControlled: z.boolean().optional(),
-      page: z.number().int().positive().default(1),
-      limit: z.number().int().positive().max(1000).default(100),
-    }))
+    .input(
+      z.object({
+        search: z.string().optional(),
+        warehouseId: z.string().optional(),
+        zone: z.string().optional(),
+        tempControlled: z.boolean().optional(),
+        page: z.number().int().positive().default(1),
+        limit: z.number().int().positive().max(1000).default(100),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const where: Prisma.LocationWhereInput = {
         organizationId: ctx.user.organizationId,
@@ -1192,17 +1196,19 @@ export const warehousesRouter = createTRPCRouter({
 
   // Update location
   updateLocation: organizationProcedure
-    .input(z.object({
-      locationId: z.string().cuid(),
-      code: z.string().min(1).max(50).optional(),
-      description: z.string().optional().nullable(),
-      zone: z.string().optional().nullable(),
-      aisle: z.string().optional().nullable(),
-      shelf: z.string().optional().nullable(),
-      bin: z.string().optional().nullable(),
-      maxCapacity: z.number().int().min(0).optional().nullable(),
-      isTempControlled: z.boolean().optional(),
-    }))
+    .input(
+      z.object({
+        locationId: z.string().cuid(),
+        code: z.string().min(1).max(50).optional(),
+        description: z.string().optional().nullable(),
+        zone: z.string().optional().nullable(),
+        aisle: z.string().optional().nullable(),
+        shelf: z.string().optional().nullable(),
+        bin: z.string().optional().nullable(),
+        maxCapacity: z.number().int().min(0).optional().nullable(),
+        isTempControlled: z.boolean().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { locationId, ...data } = input;
 

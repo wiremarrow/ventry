@@ -20,6 +20,7 @@ This comprehensive guide covers all aspects of performance optimization for the 
 ### 1.1 Query Optimization
 
 **Use Proper Indexes:**
+
 ```sql
 -- Critical indexes for multi-tenant queries
 CREATE INDEX CONCURRENTLY idx_items_org_sku ON items(organization_id, sku);
@@ -36,12 +37,13 @@ CREATE INDEX CONCURRENTLY idx_items_search ON items USING gin(to_tsvector('engli
 ```
 
 **Query Optimization Patterns:**
+
 ```typescript
 // BAD: N+1 query problem
 const orders = await prisma.order.findMany();
 for (const order of orders) {
   const items = await prisma.orderItem.findMany({
-    where: { orderId: order.id }
+    where: { orderId: order.id },
   });
 }
 
@@ -56,18 +58,18 @@ const orders = await prisma.order.findMany({
             name: true,
             sku: true,
             price: true,
-          }
-        }
-      }
+          },
+        },
+      },
     },
     customer: {
       select: {
         id: true,
         name: true,
         email: true,
-      }
-    }
-  }
+      },
+    },
+  },
 });
 
 // BETTER: Optimized select to reduce data transfer
@@ -85,17 +87,18 @@ const orders = await prisma.order.findMany({
           select: {
             name: true,
             sku: true,
-          }
-        }
-      }
-    }
-  }
+          },
+        },
+      },
+    },
+  },
 });
 ```
 
 ### 1.2 Connection Pooling
 
 **Prisma Connection Configuration:**
+
 ```typescript
 // packages/database/src/client.ts
 import { PrismaClient } from '@prisma/client';
@@ -117,19 +120,20 @@ export const prisma = new PrismaClient({
       url: url.toString(),
     },
   },
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'warn', 'error']
-    : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],
 });
 
 // Implement connection lifecycle hooks
 prisma.$on('query', (e) => {
   if (e.duration > 1000) {
-    logger.warn({
-      query: e.query,
-      params: e.params,
-      duration: e.duration,
-    }, 'Slow query detected');
+    logger.warn(
+      {
+        query: e.query,
+        params: e.params,
+        duration: e.duration,
+      },
+      'Slow query detected'
+    );
   }
 });
 
@@ -154,6 +158,7 @@ server_idle_timeout = 600
 ### 1.3 Query Batching
 
 **Implement DataLoader Pattern:**
+
 ```typescript
 // apps/backend/src/lib/dataloaders.ts
 import DataLoader from 'dataloader';
@@ -163,28 +168,28 @@ export function createDataLoaders(prisma: PrismaClient) {
     // Batch load items by IDs
     itemLoader: new DataLoader<string, Item>(async (ids) => {
       const items = await prisma.item.findMany({
-        where: { id: { in: [...ids] } }
+        where: { id: { in: [...ids] } },
       });
-      
-      const itemMap = new Map(items.map(item => [item.id, item]));
-      return ids.map(id => itemMap.get(id) || null);
+
+      const itemMap = new Map(items.map((item) => [item.id, item]));
+      return ids.map((id) => itemMap.get(id) || null);
     }),
-    
+
     // Batch load inventory by item IDs
     inventoryLoader: new DataLoader<string, Inventory[]>(async (itemIds) => {
       const inventories = await prisma.inventory.findMany({
-        where: { itemId: { in: [...itemIds] } }
+        where: { itemId: { in: [...itemIds] } },
       });
-      
+
       const inventoryMap = new Map<string, Inventory[]>();
-      inventories.forEach(inv => {
+      inventories.forEach((inv) => {
         if (!inventoryMap.has(inv.itemId)) {
           inventoryMap.set(inv.itemId, []);
         }
         inventoryMap.get(inv.itemId)!.push(inv);
       });
-      
-      return itemIds.map(id => inventoryMap.get(id) || []);
+
+      return itemIds.map((id) => inventoryMap.get(id) || []);
     }),
   };
 }
@@ -192,7 +197,7 @@ export function createDataLoaders(prisma: PrismaClient) {
 // Use in tRPC context
 export const createContext = async ({ req, res }: CreateContextOptions) => {
   const loaders = createDataLoaders(prisma);
-  
+
   return {
     prisma,
     loaders,
@@ -205,28 +210,31 @@ export const createContext = async ({ req, res }: CreateContextOptions) => {
 ### 1.4 Database Query Patterns
 
 **Aggregation Optimization:**
+
 ```typescript
 // BAD: Loading all records to count
 const items = await prisma.item.findMany({
-  where: { organizationId }
+  where: { organizationId },
 });
-const activeCount = items.filter(i => i.isActive).length;
+const activeCount = items.filter((i) => i.isActive).length;
 
 // GOOD: Database aggregation
 const activeCount = await prisma.item.count({
-  where: { 
+  where: {
     organizationId,
-    isActive: true 
-  }
+    isActive: true,
+  },
 });
 
 // BETTER: Multiple aggregations in one query
-const stats = await prisma.$queryRaw<{
-  total: bigint;
-  active: bigint;
-  lowStock: bigint;
-  outOfStock: bigint;
-}[]>`
+const stats = await prisma.$queryRaw<
+  {
+    total: bigint;
+    active: bigint;
+    lowStock: bigint;
+    outOfStock: bigint;
+  }[]
+>`
   SELECT 
     COUNT(*) as total,
     COUNT(*) FILTER (WHERE is_active = true) as active,
@@ -238,6 +246,7 @@ const stats = await prisma.$queryRaw<{
 ```
 
 **Pagination Optimization:**
+
 ```typescript
 // Implement cursor-based pagination for large datasets
 export async function getCursorPaginatedItems(
@@ -261,10 +270,10 @@ export async function getCursorPaginatedItems(
       qtyOnHand: true,
     },
   });
-  
+
   const hasNextPage = items.length > limit;
   const edges = hasNextPage ? items.slice(0, -1) : items;
-  
+
   return {
     edges,
     pageInfo: {
@@ -282,24 +291,33 @@ export async function getCursorPaginatedItems(
 ### 2.1 Response Optimization
 
 **Implement Field Selection:**
+
 ```typescript
 // apps/backend/src/routers/items.ts
 const itemsRouter = createTRPCRouter({
   list: organizationProcedure
-    .input(z.object({
-      fields: z.array(z.string()).optional(),
-      filters: z.object({
-        search: z.string().optional(),
-        categoryId: z.string().optional(),
-      }).optional(),
-    }))
+    .input(
+      z.object({
+        fields: z.array(z.string()).optional(),
+        filters: z
+          .object({
+            search: z.string().optional(),
+            categoryId: z.string().optional(),
+          })
+          .optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       // Build dynamic select object
-      const select = input.fields?.reduce((acc, field) => ({
-        ...acc,
-        [field]: true,
-      }), { id: true }) || undefined;
-      
+      const select =
+        input.fields?.reduce(
+          (acc, field) => ({
+            ...acc,
+            [field]: true,
+          }),
+          { id: true }
+        ) || undefined;
+
       return ctx.prisma.item.findMany({
         where: {
           organizationId: ctx.organizationId,
@@ -320,6 +338,7 @@ const itemsRouter = createTRPCRouter({
 ```
 
 **Response Compression:**
+
 ```typescript
 // apps/backend/src/server.ts
 import compress from '@fastify/compress';
@@ -343,6 +362,7 @@ await server.register(compress, {
 ### 2.2 Request Batching
 
 **Implement tRPC Batching:**
+
 ```typescript
 // apps/web/src/lib/trpc.ts
 export const trpc = createTRPCReact<AppRouter>();
@@ -376,6 +396,7 @@ const [items, warehouses, categories] = await Promise.all([
 ### 2.3 API Caching
 
 **Implement HTTP Caching:**
+
 ```typescript
 // apps/backend/src/middleware/cache.ts
 export const cacheMiddleware = (options: {
@@ -385,10 +406,10 @@ export const cacheMiddleware = (options: {
   return async (req: FastifyRequest, reply: FastifyReply) => {
     // Set cache headers
     reply.header('Cache-Control', `public, max-age=${options.ttl}`);
-    
+
     // Add ETag support
     reply.header('ETag', `"${generateETag(req, options.varyBy)}"');
-    
+
     // Check If-None-Match
     const clientETag = req.headers['if-none-match'];
     if (clientETag === reply.getHeader('ETag')) {
@@ -408,6 +429,7 @@ server.get('/api/items', {
 ### 2.4 Rate Limiting Optimization
 
 **Implement Tiered Rate Limiting:**
+
 ```typescript
 // apps/backend/src/middleware/rateLimiter.ts
 import { RateLimiterRedis, RateLimiterMemory } from 'rate-limiter-flexible';
@@ -419,7 +441,7 @@ const rateLimiter = new RateLimiterRedis({
   points: 100, // Number of requests
   duration: 60, // Per 60 seconds
   blockDuration: 60, // Block for 1 minute
-  
+
   // Use insurance limiter for Redis failures
   insuranceLimiter: new RateLimiterMemory({
     points: 50,
@@ -428,28 +450,24 @@ const rateLimiter = new RateLimiterRedis({
 });
 
 // Implement sliding window algorithm
-export const slidingWindowRateLimiter = async (
-  key: string,
-  limit: number,
-  window: number
-) => {
+export const slidingWindowRateLimiter = async (key: string, limit: number, window: number) => {
   const now = Date.now();
   const windowStart = now - window * 1000;
-  
+
   // Remove old entries
   await redisClient.zremrangebyscore(key, '-inf', windowStart);
-  
+
   // Count requests in window
   const count = await redisClient.zcard(key);
-  
+
   if (count >= limit) {
     throw new Error('Rate limit exceeded');
   }
-  
+
   // Add current request
   await redisClient.zadd(key, now, `${now}-${Math.random()}`);
   await redisClient.expire(key, window);
-  
+
   return {
     remaining: limit - count - 1,
     reset: new Date(now + window * 1000),
@@ -464,6 +482,7 @@ export const slidingWindowRateLimiter = async (
 ### 3.1 Code Splitting
 
 **Implement Route-Based Splitting:**
+
 ```typescript
 // apps/web/src/app/layout.tsx
 import dynamic from 'next/dynamic';
@@ -496,6 +515,7 @@ export default function InventoryPage() {
 ```
 
 **Component-Level Splitting:**
+
 ```typescript
 // Split heavy dependencies
 const Chart = dynamic(() => import('recharts').then(mod => mod.LineChart), {
@@ -515,6 +535,7 @@ const ExcelExporter = dynamic(() => import('@/components/excel-exporter'), {
 ### 3.2 React Optimization
 
 **Memoization Strategies:**
+
 ```typescript
 // apps/web/src/components/item-list.tsx
 import { memo, useMemo, useCallback } from 'react';
@@ -533,7 +554,7 @@ export const ItemList = memo(({ items, filters }: ItemListProps) => {
       return true;
     });
   }, [items, filters.search]);
-  
+
   const sortedItems = useMemo(() => {
     return [...filteredItems].sort((a, b) => {
       switch (filters.sortBy) {
@@ -548,12 +569,12 @@ export const ItemList = memo(({ items, filters }: ItemListProps) => {
       }
     });
   }, [filteredItems, filters.sortBy]);
-  
+
   // Memoize callbacks
   const handleItemClick = useCallback((itemId: string) => {
     router.push(`/inventory/items/${itemId}`);
   }, [router]);
-  
+
   return (
     <VirtualList
       items={sortedItems}
@@ -591,6 +612,7 @@ export const ItemCard = memo(
 ### 3.3 Virtual Scrolling
 
 **Implement Virtual Lists:**
+
 ```typescript
 // apps/web/src/components/virtual-list.tsx
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -601,14 +623,14 @@ export function VirtualList<T>({
   itemHeight = 80,
 }: VirtualListProps<T>) {
   const parentRef = useRef<HTMLDivElement>(null);
-  
+
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => itemHeight,
     overscan: 5, // Render 5 items outside visible area
   });
-  
+
   return (
     <div ref={parentRef} className="h-full overflow-auto">
       <div
@@ -642,14 +664,15 @@ export function VirtualList<T>({
 ### 3.4 Image Optimization
 
 **Next.js Image Component:**
+
 ```typescript
 // apps/web/src/components/product-image.tsx
 import Image from 'next/image';
 
-export function ProductImage({ 
-  src, 
-  alt, 
-  priority = false 
+export function ProductImage({
+  src,
+  alt,
+  priority = false
 }: ProductImageProps) {
   return (
     <div className="relative aspect-square">
@@ -689,6 +712,7 @@ function generateBlurDataURL(): string {
 ### 4.1 Redis Caching
 
 **Implement Multi-Layer Caching:**
+
 ```typescript
 // apps/backend/src/lib/cache.ts
 import Redis from 'ioredis';
@@ -715,7 +739,7 @@ export class CacheService {
     if (memResult) {
       return memResult as T;
     }
-    
+
     // Check Redis
     const redisResult = await redis.get(key);
     if (redisResult) {
@@ -724,22 +748,18 @@ export class CacheService {
       memoryCache.set(key, parsed);
       return parsed as T;
     }
-    
+
     return null;
   }
-  
-  async set<T>(
-    key: string, 
-    value: T, 
-    ttl: number = 300
-  ): Promise<void> {
+
+  async set<T>(key: string, value: T, ttl: number = 300): Promise<void> {
     const serialized = JSON.stringify(value);
-    
+
     // Set in both caches
     memoryCache.set(key, value);
     await redis.setex(key, ttl, serialized);
   }
-  
+
   async invalidate(pattern: string): Promise<void> {
     // Clear memory cache
     for (const key of memoryCache.keys()) {
@@ -747,34 +767,30 @@ export class CacheService {
         memoryCache.delete(key);
       }
     }
-    
+
     // Clear Redis cache
     const keys = await redis.keys(`ventry:cache:${pattern}*`);
     if (keys.length > 0) {
       await redis.del(...keys);
     }
   }
-  
+
   // Cache decorator
   cached(ttl: number = 300) {
-    return (
-      target: any,
-      propertyKey: string,
-      descriptor: PropertyDescriptor
-    ) => {
+    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
       const originalMethod = descriptor.value;
-      
-      descriptor.value = async function(...args: any[]) {
+
+      descriptor.value = async function (...args: any[]) {
         const cacheKey = `${propertyKey}:${JSON.stringify(args)}`;
-        
+
         const cached = await this.cache.get(cacheKey);
         if (cached) {
           return cached;
         }
-        
+
         const result = await originalMethod.apply(this, args);
         await this.cache.set(cacheKey, result, ttl);
-        
+
         return result;
       };
     };
@@ -785,22 +801,25 @@ export class CacheService {
 ### 4.2 Query Result Caching
 
 **tRPC Query Caching:**
+
 ```typescript
 // apps/backend/src/routers/inventory.ts
 export const inventoryRouter = createTRPCRouter({
   getStockLevels: organizationProcedure
-    .input(z.object({
-      warehouseId: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        warehouseId: z.string().optional(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const cacheKey = `stock:${ctx.organizationId}:${input.warehouseId || 'all'}`;
-      
+
       // Check cache
       const cached = await cache.get(cacheKey);
       if (cached) {
         return cached;
       }
-      
+
       // Complex aggregation query
       const stockLevels = await ctx.prisma.$queryRaw`
         SELECT 
@@ -818,10 +837,10 @@ export const inventoryRouter = createTRPCRouter({
         GROUP BY i.id, i.name, i.sku
         ORDER BY i.name
       `;
-      
+
       // Cache for 5 minutes
       await cache.set(cacheKey, stockLevels, 300);
-      
+
       return stockLevels;
     }),
 });
@@ -830,6 +849,7 @@ export const inventoryRouter = createTRPCRouter({
 ### 4.3 Frontend Caching
 
 **React Query Cache Configuration:**
+
 ```typescript
 // apps/web/src/lib/query-client.ts
 import { QueryClient } from '@tanstack/react-query';
@@ -860,7 +880,7 @@ export const queryClient = new QueryClient({
 // Implement optimistic updates
 export function useOptimisticUpdate() {
   const utils = trpc.useContext();
-  
+
   return {
     updateItem: (itemId: string, updates: Partial<Item>) => {
       // Optimistically update cache
@@ -868,13 +888,11 @@ export function useOptimisticUpdate() {
         if (!old) return old;
         return { ...old, ...updates };
       });
-      
+
       // Also update in list
       utils.items.list.setData({}, (old) => {
         if (!old) return old;
-        return old.map(item => 
-          item.id === itemId ? { ...item, ...updates } : item
-        );
+        return old.map((item) => (item.id === itemId ? { ...item, ...updates } : item));
       });
     },
   };
@@ -888,6 +906,7 @@ export function useOptimisticUpdate() {
 ### 5.1 Webpack Configuration
 
 **Next.js Config Optimization:**
+
 ```javascript
 // apps/web/next.config.js
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
@@ -897,20 +916,20 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 module.exports = withBundleAnalyzer({
   reactStrictMode: true,
   swcMinify: true,
-  
+
   // Optimize builds
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
-  
+
   // Module federation for micro-frontends
   webpack: (config, { isServer }) => {
     // Tree shake unused lodash methods
     config.resolve.alias = {
       ...config.resolve.alias,
-      'lodash': 'lodash-es',
+      lodash: 'lodash-es',
     };
-    
+
     // Optimize moment.js
     config.plugins.push(
       new webpack.IgnorePlugin({
@@ -918,7 +937,7 @@ module.exports = withBundleAnalyzer({
         contextRegExp: /moment$/,
       })
     );
-    
+
     // Split chunks optimization
     if (!isServer) {
       config.optimization.splitChunks = {
@@ -935,8 +954,7 @@ module.exports = withBundleAnalyzer({
           },
           lib: {
             test(module) {
-              return module.size() > 160000 &&
-                /node_modules[/\\]/.test(module.identifier());
+              return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
             },
             name(module) {
               const hash = crypto.createHash('sha1');
@@ -967,10 +985,10 @@ module.exports = withBundleAnalyzer({
         },
       };
     }
-    
+
     return config;
   },
-  
+
   // Experimental features
   experimental: {
     optimizeCss: true,
@@ -982,6 +1000,7 @@ module.exports = withBundleAnalyzer({
 ### 5.2 Tree Shaking
 
 **Optimize Imports:**
+
 ```typescript
 // BAD: Imports entire library
 import _ from 'lodash';
@@ -1008,6 +1027,7 @@ export { formatDate } from './utils/date';
 ### 5.3 Asset Optimization
 
 **Image and Font Optimization:**
+
 ```typescript
 // apps/web/src/app/layout.tsx
 import { Inter } from 'next/font/google';
@@ -1060,6 +1080,7 @@ export default function RootLayout({ children }) {
 ### 6.1 Worker Threads
 
 **CPU-Intensive Operations:**
+
 ```typescript
 // apps/backend/src/workers/report-generator.ts
 import { Worker } from 'worker_threads';
@@ -1072,34 +1093,34 @@ export class ReportGeneratorPool {
     resolve: (value: any) => void;
     reject: (error: any) => void;
   }> = [];
-  
+
   constructor(private poolSize: number = cpus().length) {
     this.initializeWorkers();
   }
-  
+
   private initializeWorkers() {
     for (let i = 0; i < this.poolSize; i++) {
       const worker = new Worker('./report-worker.js');
-      
+
       worker.on('message', ({ id, result, error }) => {
-        const task = this.queue.find(t => t.data.id === id);
+        const task = this.queue.find((t) => t.data.id === id);
         if (task) {
           if (error) {
             task.reject(error);
           } else {
             task.resolve(result);
           }
-          this.queue = this.queue.filter(t => t.data.id !== id);
+          this.queue = this.queue.filter((t) => t.data.id !== id);
         }
-        
+
         // Process next task
         this.processNext(worker);
       });
-      
+
       this.workers.push(worker);
     }
   }
-  
+
   async generateReport(reportData: any): Promise<any> {
     return new Promise((resolve, reject) => {
       const task = {
@@ -1107,17 +1128,17 @@ export class ReportGeneratorPool {
         resolve,
         reject,
       };
-      
+
       this.queue.push(task);
-      
+
       // Find available worker
-      const availableWorker = this.workers.find(w => !w.threadId);
+      const availableWorker = this.workers.find((w) => !w.threadId);
       if (availableWorker) {
         this.processNext(availableWorker);
       }
     });
   }
-  
+
   private processNext(worker: Worker) {
     const task = this.queue.shift();
     if (task) {
@@ -1143,6 +1164,7 @@ parentPort.on('message', async (data) => {
 ### 6.2 Memory Management
 
 **Prevent Memory Leaks:**
+
 ```typescript
 // apps/backend/src/lib/memory-monitor.ts
 import v8 from 'v8';
@@ -1151,30 +1173,33 @@ import { performance } from 'perf_hooks';
 export class MemoryMonitor {
   private interval: NodeJS.Timeout;
   private baseline: number;
-  
+
   start() {
     this.baseline = process.memoryUsage().heapUsed;
-    
+
     this.interval = setInterval(() => {
       const heap = v8.getHeapStatistics();
       const usage = process.memoryUsage();
-      
+
       // Log metrics
-      logger.info({
-        memory: {
-          heapUsed: usage.heapUsed,
-          heapTotal: usage.heapTotal,
-          external: usage.external,
-          heapLimit: heap.heap_size_limit,
-          mallocedMemory: heap.malloced_memory,
-          peakMallocedMemory: heap.peak_malloced_memory,
+      logger.info(
+        {
+          memory: {
+            heapUsed: usage.heapUsed,
+            heapTotal: usage.heapTotal,
+            external: usage.external,
+            heapLimit: heap.heap_size_limit,
+            mallocedMemory: heap.malloced_memory,
+            peakMallocedMemory: heap.peak_malloced_memory,
+          },
         },
-      }, 'Memory statistics');
-      
+        'Memory statistics'
+      );
+
       // Check for memory leaks
       if (usage.heapUsed > this.baseline * 2) {
         logger.warn('Potential memory leak detected');
-        
+
         // Take heap snapshot
         if (process.env.NODE_ENV === 'development') {
           const snapshot = v8.writeHeapSnapshot();
@@ -1183,7 +1208,7 @@ export class MemoryMonitor {
       }
     }, 60000); // Every minute
   }
-  
+
   stop() {
     clearInterval(this.interval);
   }
@@ -1192,17 +1217,17 @@ export class MemoryMonitor {
 // Implement cleanup in services
 export class InventoryService {
   private subscriptions: Set<Subscription> = new Set();
-  
+
   async subscribeToUpdates(callback: Function) {
     const subscription = redis.subscribe('inventory:updates', callback);
     this.subscriptions.add(subscription);
-    
+
     return () => {
       subscription.unsubscribe();
       this.subscriptions.delete(subscription);
     };
   }
-  
+
   // Clean up on service destruction
   destroy() {
     for (const subscription of this.subscriptions) {
@@ -1216,6 +1241,7 @@ export class InventoryService {
 ### 6.3 Event Loop Optimization
 
 **Prevent Blocking:**
+
 ```typescript
 // apps/backend/src/lib/async-iterator.ts
 export async function* batchProcess<T>(
@@ -1225,13 +1251,13 @@ export async function* batchProcess<T>(
 ) {
   for (let i = 0; i < items.length; i += batchSize) {
     const batch = items.slice(i, i + batchSize);
-    
+
     // Process batch in parallel
-    await Promise.all(batch.map(item => processFn(item)));
-    
+    await Promise.all(batch.map((item) => processFn(item)));
+
     // Yield control back to event loop
-    await new Promise(resolve => setImmediate(resolve));
-    
+    await new Promise((resolve) => setImmediate(resolve));
+
     yield {
       processed: Math.min(i + batchSize, items.length),
       total: items.length,
@@ -1246,17 +1272,12 @@ export async function processLargeDataset(items: any[]) {
     // Process item
     await updateInventory(item);
   });
-  
+
   for await (const progress of processor) {
     logger.info(`Processing: ${progress.percentage}%`);
-    
+
     // Update progress in Redis for UI
-    await redis.set(
-      'import:progress',
-      JSON.stringify(progress),
-      'EX',
-      300
-    );
+    await redis.set('import:progress', JSON.stringify(progress), 'EX', 300);
   }
 }
 ```
@@ -1268,49 +1289,53 @@ export async function processLargeDataset(items: any[]) {
 ### 7.1 Performance Monitoring
 
 **Application Performance Monitoring:**
+
 ```typescript
 // apps/backend/src/lib/apm.ts
 import { performance, PerformanceObserver } from 'perf_hooks';
 
 export class PerformanceMonitor {
   private observer: PerformanceObserver;
-  
+
   constructor() {
     this.observer = new PerformanceObserver((items) => {
       items.getEntries().forEach((entry) => {
         if (entry.duration > 100) {
-          logger.warn({
-            name: entry.name,
-            duration: entry.duration,
-            startTime: entry.startTime,
-          }, 'Slow operation detected');
+          logger.warn(
+            {
+              name: entry.name,
+              duration: entry.duration,
+              startTime: entry.startTime,
+            },
+            'Slow operation detected'
+          );
         }
-        
+
         // Send to monitoring service
         metrics.recordHistogram('operation.duration', entry.duration, {
           operation: entry.name,
         });
       });
     });
-    
+
     this.observer.observe({ entryTypes: ['measure'] });
   }
-  
+
   measure<T>(name: string, fn: () => T): T {
     const start = `${name}-start-${Date.now()}`;
     const end = `${name}-end-${Date.now()}`;
-    
+
     performance.mark(start);
     try {
       const result = fn();
-      
+
       if (result instanceof Promise) {
         return result.finally(() => {
           performance.mark(end);
           performance.measure(name, start, end);
         }) as any;
       }
-      
+
       performance.mark(end);
       performance.measure(name, start, end);
       return result;
@@ -1326,20 +1351,20 @@ export class PerformanceMonitor {
 const perfMonitor = new PerformanceMonitor();
 
 export const inventoryRouter = createTRPCRouter({
-  heavyOperation: organizationProcedure
-    .mutation(async ({ ctx }) => {
-      return perfMonitor.measure('inventory.heavyOperation', async () => {
-        // Heavy operation
-        const result = await processInventory();
-        return result;
-      });
-    }),
+  heavyOperation: organizationProcedure.mutation(async ({ ctx }) => {
+    return perfMonitor.measure('inventory.heavyOperation', async () => {
+      // Heavy operation
+      const result = await processInventory();
+      return result;
+    });
+  }),
 });
 ```
 
 ### 7.2 Database Query Analysis
 
 **Query Performance Tracking:**
+
 ```typescript
 // apps/backend/src/lib/database/performance.ts
 export const performanceExtension = Prisma.defineExtension({
@@ -1347,11 +1372,11 @@ export const performanceExtension = Prisma.defineExtension({
   query: {
     async $allOperations({ operation, model, args, query }) {
       const start = performance.now();
-      
+
       try {
         const result = await query(args);
         const duration = performance.now() - start;
-        
+
         // Track slow queries
         if (duration > 100) {
           const queryInfo = {
@@ -1360,23 +1385,19 @@ export const performanceExtension = Prisma.defineExtension({
             duration,
             args: JSON.stringify(args).substring(0, 200),
           };
-          
+
           logger.warn(queryInfo, 'Slow query detected');
-          
+
           // Store for analysis
-          await redis.zadd(
-            'slow-queries',
-            Date.now(),
-            JSON.stringify(queryInfo)
-          );
+          await redis.zadd('slow-queries', Date.now(), JSON.stringify(queryInfo));
         }
-        
+
         // Record metrics
         metrics.recordHistogram('db.query.duration', duration, {
           operation,
           model,
         });
-        
+
         return result;
       } catch (error) {
         metrics.increment('db.query.error', {
@@ -1397,6 +1418,7 @@ export const prisma = new PrismaClient().$extends(performanceExtension);
 ### 7.3 Frontend Performance Tracking
 
 **Web Vitals Monitoring:**
+
 ```typescript
 // apps/web/src/lib/performance.ts
 import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
@@ -1408,7 +1430,7 @@ export function initializePerformanceMonitoring() {
   getFCP((metric) => sendToAnalytics('FCP', metric));
   getLCP((metric) => sendToAnalytics('LCP', metric));
   getTTFB((metric) => sendToAnalytics('TTFB', metric));
-  
+
   // Track custom metrics
   if ('PerformanceObserver' in window) {
     // Track long tasks
@@ -1422,9 +1444,9 @@ export function initializePerformanceMonitoring() {
         });
       }
     });
-    
+
     observer.observe({ entryTypes: ['longtask'] });
-    
+
     // Track resource loading
     const resourceObserver = new PerformanceObserver((list) => {
       for (const entry of list.getEntries()) {
@@ -1437,7 +1459,7 @@ export function initializePerformanceMonitoring() {
         }
       }
     });
-    
+
     resourceObserver.observe({ entryTypes: ['resource'] });
   }
 }
@@ -1452,7 +1474,7 @@ function sendToAnalytics(metricName: string, data: any) {
       metric_delta: data.delta,
     });
   }
-  
+
   // Send to custom monitoring
   fetch('/api/metrics', {
     method: 'POST',
@@ -1474,6 +1496,7 @@ function sendToAnalytics(metricName: string, data: any) {
 ### Pre-Deployment Checklist
 
 #### Database Performance
+
 - [ ] All foreign keys have indexes
 - [ ] Common query patterns have composite indexes
 - [ ] Slow queries identified and optimized
@@ -1482,6 +1505,7 @@ function sendToAnalytics(metricName: string, data: any) {
 - [ ] Database statistics updated (`ANALYZE` run)
 
 #### API Performance
+
 - [ ] Response compression enabled
 - [ ] Rate limiting configured
 - [ ] API response caching implemented
@@ -1490,6 +1514,7 @@ function sendToAnalytics(metricName: string, data: any) {
 - [ ] Request batching enabled
 
 #### Frontend Performance
+
 - [ ] Code splitting implemented
 - [ ] Dynamic imports for heavy components
 - [ ] Images optimized and lazy loaded
@@ -1498,6 +1523,7 @@ function sendToAnalytics(metricName: string, data: any) {
 - [ ] JavaScript minified and compressed
 
 #### Caching Strategy
+
 - [ ] Redis configured and tested
 - [ ] Cache invalidation strategy defined
 - [ ] HTTP caching headers configured
@@ -1505,6 +1531,7 @@ function sendToAnalytics(metricName: string, data: any) {
 - [ ] API responses cached appropriately
 
 #### Monitoring
+
 - [ ] APM tool configured (Sentry/DataDog)
 - [ ] Custom metrics tracking implemented
 - [ ] Performance budgets defined
@@ -1513,18 +1540,18 @@ function sendToAnalytics(metricName: string, data: any) {
 
 ### Performance Targets
 
-| Metric | Target | Critical |
-|--------|--------|----------|
-| Time to First Byte (TTFB) | <200ms | <500ms |
-| First Contentful Paint (FCP) | <1s | <2s |
-| Largest Contentful Paint (LCP) | <2.5s | <4s |
-| First Input Delay (FID) | <100ms | <300ms |
-| Cumulative Layout Shift (CLS) | <0.1 | <0.25 |
-| API Response Time (p95) | <200ms | <500ms |
-| Database Query Time (p95) | <50ms | <100ms |
-| JavaScript Bundle Size | <200KB | <500KB |
-| Page Load Time | <3s | <5s |
-| Memory Usage | <512MB | <1GB |
+| Metric                         | Target | Critical |
+| ------------------------------ | ------ | -------- |
+| Time to First Byte (TTFB)      | <200ms | <500ms   |
+| First Contentful Paint (FCP)   | <1s    | <2s      |
+| Largest Contentful Paint (LCP) | <2.5s  | <4s      |
+| First Input Delay (FID)        | <100ms | <300ms   |
+| Cumulative Layout Shift (CLS)  | <0.1   | <0.25    |
+| API Response Time (p95)        | <200ms | <500ms   |
+| Database Query Time (p95)      | <50ms  | <100ms   |
+| JavaScript Bundle Size         | <200KB | <500KB   |
+| Page Load Time                 | <3s    | <5s      |
+| Memory Usage                   | <512MB | <1GB     |
 
 ---
 

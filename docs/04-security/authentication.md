@@ -45,9 +45,9 @@ interface JWTPayload {
 ```typescript
 // Secure cookie settings
 const cookieOptions = {
-  httpOnly: true,      // Prevent XSS
-  signed: true,        // Prevent tampering
-  sameSite: 'lax',     // CSRF protection
+  httpOnly: true, // Prevent XSS
+  signed: true, // Prevent tampering
+  sameSite: 'lax', // CSRF protection
   secure: isProduction, // HTTPS only in production
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
@@ -62,13 +62,13 @@ const cookieOptions = {
 async login(email: string, password: string) {
   // 1. Validate credentials
   const user = await validateUser(email, password);
-  
+
   // 2. Get user's organizations
   const memberships = await getUserMemberships(user.id);
-  
+
   // 3. Select active organization
   const activeMembership = selectActiveMembership(memberships);
-  
+
   // 4. Generate JWT
   const token = jwt.sign({
     userId: user.id,
@@ -77,11 +77,11 @@ async login(email: string, password: string) {
     membershipId: activeMembership.id,
     role: activeMembership.role,
   }, JWT_SECRET, { expiresIn: '7d' });
-  
+
   // 5. Set cookies
   setCookie(res, COOKIE_NAMES.AUTH_TOKEN, token);
   setCookie(res, COOKIE_NAMES.ACTIVE_ORGANIZATION, activeMembership.organizationId);
-  
+
   return { user, membership: activeMembership };
 }
 ```
@@ -94,16 +94,16 @@ export async function authenticateRequest(req: FastifyRequest) {
   // 1. Extract auth cookie
   const authCookie = req.cookies[COOKIE_NAMES.AUTH_TOKEN];
   if (!authCookie) throw new TRPCError({ code: 'UNAUTHORIZED' });
-  
+
   // 2. Unsign cookie (CRITICAL!)
   const unsigned = req.unsignCookie(authCookie);
   if (!unsigned.valid || !unsigned.value) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  
+
   // 3. Verify JWT
   const payload = jwt.verify(unsigned.value, JWT_SECRET) as JWTPayload;
-  
+
   // 4. Return user context
   return {
     user: {
@@ -123,7 +123,7 @@ export async function authenticateRequest(req: FastifyRequest) {
 // Frontend: use-organization.tsx
 const switchOrganization = async (membershipId: string) => {
   const result = await switchOrgMutation.mutateAsync({ membershipId });
-  
+
   // Server updates JWT and cookies
   // Client receives new context
   // UI updates automatically via React Query
@@ -164,28 +164,26 @@ try {
 
 ```typescript
 // Every authenticated procedure includes org context
-export const organizationProcedure = protectedProcedure.use(
-  async ({ ctx, next }) => {
-    if (!ctx.organizationId) {
-      throw new TRPCError({ code: 'FORBIDDEN' });
-    }
-    
-    // Verify user has access to organization
-    const membership = await ctx.prisma.organizationMember.findFirst({
-      where: {
-        userId: ctx.user.id,
-        organizationId: ctx.organizationId,
-        status: 'ACTIVE',
-      },
-    });
-    
-    if (!membership) {
-      throw new TRPCError({ code: 'FORBIDDEN' });
-    }
-    
-    return next({ ctx: { ...ctx, membership } });
+export const organizationProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  if (!ctx.organizationId) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
   }
-);
+
+  // Verify user has access to organization
+  const membership = await ctx.prisma.organizationMember.findFirst({
+    where: {
+      userId: ctx.user.id,
+      organizationId: ctx.organizationId,
+      status: 'ACTIVE',
+    },
+  });
+
+  if (!membership) {
+    throw new TRPCError({ code: 'FORBIDDEN' });
+  }
+
+  return next({ ctx: { ...ctx, membership } });
+});
 ```
 
 ## Common Authentication Errors
@@ -195,6 +193,7 @@ export const organizationProcedure = protectedProcedure.use(
 **Cause**: Cookie doesn't exist or is being read incorrectly
 
 **Solution**:
+
 ```typescript
 // Handle missing cookie
 const authCookie = request.cookies['auth-token'];
@@ -209,6 +208,7 @@ if (!authCookie) {
 **Cause**: Reading signed cookie directly without unsigning
 
 **Solution**:
+
 ```typescript
 // Always unsign first
 const unsigned = request.unsignCookie(authCookie);
@@ -220,6 +220,7 @@ const token = unsigned.value; // Now it's the actual JWT
 **Cause**: JWT missing organizationId or cookie not set
 
 **Solution**:
+
 ```typescript
 // Ensure organization is set during login
 if (!activeMembership) {
@@ -235,7 +236,7 @@ if (!activeMembership) {
 describe('AuthService', () => {
   it('should generate valid JWT on login', async () => {
     const result = await authService.login('test@example.com', 'password');
-    
+
     expect(result.token).toBeDefined();
     expect(jwt.verify(result.token, JWT_SECRET)).toMatchObject({
       userId: expect.any(String),
@@ -254,14 +255,12 @@ describe('Auth Flow', () => {
     const loginRes = await request(app)
       .post('/trpc/auth.login')
       .send({ email: 'test@example.com', password: 'password' });
-    
+
     const cookies = loginRes.headers['set-cookie'];
-    
+
     // Make authenticated request
-    const itemsRes = await request(app)
-      .get('/trpc/items.list')
-      .set('Cookie', cookies);
-    
+    const itemsRes = await request(app).get('/trpc/items.list').set('Cookie', cookies);
+
     expect(itemsRes.status).toBe(200);
     // Items should be filtered by organization
   });
@@ -277,14 +276,14 @@ test('complete auth flow', async ({ page }) => {
   await page.fill('[name="email"]', 'test@example.com');
   await page.fill('[name="password"]', 'password');
   await page.click('button[type="submit"]');
-  
+
   // Verify redirect to dashboard
   await expect(page).toHaveURL('/dashboard');
-  
+
   // Switch organization
   await page.click('[data-testid="org-switcher"]');
   await page.click('[data-testid="org-option-2"]');
-  
+
   // Verify data updates
   await expect(page.locator('[data-testid="org-name"]')).toContainText('New Org');
 });

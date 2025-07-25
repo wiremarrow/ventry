@@ -21,7 +21,9 @@ export interface JWTVerifyResult {
 }
 
 export function signJWT(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'] });
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+  });
 }
 
 /**
@@ -43,29 +45,29 @@ export function verifyJwt(token: string): JWTVerifyResult {
 
   try {
     const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    
+
     // Validate payload structure
     if (!payload || typeof payload !== 'object' || !payload.userId) {
       logger.warn({ payload }, 'Invalid JWT payload structure');
       throw new AuthError('MALFORMED', 'UNAUTHORIZED');
     }
-    
+
     // Return only the necessary fields
     const result: JWTVerifyResult = {
       userId: payload.userId,
     };
-    
+
     if (payload.organizationId) {
       result.organizationId = payload.organizationId;
     }
-    
+
     return result;
   } catch (error) {
     // If it's already an AuthError, re-throw it
     if (error instanceof AuthError) {
       throw error;
     }
-    
+
     // Handle specific JWT errors
     if (error instanceof jwt.TokenExpiredError) {
       logger.debug({ error }, 'JWT token expired');
@@ -77,7 +79,7 @@ export function verifyJwt(token: string): JWTVerifyResult {
       logger.debug({ error }, 'JWT not yet active');
       throw new AuthError('MALFORMED', 'UNAUTHORIZED', error);
     }
-    
+
     // Handle any other errors
     logger.error({ error }, 'Unexpected error during JWT verification');
     throw new AuthError('MALFORMED', 'UNAUTHORIZED', error as Error);

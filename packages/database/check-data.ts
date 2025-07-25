@@ -9,7 +9,7 @@ async function checkData() {
     const supplierCount = await prisma.supplier.count();
     const customerCount = await prisma.customer.count();
     const orderCount = await prisma.order.count();
-    
+
     console.log('📊 Database Status:');
     console.log(`Organizations: ${orgCount}`);
     console.log(`Users: ${userCount}`);
@@ -18,7 +18,7 @@ async function checkData() {
     console.log(`Suppliers: ${supplierCount}`);
     console.log(`Customers: ${customerCount}`);
     console.log(`Orders: ${orderCount}`);
-    
+
     if (orgCount === 0) {
       console.log('\n⚠️  No organizations found! Need to run comprehensive seed.');
     } else {
@@ -26,13 +26,13 @@ async function checkData() {
         include: {
           members: {
             include: {
-              user: true
-            }
-          }
-        }
+              user: true,
+            },
+          },
+        },
       });
       console.log('\n🏢 Organizations:');
-      orgs.forEach(org => {
+      orgs.forEach((org) => {
         console.log(`- ${org.name} (${org.members.length} members)`);
       });
     }

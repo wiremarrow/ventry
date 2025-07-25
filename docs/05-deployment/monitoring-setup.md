@@ -49,7 +49,7 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
   // Profiling
   profilesSampleRate: 0.1,
-  
+
   beforeSend(event, hint) {
     // Filter out sensitive data
     if (event.request?.cookies) {
@@ -82,7 +82,7 @@ Sentry.init({
   tracesSampleRate: 0.1,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  
+
   beforeSend(event, hint) {
     // Filter out non-app errors
     if (event.exception?.values?.[0]?.type === 'NetworkError') {
@@ -112,17 +112,17 @@ export const metrics = {
   increment(metric: string, tags?: Record<string, string>) {
     statsd.increment(metric, 1, tags);
   },
-  
+
   // Timing metrics
   timing(metric: string, time: number, tags?: Record<string, string>) {
     statsd.timing(metric, time, tags);
   },
-  
+
   // Gauge metrics
   gauge(metric: string, value: number, tags?: Record<string, string>) {
     statsd.gauge(metric, value, tags);
   },
-  
+
   // Histogram
   histogram(metric: string, value: number, tags?: Record<string, string>) {
     statsd.histogram(metric, value, tags);
@@ -141,23 +141,23 @@ metrics.gauge('inventory.total_value', 1250000);
 // src/trpc/metrics-middleware.ts
 export const metricsMiddleware = t.middleware(async ({ path, type, next }) => {
   const start = Date.now();
-  
+
   const result = await next();
-  
+
   const duration = Date.now() - start;
-  
+
   // Track request metrics
   metrics.increment('trpc.request', {
     procedure: path,
     type: type,
     status: result.ok ? 'success' : 'error',
   });
-  
+
   metrics.timing('trpc.duration', duration, {
     procedure: path,
     type: type,
   });
-  
+
   // Log slow requests
   if (duration > 1000) {
     logger.warn('Slow tRPC procedure', {
@@ -166,7 +166,7 @@ export const metricsMiddleware = t.middleware(async ({ path, type, next }) => {
       type,
     });
   }
-  
+
   return result;
 });
 ```
@@ -185,19 +185,19 @@ export class BusinessMetrics {
         createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
       },
     });
-    
+
     metrics.gauge('business.daily_orders', orderStats._count);
     metrics.gauge('business.daily_revenue', orderStats._sum.totalAmount || 0);
-    
+
     // Inventory metrics
     const inventoryValue = await prisma.$queryRaw`
       SELECT SUM(i.qty_on_hand * it.unit_cost) as total_value
       FROM inventory i
       JOIN items it ON i.item_id = it.id
     `;
-    
+
     metrics.gauge('business.inventory_value', inventoryValue[0].total_value);
-    
+
     // User activity
     const activeUsers = await prisma.auditLog.groupBy({
       by: ['userId'],
@@ -206,15 +206,18 @@ export class BusinessMetrics {
       },
       _count: true,
     });
-    
+
     metrics.gauge('business.active_users_hourly', activeUsers.length);
   }
 }
 
 // Run every 5 minutes
-setInterval(() => {
-  new BusinessMetrics().collectMetrics();
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    new BusinessMetrics().collectMetrics();
+  },
+  5 * 60 * 1000
+);
 ```
 
 ## Infrastructure Monitoring
@@ -232,15 +235,15 @@ scrape_configs:
     static_configs:
       - targets: ['backend:4000']
     metrics_path: '/metrics'
-    
+
   - job_name: 'postgres'
     static_configs:
       - targets: ['postgres-exporter:9187']
-      
+
   - job_name: 'redis'
     static_configs:
       - targets: ['redis-exporter:9121']
-      
+
   - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
@@ -286,7 +289,7 @@ export async function putMetric(
       },
     ],
   });
-  
+
   await cloudwatch.send(command);
 }
 
@@ -313,7 +316,7 @@ services:
       - /var/lib/docker/:/var/lib/docker:ro
     ports:
       - 8080:8080
-      
+
   node-exporter:
     image: prom/node-exporter:latest
     ports:
@@ -380,18 +383,18 @@ filebeat.inputs:
       - '/var/lib/docker/containers/*/*.log'
     processors:
       - add_docker_metadata:
-          host: "unix:///var/run/docker.sock"
+          host: 'unix:///var/run/docker.sock'
       - decode_json_fields:
-          fields: ["message"]
-          target: "json"
+          fields: ['message']
+          target: 'json'
           overwrite_keys: true
 
 output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
+  hosts: ['elasticsearch:9200']
   indices:
-    - index: "ventry-logs-%{+yyyy.MM.dd}"
+    - index: 'ventry-logs-%{+yyyy.MM.dd}'
       when.contains:
-        container.labels.app: "ventry"
+        container.labels.app: 'ventry'
 ```
 
 ### 3. Log Queries
@@ -477,18 +480,12 @@ import { trace, context, SpanStatusCode } from '@opentelemetry/api';
 
 const tracer = trace.getTracer('ventry-backend');
 
-export async function tracedOperation<T>(
-  name: string,
-  operation: () => Promise<T>
-): Promise<T> {
+export async function tracedOperation<T>(name: string, operation: () => Promise<T>): Promise<T> {
   const span = tracer.startSpan(name);
-  
+
   try {
-    const result = await context.with(
-      trace.setSpan(context.active(), span),
-      operation
-    );
-    
+    const result = await context.with(trace.setSpan(context.active(), span), operation);
+
     span.setStatus({ code: SpanStatusCode.OK });
     return result;
   } catch (error) {
@@ -525,35 +522,35 @@ groups:
         labels:
           severity: critical
         annotations:
-          summary: "High error rate detected"
-          description: "Error rate is above 5% for 5 minutes"
-          
+          summary: 'High error rate detected'
+          description: 'Error rate is above 5% for 5 minutes'
+
       - alert: SlowAPIResponse
         expr: histogram_quantile(0.95, http_request_duration_seconds_bucket) > 1
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "API response time degraded"
-          description: "95th percentile response time is above 1 second"
-          
+          summary: 'API response time degraded'
+          description: '95th percentile response time is above 1 second'
+
       - alert: DatabaseConnectionPoolExhausted
         expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Database connection pool nearly exhausted"
-          description: "Using more than 80% of available connections"
-          
+          summary: 'Database connection pool nearly exhausted'
+          description: 'Using more than 80% of available connections'
+
       - alert: HighMemoryUsage
         expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
         for: 5m
         labels:
           severity: warning
         annotations:
-          summary: "High memory usage detected"
-          description: "Memory usage is above 90%"
+          summary: 'High memory usage detected'
+          description: 'Memory usage is above 90%'
 ```
 
 ### 2. PagerDuty Integration
@@ -584,12 +581,12 @@ export async function createIncident(
 
 // Alert on critical errors
 logger.on('error', async (error) => {
-  if (error.level >= 50) { // Error or Fatal
-    await createIncident(
-      `Critical error: ${error.msg}`,
-      'critical',
-      { error: error.err, context: error }
-    );
+  if (error.level >= 50) {
+    // Error or Fatal
+    await createIncident(`Critical error: ${error.msg}`, 'critical', {
+      error: error.err,
+      context: error,
+    });
   }
 });
 ```
@@ -613,16 +610,18 @@ export async function sendAlert(
     warning: '#ff9800',
     error: '#ff0000',
   }[severity];
-  
+
   await slack.chat.postMessage({
     channel,
-    attachments: [{
-      color,
-      title,
-      text: message,
-      footer: 'Ventry Monitoring',
-      ts: `${Date.now() / 1000}`,
-    }],
+    attachments: [
+      {
+        color,
+        title,
+        text: message,
+        footer: 'Ventry Monitoring',
+        ts: `${Date.now() / 1000}`,
+      },
+    ],
   });
 }
 ```
@@ -638,46 +637,58 @@ export async function sendAlert(
     "panels": [
       {
         "title": "Request Rate",
-        "targets": [{
-          "expr": "sum(rate(http_requests_total[5m])) by (endpoint)"
-        }],
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (endpoint)"
+          }
+        ],
         "type": "graph"
       },
       {
         "title": "Error Rate",
-        "targets": [{
-          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))"
-        }],
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m]))"
+          }
+        ],
         "type": "singlestat",
         "thresholds": "0.01,0.05",
         "colors": ["green", "yellow", "red"]
       },
       {
         "title": "Response Time (p95)",
-        "targets": [{
-          "expr": "histogram_quantile(0.95, http_request_duration_seconds_bucket)"
-        }],
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, http_request_duration_seconds_bucket)"
+          }
+        ],
         "type": "graph"
       },
       {
         "title": "Active Users",
-        "targets": [{
-          "expr": "business_active_users_hourly"
-        }],
+        "targets": [
+          {
+            "expr": "business_active_users_hourly"
+          }
+        ],
         "type": "singlestat"
       },
       {
         "title": "Database Connections",
-        "targets": [{
-          "expr": "pg_stat_database_numbackends{datname=\"ventry\"}"
-        }],
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends{datname=\"ventry\"}"
+          }
+        ],
         "type": "graph"
       },
       {
         "title": "Memory Usage",
-        "targets": [{
-          "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"
-        }],
+        "targets": [
+          {
+            "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100"
+          }
+        ],
         "type": "gauge",
         "thresholds": "70,90"
       }
@@ -698,7 +709,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
       _sum: { totalAmount: true },
       where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     }),
-    
+
     // Inventory metrics
     prisma.$queryRaw`
       SELECT 
@@ -708,14 +719,14 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
       FROM inventory i
       JOIN items it ON i.item_id = it.id
     `,
-    
+
     // User activity
     prisma.auditLog.groupBy({
       by: ['userId'],
       where: { createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } },
       _count: true,
     }),
-    
+
     // Performance metrics from Redis
     redis.mget([
       'metrics:api:response_time:p95',
@@ -723,7 +734,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
       'metrics:api:error_rate',
     ]),
   ]);
-  
+
   return {
     business: {
       dailyOrders: orders._count,
@@ -745,6 +756,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
 ## Monitoring Checklist
 
 ### Initial Setup
+
 - [ ] Sentry configured for error tracking
 - [ ] Prometheus/CloudWatch for metrics
 - [ ] ELK/CloudWatch Logs for log aggregation
@@ -753,6 +765,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
 - [ ] PagerDuty/Opsgenie for alerting
 
 ### Key Metrics Tracked
+
 - [ ] API response times (p50, p95, p99)
 - [ ] Error rates by endpoint
 - [ ] Database query performance
@@ -761,6 +774,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
 - [ ] User activity metrics
 
 ### Alerts Configured
+
 - [ ] High error rate (>5%)
 - [ ] Slow response times (>1s)
 - [ ] Database connection exhaustion
@@ -769,6 +783,7 @@ app.get('/api/metrics/dashboard', async (req, reply) => {
 - [ ] SSL certificate expiration
 
 ### Regular Reviews
+
 - [ ] Daily: Check error rates and alerts
 - [ ] Weekly: Review performance trends
 - [ ] Monthly: Analyze business metrics

@@ -8,16 +8,6 @@
     "target": "ES2022",
     "moduleResolution": "node"
   },
-  "include": [
-    "index.ts",
-    "client.ts",
-    "prisma/**/*",
-    "generated/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "prisma/seed.ts",
-    "prisma/seed-comprehensive.ts"
-  ]
+  "include": ["index.ts", "client.ts", "prisma/**/*", "generated/**/*"],
+  "exclude": ["node_modules", "dist", "prisma/seed.ts", "prisma/seed-comprehensive.ts"]
 }

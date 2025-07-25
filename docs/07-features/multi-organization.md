@@ -24,31 +24,31 @@ interface Organization {
   id: string;
   name: string;
   slug: string; // Unique identifier for URLs
-  
+
   // Details
   description?: string;
   website?: string;
   industry?: string;
   size?: 'SMALL' | 'MEDIUM' | 'LARGE' | 'ENTERPRISE';
-  
+
   // Branding
   logo?: string;
   primaryColor?: string;
   secondaryColor?: string;
-  
+
   // Settings
   timezone: string;
   currency: string;
   locale: string;
   fiscalYearStart?: number; // Month (1-12)
-  
+
   // Features
   features: OrganizationFeature[];
-  
+
   // Billing
   subscription?: Subscription;
   billingEmail?: string;
-  
+
   // Status
   status: 'ACTIVE' | 'SUSPENDED' | 'CANCELLED';
   createdAt: Date;
@@ -59,13 +59,13 @@ interface OrganizationMember {
   id: string;
   organizationId: string;
   userId: string;
-  
+
   // Role within organization
   role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-  
+
   // Permissions
   permissions: Permission[];
-  
+
   // Status
   status: 'ACTIVE' | 'INVITED' | 'SUSPENDED';
   invitedBy?: string;
@@ -79,18 +79,10 @@ interface OrganizationMember {
 ```typescript
 // Row-Level Security implementation
 export class RLSContext {
-  static async setContext(
-    prisma: PrismaClient,
-    userId: string,
-    organizationId: string
-  ) {
-    await prisma.$executeRawUnsafe(
-      'SELECT set_rls_context($1, $2)',
-      userId,
-      organizationId
-    );
+  static async setContext(prisma: PrismaClient, userId: string, organizationId: string) {
+    await prisma.$executeRawUnsafe('SELECT set_rls_context($1, $2)', userId, organizationId);
   }
-  
+
   static async clearContext(prisma: PrismaClient) {
     await prisma.$executeRawUnsafe('SELECT clear_rls_context()');
   }
@@ -99,16 +91,16 @@ export class RLSContext {
 // Middleware to set RLS context
 export const organizationMiddleware = async (req, res, next) => {
   const { userId, organizationId } = req.auth;
-  
+
   if (userId && organizationId) {
     await RLSContext.setContext(prisma, userId, organizationId);
-    
+
     // Clear context after request
     res.on('finish', async () => {
       await RLSContext.clearContext(prisma);
     });
   }
-  
+
   next();
 };
 ```
@@ -132,7 +124,7 @@ const createOrganization = async (data: CreateOrganizationInput) => {
         locale: data.locale || 'en-US',
       },
     });
-    
+
     // Add creator as owner
     await tx.organizationMember.create({
       data: {
@@ -143,10 +135,10 @@ const createOrganization = async (data: CreateOrganizationInput) => {
         joinedAt: new Date(),
       },
     });
-    
+
     // Create default settings
     await createDefaultSettings(tx, org.id);
-    
+
     // Create default locations
     await tx.location.create({
       data: {
@@ -156,16 +148,16 @@ const createOrganization = async (data: CreateOrganizationInput) => {
         isDefault: true,
       },
     });
-    
+
     // Set up features based on plan
     await setupOrganizationFeatures(tx, org.id, data.plan);
-    
+
     return org;
   });
-  
+
   // Send welcome email
   await sendWelcomeEmail(result);
-  
+
   return result;
 };
 
@@ -181,25 +173,25 @@ const setupOrganization = async (orgId: string, setup: SetupData) => {
         website: setup.website,
       },
     }),
-    
+
     // Create initial categories
-    ...setup.categories.map(cat =>
+    ...setup.categories.map((cat) =>
       prisma.category.create({
         data: { ...cat, organizationId: orgId },
       })
     ),
-    
+
     // Create tax rules
-    ...setup.taxRules.map(rule =>
+    ...setup.taxRules.map((rule) =>
       prisma.taxRule.create({
         data: { ...rule, organizationId: orgId },
       })
     ),
-    
+
     // Import initial data if requested
     setup.importData && importInitialData(orgId, setup.importData),
   ]);
-  
+
   return updates;
 };
 ```
@@ -208,17 +200,14 @@ const setupOrganization = async (orgId: string, setup: SetupData) => {
 
 ```typescript
 // Invite members
-const inviteMembers = async (
-  orgId: string,
-  invites: InviteInput[]
-) => {
+const inviteMembers = async (orgId: string, invites: InviteInput[]) => {
   const invitations = await Promise.all(
     invites.map(async (invite) => {
       // Check if user exists
       let user = await prisma.user.findUnique({
         where: { email: invite.email },
       });
-      
+
       if (!user) {
         // Create pending user
         user = await prisma.user.create({
@@ -228,7 +217,7 @@ const inviteMembers = async (
           },
         });
       }
-      
+
       // Create invitation
       const member = await prisma.organizationMember.create({
         data: {
@@ -240,7 +229,7 @@ const inviteMembers = async (
           invitedAt: new Date(),
         },
       });
-      
+
       // Send invitation email
       await sendInvitationEmail({
         email: invite.email,
@@ -248,18 +237,18 @@ const inviteMembers = async (
         role: invite.role,
         inviteCode: generateInviteCode(member.id),
       });
-      
+
       return member;
     })
   );
-  
+
   return invitations;
 };
 
 // Accept invitation
 const acceptInvitation = async (inviteCode: string) => {
   const invite = await decodeInviteCode(inviteCode);
-  
+
   // Update member status
   const member = await prisma.organizationMember.update({
     where: { id: invite.memberId },
@@ -268,32 +257,27 @@ const acceptInvitation = async (inviteCode: string) => {
       joinedAt: new Date(),
     },
   });
-  
+
   // Log activity
   await logActivity({
     organizationId: member.organizationId,
     userId: member.userId,
     action: 'JOINED_ORGANIZATION',
   });
-  
+
   return member;
 };
 
 // Manage permissions
-const updateMemberPermissions = async (
-  memberId: string,
-  permissions: Permission[]
-) => {
+const updateMemberPermissions = async (memberId: string, permissions: Permission[]) => {
   // Validate permissions for role
   const member = await prisma.organizationMember.findUnique({
     where: { id: memberId },
   });
-  
+
   const allowedPermissions = getPermissionsForRole(member.role);
-  const validPermissions = permissions.filter(p =>
-    allowedPermissions.includes(p)
-  );
-  
+  const validPermissions = permissions.filter((p) => allowedPermissions.includes(p));
+
   // Update permissions
   await prisma.organizationMember.update({
     where: { id: memberId },
@@ -301,7 +285,7 @@ const updateMemberPermissions = async (
       permissions: validPermissions,
     },
   });
-  
+
   // Clear permission cache
   await clearPermissionCache(member.userId);
 };
@@ -311,10 +295,7 @@ const updateMemberPermissions = async (
 
 ```typescript
 // Switch active organization
-const switchOrganization = async (
-  userId: string,
-  organizationId: string
-) => {
+const switchOrganization = async (userId: string, organizationId: string) => {
   // Verify membership
   const membership = await prisma.organizationMember.findFirst({
     where: {
@@ -323,35 +304,35 @@ const switchOrganization = async (
       status: 'ACTIVE',
     },
   });
-  
+
   if (!membership) {
     throw new Error('Not a member of this organization');
   }
-  
+
   // Update user's active organization
   await prisma.user.update({
     where: { id: userId },
     data: { activeOrganizationId: organizationId },
   });
-  
+
   // Generate new JWT with organization context
   const token = generateToken({
     userId,
     organizationId,
     role: membership.role,
   });
-  
+
   // Set cookies
   setCookie('active-organization', organizationId);
   setCookie('auth-token', token);
-  
+
   // Log switch
   await logActivity({
     userId,
     organizationId,
     action: 'SWITCHED_ORGANIZATION',
   });
-  
+
   return { token, organization: organizationId };
 };
 
@@ -369,8 +350,8 @@ const getUserOrganizations = async (userId: string) => {
       joinedAt: 'desc',
     },
   });
-  
-  return memberships.map(m => ({
+
+  return memberships.map((m) => ({
     ...m.organization,
     role: m.role,
     permissions: m.permissions,
@@ -409,7 +390,7 @@ export const organizationScope = <T extends { organizationId: string }>(
   query: Prisma.Args<T, 'findMany'>
 ) => {
   const orgId = getCurrentOrganizationId();
-  
+
   return {
     ...query,
     where: {
@@ -433,7 +414,7 @@ export const enforceOrganizationScope = async (params, next) => {
   if (params.action === 'create') {
     params.args.data.organizationId = getCurrentOrganizationId();
   }
-  
+
   // Add organizationId to queries
   if (['findMany', 'findFirst', 'findUnique'].includes(params.action)) {
     params.args.where = {
@@ -441,7 +422,7 @@ export const enforceOrganizationScope = async (params, next) => {
       organizationId: getCurrentOrganizationId(),
     };
   }
-  
+
   return next(params);
 };
 ```
@@ -461,7 +442,7 @@ const shareWithOrganization = async (
   if (resource.organizationId !== getCurrentOrganizationId()) {
     throw new Error('Cannot share resources you do not own');
   }
-  
+
   // Create share record
   const share = await prisma.organizationShare.create({
     data: {
@@ -473,14 +454,14 @@ const shareWithOrganization = async (
       expiresAt: calculateExpiry(),
     },
   });
-  
+
   // Notify target organization
   await notifyOrganization(targetOrgId, {
     type: 'RESOURCE_SHARED',
     from: getCurrentOrganizationId(),
     resource: resourceType,
   });
-  
+
   return share;
 };
 
@@ -496,7 +477,7 @@ const getSharedResources = async () => {
       fromOrganization: true,
     },
   });
-  
+
   // Fetch actual resources
   const resources = await Promise.all(
     shares.map(async (share) => {
@@ -505,7 +486,7 @@ const getSharedResources = async () => {
         share.resourceId,
         share.fromOrganizationId
       );
-      
+
       return {
         ...resource,
         sharedBy: share.fromOrganization,
@@ -513,7 +494,7 @@ const getSharedResources = async () => {
       };
     })
   );
-  
+
   return resources;
 };
 ```
@@ -531,20 +512,17 @@ interface OrganizationFeature {
   enabled: boolean;
   limit?: number;
   usage?: number;
-  
+
   // Configuration
   config?: Record<string, any>;
-  
+
   // Billing
   billingType: 'INCLUDED' | 'METERED' | 'FLAT_FEE';
   price?: number;
 }
 
 // Check feature availability
-const checkFeature = async (
-  orgId: string,
-  feature: FeatureType
-): Promise<FeatureCheck> => {
+const checkFeature = async (orgId: string, feature: FeatureType): Promise<FeatureCheck> => {
   const orgFeature = await prisma.organizationFeature.findFirst({
     where: {
       organizationId: orgId,
@@ -552,30 +530,26 @@ const checkFeature = async (
       enabled: true,
     },
   });
-  
+
   if (!orgFeature) {
     return { available: false, reason: 'Feature not enabled' };
   }
-  
+
   // Check limits
   if (orgFeature.limit && orgFeature.usage >= orgFeature.limit) {
-    return { 
-      available: false, 
+    return {
+      available: false,
       reason: 'Feature limit reached',
       limit: orgFeature.limit,
       usage: orgFeature.usage,
     };
   }
-  
+
   return { available: true, config: orgFeature.config };
 };
 
 // Track feature usage
-const trackFeatureUsage = async (
-  orgId: string,
-  feature: FeatureType,
-  usage: number = 1
-) => {
+const trackFeatureUsage = async (orgId: string, feature: FeatureType, usage: number = 1) => {
   await prisma.organizationFeature.update({
     where: {
       organizationId_feature: {
@@ -588,12 +562,12 @@ const trackFeatureUsage = async (
       lastUsedAt: new Date(),
     },
   });
-  
+
   // Check if approaching limit
   const updated = await prisma.organizationFeature.findFirst({
     where: { organizationId: orgId, feature },
   });
-  
+
   if (updated.limit && updated.usage > updated.limit * 0.8) {
     await sendUsageAlert(orgId, feature, updated);
   }
@@ -609,23 +583,23 @@ interface Subscription {
   organizationId: string;
   plan: PlanType;
   status: 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED';
-  
+
   // Billing
   billingCycle: 'MONTHLY' | 'YEARLY';
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
-  
+
   // Pricing
   basePrice: number;
   addons: SubscriptionAddon[];
   discount?: number;
-  
+
   // Limits
   userLimit: number;
   itemLimit: number;
   warehouseLimit: number;
   apiCallLimit: number;
-  
+
   // Payment
   paymentMethod?: PaymentMethod;
   nextBillingDate: Date;
@@ -633,40 +607,35 @@ interface Subscription {
 }
 
 // Upgrade/downgrade subscription
-const changeSubscription = async (
-  orgId: string,
-  newPlan: PlanType
-) => {
+const changeSubscription = async (orgId: string, newPlan: PlanType) => {
   const current = await prisma.subscription.findUnique({
     where: { organizationId: orgId },
   });
-  
+
   // Calculate proration
   const proration = calculateProration(current, newPlan);
-  
+
   // Update subscription
   const updated = await prisma.subscription.update({
     where: { organizationId: orgId },
     data: {
       plan: newPlan,
       ...getPlanLimits(newPlan),
-      changeEffectiveDate: proration.immediate 
-        ? new Date() 
-        : current.currentPeriodEnd,
+      changeEffectiveDate: proration.immediate ? new Date() : current.currentPeriodEnd,
     },
   });
-  
+
   // Update features
   await updateOrganizationFeatures(orgId, newPlan);
-  
+
   // Process payment if upgrade
   if (proration.amount > 0) {
     await processPayment(orgId, proration.amount, 'PLAN_UPGRADE');
   }
-  
+
   // Send confirmation
   await sendPlanChangeConfirmation(orgId, current.plan, newPlan);
-  
+
   return updated;
 };
 ```
@@ -690,7 +659,7 @@ const getOrganizationBranding = async (orgId: string) => {
       emailLogo: true,
     },
   });
-  
+
   return {
     ...org,
     theme: generateTheme(org),
@@ -715,10 +684,7 @@ const generateTheme = (branding: Branding) => {
 };
 
 // Custom domain support
-const setupCustomDomain = async (
-  orgId: string,
-  domain: string
-) => {
+const setupCustomDomain = async (orgId: string, domain: string) => {
   // Verify domain ownership
   const verification = await verifyDomain(domain);
   if (!verification.verified) {
@@ -727,7 +693,7 @@ const setupCustomDomain = async (
       instructions: verification.instructions,
     };
   }
-  
+
   // Update organization
   await prisma.organization.update({
     where: { id: orgId },
@@ -737,13 +703,13 @@ const setupCustomDomain = async (
       domainVerifiedAt: new Date(),
     },
   });
-  
+
   // Configure SSL
   await configureSSL(domain);
-  
+
   // Update routing
   await updateDomainRouting(domain, orgId);
-  
+
   return { success: true, domain };
 };
 ```
@@ -755,18 +721,13 @@ const setupCustomDomain = async (
 ```typescript
 // Get organization analytics
 const getOrganizationAnalytics = async (orgId: string) => {
-  const [
-    userMetrics,
-    usageMetrics,
-    performanceMetrics,
-    growthMetrics,
-  ] = await Promise.all([
+  const [userMetrics, usageMetrics, performanceMetrics, growthMetrics] = await Promise.all([
     getUserMetrics(orgId),
     getUsageMetrics(orgId),
     getPerformanceMetrics(orgId),
     getGrowthMetrics(orgId),
   ]);
-  
+
   return {
     users: userMetrics,
     usage: usageMetrics,
@@ -779,7 +740,7 @@ const getOrganizationAnalytics = async (orgId: string) => {
 // Usage tracking
 const getUsageMetrics = async (orgId: string) => {
   const period = getLast30Days();
-  
+
   const metrics = await prisma.$queryRaw`
     SELECT 
       COUNT(DISTINCT o.id) as orders,
@@ -799,7 +760,7 @@ const getUsageMetrics = async (orgId: string) => {
     WHERE org.id = ${orgId}
     GROUP BY org.id
   `;
-  
+
   return metrics[0];
 };
 ```
@@ -808,20 +769,14 @@ const getUsageMetrics = async (orgId: string) => {
 
 ```typescript
 // Cross-organization reports (for enterprise)
-const getEnterpriseReport = async (
-  parentOrgId: string,
-  childOrgIds: string[]
-) => {
+const getEnterpriseReport = async (parentOrgId: string, childOrgIds: string[]) => {
   // Verify parent-child relationship
-  const verified = await verifyOrganizationHierarchy(
-    parentOrgId,
-    childOrgIds
-  );
-  
+  const verified = await verifyOrganizationHierarchy(parentOrgId, childOrgIds);
+
   if (!verified) {
     throw new Error('Invalid organization hierarchy');
   }
-  
+
   // Aggregate data across organizations
   const report = await prisma.$queryRaw`
     WITH org_metrics AS (
@@ -846,7 +801,7 @@ const getEnterpriseReport = async (
     FROM org_metrics
     ORDER BY total_revenue DESC
   `;
-  
+
   return {
     summary: calculateSummaryStats(report),
     organizations: report,
@@ -882,23 +837,20 @@ const verifyOrganizationAccess = async (
       status: 'ACTIVE',
     },
   });
-  
+
   if (!membership) {
     throw new Error('Access denied: Not a member');
   }
-  
+
   if (requiredRole && !hasRole(membership.role, requiredRole)) {
     throw new Error('Access denied: Insufficient permissions');
   }
-  
+
   return membership;
 };
 
 // Audit organization actions
-const auditOrganizationAction = async (
-  action: AuditAction,
-  details: any
-) => {
+const auditOrganizationAction = async (action: AuditAction, details: any) => {
   await prisma.auditLog.create({
     data: {
       organizationId: getCurrentOrganizationId(),
@@ -924,27 +876,25 @@ const cacheOrganization = async (orgId: string) => {
       subscription: true,
     },
   });
-  
+
   await redis.setex(
     `org:${orgId}`,
     3600, // 1 hour
     JSON.stringify(org)
   );
-  
+
   return org;
 };
 
 // Batch operations for multiple organizations
-const batchUpdateOrganizations = async (
-  updates: OrganizationUpdate[]
-) => {
-  const promises = updates.map(update =>
+const batchUpdateOrganizations = async (updates: OrganizationUpdate[]) => {
+  const promises = updates.map((update) =>
     prisma.organization.update({
       where: { id: update.id },
       data: update.data,
     })
   );
-  
+
   return Promise.all(promises);
 };
 ```
@@ -972,7 +922,7 @@ const batchUpdateOrganizations = async (
 
 ```sql
 -- Check user's organizations
-SELECT 
+SELECT
   om.*,
   o.name,
   o.status
@@ -981,7 +931,7 @@ JOIN organizations o ON om.organization_id = o.id
 WHERE om.user_id = 'user-id-here';
 
 -- Verify RLS context
-SELECT 
+SELECT
   current_setting('app.current_user_id', true) as user_id,
   current_setting('app.current_organization_id', true) as org_id;
 

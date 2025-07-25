@@ -77,13 +77,13 @@ interface EditProductDialogProps {
 
 export function EditProductDialog({ product, open, onOpenChange }: EditProductDialogProps) {
   const utils = trpc.useUtils();
-  
+
   // Fetch categories
   const { data: categories } = trpc.itemCategories.list.useQuery({});
-  
+
   // Fetch units of measure
   const { data: uoms } = trpc.unitsOfMeasure.list.useQuery({});
-  
+
   // Fetch suppliers
   const { data: suppliers } = trpc.suppliers.list.useQuery({
     page: 1,
@@ -148,7 +148,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
 
   const onSubmit = (data: EditProductFormData) => {
     if (!product?.id) return;
-    
+
     updateMutation.mutate({
       id: product.id,
       ...data,
@@ -172,7 +172,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Basic Information</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -210,7 +210,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
+                      <Textarea
                         placeholder="Enter product description"
                         {...field}
                         value={field.value || ''}
@@ -277,7 +277,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
             {/* Pricing & Supplier */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Pricing & Supplier</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -286,13 +286,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Default Cost</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.01"
                           placeholder="0.00"
                           {...field}
                           value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -307,13 +309,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Default Price</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.01"
                           placeholder="0.00"
                           {...field}
                           value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -328,8 +332,8 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Default Supplier</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(value === 'none' ? null : value)} 
+                    <Select
+                      onValueChange={(value) => field.onChange(value === 'none' ? null : value)}
                       value={field.value || 'none'}
                     >
                       <FormControl>
@@ -355,7 +359,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
             {/* Inventory Management */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Inventory Management</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -364,16 +368,16 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Reorder Point</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           placeholder="0"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 0)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? parseInt(e.target.value) : 0)
+                          }
                         />
                       </FormControl>
-                      <FormDescription>
-                        Minimum quantity before reordering
-                      </FormDescription>
+                      <FormDescription>Minimum quantity before reordering</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -386,16 +390,16 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Reorder Quantity</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           placeholder="1"
                           {...field}
-                          onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : 1)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? parseInt(e.target.value) : 1)
+                          }
                         />
                       </FormControl>
-                      <FormDescription>
-                        Quantity to reorder
-                      </FormDescription>
+                      <FormDescription>Quantity to reorder</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -406,7 +410,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
             {/* Physical Dimensions */}
             <div className="space-y-4">
               <h3 className="text-sm font-medium">Physical Dimensions (Optional)</h3>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -415,13 +419,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     <FormItem>
                       <FormLabel>Weight (kg)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
+                        <Input
+                          type="number"
                           step="0.001"
                           placeholder="0.000"
                           {...field}
                           value={field.value ?? ''}
-                          onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                          onChange={(e) =>
+                            field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -437,13 +443,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                       <FormItem>
                         <FormLabel>L (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
                             value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={(e) =>
+                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                       </FormItem>
@@ -457,13 +465,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                       <FormItem>
                         <FormLabel>W (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
                             value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={(e) =>
+                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                       </FormItem>
@@ -477,13 +487,15 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                       <FormItem>
                         <FormLabel>H (cm)</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
+                          <Input
+                            type="number"
                             step="0.1"
                             placeholder="0.0"
                             {...field}
                             value={field.value ?? ''}
-                            onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : null)}
+                            onChange={(e) =>
+                              field.onChange(e.target.value ? parseFloat(e.target.value) : null)
+                            }
                           />
                         </FormControl>
                       </FormItem>
@@ -506,10 +518,7 @@ export function EditProductDialog({ product, open, onOpenChange }: EditProductDi
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}

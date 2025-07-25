@@ -9,24 +9,30 @@ The Ventry system uses PostgreSQL indexes to optimize query performance, especia
 ## Index Strategy
 
 ### 1. Multi-Tenant Indexes
+
 Every table that contains `organizationId` has an index on this column as the first column, enabling efficient tenant isolation.
 
 ### 2. Foreign Key Indexes
+
 All foreign key columns have indexes to optimize JOIN operations and referential integrity checks.
 
 ### 3. Composite Indexes
+
 Frequently used query patterns have composite indexes that match the WHERE clause conditions.
 
 ### 4. Text Search Indexes
+
 GIN indexes are used for full-text search on name fields for items, customers, and suppliers.
 
 ## Critical Indexes by Table
 
 ### Organization Members
+
 - `idx_organization_members_user_id`: For user login lookups
 - `idx_organization_members_org_user`: For authorization checks
 
 ### Items
+
 - `idx_items_organization_id`: Tenant isolation
 - `idx_items_org_sku`: SKU lookups within organization
 - `idx_items_org_active`: Filter active items
@@ -35,6 +41,7 @@ GIN indexes are used for full-text search on name fields for items, customers, a
 - `idx_items_name_gin`: Full-text search on item names
 
 ### Inventory
+
 - `idx_inventory_organization_id`: Tenant isolation
 - `idx_inventory_item_id`: Item stock lookups
 - `idx_inventory_warehouse_id`: Warehouse stock queries
@@ -42,6 +49,7 @@ GIN indexes are used for full-text search on name fields for items, customers, a
 - `idx_inventory_org_item_warehouse`: Common query pattern
 
 ### Orders
+
 - `idx_orders_organization_id`: Tenant isolation
 - `idx_orders_customer_id`: Customer order history
 - `idx_orders_org_status`: Order status filtering
@@ -49,6 +57,7 @@ GIN indexes are used for full-text search on name fields for items, customers, a
 - `idx_orders_order_number`: Order number lookups
 
 ### Stock Movements
+
 - `idx_stock_movements_organization_id`: Tenant isolation
 - `idx_stock_movements_item_id`: Item movement history
 - `idx_stock_movements_warehouse_id`: Warehouse movements
@@ -58,12 +67,14 @@ GIN indexes are used for full-text search on name fields for items, customers, a
 ## Performance Impact
 
 ### Expected Improvements
+
 - Multi-tenant queries: 10-100x faster
 - JOIN operations: 5-50x faster
 - Full-text searches: 20-200x faster
 - Order history queries: 10-50x faster
 
 ### Index Maintenance
+
 - Indexes are automatically maintained by PostgreSQL
 - Regular `VACUUM ANALYZE` should be run to update statistics
 - Monitor index usage with `pg_stat_user_indexes`
@@ -71,13 +82,17 @@ GIN indexes are used for full-text search on name fields for items, customers, a
 ## Applying Indexes
 
 ### Development
+
 Indexes are automatically created when running migrations:
+
 ```bash
 pnpm prisma migrate dev
 ```
 
 ### Production
+
 Use the provided script for safe index creation:
+
 ```bash
 # Dry run to see what will be created
 DATABASE_URL=your_production_url ./tools/scripts/apply-indexes.sh --dry-run
@@ -89,8 +104,9 @@ DATABASE_URL=your_production_url ./tools/scripts/apply-indexes.sh
 ## Monitoring Index Usage
 
 ### Check Index Usage
+
 ```sql
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
@@ -102,8 +118,9 @@ ORDER BY idx_scan DESC;
 ```
 
 ### Find Missing Indexes
+
 ```sql
-SELECT 
+SELECT
     schemaname,
     tablename,
     attname,
@@ -117,8 +134,9 @@ ORDER BY n_distinct DESC;
 ```
 
 ### Index Size
+
 ```sql
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,

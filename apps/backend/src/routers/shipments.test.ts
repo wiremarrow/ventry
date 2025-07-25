@@ -40,12 +40,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -70,7 +70,7 @@ describe('Shipments Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.shipment.findMany.mockReset();
     mockPrisma.shipment.findFirst.mockReset();
@@ -87,14 +87,14 @@ describe('Shipments Router', () => {
     mockPrisma.inventory.updateMany.mockReset();
     mockPrisma.stockMovement.create.mockReset();
     mockPrisma.auditLog.create.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -102,8 +102,8 @@ describe('Shipments Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -146,11 +146,9 @@ describe('Shipments Router', () => {
       mockPrisma.shipment.count.mockResolvedValue(1);
       mockPrisma.shipment.findMany.mockResolvedValue(mockShipments);
       mockPrisma.shipment.groupBy
+        .mockResolvedValueOnce([{ status: 'PENDING', _count: 1 }])
         .mockResolvedValueOnce([
-          { status: 'PENDING', _count: 1 },
-        ])
-        .mockResolvedValueOnce([
-          { carrierId: testId('car1'), _count: 5, _avg: { shippingCost: 25.50 } },
+          { carrierId: testId('car1'), _count: 5, _avg: { shippingCost: 25.5 } },
         ]);
 
       const result = await caller.shipments.list({
@@ -162,7 +160,7 @@ describe('Shipments Router', () => {
       expect(result.pagination.total).toBe(1);
       expect(result.stats.pending).toBe(1);
       expect(result.stats.carrierPerformance).toHaveLength(1);
-      expect(result.stats.carrierPerformance[0].avgCost).toBe(25.50);
+      expect(result.stats.carrierPerformance[0].avgCost).toBe(25.5);
     });
 
     it('should filter by search term', async () => {
@@ -246,7 +244,7 @@ describe('Shipments Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -305,9 +303,9 @@ describe('Shipments Router', () => {
     it('should throw NOT_FOUND for non-existent shipment', async () => {
       mockPrisma.shipment.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.shipments.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Shipment not found');
+      await expect(caller.shipments.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Shipment not found'
+      );
     });
   });
 
@@ -596,7 +594,7 @@ describe('Shipments Router', () => {
         ...existingShipment,
         status: 'SHIPPED',
         trackingNumber: '1Z999AA10123456784',
-        shippingCost: 25.50,
+        shippingCost: 25.5,
         shipDate: new Date(),
         items: [
           {
@@ -618,12 +616,12 @@ describe('Shipments Router', () => {
       const result = await caller.shipments.ship({
         id: testId('ship1'),
         trackingNumber: '1Z999AA10123456784',
-        shippingCost: 25.50,
+        shippingCost: 25.5,
       });
 
       expect(result.status).toBe('SHIPPED');
       expect(result.trackingNumber).toBe('1Z999AA10123456784');
-      
+
       // Verify inventory was updated
       expect(mockPrisma.inventory.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -765,7 +763,7 @@ describe('Shipments Router', () => {
 
       expect(result.status).toBe('RETURNED');
       expect(result.notes).toContain('Cancelled: Customer request');
-      
+
       // Verify inventory was released
       expect(mockPrisma.inventory.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({

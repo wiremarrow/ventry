@@ -46,8 +46,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       WarehouseWhereInput: {},
@@ -118,14 +118,14 @@ describe('Warehouses Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context and ADMIN role for warehouse operations
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -133,8 +133,8 @@ describe('Warehouses Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN', // Warehouses require ADMIN role
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -232,7 +232,7 @@ describe('Warehouses Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -288,9 +288,9 @@ describe('Warehouses Router', () => {
     it('should throw NOT_FOUND when warehouse does not exist', async () => {
       mockPrisma.warehouse.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.warehouses.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Warehouse not found');
+      await expect(caller.warehouses.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Warehouse not found'
+      );
     });
   });
 
@@ -347,7 +347,7 @@ describe('Warehouses Router', () => {
     });
 
     it('should require ADMIN role', async () => {
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
@@ -423,7 +423,7 @@ describe('Warehouses Router', () => {
   describe('delete', () => {
     it('should delete a warehouse', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -455,7 +455,7 @@ describe('Warehouses Router', () => {
 
     it('should throw PRECONDITION_FAILED when warehouse has locations', async () => {
       // Create caller with ADMIN role for delete
-      const adminCaller = await createDirectCaller({ 
+      const adminCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'ADMIN' },
@@ -469,22 +469,22 @@ describe('Warehouses Router', () => {
       mockPrisma.warehouse.findFirst.mockResolvedValue(mockWarehouse);
       mockPrisma.location.count.mockResolvedValue(5); // Has locations
 
-      await expect(
-        adminCaller.warehouses.delete({ id: testId('wh1') })
-      ).rejects.toThrow('Cannot delete warehouse with 5 locations');
+      await expect(adminCaller.warehouses.delete({ id: testId('wh1') })).rejects.toThrow(
+        'Cannot delete warehouse with 5 locations'
+      );
     });
 
     it('should require ADMIN role for delete', async () => {
       // Create non-admin caller
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
       });
 
-      await expect(
-        managerCaller.warehouses.delete({ id: testId('wh1') })
-      ).rejects.toThrow('Only administrators can delete warehouses');
+      await expect(managerCaller.warehouses.delete({ id: testId('wh1') })).rejects.toThrow(
+        'Only administrators can delete warehouses'
+      );
     });
   });
 
@@ -615,7 +615,7 @@ describe('Warehouses Router', () => {
     });
 
     it('should require ADMIN or MANAGER role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },

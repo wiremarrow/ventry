@@ -50,7 +50,7 @@ export function PurchaseOrderApprovalDialog({
   action,
 }: PurchaseOrderApprovalDialogProps) {
   const utils = trpc.useUtils();
-  
+
   const approveForm = useForm<ApproveFormData>({
     resolver: zodResolver(approveSchema),
     defaultValues: {
@@ -112,9 +112,7 @@ export function PurchaseOrderApprovalDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {action === 'approve' ? 'Approve' : 'Reject'} Purchase Order
-          </DialogTitle>
+          <DialogTitle>{action === 'approve' ? 'Approve' : 'Reject'} Purchase Order</DialogTitle>
           <DialogDescription>
             {action === 'approve'
               ? 'Approve this purchase order to allow receiving items.'
@@ -132,10 +130,7 @@ export function PurchaseOrderApprovalDialog({
                   <FormItem>
                     <FormLabel>Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Add any approval notes..."
-                        {...field}
-                      />
+                      <Textarea placeholder="Add any approval notes..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -143,11 +138,7 @@ export function PurchaseOrderApprovalDialog({
               />
 
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
                 <Button
@@ -171,10 +162,7 @@ export function PurchaseOrderApprovalDialog({
                   <FormItem>
                     <FormLabel>Reason for Rejection</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Provide a reason for rejection..."
-                        {...field}
-                      />
+                      <Textarea placeholder="Provide a reason for rejection..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -188,10 +176,7 @@ export function PurchaseOrderApprovalDialog({
                   <FormItem>
                     <FormLabel>Additional Notes (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Add any additional notes..."
-                        {...field}
-                      />
+                      <Textarea placeholder="Add any additional notes..." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -199,18 +184,10 @@ export function PurchaseOrderApprovalDialog({
               />
 
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={rejectMutation.isPending}
-                  variant="destructive"
-                >
+                <Button type="submit" disabled={rejectMutation.isPending} variant="destructive">
                   <XCircle className="mr-2 h-4 w-4" />
                   {rejectMutation.isPending ? 'Rejecting...' : 'Reject Order'}
                 </Button>

@@ -5,6 +5,7 @@
 The database verification tool (`pnpm db:verify`) provides a unified interface for inspecting database state, validating data integrity, and testing Row-Level Security (RLS) policies. It respects the dual-user security model and provides flexible querying capabilities.
 
 **Key Features:**
+
 - Count, show, and aggregate data across all tables
 - Field-to-field comparisons within tables (e.g., `qtyOnHand <= qtyReserved`)
 - RLS policy testing with user simulation
@@ -33,7 +34,8 @@ pnpm db:verify show inventory --where "qtyOnHand <= 10"
 The tool works with two database users:
 
 ### Admin User (Default)
-- Uses `DATABASE_ADMIN_URL` 
+
+- Uses `DATABASE_ADMIN_URL`
 - Bypasses all RLS policies
 - Sees all data across all organizations
 - Use for: debugging, verification after seeding
@@ -44,6 +46,7 @@ pnpm db:verify count items
 ```
 
 ### App User
+
 - Uses `DATABASE_URL`
 - Respects RLS policies
 - Requires authentication context to see data
@@ -57,6 +60,7 @@ pnpm db:verify count items --user app --auth admin@ventry.com
 ## Commands
 
 ### count
+
 Count records in a table.
 
 ```bash
@@ -74,6 +78,7 @@ pnpm db:verify count items --format count
 ```
 
 ### show
+
 Display records from a table.
 
 ```bash
@@ -97,6 +102,7 @@ pnpm db:verify show inventory --select "item.sku,item.name,qtyOnHand"
 ```
 
 ### stats
+
 Calculate statistics on a table.
 
 ```bash
@@ -111,6 +117,7 @@ pnpm db:verify stats items --group-by categoryId --min price --max price --avg p
 ```
 
 ### access
+
 Test what a specific user can access.
 
 ```bash
@@ -122,6 +129,7 @@ pnpm db:verify access orders --as manager@ventry.com
 ```
 
 ### compare
+
 Compare access between multiple users.
 
 ```bash
@@ -133,6 +141,7 @@ pnpm db:verify compare orders --users "admin@ventry.com,manager@ventry.com,emplo
 ```
 
 ### tables
+
 List all available tables.
 
 ```bash
@@ -193,6 +202,7 @@ pnpm db:verify count customers --user app --auth charlie@globalretail.com
 The tool supports comparing fields both within the same table and across related tables:
 
 #### Same Table Comparisons
+
 ```bash
 # Find inventory where on-hand quantity is less than reserved
 pnpm db:verify count inventory --where "qtyOnHand <= qtyReserved"
@@ -206,6 +216,7 @@ pnpm db:verify count items --where "defaultPrice > defaultCost"
 ```
 
 #### Cross-Table Comparisons (NEW)
+
 ```bash
 # Find low stock items (inventory below reorder point)
 pnpm db:verify count inventory --where "qtyOnHand <= item.reorderPoint"
@@ -251,7 +262,9 @@ pnpm db:verify stats item \
 ## Output Formats
 
 ### table (default)
+
 Human-readable table format:
+
 ```
 sku       | name           | price
 ----------|----------------|-------
@@ -262,7 +275,9 @@ Total: 2 records
 ```
 
 ### json
+
 Machine-readable JSON:
+
 ```json
 [
   {
@@ -279,7 +294,9 @@ Machine-readable JSON:
 ```
 
 ### csv
+
 Excel-compatible CSV:
+
 ```csv
 sku,name,price
 LAPTOP001,Dell Laptop,999.99
@@ -287,7 +304,9 @@ MOUSE001,Wireless Mouse,29.99
 ```
 
 ### count
+
 Just the number:
+
 ```
 42
 ```
@@ -295,6 +314,7 @@ Just the number:
 ## Advanced Options
 
 ### Global Options
+
 - `--user <admin|app>` - Database user context (default: admin)
 - `--auth <email>` - Simulate authenticated user (requires --user app)
 - `--format <table|json|csv|count>` - Output format (default: table)
@@ -306,22 +326,26 @@ Just the number:
 The tool supports a variety of WHERE clause patterns for flexible querying:
 
 #### Basic Comparisons
+
 - Equality: `field = 'value'`, `field = true`, `field = 123`
 - Numeric: `field > 10`, `field >= 100`, `field < 50`, `field <= 20`
 - Not equal: `field != 'value'`
 
 #### Field-to-Field Comparisons
+
 - Same table: `qtyOnHand <= qtyReserved`
 - Cross-table: `qtyOnHand <= item.reorderPoint`
 - With table prefix: `inventory.qtyOnHand <= item.reorderPoint`
 
 #### Advanced Operators
+
 - **IN clause**: `status IN ('PENDING', 'PROCESSING', 'APPROVED')`
 - **LIKE pattern**: `name LIKE '%Widget%'`, `sku LIKE 'WIDGET%'`, `email LIKE '%@ventry.com'`
 - **NULL checks**: `phone IS NULL`, `deletedAt IS NOT NULL`
 - **Date comparisons**: `createdAt > NOW() - INTERVAL '7 days'`, `expiryDate < NOW()`, `orderDate >= CURRENT_DATE`
 
 #### Combining Conditions
+
 - Simple AND: `status = 'ACTIVE' AND price > 100`
 - Multiple ANDs: `isActive = true AND qtyOnHand > 0 AND locationId IS NOT NULL`
 - With IN: `status IN ('PENDING', 'PROCESSING') AND grandTotal > 1000`
@@ -329,6 +353,7 @@ The tool supports a variety of WHERE clause patterns for flexible querying:
 - With field comparison: `qtyOnHand > 0 AND qtyOnHand <= item.reorderPoint`
 
 #### Examples
+
 ```bash
 # Find orders with specific statuses
 pnpm db:verify count order --where "status IN ('PENDING', 'PROCESSING')"
@@ -360,6 +385,7 @@ pnpm db:verify count item --where "createdAt >= CURRENT_DATE - INTERVAL '1 month
 ## Scripting Examples
 
 ### Check if seeding worked
+
 ```bash
 #!/bin/bash
 COUNT=$(pnpm db:verify count items --format count)
@@ -371,6 +397,7 @@ echo "Success: Found $COUNT items"
 ```
 
 ### Daily inventory snapshot
+
 ```bash
 #!/bin/bash
 DATE=$(date +%Y%m%d)
@@ -380,6 +407,7 @@ pnpm db:verify show inventory \
 ```
 
 ### RLS compliance check
+
 ```bash
 #!/bin/bash
 USERS="admin@ventry.com,alice@techstart.com,charlie@globalretail.com"
@@ -389,15 +417,19 @@ pnpm db:verify compare customers --users "$USERS"
 ## Troubleshooting
 
 ### "Table 'foo' not found"
+
 Use `pnpm db:verify tables` to see available table names.
 
 ### "Field 'bar' not found"
+
 Check available fields with `pnpm db:verify show <table> --limit 1`
 
 ### No data visible with --user app
+
 App user requires authentication context. Use `--auth <email>` to simulate a logged-in user.
 
 ### Complex WHERE clauses
+
 Currently limited to simple conditions. For complex queries, use multiple commands or export data for external analysis.
 
 ## Security Notes

@@ -59,6 +59,7 @@ export function verifyJWT(token: string): JWTPayload | null {
 ```
 
 **Risk:** Cannot distinguish between:
+
 - Expired tokens (user needs to re-login)
 - Invalid signatures (potential attack)
 - Malformed tokens (client error)
@@ -66,7 +67,7 @@ export function verifyJWT(token: string): JWTPayload | null {
 **Recommendation:** Return detailed error information:
 
 ```typescript
-export type JWTVerifyResult = 
+export type JWTVerifyResult =
   | { success: true; payload: JWTPayload }
   | { success: false; error: 'EXPIRED' | 'INVALID_SIGNATURE' | 'MALFORMED' };
 
@@ -104,9 +105,9 @@ export function verifyJWT(token: string): JWTVerifyResult {
 **Location:** `/apps/backend/src/trpc/context.ts:43-46`
 
 ```typescript
-let rlsContext: RLSContext = { 
+let rlsContext: RLSContext = {
   bypassRLS: true,
-  bypassReason: 'No authentication token - public endpoint'
+  bypassReason: 'No authentication token - public endpoint',
 };
 ```
 
@@ -136,12 +137,14 @@ enum RLSBypassReason {
 **Finding:** Multiple instances of RLS bypass without proper auditing.
 
 **Locations:**
+
 - Auth queries bypass RLS (`/apps/backend/src/trpc/context.ts:53,79`)
 - Legacy functions bypass without audit (`/apps/backend/src/lib/rls/index.ts:87-98`)
 
 **Risk:** Bypassed queries could leak data if not carefully controlled.
 
-**Recommendation:** 
+**Recommendation:**
+
 1. Minimize bypass usage - use filtered queries instead
 2. Implement mandatory audit logging for all bypasses
 3. Consider using a separate "system" Prisma client for administrative operations
@@ -153,6 +156,7 @@ enum RLSBypassReason {
 **Finding:** Different error messages for similar conditions across procedures.
 
 **Examples:**
+
 - `hasOrganization`: "No organization selected. Please select an organization to continue."
 - `isOrganizationAdmin`: "No organization selected"
 
@@ -197,6 +201,7 @@ const hasOrganization = isAuthed.pipe(({ ctx, next }) => {
 3. Missing null checks before property access
 
 **Locations:**
+
 - `/apps/backend/src/trpc/context.ts:35,71`
 - `/apps/backend/src/lib/cookies.ts:73` (getSignedCookie)
 
@@ -240,13 +245,13 @@ export function extractAuthToken(req: FastifyRequestWithCookies): {
         return { token: unsigned.value, source: 'cookie' };
       }
     }
-    
+
     // Fallback to header
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       return { token: authHeader.slice(7), source: 'header' };
     }
-    
+
     return { source: 'none' };
   } catch (error) {
     return { source: 'none', error: error.message };
@@ -266,7 +271,7 @@ const RLS_BYPASS_REASONS = {
   MIGRATION: 'Database migration',
 } as const;
 
-type RLSBypassReason = typeof RLS_BYPASS_REASONS[keyof typeof RLS_BYPASS_REASONS];
+type RLSBypassReason = (typeof RLS_BYPASS_REASONS)[keyof typeof RLS_BYPASS_REASONS];
 ```
 
 ### 5.3 Centralized Error Handling
@@ -308,7 +313,7 @@ describe('Authentication Edge Cases', () => {
       .get('/api/protected')
       .set('Cookie', 'auth-token=malformed_value')
       .expect(401);
-    
+
     expect(response.body.error).toBe('INVALID_TOKEN');
   });
 
@@ -318,7 +323,7 @@ describe('Authentication Edge Cases', () => {
       .get('/api/protected')
       .set('Cookie', `auth-token=${sign(expiredToken)}`)
       .expect(401);
-    
+
     expect(response.body.error).toBe('TOKEN_EXPIRED');
   });
 
@@ -334,9 +339,9 @@ describe('Authentication Edge Cases', () => {
 describe('RLS Bypass Auditing', () => {
   it('should log all RLS bypasses with reasons', async () => {
     const auditSpy = jest.spyOn(auditLogger, 'warn');
-    
+
     await authService.verifyUserWithoutRLS(userId);
-    
+
     expect(auditSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'RLS_BYPASS',
@@ -350,13 +355,13 @@ describe('RLS Bypass Auditing', () => {
 
 ## 7. Security Risk Summary
 
-| Finding | Severity | Impact | Effort to Fix |
-|---------|----------|--------|---------------|
-| Unhandled cookie unsigning exceptions | Critical | Service crashes | Low |
-| No JWT error differentiation | High | Poor security visibility | Medium |
-| RLS bypass overuse | Medium | Potential data leaks | High |
-| Inconsistent error messages | Low | User confusion | Low |
-| Missing rate limiting on header auth | Medium | Brute force vulnerability | Medium |
+| Finding                               | Severity | Impact                    | Effort to Fix |
+| ------------------------------------- | -------- | ------------------------- | ------------- |
+| Unhandled cookie unsigning exceptions | Critical | Service crashes           | Low           |
+| No JWT error differentiation          | High     | Poor security visibility  | Medium        |
+| RLS bypass overuse                    | Medium   | Potential data leaks      | High          |
+| Inconsistent error messages           | Low      | User confusion            | Low           |
+| Missing rate limiting on header auth  | Medium   | Brute force vulnerability | Medium        |
 
 ## 8. Implementation Priority
 

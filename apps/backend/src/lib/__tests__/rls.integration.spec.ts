@@ -29,7 +29,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
     if (!rlsEnabled) {
       console.warn('RLS is not enabled on items table. Tests may not work correctly.');
     }
-    
+
     // Clean up any existing test data
     await adminPrisma.item.deleteMany({
       where: {
@@ -38,7 +38,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.itemCategory.deleteMany({
       where: {
         name: {
@@ -46,7 +46,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.unitOfMeasure.deleteMany({
       where: {
         code: {
@@ -54,7 +54,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.organizationMember.deleteMany({});
     await adminPrisma.user.deleteMany({
       where: {
@@ -70,7 +70,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     // Create test organizations
     const org1 = await adminPrisma.organization.create({
       data: {
@@ -79,7 +79,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       },
     });
     org1Id = org1.id;
-    
+
     const org2 = await adminPrisma.organization.create({
       data: {
         name: 'Test Org 2',
@@ -117,7 +117,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       },
     });
     user1Id = user1.id;
-    
+
     const user2 = await adminPrisma.user.create({
       data: {
         email: 'rls-user2@test.com',
@@ -137,7 +137,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         role: 'ADMIN',
       },
     });
-    
+
     await adminPrisma.organizationMember.create({
       data: {
         organizationId: org2Id,
@@ -206,7 +206,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.itemCategory.deleteMany({
       where: {
         name: {
@@ -214,7 +214,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.unitOfMeasure.deleteMany({
       where: {
         code: {
@@ -222,9 +222,9 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.organizationMember.deleteMany({});
-    
+
     await adminPrisma.user.deleteMany({
       where: {
         email: {
@@ -232,7 +232,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     await adminPrisma.organization.deleteMany({
       where: {
         slug: {
@@ -240,7 +240,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
         },
       },
     });
-    
+
     // Disconnect both connections
     await adminPrisma.$disconnect();
     await appPrisma.$disconnect();
@@ -314,13 +314,13 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       };
 
       const rlsPrisma = createRLSProxy(appPrisma, () => context);
-      
+
       const items = await rlsPrisma.item.findMany({
         orderBy: { sku: 'asc' },
       });
 
       expect(items).toHaveLength(2);
-      expect(items.every(item => item.organizationId === org1Id)).toBe(true);
+      expect(items.every((item) => item.organizationId === org1Id)).toBe(true);
     });
 
     it('should prevent cross-organization updates', async () => {
@@ -331,7 +331,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       };
 
       const rlsPrisma = createRLSProxy(appPrisma, () => context);
-      
+
       // Try to update an item from org2 while context is org1
       const result = await rlsPrisma.item.updateMany({
         where: { sku: 'ORG2-ITEM1' },
@@ -349,7 +349,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       };
 
       const rlsPrisma = createRLSProxy(appPrisma, () => context);
-      
+
       // Try to delete items from org1 while context is org2
       const result = await rlsPrisma.item.deleteMany({
         where: { sku: { in: ['ORG1-ITEM1', 'ORG1-ITEM2'] } },
@@ -410,7 +410,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       };
 
       const rlsPrisma = createRLSProxy(appPrisma, () => context);
-      
+
       const result = await rlsPrisma.$transaction(async (tx) => {
         // Create a new item
         const newItem = await tx.item.create({
@@ -432,7 +432,7 @@ describe('Row-Level Security (RLS) Integration Tests', () => {
       });
 
       expect(result.allItems).toHaveLength(3); // Should include the new item
-      expect(result.allItems.every(item => item.organizationId === org1Id)).toBe(true);
+      expect(result.allItems.every((item) => item.organizationId === org1Id)).toBe(true);
 
       // Clean up
       await adminPrisma.item.delete({

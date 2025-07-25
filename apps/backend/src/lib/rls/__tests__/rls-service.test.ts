@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { setRLSContext, clearRLSContext, withRLS, validateRLSConfiguration } from '../rls-service.js';
+import {
+  setRLSContext,
+  clearRLSContext,
+  withRLS,
+  validateRLSConfiguration,
+} from '../rls-service.js';
 import { type ValidatedRLSContext, type RLSContext } from '../types.js';
 import { RLS_ERRORS } from '../constants.js';
 
@@ -53,9 +58,9 @@ describe('RLS Service', () => {
       expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
       // Check that the tagged template was called with the right arguments
       const call = mockExecuteRaw.mock.calls[0];
-      expect(call[0]).toEqual(expect.arrayContaining([
-        expect.stringContaining('SELECT set_rls_context'),
-      ]));
+      expect(call[0]).toEqual(
+        expect.arrayContaining([expect.stringContaining('SELECT set_rls_context')])
+      );
       expect(call[1]).toBe('clh3sa7gu0000qzrmn831i7rn');
       expect(call[2]).toBeUndefined();
     });
@@ -72,9 +77,9 @@ describe('RLS Service', () => {
       expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
       // The new implementation uses a single function call with both parameters
       const call = mockExecuteRaw.mock.calls[0];
-      expect(call[0]).toEqual(expect.arrayContaining([
-        expect.stringContaining('SELECT set_rls_context'),
-      ]));
+      expect(call[0]).toEqual(
+        expect.arrayContaining([expect.stringContaining('SELECT set_rls_context')])
+      );
       expect(call[1]).toBe('clh3sa7gu0000qzrmn831i7rn');
       expect(call[2]).toBe('clh3sa7gu0000qzrmn831i7ro');
     });
@@ -99,9 +104,9 @@ describe('RLS Service', () => {
 
       expect(mockExecuteRaw).toHaveBeenCalledTimes(1);
       const call = mockExecuteRaw.mock.calls[0];
-      expect(call[0]).toEqual(expect.arrayContaining([
-        expect.stringContaining('SELECT clear_rls_context'),
-      ]));
+      expect(call[0]).toEqual(
+        expect.arrayContaining([expect.stringContaining('SELECT clear_rls_context')])
+      );
     });
 
     it('should not throw if clearing fails', async () => {
@@ -120,7 +125,7 @@ describe('RLS Service', () => {
       };
 
       const mockOperation = vi.fn().mockResolvedValue({ result: 'success' });
-      
+
       mockTransaction.mockImplementation(async (fn) => {
         return fn(mockTx);
       });
@@ -132,13 +137,13 @@ describe('RLS Service', () => {
       expect(result.context.userId).toBe(context.userId);
       expect(result.context.bypassed).toBe(false);
       expect(result.timing.totalMs).toBeGreaterThanOrEqual(0);
-      
+
       // Should call setRLSContext which uses $executeRaw
       expect(mockExecuteRaw).toHaveBeenCalled();
       const call = mockExecuteRaw.mock.calls[0];
-      expect(call[0]).toEqual(expect.arrayContaining([
-        expect.stringContaining('SELECT set_rls_context'),
-      ]));
+      expect(call[0]).toEqual(
+        expect.arrayContaining([expect.stringContaining('SELECT set_rls_context')])
+      );
       expect(mockOperation).toHaveBeenCalledWith(mockTx);
     });
 
@@ -149,7 +154,7 @@ describe('RLS Service', () => {
       };
 
       const mockOperation = vi.fn().mockResolvedValue({ result: 'success' });
-      
+
       mockTransaction.mockImplementation(async (fn) => {
         return fn(mockTx);
       });
@@ -185,11 +190,12 @@ describe('RLS Service', () => {
           { routine_name: 'current_organization_id' },
           { routine_name: 'current_user_id' },
         ])
-        .mockResolvedValueOnce([])  // SELECT set_rls_context
-        .mockResolvedValueOnce([    // SELECT get_rls_context
-          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' }
+        .mockResolvedValueOnce([]) // SELECT set_rls_context
+        .mockResolvedValueOnce([
+          // SELECT get_rls_context
+          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' },
         ])
-        .mockResolvedValueOnce([])  // SELECT clear_rls_context
+        .mockResolvedValueOnce([]) // SELECT clear_rls_context
         .mockResolvedValueOnce([
           { relname: 'items', relrowsecurity: true },
           { relname: 'orders', relrowsecurity: true },
@@ -220,11 +226,12 @@ describe('RLS Service', () => {
           { routine_name: 'current_organization_id' },
           { routine_name: 'current_user_id' },
         ])
-        .mockResolvedValueOnce([])  // SELECT set_rls_context
-        .mockResolvedValueOnce([    // SELECT get_rls_context
-          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' }
+        .mockResolvedValueOnce([]) // SELECT set_rls_context
+        .mockResolvedValueOnce([
+          // SELECT get_rls_context
+          { organization_id: 'cjld2cjxh0000qzrmn831i7rn', user_id: 'cjld2cjxh0001qzrmn831i7ro' },
         ])
-        .mockResolvedValueOnce([])  // SELECT clear_rls_context
+        .mockResolvedValueOnce([]) // SELECT clear_rls_context
         .mockResolvedValueOnce([
           { relname: 'items', relrowsecurity: false },
           { relname: 'orders', relrowsecurity: true },

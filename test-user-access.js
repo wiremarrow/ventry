@@ -5,7 +5,7 @@ const backendUrl = 'http://localhost:3001/api/trpc';
 
 async function testUserLogin() {
   console.log('Testing user@ventry.com login behavior...');
-  
+
   try {
     const response = await fetch(`${backendUrl}/auth.login`, {
       method: 'POST',
@@ -14,12 +14,12 @@ async function testUserLogin() {
       },
       body: JSON.stringify({
         email: 'user@ventry.com',
-        password: 'password123'
-      })
+        password: 'password123',
+      }),
     });
 
     const result = await response.json();
-    
+
     if (response.ok) {
       console.log('❌ SECURITY ISSUE: user@ventry.com was able to login!');
       console.log('Response:', result);
@@ -36,7 +36,7 @@ async function testUserLogin() {
 // Test with organization user for comparison
 async function testEmployeeLogin() {
   console.log('\nTesting employee@ventry.com login (should work)...');
-  
+
   try {
     const response = await fetch(`${backendUrl}/auth.login`, {
       method: 'POST',
@@ -45,12 +45,12 @@ async function testEmployeeLogin() {
       },
       body: JSON.stringify({
         email: 'employee@ventry.com',
-        password: 'password123'
-      })
+        password: 'password123',
+      }),
     });
 
     const result = await response.json();
-    
+
     if (response.ok) {
       console.log('✅ employee@ventry.com login successful (expected)');
       console.log('Organization ID:', result.user.organizationId);

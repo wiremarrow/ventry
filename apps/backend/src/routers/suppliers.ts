@@ -70,125 +70,124 @@ const performanceMetricsSchema = z.object({
 
 export const suppliersRouter = createTRPCRouter({
   // List suppliers with filtering
-  list: organizationProcedure
-    .input(supplierFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        // isActive,
-        country,
-        hasOpenOrders,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
+  list: organizationProcedure.input(supplierFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      // isActive,
+      country,
+      hasOpenOrders,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
 
-      const where: Prisma.SupplierWhereInput = {
-        organizationId: ctx.user.organizationId,
-      };
+    const where: Prisma.SupplierWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { supplierCode: { contains: search, mode: 'insensitive' } },
-          { name: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+    // Search filter
+    if (search) {
+      where.OR = [
+        { supplierCode: { contains: search, mode: 'insensitive' } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
 
-      // Active filter - field doesn't exist
-      // TODO: Implement supplier active status
+    // Active filter - field doesn't exist
+    // TODO: Implement supplier active status
 
-      // Country filter
-      if (country) {
-        where.country = country;
-      }
+    // Country filter
+    if (country) {
+      where.country = country;
+    }
 
-      // Open orders filter
-      if (hasOpenOrders) {
-        where.purchaseOrders = {
-          some: {
-            status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
-          },
-        };
-      }
-
-      // Execute queries
-      const [suppliers, total] = await Promise.all([
-        ctx.prisma.supplier.findMany({
-          where,
-          include: {
-            _count: {
-              select: {
-                contacts: true,
-                // supplierItems: true, // Model doesn't exist
-                purchaseOrders: true,
-              },
-            },
-            purchaseOrders: {
-              select: {
-                id: true,
-                orderDate: true,
-                status: true,
-              },
-              orderBy: { orderDate: 'desc' },
-              take: 1,
-            },
-          },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: sortBy === 'lastOrderDate'
-            ? { purchaseOrders: { _count: sortOrder } }
-            : { [sortBy]: sortOrder },
-        }),
-        ctx.prisma.supplier.count({ where }),
-      ]);
-
-      // Calculate additional metrics
-      const suppliersWithMetrics = await Promise.all(
-        suppliers.map(async (supplier) => {
-          // Get total order value for last 12 months
-          const twelveMonthsAgo = new Date();
-          twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-          const orderStats = await ctx.prisma.purchaseOrder.aggregate({
-            where: {
-              supplierId: supplier.id,
-              orderDate: { gte: twelveMonthsAgo },
-              status: { in: ['APPROVED', 'RECEIVED'] },
-            },
-            _sum: { total: true },
-            _count: true,
-          });
-
-          return {
-            ...supplier,
-            lastOrderDate: supplier.purchaseOrders[0]?.orderDate || null,
-            totalOrderValue12Months: orderStats._sum.total || 0,
-            orderCount12Months: orderStats._count,
-          };
-        })
-      );
-
-      return {
-        suppliers: suppliersWithMetrics,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
+    // Open orders filter
+    if (hasOpenOrders) {
+      where.purchaseOrders = {
+        some: {
+          status: { in: ['DRAFT', 'SUBMITTED', 'APPROVED'] },
         },
       };
-    }),
+    }
+
+    // Execute queries
+    const [suppliers, total] = await Promise.all([
+      ctx.prisma.supplier.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              contacts: true,
+              // supplierItems: true, // Model doesn't exist
+              purchaseOrders: true,
+            },
+          },
+          purchaseOrders: {
+            select: {
+              id: true,
+              orderDate: true,
+              status: true,
+            },
+            orderBy: { orderDate: 'desc' },
+            take: 1,
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy:
+          sortBy === 'lastOrderDate'
+            ? { purchaseOrders: { _count: sortOrder } }
+            : { [sortBy]: sortOrder },
+      }),
+      ctx.prisma.supplier.count({ where }),
+    ]);
+
+    // Calculate additional metrics
+    const suppliersWithMetrics = await Promise.all(
+      suppliers.map(async (supplier) => {
+        // Get total order value for last 12 months
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
+
+        const orderStats = await ctx.prisma.purchaseOrder.aggregate({
+          where: {
+            supplierId: supplier.id,
+            orderDate: { gte: twelveMonthsAgo },
+            status: { in: ['APPROVED', 'RECEIVED'] },
+          },
+          _sum: { total: true },
+          _count: true,
+        });
+
+        return {
+          ...supplier,
+          lastOrderDate: supplier.purchaseOrders[0]?.orderDate || null,
+          totalOrderValue12Months: orderStats._sum.total || 0,
+          orderCount12Months: orderStats._count,
+        };
+      })
+    );
+
+    return {
+      suppliers: suppliersWithMetrics,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get single supplier with full details
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const supplier = await ctx.prisma.supplier.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
@@ -260,13 +259,16 @@ export const suppliersRouter = createTRPCRouter({
         ...supplier,
         statistics: {
           orders: {
-            byStatus: orderStats.reduce((acc: Record<string, any>, stat) => {
-              acc[stat.status] = {
-                count: stat._count,
-                value: Number(stat._sum.total || 0),
-              };
-              return acc;
-            }, {} as Record<string, any>),
+            byStatus: orderStats.reduce(
+              (acc: Record<string, any>, stat) => {
+                acc[stat.status] = {
+                  count: stat._count,
+                  value: Number(stat._sum.total || 0),
+                };
+                return acc;
+              },
+              {} as Record<string, any>
+            ),
             total: orderStats.reduce((sum, stat) => sum + stat._count, 0),
             totalValue: orderStats.reduce((sum, stat) => sum + Number(stat._sum.total || 0), 0),
           },
@@ -282,21 +284,89 @@ export const suppliersRouter = createTRPCRouter({
     }),
 
   // Create supplier
-  create: organizationProcedure
-    .input(supplierCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators and managers can create suppliers',
-        });
-      }
+  create: organizationProcedure.input(supplierCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators and managers can create suppliers',
+      });
+    }
 
-      // Check for duplicate supplier code
+    // Check for duplicate supplier code
+    const existing = await ctx.prisma.supplier.findFirst({
+      where: {
+        supplierCode: input.supplierCode,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (existing) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'A supplier with this code already exists',
+      });
+    }
+
+    // Create supplier with audit log
+    const supplier = await ctx.prisma.$transaction(async (tx) => {
+      const newSupplier = await tx.supplier.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'suppliers',
+          recordPk: newSupplier.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newSupplier,
+        },
+      });
+
+      return newSupplier;
+    });
+
+    return supplier;
+  }),
+
+  // Update supplier
+  update: organizationProcedure.input(supplierUpdateSchema).mutation(async ({ ctx, input }) => {
+    // Check permissions
+    if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Only administrators and managers can update suppliers',
+      });
+    }
+
+    const { id, ...data } = input;
+
+    // Get current supplier
+    const currentSupplier = await ctx.prisma.supplier.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!currentSupplier) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Supplier not found',
+      });
+    }
+
+    // Check for code uniqueness if updating
+    if (data.supplierCode && data.supplierCode !== currentSupplier.supplierCode) {
       const existing = await ctx.prisma.supplier.findFirst({
-        where: { 
-          supplierCode: input.supplierCode,
+        where: {
+          supplierCode: data.supplierCode,
           organizationId: ctx.user.organizationId,
         },
       });
@@ -307,112 +377,42 @@ export const suppliersRouter = createTRPCRouter({
           message: 'A supplier with this code already exists',
         });
       }
+    }
 
-      // Create supplier with audit log
-      const supplier = await ctx.prisma.$transaction(async (tx) => {
-        const newSupplier = await tx.supplier.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'suppliers',
-            recordPk: newSupplier.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newSupplier,
-          },
-        });
-
-        return newSupplier;
+    // Update supplier with audit log
+    const updatedSupplier = await ctx.prisma.$transaction(async (tx) => {
+      const updated = await tx.supplier.update({
+        where: { id },
+        data,
       });
 
-      return supplier;
-    }),
-
-  // Update supplier
-  update: organizationProcedure
-    .input(supplierUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check permissions
-      if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only administrators and managers can update suppliers',
-        });
-      }
-
-      const { id, ...data } = input;
-
-      // Get current supplier
-      const currentSupplier = await ctx.prisma.supplier.findFirst({
-        where: { 
-          id,
-          organizationId: ctx.user.organizationId,
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'suppliers',
+          recordPk: id,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: currentSupplier,
+          afterData: updated,
         },
       });
 
-      if (!currentSupplier) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Supplier not found',
-        });
-      }
+      return updated;
+    });
 
-      // Check for code uniqueness if updating
-      if (data.supplierCode && data.supplierCode !== currentSupplier.supplierCode) {
-        const existing = await ctx.prisma.supplier.findFirst({
-          where: { 
-            supplierCode: data.supplierCode,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'A supplier with this code already exists',
-          });
-        }
-      }
-
-      // Update supplier with audit log
-      const updatedSupplier = await ctx.prisma.$transaction(async (tx) => {
-        const updated = await tx.supplier.update({
-          where: { id },
-          data,
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'suppliers',
-            recordPk: id,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: currentSupplier,
-            afterData: updated,
-          },
-        });
-
-        return updated;
-      });
-
-      return updatedSupplier;
-    }),
+    return updatedSupplier;
+  }),
 
   // Delete/deactivate supplier
   delete: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      force: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        force: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -488,27 +488,27 @@ export const suppliersRouter = createTRPCRouter({
       }),
 
     // Create contact
-    create: organizationProcedure
-      .input(supplierContactSchema)
-      .mutation(async ({ ctx, input }) => {
-        // TODO: Implement primary contact logic
+    create: organizationProcedure.input(supplierContactSchema).mutation(async ({ ctx, input }) => {
+      // TODO: Implement primary contact logic
 
-        const contact = await ctx.prisma.supplierContact.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId!,
-          },
-        });
+      const contact = await ctx.prisma.supplierContact.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId!,
+        },
+      });
 
-        return contact;
-      }),
+      return contact;
+    }),
 
     // Update contact
     update: organizationProcedure
-      .input(z.object({
-        id: z.string().cuid(),
-        data: supplierContactSchema.partial(),
-      }))
+      .input(
+        z.object({
+          id: z.string().cuid(),
+          data: supplierContactSchema.partial(),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
         // TODO: Implement primary contact logic
 
@@ -785,9 +785,11 @@ export const suppliersRouter = createTRPCRouter({
         orderMetrics: {
           totalOrders: purchaseOrders.length,
           totalValue: purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0),
-          avgOrderValue: purchaseOrders.length > 0
-            ? purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0) / purchaseOrders.length
-            : 0,
+          avgOrderValue:
+            purchaseOrders.length > 0
+              ? purchaseOrders.reduce((sum, po) => sum + Number(po.total || 0), 0) /
+                purchaseOrders.length
+              : 0,
         },
         deliveryMetrics: {
           onTimeDeliveries: 0,
@@ -849,12 +851,12 @@ export const suppliersRouter = createTRPCRouter({
       // Calculate rates
       if (deliveryCount > 0) {
         metrics.deliveryMetrics.avgLeadTime = Math.round(totalLeadTime / deliveryCount);
-        metrics.deliveryMetrics.onTimeRate = 
+        metrics.deliveryMetrics.onTimeRate =
           (metrics.deliveryMetrics.onTimeDeliveries / deliveryCount) * 100;
       }
 
       if (purchaseOrders.length > 0) {
-        metrics.qualityMetrics.qualityRate = 
+        metrics.qualityMetrics.qualityRate =
           (metrics.qualityMetrics.perfectReceipts / purchaseOrders.length) * 100;
       }
 
@@ -1027,10 +1029,12 @@ export const suppliersRouter = createTRPCRouter({
 
   // Import suppliers from CSV
   import: organizationProcedure
-    .input(z.object({
-      suppliers: z.array(supplierCreateSchema),
-      validateOnly: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        suppliers: z.array(supplierCreateSchema),
+        validateOnly: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -1050,7 +1054,7 @@ export const suppliersRouter = createTRPCRouter({
 
         // Check for duplicate code
         const existing = await ctx.prisma.supplier.findFirst({
-          where: { 
+          where: {
             supplierCode: supplier.supplierCode,
             organizationId: ctx.user.organizationId,
           },
@@ -1171,61 +1175,61 @@ export const suppliersRouter = createTRPCRouter({
     }),
 
   // Get supplier statistics
-  getStats: organizationProcedure
-    .query(async ({ ctx }) => {
-      const organizationId = ctx.user.organizationId;
+  getStats: organizationProcedure.query(async ({ ctx }) => {
+    const organizationId = ctx.user.organizationId;
 
-      // Get total suppliers
-      const total = await ctx.prisma.supplier.count({
-        where: { organizationId },
-      });
+    // Get total suppliers
+    const total = await ctx.prisma.supplier.count({
+      where: { organizationId },
+    });
 
-      // Get suppliers with recent orders (active)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    // Get suppliers with recent orders (active)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const suppliersWithRecentOrders = await ctx.prisma.supplier.count({
-        where: {
-          organizationId,
-          purchaseOrders: {
-            some: {
-              createdAt: { gte: thirtyDaysAgo },
-            },
+    const suppliersWithRecentOrders = await ctx.prisma.supplier.count({
+      where: {
+        organizationId,
+        purchaseOrders: {
+          some: {
+            createdAt: { gte: thirtyDaysAgo },
           },
         },
-      });
+      },
+    });
 
-      // Calculate average lead time
-      const suppliers = await ctx.prisma.supplier.findMany({
-        where: { organizationId },
-        select: { leadTimeDays: true },
-      });
+    // Calculate average lead time
+    const suppliers = await ctx.prisma.supplier.findMany({
+      where: { organizationId },
+      select: { leadTimeDays: true },
+    });
 
-      const avgLeadTimeDays = suppliers.length > 0
+    const avgLeadTimeDays =
+      suppliers.length > 0
         ? suppliers.reduce((sum, s) => sum + s.leadTimeDays, 0) / suppliers.length
         : 0;
 
-      // Get monthly purchase value
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+    // Get monthly purchase value
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      const monthlyPurchases = await ctx.prisma.purchaseOrder.aggregate({
-        where: {
-          organizationId,
-          orderDate: { gte: startOfMonth },
-          status: { in: ['APPROVED', 'RECEIVED'] },
-        },
-        _sum: {
-          total: true,
-        },
-      });
+    const monthlyPurchases = await ctx.prisma.purchaseOrder.aggregate({
+      where: {
+        organizationId,
+        orderDate: { gte: startOfMonth },
+        status: { in: ['APPROVED', 'RECEIVED'] },
+      },
+      _sum: {
+        total: true,
+      },
+    });
 
-      return {
-        total,
-        active: suppliersWithRecentOrders,
-        avgLeadTimeDays,
-        monthlyPurchaseValue: monthlyPurchases._sum?.total?.toNumber() || 0,
-      };
-    }),
+    return {
+      total,
+      active: suppliersWithRecentOrders,
+      avgLeadTimeDays,
+      monthlyPurchaseValue: monthlyPurchases._sum?.total?.toNumber() || 0,
+    };
+  }),
 });

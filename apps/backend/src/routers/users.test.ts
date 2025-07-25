@@ -23,15 +23,15 @@ vi.mock('@ventry/database', () => {
       findUnique: vi.fn(),
     },
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     OrganizationRole: {
       OWNER: 'OWNER',
       ADMIN: 'ADMIN',
       MEMBER: 'MEMBER',
       VIEWER: 'VIEWER',
-    }
+    },
   };
 });
 
@@ -54,22 +54,22 @@ describe('Users Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
       organizationId: 'org-123',
       organizationRole: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -137,7 +137,7 @@ describe('Users Router', () => {
 
     it('should require organization context', async () => {
       // Create caller without organization context
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -192,9 +192,9 @@ describe('Users Router', () => {
     it('should throw NOT_FOUND when user not in organization', async () => {
       mockPrisma.organizationMember.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.users.getById({ id: 'user-not-in-org' })
-      ).rejects.toThrow('User not found in organization');
+      await expect(caller.users.getById({ id: 'user-not-in-org' })).rejects.toThrow(
+        'User not found in organization'
+      );
     });
   });
 
@@ -306,7 +306,7 @@ describe('Users Router', () => {
 
     it('should throw FORBIDDEN when non-admin tries to update other user', async () => {
       // Create caller as regular member
-      const memberCaller = await createDirectCaller({ 
+      const memberCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: {
@@ -374,22 +374,22 @@ describe('Users Router', () => {
         role: 'OWNER',
       });
 
-      await expect(
-        caller.users.deactivate({ id: 'owner-user' })
-      ).rejects.toThrow('Cannot deactivate organization owner');
+      await expect(caller.users.deactivate({ id: 'owner-user' })).rejects.toThrow(
+        'Cannot deactivate organization owner'
+      );
     });
 
     it('should throw NOT_FOUND when user not in organization', async () => {
       mockPrisma.organizationMember.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.users.deactivate({ id: 'user-not-in-org' })
-      ).rejects.toThrow('User not found in your organization');
+      await expect(caller.users.deactivate({ id: 'user-not-in-org' })).rejects.toThrow(
+        'User not found in your organization'
+      );
     });
 
     it('should require admin role', async () => {
       // Create caller as regular member
-      const memberCaller = await createDirectCaller({ 
+      const memberCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: {
@@ -399,9 +399,9 @@ describe('Users Router', () => {
         },
       });
 
-      await expect(
-        memberCaller.users.deactivate({ id: 'some-user' })
-      ).rejects.toThrow('You must be an organization admin to perform this action');
+      await expect(memberCaller.users.deactivate({ id: 'some-user' })).rejects.toThrow(
+        'You must be an organization admin to perform this action'
+      );
     });
   });
 
@@ -433,14 +433,14 @@ describe('Users Router', () => {
     it('should throw NOT_FOUND when user not in organization', async () => {
       mockPrisma.organizationMember.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.users.activate({ id: 'user-not-in-org' })
-      ).rejects.toThrow('User not found in your organization');
+      await expect(caller.users.activate({ id: 'user-not-in-org' })).rejects.toThrow(
+        'User not found in your organization'
+      );
     });
 
     it('should require admin role', async () => {
       // Create caller as regular member
-      const memberCaller = await createDirectCaller({ 
+      const memberCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: {
@@ -450,9 +450,9 @@ describe('Users Router', () => {
         },
       });
 
-      await expect(
-        memberCaller.users.activate({ id: 'some-user' })
-      ).rejects.toThrow('You must be an organization admin to perform this action');
+      await expect(memberCaller.users.activate({ id: 'some-user' })).rejects.toThrow(
+        'You must be an organization admin to perform this action'
+      );
     });
   });
 });

@@ -26,51 +26,49 @@ const unitOfMeasureListSchema = z.object({
 
 export const unitsOfMeasureRouter = createTRPCRouter({
   // List all units of measure for the organization
-  list: organizationProcedure
-    .input(unitOfMeasureListSchema)
-    .query(async ({ ctx, input }) => {
-      const where: any = {
-        organizationId: ctx.user.organizationId,
-      };
+  list: organizationProcedure.input(unitOfMeasureListSchema).query(async ({ ctx, input }) => {
+    const where: any = {
+      organizationId: ctx.user.organizationId,
+    };
 
-      if (input.search) {
-        where.OR = [
-          { code: { contains: input.search, mode: 'insensitive' } },
-          { description: { contains: input.search, mode: 'insensitive' } },
-        ];
-      }
+    if (input.search) {
+      where.OR = [
+        { code: { contains: input.search, mode: 'insensitive' } },
+        { description: { contains: input.search, mode: 'insensitive' } },
+      ];
+    }
 
-      if (input.isBase !== undefined) {
-        where.isBase = input.isBase;
-      }
+    if (input.isBase !== undefined) {
+      where.isBase = input.isBase;
+    }
 
-      const units = await ctx.prisma.unitOfMeasure.findMany({
-        where,
-        include: {
-          _count: {
-            select: { items: true },
-          },
+    const units = await ctx.prisma.unitOfMeasure.findMany({
+      where,
+      include: {
+        _count: {
+          select: { items: true },
         },
-        orderBy: [
-          { isBase: 'desc' }, // Base units first
-          { code: 'asc' },
-        ],
-      });
+      },
+      orderBy: [
+        { isBase: 'desc' }, // Base units first
+        { code: 'asc' },
+      ],
+    });
 
-      // Add audit log for data access
-      await ctx.prisma.auditLog.create({
-        data: {
-          action: 'CREATE', // Using CREATE as a proxy for LIST action
-          tableName: 'units_of_measure',
-          recordPk: 'LIST',
-          userId: ctx.user.id,
-          organizationId: ctx.user.organizationId!,
-          afterData: { count: units.length },
-        },
-      });
+    // Add audit log for data access
+    await ctx.prisma.auditLog.create({
+      data: {
+        action: 'CREATE', // Using CREATE as a proxy for LIST action
+        tableName: 'units_of_measure',
+        recordPk: 'LIST',
+        userId: ctx.user.id,
+        organizationId: ctx.user.organizationId!,
+        afterData: { count: units.length },
+      },
+    });
 
-      return units;
-    }),
+    return units;
+  }),
 
   // Get a single unit of measure by ID
   getById: organizationProcedure
@@ -229,8 +227,11 @@ export const unitsOfMeasureRouter = createTRPCRouter({
       }
 
       // Base units must have conversion factor of 1
-      if ((data.isBase === true || (existing.isBase && data.isBase !== false)) && 
-          data.conversionFactorToBase && data.conversionFactorToBase !== 1) {
+      if (
+        (data.isBase === true || (existing.isBase && data.isBase !== false)) &&
+        data.conversionFactorToBase &&
+        data.conversionFactorToBase !== 1
+      ) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Base unit must have conversion factor of 1',

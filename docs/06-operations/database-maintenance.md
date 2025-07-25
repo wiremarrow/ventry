@@ -6,14 +6,14 @@ This guide covers PostgreSQL maintenance procedures, optimization strategies, an
 
 ### Maintenance Schedule
 
-| Task | Frequency | Duration | Impact |
-|------|-----------|----------|---------|
-| VACUUM ANALYZE | Daily | 5-30 min | Low |
-| Update Statistics | Daily | 1-5 min | None |
-| Reindex | Weekly | 30-60 min | Medium |
-| Full VACUUM | Monthly | 1-4 hours | High |
-| Partition Maintenance | Monthly | 30 min | Low |
-| Archive Old Data | Quarterly | 2-8 hours | Medium |
+| Task                  | Frequency | Duration  | Impact |
+| --------------------- | --------- | --------- | ------ |
+| VACUUM ANALYZE        | Daily     | 5-30 min  | Low    |
+| Update Statistics     | Daily     | 1-5 min   | None   |
+| Reindex               | Weekly    | 30-60 min | Medium |
+| Full VACUUM           | Monthly   | 1-4 hours | High   |
+| Partition Maintenance | Monthly   | 30 min    | Low    |
+| Archive Old Data      | Quarterly | 2-8 hours | Medium |
 
 ## Automated Maintenance
 
@@ -49,13 +49,13 @@ EOF
 
 # Check for bloated tables
 psql -h $DB_HOST -U $DB_USER -d $DB_NAME >> $LOG_FILE 2>&1 <<EOF
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
-  CASE WHEN pg_total_relation_size(schemaname||'.'||tablename) > 1073741824 
-    THEN 'NEEDS ATTENTION' 
-    ELSE 'OK' 
+  CASE WHEN pg_total_relation_size(schemaname||'.'||tablename) > 1073741824
+    THEN 'NEEDS ATTENTION'
+    ELSE 'OK'
   END as status
 FROM pg_tables
 WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
@@ -67,7 +67,7 @@ EOF
 # Check index usage
 psql -h $DB_HOST -U $DB_USER -d $DB_NAME >> $LOG_FILE 2>&1 <<EOF
 -- Find unused indexes
-SELECT 
+SELECT
   schemaname,
   tablename,
   indexname,
@@ -204,14 +204,14 @@ DROP TABLE orders_old;
 
 ```sql
 -- Find duplicate indexes
-SELECT 
+SELECT
   idx1.indrelid::regclass AS table_name,
   idx1.indexrelid::regclass AS index1,
   idx2.indexrelid::regclass AS index2,
   pg_size_pretty(pg_relation_size(idx1.indexrelid)) AS size1,
   pg_size_pretty(pg_relation_size(idx2.indexrelid)) AS size2
 FROM pg_index idx1
-JOIN pg_index idx2 ON idx1.indrelid = idx2.indrelid 
+JOIN pg_index idx2 ON idx1.indrelid = idx2.indrelid
   AND idx1.indexrelid != idx2.indexrelid
 WHERE idx1.indkey = idx2.indkey
   AND idx1.indpred IS NOT DISTINCT FROM idx2.indpred
@@ -224,17 +224,17 @@ SELECT
   seq_scan,
   seq_tup_read,
   idx_scan,
-  CASE WHEN seq_scan > 0 
-    THEN ROUND(100.0 * idx_scan / (seq_scan + idx_scan), 2) 
-    ELSE 100 
+  CASE WHEN seq_scan > 0
+    THEN ROUND(100.0 * idx_scan / (seq_scan + idx_scan), 2)
+    ELSE 100
   END AS idx_scan_pct
 FROM pg_stat_user_tables
 WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
   AND seq_scan > 1000
   AND seq_tup_read > 100000
-  AND CASE WHEN seq_scan > 0 
-    THEN 100.0 * idx_scan / (seq_scan + idx_scan) 
-    ELSE 100 
+  AND CASE WHEN seq_scan > 0
+    THEN 100.0 * idx_scan / (seq_scan + idx_scan)
+    ELSE 100
   END < 95
 ORDER BY seq_tup_read DESC;
 ```
@@ -243,19 +243,19 @@ ORDER BY seq_tup_read DESC;
 
 ```sql
 -- Concurrent index rebuild
-CREATE INDEX CONCURRENTLY idx_orders_customer_new 
+CREATE INDEX CONCURRENTLY idx_orders_customer_new
   ON orders(customer_id, created_at DESC);
-  
+
 DROP INDEX CONCURRENTLY idx_orders_customer;
 
-ALTER INDEX idx_orders_customer_new 
+ALTER INDEX idx_orders_customer_new
   RENAME TO idx_orders_customer;
 
 -- Rebuild all indexes on a table
 REINDEX TABLE CONCURRENTLY orders;
 
 -- Monitor index rebuild progress
-SELECT 
+SELECT
   a.query,
   p.phase,
   p.blocks_total,
@@ -281,11 +281,11 @@ CREATE TABLE audit_logs (
 ) PARTITION BY RANGE (created_at);
 
 -- Create monthly partitions
-CREATE TABLE audit_logs_2024_01 
+CREATE TABLE audit_logs_2024_01
   PARTITION OF audit_logs
   FOR VALUES FROM ('2024-01-01') TO ('2024-02-01');
 
-CREATE TABLE audit_logs_2024_02 
+CREATE TABLE audit_logs_2024_02
   PARTITION OF audit_logs
   FOR VALUES FROM ('2024-02-01') TO ('2024-03-01');
 
@@ -301,7 +301,7 @@ BEGIN
   start_date := DATE_TRUNC('month', CURRENT_DATE + INTERVAL '1 month');
   end_date := start_date + INTERVAL '1 month';
   partition_name := 'audit_logs_' || TO_CHAR(start_date, 'YYYY_MM');
-  
+
   -- Check if partition exists
   IF NOT EXISTS (
     SELECT 1 FROM pg_class WHERE relname = partition_name
@@ -310,7 +310,7 @@ BEGIN
       'CREATE TABLE %I PARTITION OF audit_logs FOR VALUES FROM (%L) TO (%L)',
       partition_name, start_date, end_date
     );
-    
+
     -- Create indexes on partition
     EXECUTE format(
       'CREATE INDEX %I ON %I (user_id, created_at)',
@@ -322,7 +322,7 @@ $$ LANGUAGE plpgsql;
 
 -- Schedule monthly
 CREATE EXTENSION IF NOT EXISTS pg_cron;
-SELECT cron.schedule('create-partitions', '0 0 25 * *', 
+SELECT cron.schedule('create-partitions', '0 0 25 * *',
   'SELECT create_monthly_partition()');
 ```
 
@@ -337,18 +337,18 @@ DECLARE
   retention_date DATE;
 BEGIN
   retention_date := CURRENT_DATE - INTERVAL '6 months';
-  
-  FOR partition IN 
-    SELECT 
+
+  FOR partition IN
+    SELECT
       schemaname,
       tablename
     FROM pg_tables
     WHERE tablename LIKE 'audit_logs_%'
       AND tablename < 'audit_logs_' || TO_CHAR(retention_date, 'YYYY_MM')
   LOOP
-    EXECUTE format('DROP TABLE %I.%I', 
+    EXECUTE format('DROP TABLE %I.%I',
       partition.schemaname, partition.tablename);
-    
+
     RAISE NOTICE 'Dropped partition: %', partition.tablename;
   END LOOP;
 END;
@@ -363,7 +363,7 @@ BEGIN
     'COPY %I TO PROGRAM ''aws s3 cp - s3://ventry-archive/%s.csv''',
     partition_name, partition_name
   );
-  
+
   -- Then drop
   EXECUTE format('DROP TABLE %I', partition_name);
 END;
@@ -379,7 +379,7 @@ $$ LANGUAGE plpgsql;
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
 
 -- Top slow queries
-SELECT 
+SELECT
   query,
   calls,
   total_exec_time,
@@ -392,7 +392,7 @@ ORDER BY mean_exec_time DESC
 LIMIT 20;
 
 -- Queries with high variance
-SELECT 
+SELECT
   query,
   calls,
   mean_exec_time,
@@ -404,7 +404,7 @@ WHERE calls > 100
 ORDER BY coefficient_of_variation DESC;
 
 -- Missing index hints
-SELECT 
+SELECT
   schemaname,
   tablename,
   attname,
@@ -417,7 +417,7 @@ WHERE schemaname = 'public'
   AND attname NOT IN (
     SELECT a.attname
     FROM pg_index i
-    JOIN pg_attribute a ON a.attrelid = i.indrelid 
+    JOIN pg_attribute a ON a.attrelid = i.indrelid
       AND a.attnum = ANY(i.indkey)
   );
 ```
@@ -426,7 +426,7 @@ WHERE schemaname = 'public'
 
 ```sql
 -- Monitor connection usage
-SELECT 
+SELECT
   datname,
   count(*) as connections,
   count(*) FILTER (WHERE state = 'active') as active,
@@ -437,7 +437,7 @@ FROM pg_stat_activity
 GROUP BY datname;
 
 -- Find long-running queries
-SELECT 
+SELECT
   pid,
   now() - query_start AS duration,
   state,
@@ -448,14 +448,14 @@ WHERE state != 'idle'
 ORDER BY duration DESC;
 
 -- Connection pool recommendations
-SELECT 
+SELECT
   'Recommended pool size' as metric,
   GREATEST(
     (SELECT count(*) FROM pg_stat_activity WHERE state = 'active'),
     4
   ) * 2 as value
 UNION ALL
-SELECT 
+SELECT
   'Current connections' as metric,
   count(*) as value
 FROM pg_stat_activity
@@ -468,13 +468,13 @@ WHERE datname = 'ventry';
 
 ```sql
 -- Database size growth
-SELECT 
+SELECT
   pg_database.datname,
   pg_size_pretty(pg_database_size(pg_database.datname)) AS size,
   ROUND(
-    100.0 * pg_database_size(pg_database.datname) / 
-    LAG(pg_database_size(pg_database.datname), 1, pg_database_size(pg_database.datname)) 
-    OVER (ORDER BY pg_database.datname) - 100, 
+    100.0 * pg_database_size(pg_database.datname) /
+    LAG(pg_database_size(pg_database.datname), 1, pg_database_size(pg_database.datname))
+    OVER (ORDER BY pg_database.datname) - 100,
     2
   ) AS growth_pct
 FROM pg_database
@@ -493,11 +493,11 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
 LIMIT 20;
 
 -- Cache hit ratio
-SELECT 
+SELECT
   'Cache Hit Ratio' as metric,
   ROUND(
-    100.0 * sum(heap_blks_hit) / 
-    NULLIF(sum(heap_blks_hit) + sum(heap_blks_read), 0), 
+    100.0 * sum(heap_blks_hit) /
+    NULLIF(sum(heap_blks_hit) + sum(heap_blks_read), 0),
     2
   ) AS ratio
 FROM pg_statio_user_tables;
@@ -516,10 +516,10 @@ export class DatabaseHealthMonitor {
       this.checkConnectionSaturation(),
       this.checkCacheHitRatio(),
     ];
-    
+
     const results = await Promise.all(checks);
-    const failures = results.filter(r => !r.healthy);
-    
+    const failures = results.filter((r) => !r.healthy);
+
     if (failures.length > 0) {
       await this.sendAlert({
         level: 'warning',
@@ -528,7 +528,7 @@ export class DatabaseHealthMonitor {
       });
     }
   }
-  
+
   async checkTableBloat() {
     const result = await prisma.$queryRaw`
       SELECT 
@@ -539,7 +539,7 @@ export class DatabaseHealthMonitor {
       ) bloat
       WHERE bloat_pct > 30
     `;
-    
+
     return {
       healthy: result.length === 0,
       message: `${result.length} tables have >30% bloat`,
@@ -556,23 +556,23 @@ export class DatabaseHealthMonitor {
 ```yaml
 maintenance_windows:
   daily:
-    time: "02:00-03:00 UTC"
+    time: '02:00-03:00 UTC'
     tasks:
       - vacuum_analyze
       - update_statistics
       - check_replication
-    
+
   weekly:
-    day: "Sunday"
-    time: "03:00-05:00 UTC"
+    day: 'Sunday'
+    time: '03:00-05:00 UTC'
     tasks:
       - reindex_active_tables
       - analyze_slow_queries
       - cleanup_old_logs
-    
+
   monthly:
-    day: "First Sunday"
-    time: "01:00-06:00 UTC"
+    day: 'First Sunday'
+    time: '01:00-06:00 UTC'
     tasks:
       - full_vacuum_large_tables
       - partition_maintenance
@@ -605,7 +605,7 @@ psql -c "SELECT pg_reload_conf();"
 
 ```sql
 -- Detect corruption
-SELECT 
+SELECT
   c.relname,
   pg_size_pretty(pg_relation_size(c.oid))
 FROM pg_class c

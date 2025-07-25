@@ -27,7 +27,7 @@ describe('Items Router Integration Tests', () => {
     // Create test organization and user with ADMIN role
     const setup = await createTestSetup(adminPrisma, {
       orgName: 'Items Test Org',
-      memberRole: 'ADMIN'
+      memberRole: 'ADMIN',
     });
     organizationId = setup.org.id;
     userId = setup.user.id;
@@ -36,9 +36,9 @@ describe('Items Router Integration Tests', () => {
     const rlsContext = {
       userId,
       organizationId,
-      bypassRLS: false
+      bypassRLS: false,
     };
-    
+
     // Convert database user to AuthenticatedUser type
     const authenticatedUser = {
       id: setup.user.id,
@@ -52,7 +52,7 @@ describe('Items Router Integration Tests', () => {
       organizationId,
       organizationRole: setup.membership.role,
     };
-    
+
     const ctx = {
       user: authenticatedUser,
       organizationId,
@@ -60,7 +60,7 @@ describe('Items Router Integration Tests', () => {
       req: {} as any,
       res: {} as any,
     };
-    
+
     caller = appRouter.createCaller(ctx);
 
     // Create test data using admin connection
@@ -132,15 +132,15 @@ describe('Items Router Integration Tests', () => {
     await adminPrisma.itemCategory.deleteMany({ where: { organizationId } });
     await adminPrisma.unitOfMeasure.deleteMany({ where: { organizationId } });
     await adminPrisma.supplier.deleteMany({ where: { organizationId } });
-    
+
     // Clean up audit logs before deleting user
     await adminPrisma.auditLog.deleteMany({ where: { userId } });
-    
+
     // Clean up user and organization using test helper
     await adminPrisma.organizationMember.deleteMany({ where: { organizationId } });
     await adminPrisma.user.delete({ where: { id: userId } });
     await adminPrisma.organization.delete({ where: { id: organizationId } });
-    
+
     // Disconnect both connections
     await adminPrisma.$disconnect();
     await appPrisma.$disconnect();
@@ -316,7 +316,7 @@ describe('Items Router Integration Tests', () => {
       });
 
       expect(result.items).toHaveLength(2);
-      expect(result.items.every(item => item.isActive)).toBe(true);
+      expect(result.items.every((item) => item.isActive)).toBe(true);
     });
 
     it('should filter by supplier', async () => {
@@ -383,9 +383,7 @@ describe('Items Router Integration Tests', () => {
     it('should throw error for non-existent item', async () => {
       // Use a valid CUID format that doesn't exist
       const nonExistentId = 'clh1234567890abcdefghijkl';
-      await expect(
-        caller.items.get({ id: nonExistentId })
-      ).rejects.toThrow('Item not found');
+      await expect(caller.items.get({ id: nonExistentId })).rejects.toThrow('Item not found');
     });
   });
 
@@ -605,7 +603,7 @@ describe('Items Router Integration Tests', () => {
         }),
       ]);
 
-      const itemIds = items.map(item => item.id);
+      const itemIds = items.map((item) => item.id);
 
       const result = await caller.items.archive({
         itemIds,
@@ -620,7 +618,7 @@ describe('Items Router Integration Tests', () => {
         where: { id: { in: itemIds } },
       });
 
-      expect(dbItems.every(item => !item.isActive)).toBe(true);
+      expect(dbItems.every((item) => !item.isActive)).toBe(true);
     });
 
     it('should prevent archiving items with inventory', async () => {

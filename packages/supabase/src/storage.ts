@@ -10,27 +10,21 @@ export class SupabaseStorageService {
   }
 
   // Upload product image
-  async uploadProductImage(
-    productId: string,
-    file: File | Blob,
-    fileName?: string
-  ) {
+  async uploadProductImage(productId: string, file: File | Blob, fileName?: string) {
     const extension = fileName?.split('.').pop() || 'jpg';
     const path = `products/${productId}/${fileName || `${Date.now()}.${extension}`}`;
 
-    const { data, error } = await this.client.storage
-      .from(this.bucketName)
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type,
-      });
+    const { data, error } = await this.client.storage.from(this.bucketName).upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
 
     if (error) throw error;
 
     // Get public URL
-    const { data: { publicUrl } } = this.client.storage
-      .from(this.bucketName)
-      .getPublicUrl(data.path);
+    const {
+      data: { publicUrl },
+    } = this.client.storage.from(this.bucketName).getPublicUrl(data.path);
 
     return {
       path: data.path,
@@ -39,10 +33,7 @@ export class SupabaseStorageService {
   }
 
   // Upload multiple product images
-  async uploadProductImages(
-    productId: string,
-    files: FileList | File[]
-  ) {
+  async uploadProductImages(productId: string, files: FileList | File[]) {
     const uploads = Array.from(files).map((file, index) => {
       const fileName = file instanceof File ? file.name : 'image.jpg';
       const extension = fileName.split('.').pop() || 'jpg';
@@ -54,9 +45,7 @@ export class SupabaseStorageService {
 
   // Delete product image
   async deleteProductImage(path: string) {
-    const { error } = await this.client.storage
-      .from(this.bucketName)
-      .remove([path]);
+    const { error } = await this.client.storage.from(this.bucketName).remove([path]);
 
     if (error) throw error;
   }
@@ -70,12 +59,10 @@ export class SupabaseStorageService {
     const name = file instanceof File ? file.name : 'document';
     const fileName = `${type}/${new Date().toISOString().split('T')[0]}/${Date.now()}-${name}`;
 
-    const { data, error } = await this.client.storage
-      .from(this.bucketName)
-      .upload(fileName, file, {
-        contentType: file.type,
-        metadata,
-      });
+    const { data, error } = await this.client.storage.from(this.bucketName).upload(fileName, file, {
+      contentType: file.type,
+      metadata,
+    });
 
     if (error) throw error;
 
@@ -97,14 +84,15 @@ export class SupabaseStorageService {
   }
 
   // List files in a directory
-  async listFiles(path: string, options?: {
-    limit?: number;
-    offset?: number;
-    sortBy?: { column: string; order: 'asc' | 'desc' };
-  }) {
-    const { data, error } = await this.client.storage
-      .from(this.bucketName)
-      .list(path, options);
+  async listFiles(
+    path: string,
+    options?: {
+      limit?: number;
+      offset?: number;
+      sortBy?: { column: string; order: 'asc' | 'desc' };
+    }
+  ) {
+    const { data, error } = await this.client.storage.from(this.bucketName).list(path, options);
 
     if (error) throw error;
     return data;
@@ -112,9 +100,7 @@ export class SupabaseStorageService {
 
   // Download file
   async downloadFile(path: string) {
-    const { data, error } = await this.client.storage
-      .from(this.bucketName)
-      .download(path);
+    const { data, error } = await this.client.storage.from(this.bucketName).download(path);
 
     if (error) throw error;
     return data;

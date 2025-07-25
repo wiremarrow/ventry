@@ -100,9 +100,7 @@ const prodConfig: pino.LoggerOptions = {
 };
 
 // Create the logger instance
-export const logger = pino(
-  process.env.NODE_ENV === 'production' ? prodConfig : devConfig
-);
+export const logger = pino(process.env.NODE_ENV === 'production' ? prodConfig : devConfig);
 
 // Create child loggers for different modules
 export const createLogger = (module: string) => {
@@ -122,53 +120,59 @@ export const logWithContext = (
 export const requestLogger = (req: any, res: any, next: any) => {
   const start = Date.now();
   const requestId = req.id || randomUUID();
-  
+
   // Attach request ID
   req.id = requestId;
-  
+
   // Create child logger with request context
   req.log = logger.child({
     requestId,
     userId: req.user?.id,
     organizationId: req.user?.organizationId,
   });
-  
+
   // Log request
-  req.log.info({
-    request: req,
-  }, 'Request received');
-  
+  req.log.info(
+    {
+      request: req,
+    },
+    'Request received'
+  );
+
   // Log response
   const originalSend = res.send;
-  res.send = function(data: any) {
+  res.send = function (data: any) {
     res.send = originalSend;
     const duration = Date.now() - start;
-    
-    req.log.info({
-      response: res,
-      duration,
-      responseSize: data?.length || 0,
-    }, 'Request completed');
-    
+
+    req.log.info(
+      {
+        response: res,
+        duration,
+        responseSize: data?.length || 0,
+      },
+      'Request completed'
+    );
+
     return res.send(data);
   };
-  
+
   next();
 };
 
 // Error logger
-export const logError = (
-  error: Error,
-  context?: Record<string, unknown>
-) => {
-  logger.error({
-    ...context,
-    error: {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
+export const logError = (error: Error, context?: Record<string, unknown>) => {
+  logger.error(
+    {
+      ...context,
+      error: {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      },
     },
-  }, error.message);
+    error.message
+  );
 };
 
 // Performance logger
@@ -178,42 +182,43 @@ export const logPerformance = (
   metadata?: Record<string, unknown>
 ) => {
   const level = duration > 1000 ? 'warn' : 'debug';
-  logger[level]({
-    operation,
-    duration,
-    ...metadata,
-  }, `Operation ${operation} took ${duration}ms`);
+  logger[level](
+    {
+      operation,
+      duration,
+      ...metadata,
+    },
+    `Operation ${operation} took ${duration}ms`
+  );
 };
 
 // Audit logger for security events
-export const auditLog = (
-  action: string,
-  userId: string,
-  metadata?: Record<string, unknown>
-) => {
-  logger.info({
-    audit: true,
-    action,
-    userId,
-    timestamp: new Date().toISOString(),
-    ...metadata,
-  }, `Audit: ${action}`);
+export const auditLog = (action: string, userId: string, metadata?: Record<string, unknown>) => {
+  logger.info(
+    {
+      audit: true,
+      action,
+      userId,
+      timestamp: new Date().toISOString(),
+      ...metadata,
+    },
+    `Audit: ${action}`
+  );
 };
 
 // Database query logger
-export const logQuery = (
-  query: string,
-  params?: unknown[],
-  duration?: number
-) => {
+export const logQuery = (query: string, params?: unknown[], duration?: number) => {
   const level = duration && duration > 100 ? 'warn' : 'debug';
-  logger[level]({
-    database: {
-      query: query.substring(0, 1000), // Truncate long queries
-      params: process.env.LOG_SQL_PARAMS === 'true' ? params : undefined,
-      duration,
+  logger[level](
+    {
+      database: {
+        query: query.substring(0, 1000), // Truncate long queries
+        params: process.env.LOG_SQL_PARAMS === 'true' ? params : undefined,
+        duration,
+      },
     },
-  }, 'Database query executed');
+    'Database query executed'
+  );
 };
 
 // Graceful shutdown logger

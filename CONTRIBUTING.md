@@ -26,18 +26,21 @@ Before you begin, ensure you have the following installed:
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork**:
+
    ```bash
    git clone https://github.com/YOUR_USERNAME/ventry.git
    cd ventry
    ```
 
 3. **Run the development setup script**:
+
    ```bash
    # Complete setup including PostgreSQL with Docker
    ./tools/scripts/dev-setup.sh
    ```
 
 4. **Start the development environment**:
+
    ```bash
    pnpm dev
    ```
@@ -166,14 +169,14 @@ import type { LocalType } from './types';
 
 ### File Naming Conventions
 
-| File Type | Pattern | Example |
-|-----------|---------|---------|
-| **Components** | kebab-case.tsx | `stock-adjustment-dialog.tsx` |
-| **Pages** | page.tsx | `app/inventory/page.tsx` |
-| **tRPC Routers** | camelCase.ts | `purchaseOrders.ts` |
-| **Unit Tests** | *.test.ts(x) | `order-list.test.tsx` |
-| **Integration Tests** | *.integration.test.ts | `auth.integration.test.ts` |
-| **E2E Tests** | *.spec.ts | `login.spec.ts` |
+| File Type             | Pattern                | Example                       |
+| --------------------- | ---------------------- | ----------------------------- |
+| **Components**        | kebab-case.tsx         | `stock-adjustment-dialog.tsx` |
+| **Pages**             | page.tsx               | `app/inventory/page.tsx`      |
+| **tRPC Routers**      | camelCase.ts           | `purchaseOrders.ts`           |
+| **Unit Tests**        | \*.test.ts(x)          | `order-list.test.tsx`         |
+| **Integration Tests** | \*.integration.test.ts | `auth.integration.test.ts`    |
+| **E2E Tests**         | \*.spec.ts             | `login.spec.ts`               |
 
 ### TypeScript Guidelines
 
@@ -206,24 +209,24 @@ export function ComponentName({ prop1, prop2 }: ComponentProps) {
   // Hooks first
   const router = useRouter();
   const [state, setState] = useState();
-  
+
   // tRPC queries
   const { data, isLoading } = trpc.items.list.useQuery();
-  
+
   // tRPC mutations
   const createMutation = trpc.items.create.useMutation({
     onSuccess: () => {
       toast.success('Item created');
     },
   });
-  
+
   // Event handlers
   const handleSubmit = () => { ... };
-  
+
   // Early returns
   if (isLoading) return <Skeleton />;
   if (!data) return null;
-  
+
   // Render
   return (
     <div>
@@ -360,24 +363,29 @@ Before submitting your PR, ensure:
 
 ```markdown
 ## Description
+
 Brief description of what this PR does and why
 
 ## Type of Change
+
 - [ ] Bug fix (non-breaking change)
 - [ ] New feature (non-breaking change)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
 
 ## How Has This Been Tested?
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] E2E tests pass (if applicable)
 - [ ] Manual testing completed
 
 ## Screenshots (if applicable)
+
 Add screenshots for UI changes
 
 ## Checklist
+
 - [ ] My code follows the project style guidelines
 - [ ] I have performed a self-review of my code
 - [ ] I have commented my code, particularly in hard-to-understand areas
@@ -409,22 +417,25 @@ Add screenshots for UI changes
 When contributing to AI-powered features:
 
 ### Prompt Engineering
+
 - Use clear, structured prompts
 - Include examples for consistency
 - Version control prompt templates
 - Test with edge cases
 
 ### Testing AI Features
+
 ```typescript
 // Mock LLM responses in tests
 vi.mock('@/lib/ai-client', () => ({
   generateResponse: vi.fn().mockResolvedValue({
-    recommendation: 'Reorder 100 units'
-  })
+    recommendation: 'Reorder 100 units',
+  }),
 }));
 ```
 
 ### Best Practices
+
 - Log all AI interactions for debugging
 - Handle failures gracefully with fallbacks
 - Monitor token usage and costs
@@ -433,18 +444,21 @@ vi.mock('@/lib/ai-client', () => ({
 ## 🛠️ Project-Specific Guidelines
 
 ### Backend (tRPC + Fastify)
+
 - Use organization-scoped procedures for multi-tenant data
 - Implement proper error handling with TRPCError
 - Add input validation with Zod schemas
 - Follow RESTful conventions for tRPC procedure names
 
 ### Frontend (Next.js + React)
+
 - Use App Router patterns
 - Implement proper loading and error states
 - Ensure mobile responsiveness
 - Use shadcn/ui components consistently
 
 ### Database (Prisma + PostgreSQL)
+
 - Always create migrations for schema changes
 - Use appropriate indexes for query optimization
 - Maintain referential integrity
@@ -482,9 +496,11 @@ By contributing to Ventry, you agree that your contributions will be licensed un
 ## 🎯 What to Work On
 
 ### Good First Issues
+
 Look for issues labeled with `good first issue` - these are specifically chosen for newcomers.
 
 ### Priority Areas
+
 - **Test Coverage**: We need more tests, especially integration tests
 - **Documentation**: Help improve our docs and examples
 - **Performance**: Optimize queries and reduce bundle size
@@ -492,6 +508,7 @@ Look for issues labeled with `good first issue` - these are specifically chosen 
 - **Internationalization**: Help translate the UI
 
 ### Feature Requests
+
 Check our [TODO.md](./TODO.md) for the roadmap and upcoming features.
 
 ---

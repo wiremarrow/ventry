@@ -87,10 +87,7 @@ export async function deleteTestItems() {
   testItemIds.length = 0;
 }
 
-export async function createTestSupplier(data: {
-  code: string;
-  name: string;
-}) {
+export async function createTestSupplier(data: { code: string; name: string }) {
   const organization = await prisma.organization.findFirst();
   if (!organization) {
     throw new Error('No organization found for testing');
@@ -110,10 +107,7 @@ export async function createTestSupplier(data: {
   });
 }
 
-export async function createTestWarehouse(data: {
-  code: string;
-  name: string;
-}) {
+export async function createTestWarehouse(data: { code: string; name: string }) {
   const organization = await prisma.organization.findFirst();
   if (!organization) {
     throw new Error('No organization found for testing');
@@ -133,15 +127,18 @@ export async function createTestWarehouse(data: {
   });
 }
 
-export async function createTestLocation(warehouseId: string, data: {
-  code: string;
-  description: string;
-}) {
+export async function createTestLocation(
+  warehouseId: string,
+  data: {
+    code: string;
+    description: string;
+  }
+) {
   const warehouse = await prisma.warehouse.findUnique({
     where: { id: warehouseId },
     select: { organizationId: true },
   });
-  
+
   if (!warehouse) {
     throw new Error('Warehouse not found');
   }

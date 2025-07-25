@@ -56,12 +56,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -87,7 +87,7 @@ describe('Organizations Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.organizationMember.findUnique.mockReset();
     mockPrisma.organizationMember.findMany.mockReset();
@@ -106,27 +106,27 @@ describe('Organizations Router', () => {
     mockPrisma.supplier.count.mockReset();
     mockPrisma.order.count.mockReset();
     mockPrisma.inventory.aggregate.mockReset();
-    
+
     // Create a proper mock request object
     mockReq = {
       cookies: {},
       headers: {},
     };
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user
     const authenticatedUser = {
       ...mockAuthenticatedUser,
       organizationId: testId('org'),
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       req: mockReq,
       res: mockRes,
@@ -183,7 +183,7 @@ describe('Organizations Router', () => {
     });
 
     it('should require authentication', async () => {
-      const publicCaller = await createDirectCaller({ 
+      const publicCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: null,
@@ -227,9 +227,9 @@ describe('Organizations Router', () => {
     it('should throw NOT_FOUND when not a member', async () => {
       mockPrisma.organizationMember.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.organizations.get({ id: testId('org1') })
-      ).rejects.toThrow('Organization not found or you do not have access');
+      await expect(caller.organizations.get({ id: testId('org1') })).rejects.toThrow(
+        'Organization not found or you do not have access'
+      );
     });
   });
 
@@ -246,10 +246,12 @@ describe('Organizations Router', () => {
         ...orgData,
         createdAt: new Date(),
         updatedAt: new Date(),
-        members: [{
-          userId: mockAuthenticatedUser.id,
-          role: 'OWNER',
-        }],
+        members: [
+          {
+            userId: mockAuthenticatedUser.id,
+            role: 'OWNER',
+          },
+        ],
       };
 
       mockPrisma.organization.findUnique.mockResolvedValue(null); // No existing org
@@ -780,10 +782,7 @@ describe('Organizations Router', () => {
       expect(result.success).toBe(true);
       expect(result.organization.id).toBe(testId('org2'));
       expect(result.role).toBe('MEMBER');
-      expect(CookieService.setActiveOrganization).toHaveBeenCalledWith(
-        mockRes,
-        testId('org2')
-      );
+      expect(CookieService.setActiveOrganization).toHaveBeenCalledWith(mockRes, testId('org2'));
     });
 
     it('should throw FORBIDDEN for non-member', async () => {

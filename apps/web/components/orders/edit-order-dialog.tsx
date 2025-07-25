@@ -35,7 +35,15 @@ import { trpc } from '@/lib/trpc';
 import type { Order } from '@ventry/database';
 
 const updateOrderSchema = z.object({
-  status: z.enum(['PENDING', 'CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED', 'CANCELLED']),
+  status: z.enum([
+    'PENDING',
+    'CONFIRMED',
+    'PICKING',
+    'PACKED',
+    'SHIPPED',
+    'DELIVERED',
+    'CANCELLED',
+  ]),
   notes: z.string().optional(),
 });
 
@@ -93,9 +101,7 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Order {order.orderNumber}</DialogTitle>
-          <DialogDescription>
-            Update order information and status
-          </DialogDescription>
+          <DialogDescription>Update order information and status</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -107,8 +113,8 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Order Status</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
+                    <Select
+                      onValueChange={field.onChange}
                       value={field.value}
                       disabled={!canEditStatus}
                     >
@@ -136,7 +142,6 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
                   </FormItem>
                 )}
               />
-
             </div>
 
             <FormField
@@ -146,10 +151,7 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Add any order notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Add any order notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -158,17 +160,13 @@ export function EditOrderDialog({ order, open, onOpenChange }: EditOrderDialogPr
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> You cannot edit order items after creation. 
-                To modify items, cancel this order and create a new one.
+                <strong>Note:</strong> You cannot edit order items after creation. To modify items,
+                cancel this order and create a new one.
               </p>
             </div>
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>

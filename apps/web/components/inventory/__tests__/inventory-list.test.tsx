@@ -81,7 +81,7 @@ describe('InventoryList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Set up default mock responses
     vi.mocked(trpc.inventory.list.useQuery).mockReturnValue({
       data: mockInventoryData,
@@ -94,7 +94,7 @@ describe('InventoryList', () => {
       isRefetching: false,
       status: 'success',
     } as any);
-    
+
     vi.mocked(trpc.inventory.adjust.useMutation).mockReturnValue({
       mutate: vi.fn(),
       mutateAsync: vi.fn(),
@@ -110,7 +110,7 @@ describe('InventoryList', () => {
 
   it('renders inventory items correctly', async () => {
     render(<InventoryList warehouseId="all" searchTerm="" showLowStock={false} />);
-    
+
     // Wait for data to load
     await waitFor(() => {
       expect(screen.getByText('Test Product 1')).toBeInTheDocument();
@@ -163,7 +163,6 @@ describe('InventoryList', () => {
 
     expect(screen.getByText(/Error loading inventory/)).toBeInTheDocument();
   });
-
 
   it('highlights low stock items', () => {
     const lowStockData = {

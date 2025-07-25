@@ -5,11 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, Input, Label, Button } from '@ventry/ui';
-import { 
-  Building2, 
-  ArrowLeft,
-  Sparkles
-} from 'lucide-react';
+import { Building2, ArrowLeft, Sparkles } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { toast } from '@/hooks/use-toast';
 import { useOrganization } from '@/hooks/use-organization';
@@ -17,7 +13,8 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1, 'Organization name is required').max(100),
-  slug: z.string()
+  slug: z
+    .string()
     .min(3, 'Slug must be at least 3 characters')
     .max(50)
     .regex(/^[a-z0-9-]+$/, 'Slug can only contain lowercase letters, numbers, and hyphens'),
@@ -68,7 +65,7 @@ export default function NewOrganizationPage() {
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     register('name').onChange(e);
-    
+
     // Generate slug from name
     const slug = value
       .toLowerCase()
@@ -76,7 +73,7 @@ export default function NewOrganizationPage() {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
-    
+
     setValue('slug', slug);
   };
 
@@ -84,11 +81,7 @@ export default function NewOrganizationPage() {
     <ProtectedRoute>
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-          >
+          <Button variant="ghost" size="sm" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -120,12 +113,7 @@ export default function NewOrganizationPage() {
 
               <div>
                 <Label htmlFor="slug">Organization Slug</Label>
-                <Input
-                  id="slug"
-                  placeholder="acme-corp"
-                  {...register('slug')}
-                  className="mt-1"
-                />
+                <Input id="slug" placeholder="acme-corp" {...register('slug')} className="mt-1" />
                 {errors.slug && (
                   <p className="text-sm text-destructive mt-1">{errors.slug.message}</p>
                 )}
@@ -165,11 +153,7 @@ export default function NewOrganizationPage() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
+              <Button type="button" variant="outline" onClick={() => router.back()}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

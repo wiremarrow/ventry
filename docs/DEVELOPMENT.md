@@ -9,20 +9,24 @@ Before you begin, ensure you have the following installed:
 - **Git**
 
 Required:
+
 - **Docker** and **Docker Compose** for PostgreSQL and Redis
 
 ## Initial Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd ventry
    ```
 
 2. **Run the automated setup script**
+
    ```bash
    ./tools/scripts/dev-setup.sh
    ```
+
    - Sets up PostgreSQL and Redis with Docker
    - Creates the `ventry_app` database user for Row-Level Security (RLS)
    - Installs all dependencies
@@ -30,7 +34,7 @@ Required:
    - Creates environment configuration
 
 3. **Configure environment variables**
-   
+
    Edit the `.env` file and update with your values:
    - Database credentials (if changed from defaults)
    - AI provider API keys (OpenAI/Anthropic)
@@ -57,35 +61,36 @@ pnpm --filter @ventry/web dev
 
 ### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start all development servers |
-| `pnpm build` | Build all packages for production |
-| `pnpm test` | Run unit tests with Vitest (excludes integration tests) |
-| `pnpm test:integration` | Run integration tests with PostgreSQL |
-| `pnpm test:e2e` | Run E2E tests with Playwright |
-| `pnpm test:e2e:ui` | Run E2E tests with interactive UI |
-| `pnpm lint` | Run ESLint on all packages |
-| `pnpm typecheck` | Run TypeScript type checking |
-| `pnpm format` | Format code with Prettier |
-| `pnpm clean` | Clean all build artifacts and node_modules |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| `pnpm dev`              | Start all development servers                           |
+| `pnpm build`            | Build all packages for production                       |
+| `pnpm test`             | Run unit tests with Vitest (excludes integration tests) |
+| `pnpm test:integration` | Run integration tests with PostgreSQL                   |
+| `pnpm test:e2e`         | Run E2E tests with Playwright                           |
+| `pnpm test:e2e:ui`      | Run E2E tests with interactive UI                       |
+| `pnpm lint`             | Run ESLint on all packages                              |
+| `pnpm typecheck`        | Run TypeScript type checking                            |
+| `pnpm format`           | Format code with Prettier                               |
+| `pnpm clean`            | Clean all build artifacts and node_modules              |
 
 ### Database Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm --filter @ventry/database db:push` | Push schema changes to database |
-| `pnpm --filter @ventry/database db:migrate` | Run database migrations |
-| `pnpm --filter @ventry/database db:seed` | Default seed - Creates users + organization with basic data |
-| `pnpm --filter @ventry/database db:seed:basic` | Basic seed - Creates only 4 demo users |
-| `pnpm --filter @ventry/database db:seed:comprehensive` | Comprehensive seed - Full demo data for testing |
-| `pnpm --filter @ventry/database db:seed:multi-org` | Multi-org seed - For RLS/multi-tenant testing |
-| `./tools/scripts/reset-db.sh` | Reset database (WARNING: Deletes all data) |
-| `./tools/scripts/backup-db.sh` | Create database backup |
+| Command                                                | Description                                                 |
+| ------------------------------------------------------ | ----------------------------------------------------------- |
+| `pnpm --filter @ventry/database db:push`               | Push schema changes to database                             |
+| `pnpm --filter @ventry/database db:migrate`            | Run database migrations                                     |
+| `pnpm --filter @ventry/database db:seed`               | Default seed - Creates users + organization with basic data |
+| `pnpm --filter @ventry/database db:seed:basic`         | Basic seed - Creates only 4 demo users                      |
+| `pnpm --filter @ventry/database db:seed:comprehensive` | Comprehensive seed - Full demo data for testing             |
+| `pnpm --filter @ventry/database db:seed:multi-org`     | Multi-org seed - For RLS/multi-tenant testing               |
+| `./tools/scripts/reset-db.sh`                          | Reset database (WARNING: Deletes all data)                  |
+| `./tools/scripts/backup-db.sh`                         | Create database backup                                      |
 
 ### Database Seeding Options
 
 #### 1. **Basic Seed** (`db:seed:basic`)
+
 - **Purpose**: Minimal setup with only user accounts
 - **Creates**:
   - 4 demo users (admin, manager, employee, user)
@@ -93,6 +98,7 @@ pnpm --filter @ventry/web dev
 - **Use case**: Quick authentication testing
 
 #### 2. **Default Seed** (`db:seed`) - **Recommended for development**
+
 - **Purpose**: Standard development setup
 - **Creates**:
   - 4 demo users with roles
@@ -109,6 +115,7 @@ pnpm --filter @ventry/web dev
   - user@ventry.com / password123 (USER - no org access, tests boundaries)
 
 #### 3. **Comprehensive Seed** (`db:seed:comprehensive`)
+
 - **Purpose**: Full application testing with realistic data
 - **Creates**: Everything from default seed PLUS:
   - 4 warehouses with 32-48 locations total
@@ -122,6 +129,7 @@ pnpm --filter @ventry/web dev
 - **Use case**: Demos, full testing, dashboard development
 
 #### 4. **Multi-Organization Seed** (`db:seed:multi-org`)
+
 - **Purpose**: Test Row-Level Security (RLS) and multi-tenancy
 - **Creates**:
   - Multiple organizations (TechStart Inc, GlobalRetail Co)
@@ -169,6 +177,7 @@ Ventry uses a dual-user pattern for Row-Level Security:
    - Connection: `DATABASE_URL`
 
 If you need to manually create the app user:
+
 ```bash
 ./tools/scripts/setup-app-user.sh
 ```
@@ -176,11 +185,13 @@ If you need to manually create the app user:
 ### Schema Operations
 
 All Prisma schema operations (`db:push`, `db:migrate`, `db:reset`) automatically use the admin connection through the `migrate-with-admin.sh` script. This ensures:
+
 - Schema changes have the necessary privileges
 - Application runtime still uses the restricted user
 - Security boundaries are maintained
 
 The npm scripts handle this automatically:
+
 ```bash
 # These commands automatically use DATABASE_ADMIN_URL
 pnpm db:push       # Push schema changes
@@ -235,6 +246,7 @@ ventry/
 ### Pre-commit Hooks
 
 Husky is configured to run the following checks before each commit:
+
 - ESLint for code quality
 - Prettier for code formatting
 - TypeScript compilation check
@@ -260,17 +272,20 @@ pnpm lint && pnpm typecheck && pnpm test
 ### Command Scope Reference
 
 **Root Level Commands (via Turborepo)**
+
 - Run across all packages in parallel
 - Use when you want to test/check everything
 - Example: `pnpm test`, `pnpm lint`, `pnpm typecheck`
 
 **Package-Specific Commands**
+
 - Run only in specific package context
 - Use when working on specific features
 - Navigate to package dir OR use `--filter` flag
 - Example: `pnpm test:cov` (backend only), `pnpm test:integration`
 
 **Filter Examples**
+
 ```bash
 # From root directory
 pnpm --filter @ventry/backend test:cov          # Backend coverage
@@ -311,6 +326,7 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
 ### Backend (tRPC + Fastify)
 
 1. Start the backend in debug mode:
+
    ```bash
    pnpm --filter @ventry/backend dev
    ```
@@ -322,6 +338,7 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
 ### Frontend (Next.js)
 
 1. Start the frontend in debug mode:
+
    ```bash
    pnpm --filter @ventry/web dev:debug
    ```
@@ -332,6 +349,7 @@ pnpm --filter @ventry/backend test:integration  # Integration tests only
 ### Database
 
 Access pgAdmin at http://localhost:5050:
+
 - Email: `admin@ventry.local`
 - Password: `pgadmin_dev_password`
 
@@ -352,7 +370,7 @@ pnpm dev
 
 # Login with demo credentials to test dashboard:
 # - admin@ventry.com/password123 (full access)
-# - manager@ventry.com/password123 (full access)  
+# - manager@ventry.com/password123 (full access)
 # - employee@ventry.com/password123 (dashboard + products only)
 # - user@ventry.com/password123 (no organization access - shows multi-tenant boundary)
 ```
@@ -369,13 +387,20 @@ The dashboard uses these tRPC endpoints for live data:
 
 ```typescript
 // StatsCards component with auto-refresh
-const { data: analytics, isLoading, error } = trpc.analytics.dashboard.useQuery({
-  period: 'last30days',
-  includeAllWarehouses: true,
-}, {
-  refetchInterval: refreshInterval, // 30 seconds by default
-  refetchIntervalInBackground: true,
-});
+const {
+  data: analytics,
+  isLoading,
+  error,
+} = trpc.analytics.dashboard.useQuery(
+  {
+    period: 'last30days',
+    includeAllWarehouses: true,
+  },
+  {
+    refetchInterval: refreshInterval, // 30 seconds by default
+    refetchIntervalInBackground: true,
+  }
+);
 ```
 
 #### Development Tips
@@ -411,7 +436,7 @@ To add new dashboard features:
 
 **Issue**: Next.js 15 requires ESLint 9, but `eslint-config-next` includes TypeScript ESLint v6.21.0 which is incompatible, causing `context.getScope is not a function` errors.
 
-**Current Solution**: 
+**Current Solution**:
 We've implemented a custom ESLint configuration that bypasses the Next.js config:
 
 ```javascript
@@ -421,6 +446,7 @@ import typescriptParser from '@typescript-eslint/parser';
 ```
 
 **Trade-offs**:
+
 - ✅ Fixes ESLint 9 compatibility with TypeScript ESLint v8.35.1
 - ✅ Maintains essential TypeScript and React linting
 - ⚠️ Loses Next.js-specific linting rules (image optimization, font loading, etc.)
@@ -432,7 +458,8 @@ import typescriptParser from '@typescript-eslint/parser';
 
 **Issue**: Turbopack fails with "Next.js package not found" error in monorepo setups using pnpm workspaces.
 
-**Error**: 
+**Error**:
+
 ```
 [Error [TurbopackInternalError]: Next.js package not found
 Debug info:
@@ -443,6 +470,7 @@ Debug info:
 **Root Cause**: Known bug in Turbopack with module resolution in monorepo environments, particularly with pnpm's unique node_modules structure.
 
 **Current Workaround**: Turbopack disabled in development mode. Frontend runs with standard webpack dev server:
+
 ```json
 {
   "scripts": {
@@ -452,16 +480,19 @@ Debug info:
 ```
 
 **Attempted Solutions**:
+
 - ✅ Clean dependency installation (deleted pnpm-lock.yaml, node_modules, reinstalled)
 - ✅ Updated Next.js config from `experimental.turbo` to `turbopack` (Next.js 15 stable format)
 - ❌ Issue persists despite proper configuration
 
-**Performance Impact**: 
+**Performance Impact**:
+
 - ⚠️ Slower compilation compared to Turbopack
 - ⚠️ Slower hot module replacement
 - ✅ Stable development experience
 
 **Tracking**: Multiple GitHub issues confirm this is an ongoing problem:
+
 - [vercel/next.js#55987](https://github.com/vercel/next.js/discussions/55987)
 - [vercel/next.js#56887](https://github.com/vercel/next.js/issues/56887)
 - [vercel/next.js#74731](https://github.com/vercel/next.js/issues/74731)
@@ -471,6 +502,7 @@ Debug info:
 ### Node.js Type Stripping Warning (Backend)
 
 **Issue**: Backend shows experimental warning during startup:
+
 ```
 (node:79903) ExperimentalWarning: Type Stripping is an experimental feature
 ```
@@ -482,18 +514,21 @@ Debug info:
 ### tRPC + Fastify Architecture
 
 **Key Benefits**:
+
 - End-to-end type safety between frontend and backend
 - No code generation required - types are inferred automatically
 - Better performance than REST with automatic batching
 - Built-in error handling and validation with Zod
 
 **Development Workflow**:
+
 1. Define procedures in `apps/backend/src/routers/`
 2. Export router types through `AppRouter`
 3. Frontend imports types via workspace dependency
 4. Full IntelliSense and type checking in frontend
 
 **Common Patterns**:
+
 ```typescript
 // Backend: Define a procedure
 export const productsRouter = createTRPCRouter({
@@ -515,6 +550,7 @@ const { data } = trpc.products.list.useQuery({ limit: 10 });
 ### Common Issues
 
 1. **Port already in use**
+
    ```bash
    # Find process using port (backend)
    lsof -i :6060
@@ -525,6 +561,7 @@ const { data } = trpc.products.list.useQuery({ limit: 10 });
    ```
 
 2. **Database connection issues**
+
    ```bash
    # Check if PostgreSQL is running
    docker-compose ps
@@ -533,6 +570,7 @@ const { data } = trpc.products.list.useQuery({ limit: 10 });
    ```
 
 3. **Dependency issues**
+
    ```bash
    # Clean and reinstall
    pnpm clean

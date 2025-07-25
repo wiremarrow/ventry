@@ -6,14 +6,14 @@ This guide covers comprehensive performance optimization strategies for Ventry, 
 
 ### Target Metrics
 
-| Metric | Target | Critical |
-|--------|--------|----------|
-| First Contentful Paint (FCP) | < 1.8s | < 3s |
-| Largest Contentful Paint (LCP) | < 2.5s | < 4s |
-| Time to Interactive (TTI) | < 3.8s | < 7.3s |
-| API Response Time (p95) | < 200ms | < 500ms |
-| Database Query Time (p95) | < 50ms | < 100ms |
-| Memory Usage | < 512MB | < 1GB |
+| Metric                         | Target  | Critical |
+| ------------------------------ | ------- | -------- |
+| First Contentful Paint (FCP)   | < 1.8s  | < 3s     |
+| Largest Contentful Paint (LCP) | < 2.5s  | < 4s     |
+| Time to Interactive (TTI)      | < 3.8s  | < 7.3s   |
+| API Response Time (p95)        | < 200ms | < 500ms  |
+| Database Query Time (p95)      | < 50ms  | < 100ms  |
+| Memory Usage                   | < 512MB | < 1GB    |
 
 ## Database Optimization
 
@@ -23,23 +23,23 @@ This guide covers comprehensive performance optimization strategies for Ventry, 
 
 ```sql
 -- Analyze slow queries
-EXPLAIN (ANALYZE, BUFFERS) 
-SELECT * FROM items 
-WHERE organization_id = 'xxx' 
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM items
+WHERE organization_id = 'xxx'
   AND status = 'ACTIVE'
 ORDER BY created_at DESC;
 
 -- Create composite indexes for common queries
-CREATE INDEX idx_items_org_status_created 
+CREATE INDEX idx_items_org_status_created
 ON items(organization_id, status, created_at DESC);
 
 -- Partial indexes for filtered queries
-CREATE INDEX idx_active_items 
-ON items(organization_id, created_at DESC) 
+CREATE INDEX idx_active_items
+ON items(organization_id, created_at DESC)
 WHERE status = 'ACTIVE';
 
 -- Covering indexes to avoid table lookups
-CREATE INDEX idx_items_covering 
+CREATE INDEX idx_items_covering
 ON items(organization_id, id, name, sku, status)
 INCLUDE (qty_on_hand, price);
 ```
@@ -51,7 +51,7 @@ INCLUDE (qty_on_hand, price);
 const orders = await prisma.order.findMany();
 for (const order of orders) {
   const items = await prisma.orderItem.findMany({
-    where: { orderId: order.id }
+    where: { orderId: order.id },
   });
 }
 
@@ -60,10 +60,10 @@ const orders = await prisma.order.findMany({
   include: {
     orderItems: {
       include: {
-        item: true
-      }
-    }
-  }
+        item: true,
+      },
+    },
+  },
 });
 
 // ✅ Better: Select only needed fields
@@ -79,12 +79,12 @@ const orders = await prisma.order.findMany({
         item: {
           select: {
             name: true,
-            sku: true
-          }
-        }
-      }
-    }
-  }
+            sku: true,
+          },
+        },
+      },
+    },
+  },
 });
 ```
 
@@ -99,15 +99,15 @@ for (const item of items) {
 // ✅ Good: Batch insert
 await prisma.item.createMany({
   data: items,
-  skipDuplicates: true
+  skipDuplicates: true,
 });
 
 // ✅ Good: Batch update with transaction
 await prisma.$transaction(
-  items.map(item => 
+  items.map((item) =>
     prisma.item.update({
       where: { id: item.id },
-      data: { quantity: item.quantity }
+      data: { quantity: item.quantity },
     })
   )
 );
@@ -126,9 +126,7 @@ const prisma = new PrismaClient({
       url: process.env.DATABASE_URL,
     },
   },
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'error', 'warn'] 
-    : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
 // Connection pool configuration in DATABASE_URL
@@ -158,7 +156,7 @@ WHERE idx_scan = 0
 ORDER BY schemaname, tablename;
 
 -- Monitor table bloat
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size,
@@ -180,20 +178,20 @@ const redis = new Redis(process.env.REDIS_URL);
 
 export const cachedProcedure = t.procedure.use(async ({ ctx, next, path }) => {
   const cacheKey = `api:${path}:${JSON.stringify(ctx.input)}`;
-  
+
   // Try cache first
   const cached = await redis.get(cacheKey);
   if (cached) {
     return JSON.parse(cached);
   }
-  
+
   // Execute procedure
   const result = await next();
-  
+
   // Cache result (5 minutes for lists, 1 hour for details)
   const ttl = path.includes('list') ? 300 : 3600;
   await redis.setex(cacheKey, ttl, JSON.stringify(result));
-  
+
   return result;
 });
 
@@ -213,10 +211,12 @@ export const invalidateCache = async (patterns: string[]) => {
 ```typescript
 // Cursor-based pagination for large datasets
 export const paginatedList = organizationProcedure
-  .input(z.object({
-    cursor: z.string().optional(),
-    limit: z.number().min(1).max(100).default(20),
-  }))
+  .input(
+    z.object({
+      cursor: z.string().optional(),
+      limit: z.number().min(1).max(100).default(20),
+    })
+  )
   .query(async ({ ctx, input }) => {
     const items = await ctx.prisma.item.findMany({
       where: { organizationId: ctx.organizationId },
@@ -224,13 +224,13 @@ export const paginatedList = organizationProcedure
       cursor: input.cursor ? { id: input.cursor } : undefined,
       orderBy: { createdAt: 'desc' },
     });
-    
+
     let nextCursor: string | undefined = undefined;
     if (items.length > input.limit) {
       const nextItem = items.pop();
       nextCursor = nextItem!.id;
     }
-    
+
     return {
       items,
       nextCursor,
@@ -243,17 +243,19 @@ export const paginatedList = organizationProcedure
 ```typescript
 // Allow clients to specify fields
 export const selectableFields = organizationProcedure
-  .input(z.object({
-    id: z.string(),
-    fields: z.array(z.enum(['id', 'name', 'sku', 'price', 'inventory'])),
-  }))
+  .input(
+    z.object({
+      id: z.string(),
+      fields: z.array(z.enum(['id', 'name', 'sku', 'price', 'inventory'])),
+    })
+  )
   .query(async ({ ctx, input }) => {
     // Build select object dynamically
     const select = input.fields.reduce((acc, field) => {
       acc[field] = true;
       return acc;
     }, {} as any);
-    
+
     return ctx.prisma.item.findUnique({
       where: { id: input.id },
       select,
@@ -308,7 +310,7 @@ export async function generateBlurDataURL(src: string): Promise<string> {
     .resize(10, 10)
     .blur()
     .toBuffer();
-  
+
   return `data:image/jpeg;base64,${buffer.toString('base64')}`;
 }
 ```
@@ -320,15 +322,15 @@ export async function generateBlurDataURL(src: string): Promise<string> {
 module.exports = {
   // Enable SWC minifier
   swcMinify: true,
-  
+
   // Optimize webpack
   webpack: (config, { dev, isServer }) => {
     // Tree shake lodash
     config.resolve.alias = {
       ...config.resolve.alias,
-      'lodash': 'lodash-es',
+      lodash: 'lodash-es',
     };
-    
+
     // Minimize bundle
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
@@ -345,8 +347,7 @@ module.exports = {
           },
           lib: {
             test(module) {
-              return module.size() > 160000 &&
-                /node_modules[/\\]/.test(module.identifier());
+              return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
             },
             name(module) {
               const hash = crypto.createHash('sha1');
@@ -376,7 +377,7 @@ module.exports = {
         },
       };
     }
-    
+
     return config;
   },
 };
@@ -393,18 +394,18 @@ const ExpensiveComponent = memo(({ data, filters }) => {
       .sort((a, b) => b.value - a.value)
       .slice(0, 100);
   }, [data, filters]);
-  
+
   return <DataGrid data={processedData} />;
 });
 
 // Optimize re-renders with useCallback
 const ParentComponent = () => {
   const [search, setSearch] = useState('');
-  
+
   const handleSearch = useCallback((value: string) => {
     setSearch(value);
   }, []);
-  
+
   return <SearchInput onSearch={handleSearch} />;
 };
 
@@ -413,14 +414,14 @@ import { VirtualList } from '@tanstack/react-virtual';
 
 const LargeList = ({ items }) => {
   const parentRef = useRef<HTMLDivElement>(null);
-  
+
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 60,
     overscan: 5,
   });
-  
+
   return (
     <div ref={parentRef} className="h-96 overflow-auto">
       <div style={{ height: `${virtualizer.getTotalSize()}px` }}>
@@ -455,7 +456,7 @@ export async function GET() {
   return new Response(data, {
     headers: {
       'Cache-Control': 'public, max-age=31536000, immutable',
-      'ETag': generateETag(data),
+      ETag: generateETag(data),
     },
   });
 }
@@ -465,16 +466,16 @@ export async function GET(request: Request) {
   const etag = request.headers.get('If-None-Match');
   const data = await fetchData();
   const newEtag = generateETag(data);
-  
+
   if (etag === newEtag) {
     return new Response(null, { status: 304 });
   }
-  
+
   return new Response(JSON.stringify(data), {
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'private, max-age=300, stale-while-revalidate=600',
-      'ETag': newEtag,
+      ETag: newEtag,
     },
   });
 }
@@ -485,49 +486,39 @@ export async function GET(request: Request) {
 ```javascript
 // public/sw.js
 const CACHE_NAME = 'ventry-v1';
-const urlsToCache = [
-  '/',
-  '/styles.css',
-  '/script.js',
-  '/offline.html',
-];
+const urlsToCache = ['/', '/styles.css', '/script.js', '/offline.html'];
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
-  );
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
 });
 
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
+    caches.match(event.request).then((response) => {
+      // Cache hit - return response
+      if (response) {
+        return response;
+      }
+
+      // Clone the request
+      const fetchRequest = event.request.clone();
+
+      return fetch(fetchRequest).then((response) => {
+        // Check if valid response
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        
-        // Clone the request
-        const fetchRequest = event.request.clone();
-        
-        return fetch(fetchRequest).then(response => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone the response
-          const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseToCache);
-            });
-          
-          return response;
+
+        // Clone the response
+        const responseToCache = response.clone();
+
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
         });
-      })
+
+        return response;
+      });
+    })
   );
 });
 ```
@@ -537,17 +528,17 @@ self.addEventListener('fetch', event => {
 ```nginx
 # Cloudflare Page Rules
 # Cache Everything for static assets
-/*.(jpg|jpeg|png|gif|ico|css|js|woff|woff2)$ 
+/*.(jpg|jpeg|png|gif|ico|css|js|woff|woff2)$
   Cache Level: Cache Everything
   Edge Cache TTL: 1 month
 
 # Cache API responses with short TTL
-/api/* 
+/api/*
   Cache Level: Standard
   Edge Cache TTL: 5 minutes
-  
+
 # Bypass cache for auth endpoints
-/api/auth/* 
+/api/auth/*
   Cache Level: Bypass
 ```
 
@@ -566,7 +557,7 @@ function sendToAnalytics(metric) {
     id: metric.id,
     label: metric.label,
   });
-  
+
   // Use sendBeacon for reliability
   if (navigator.sendBeacon) {
     navigator.sendBeacon('/api/analytics', body);
@@ -590,16 +581,16 @@ import { performance } from 'perf_hooks';
 
 export function measurePerformance(name: string) {
   const start = performance.now();
-  
+
   return {
     end: () => {
       const duration = performance.now() - start;
-      
+
       // Send to monitoring service
       metrics.histogram('api.request.duration', duration, {
         tags: { endpoint: name },
       });
-      
+
       // Log slow requests
       if (duration > 1000) {
         logger.warn(`Slow API call: ${name} took ${duration}ms`);
@@ -611,7 +602,7 @@ export function measurePerformance(name: string) {
 // Usage in tRPC procedures
 .query(async ({ ctx, input }) => {
   const perf = measurePerformance('items.list');
-  
+
   try {
     const result = await ctx.prisma.item.findMany({...});
     return result;
@@ -628,7 +619,7 @@ export function measurePerformance(name: string) {
 ALTER SYSTEM SET log_min_duration_statement = 100; -- Log queries over 100ms
 
 -- Monitor query performance
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -641,7 +632,7 @@ ORDER BY mean_time DESC
 LIMIT 20;
 
 -- Find missing indexes
-SELECT 
+SELECT
   schemaname,
   tablename,
   attname,
@@ -668,15 +659,15 @@ import { check, sleep } from 'k6';
 
 export const options = {
   stages: [
-    { duration: '30s', target: 20 },   // Ramp up to 20 users
-    { duration: '1m', target: 20 },    // Stay at 20 users
-    { duration: '30s', target: 50 },   // Ramp up to 50 users
-    { duration: '1m', target: 50 },    // Stay at 50 users
-    { duration: '30s', target: 0 },    // Ramp down to 0 users
+    { duration: '30s', target: 20 }, // Ramp up to 20 users
+    { duration: '1m', target: 20 }, // Stay at 20 users
+    { duration: '30s', target: 50 }, // Ramp up to 50 users
+    { duration: '1m', target: 50 }, // Stay at 50 users
+    { duration: '30s', target: 0 }, // Ramp down to 0 users
   ],
   thresholds: {
     http_req_duration: ['p(95)<500'], // 95% of requests under 500ms
-    http_req_failed: ['rate<0.1'],    // Error rate under 10%
+    http_req_failed: ['rate<0.1'], // Error rate under 10%
   },
 };
 
@@ -686,34 +677,29 @@ export default function () {
     email: 'test@example.com',
     password: 'password',
   });
-  
+
   check(loginRes, {
     'login successful': (r) => r.status === 200,
   });
-  
+
   const authToken = loginRes.json('token');
   const params = {
     headers: {
       Authorization: `Bearer ${authToken}`,
     },
   };
-  
+
   // Test endpoints
-  const endpoints = [
-    '/api/items',
-    '/api/orders',
-    '/api/inventory/stats',
-    '/api/warehouses',
-  ];
-  
-  endpoints.forEach(endpoint => {
+  const endpoints = ['/api/items', '/api/orders', '/api/inventory/stats', '/api/warehouses'];
+
+  endpoints.forEach((endpoint) => {
     const res = http.get(`https://api.ventry.app${endpoint}`, params);
-    
+
     check(res, {
       'status is 200': (r) => r.status === 200,
       'response time < 500ms': (r) => r.timings.duration < 500,
     });
-    
+
     sleep(1);
   });
 }

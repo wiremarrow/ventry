@@ -10,11 +10,15 @@ const movementFilterSchema = z.object({
   itemId: z.string().cuid().optional(),
   warehouseId: z.string().cuid().optional(),
   locationId: z.string().cuid().optional(),
-  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
+  movementType: z
+    .enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS'])
+    .optional(),
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   userId: z.string().cuid().optional(),
-  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
+  referenceType: z
+    .enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS'])
+    .optional(),
   referenceId: z.string().optional(),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(50),
@@ -28,8 +32,18 @@ const createMovementSchema = z.object({
   fromLocationId: z.string().cuid().optional(),
   toLocationId: z.string().cuid().optional(),
   qty: z.number().int().positive(),
-  movementType: z.enum(['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']),
-  referenceType: z.enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS']).optional(),
+  movementType: z.enum([
+    'INBOUND',
+    'OUTBOUND',
+    'TRANSFER',
+    'ADJUSTMENT',
+    'RETURN',
+    'DAMAGE',
+    'LOSS',
+  ]),
+  referenceType: z
+    .enum(['PO', 'ORDER', 'TRANSFER', 'ADJUSTMENT', 'RETURN', 'DAMAGE', 'LOSS'])
+    .optional(),
   referenceId: z.string().optional(),
   notes: z.string().optional(),
   serialNumbers: z.array(z.string()).optional(),
@@ -49,133 +63,126 @@ const movementSummarySchema = z.object({
 
 export const stockMovementsRouter = createTRPCRouter({
   // List movements with filtering
-  list: organizationProcedure
-    .input(movementFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        itemId,
-        warehouseId,
-        locationId,
-        movementType,
-        dateFrom,
-        dateTo,
-        userId,
-        referenceType,
-        referenceId,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
+  list: organizationProcedure.input(movementFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      itemId,
+      warehouseId,
+      locationId,
+      movementType,
+      dateFrom,
+      dateTo,
+      userId,
+      referenceType,
+      referenceId,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
 
-      const where: Prisma.StockMovementWhereInput = {
-        item: { organizationId: ctx.user.organizationId },
-      };
+    const where: Prisma.StockMovementWhereInput = {
+      item: { organizationId: ctx.user.organizationId },
+    };
 
-      // Item filter
-      if (itemId) {
-        where.itemId = itemId;
-      }
+    // Item filter
+    if (itemId) {
+      where.itemId = itemId;
+    }
 
-      // Location filters
-      if (locationId) {
-        where.OR = [
-          { fromLocationId: locationId },
-          { toLocationId: locationId },
-        ];
-      } else if (warehouseId) {
-        where.OR = [
-          { fromLocation: { warehouseId } },
-          { toLocation: { warehouseId } },
-        ];
-      }
+    // Location filters
+    if (locationId) {
+      where.OR = [{ fromLocationId: locationId }, { toLocationId: locationId }];
+    } else if (warehouseId) {
+      where.OR = [{ fromLocation: { warehouseId } }, { toLocation: { warehouseId } }];
+    }
 
-      // Movement type filter
-      if (movementType) {
-        where.movementType = movementType;
-      }
+    // Movement type filter
+    if (movementType) {
+      where.movementType = movementType;
+    }
 
-      // Date filters
-      if (dateFrom || dateTo) {
-        where.movedAt = {};
-        if (dateFrom) where.movedAt.gte = dateFrom;
-        if (dateTo) where.movedAt.lte = dateTo;
-      }
+    // Date filters
+    if (dateFrom || dateTo) {
+      where.movedAt = {};
+      if (dateFrom) where.movedAt.gte = dateFrom;
+      if (dateTo) where.movedAt.lte = dateTo;
+    }
 
-      // User filter
-      if (userId) {
-        where.movedById = userId;
-      }
+    // User filter
+    if (userId) {
+      where.movedById = userId;
+    }
 
-      // Reference filters
-      if (referenceType) {
-        where.refType = referenceType;
-      }
-      if (referenceId) {
-        where.refId = referenceId;
-      }
+    // Reference filters
+    if (referenceType) {
+      where.refType = referenceType;
+    }
+    if (referenceId) {
+      where.refId = referenceId;
+    }
 
-      // Execute queries
-      const [movements, total] = await Promise.all([
-        ctx.prisma.stockMovement.findMany({
-          where,
-          include: {
-            item: {
-              include: {
-                category: true,
-                unitOfMeasure: true,
-              },
-            },
-            lot: true,
-            fromLocation: {
-              include: {
-                warehouse: true,
-              },
-            },
-            toLocation: {
-              include: {
-                warehouse: true,
-              },
-            },
-            movedBy: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
+    // Execute queries
+    const [movements, total] = await Promise.all([
+      ctx.prisma.stockMovement.findMany({
+        where,
+        include: {
+          item: {
+            include: {
+              category: true,
+              unitOfMeasure: true,
             },
           },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: sortBy === 'item'
+          lot: true,
+          fromLocation: {
+            include: {
+              warehouse: true,
+            },
+          },
+          toLocation: {
+            include: {
+              warehouse: true,
+            },
+          },
+          movedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy:
+          sortBy === 'item'
             ? { item: { name: sortOrder } }
             : sortBy === 'qty'
-            ? { qty: sortOrder }
-            : sortBy === 'type'
-            ? { movementType: sortOrder }
-            : { movedAt: sortOrder },
-        }),
-        ctx.prisma.stockMovement.count({ where }),
-      ]);
+              ? { qty: sortOrder }
+              : sortBy === 'type'
+                ? { movementType: sortOrder }
+                : { movedAt: sortOrder },
+      }),
+      ctx.prisma.stockMovement.count({ where }),
+    ]);
 
-      return {
-        movements,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
+    return {
+      movements,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get single movement details
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const movement = await ctx.prisma.stockMovement.findFirst({
-        where: { 
+        where: {
           id: input.id,
           item: { organizationId: ctx.user.organizationId },
         },
@@ -253,93 +260,311 @@ export const stockMovementsRouter = createTRPCRouter({
     }),
 
   // Create stock movement
-  create: organizationProcedure
-    .input(createMovementSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Validate movement type requirements
-      if (input.movementType === 'INBOUND' && !input.toLocationId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Inbound movements require a destination location',
+  create: organizationProcedure.input(createMovementSchema).mutation(async ({ ctx, input }) => {
+    // Validate movement type requirements
+    if (input.movementType === 'INBOUND' && !input.toLocationId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Inbound movements require a destination location',
+      });
+    }
+
+    if (input.movementType === 'OUTBOUND' && !input.fromLocationId) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Outbound movements require a source location',
+      });
+    }
+
+    if (input.movementType === 'TRANSFER' && (!input.fromLocationId || !input.toLocationId)) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Transfer movements require both source and destination locations',
+      });
+    }
+
+    // Perform movement with inventory updates
+    const movement = await ctx.prisma.$transaction(async (tx) => {
+      // Handle source inventory for outbound/transfer
+      if (input.fromLocationId) {
+        const sourceInventory = await tx.inventory.findFirst({
+          where: {
+            itemId: input.itemId,
+            locationId: input.fromLocationId,
+            lotId: input.lotId,
+          },
+        });
+
+        if (!sourceInventory) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Source inventory not found',
+          });
+        }
+
+        const availableQty = sourceInventory.qtyOnHand - sourceInventory.qtyReserved;
+        if (input.qty > availableQty) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Only ${availableQty} units available at source location`,
+          });
+        }
+
+        // Update source inventory
+        await tx.inventory.update({
+          where: { id: sourceInventory.id },
+          data: {
+            qtyOnHand: sourceInventory.qtyOnHand - input.qty,
+          },
         });
       }
 
-      if (input.movementType === 'OUTBOUND' && !input.fromLocationId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Outbound movements require a source location',
+      // Handle destination inventory for inbound/transfer
+      if (input.toLocationId) {
+        const destInventory = await tx.inventory.findFirst({
+          where: {
+            itemId: input.itemId,
+            locationId: input.toLocationId,
+            lotId: input.lotId,
+          },
         });
-      }
 
-      if (input.movementType === 'TRANSFER' && (!input.fromLocationId || !input.toLocationId)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Transfer movements require both source and destination locations',
-        });
-      }
-
-      // Perform movement with inventory updates
-      const movement = await ctx.prisma.$transaction(async (tx) => {
-        // Handle source inventory for outbound/transfer
-        if (input.fromLocationId) {
-          const sourceInventory = await tx.inventory.findFirst({
-            where: {
-              itemId: input.itemId,
-              locationId: input.fromLocationId,
-              lotId: input.lotId,
+        if (destInventory) {
+          // Update existing inventory
+          await tx.inventory.update({
+            where: { id: destInventory.id },
+            data: {
+              qtyOnHand: destInventory.qtyOnHand + input.qty,
             },
           });
-
-          if (!sourceInventory) {
-            throw new TRPCError({
-              code: 'NOT_FOUND',
-              message: 'Source inventory not found',
-            });
-          }
-
-          const availableQty = sourceInventory.qtyOnHand - sourceInventory.qtyReserved;
-          if (input.qty > availableQty) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Only ${availableQty} units available at source location`,
-            });
-          }
-
-          // Update source inventory
-          await tx.inventory.update({
-            where: { id: sourceInventory.id },
+        } else {
+          // Create new inventory record
+          await tx.inventory.create({
             data: {
-              qtyOnHand: sourceInventory.qtyOnHand - input.qty,
+              itemId: input.itemId,
+              locationId: input.toLocationId,
+              lotId: input.lotId,
+              qtyOnHand: input.qty,
+              qtyReserved: 0,
+              qtyInTransit: 0,
+              organizationId: ctx.user.organizationId!,
+            },
+          });
+        }
+      }
+
+      // Create movement record
+      const newMovement = await tx.stockMovement.create({
+        data: {
+          itemId: input.itemId,
+          lotId: input.lotId,
+          fromLocationId: input.fromLocationId,
+          toLocationId: input.toLocationId,
+          qty: input.qty,
+          movementType: input.movementType,
+          refType: input.referenceType,
+          refId: input.referenceId,
+          movedById: ctx.user.id,
+          movedAt: new Date(),
+          notes: input.notes,
+          organizationId: ctx.user.organizationId!,
+        },
+        include: {
+          item: true,
+          fromLocation: true,
+          toLocation: true,
+        },
+      });
+
+      // Handle serial numbers if provided
+      if (input.serialNumbers && input.serialNumbers.length > 0) {
+        // Validate serial number count
+        if (input.serialNumbers.length !== input.qty) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Serial number count (${input.serialNumbers.length}) must match quantity (${input.qty})`,
+          });
+        }
+
+        // Update serial number locations
+        if (input.fromLocationId && input.toLocationId) {
+          await tx.serialNumber.updateMany({
+            where: {
+              serialNumber: { in: input.serialNumbers },
+              itemId: input.itemId,
+              locationId: input.fromLocationId,
+              status: 'AVAILABLE',
+            },
+            data: {
+              locationId: input.toLocationId,
+            },
+          });
+        } else if (input.fromLocationId) {
+          // Mark as sold/consumed for outbound
+          await tx.serialNumber.updateMany({
+            where: {
+              serialNumber: { in: input.serialNumbers },
+              itemId: input.itemId,
+              locationId: input.fromLocationId,
+            },
+            data: {
+              status: 'SOLD',
+              // TODO: Track sold date separately
             },
           });
         }
 
-        // Handle destination inventory for inbound/transfer
-        if (input.toLocationId) {
+        // Create movement-serial number relationships
+        // TODO: Implement serial number tracking
+        /* await tx.stockMovementSerialNumber.createMany({
+            data: input.serialNumbers.map(sn => ({
+              movementId: newMovement.id,
+              serialNumberId: sn,
+            })),
+          }); */
+      }
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'stock_movements',
+          recordPk: newMovement.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newMovement,
+        },
+      });
+
+      return newMovement;
+    });
+
+    return movement;
+  }),
+
+  // Batch create movements
+  batchCreate: organizationProcedure.input(batchMovementSchema).mutation(async ({ ctx, input }) => {
+    const { movements, validateOnly } = input;
+    const errors: Array<{ index: number; errors: string[] }> = [];
+    const validMovements: typeof movements = [];
+
+    // Validate all movements
+    for (let i = 0; i < movements.length; i++) {
+      const movement = movements[i];
+      const movementErrors: string[] = [];
+
+      // Type-specific validation
+      if (movement.movementType === 'INBOUND' && !movement.toLocationId) {
+        movementErrors.push('Inbound movements require a destination location');
+      }
+      if (movement.movementType === 'OUTBOUND' && !movement.fromLocationId) {
+        movementErrors.push('Outbound movements require a source location');
+      }
+      if (
+        movement.movementType === 'TRANSFER' &&
+        (!movement.fromLocationId || !movement.toLocationId)
+      ) {
+        movementErrors.push('Transfer movements require both source and destination locations');
+      }
+
+      // Check inventory availability for outbound/transfer
+      if (movement.fromLocationId) {
+        const inventory = await ctx.prisma.inventory.findFirst({
+          where: {
+            itemId: movement.itemId,
+            locationId: movement.fromLocationId,
+            lotId: movement.lotId,
+          },
+        });
+
+        if (!inventory) {
+          movementErrors.push('Source inventory not found');
+        } else {
+          const available = inventory.qtyOnHand - inventory.qtyReserved;
+          if (movement.qty > available) {
+            movementErrors.push(`Only ${available} units available (requested ${movement.qty})`);
+          }
+        }
+      }
+
+      if (movementErrors.length > 0) {
+        errors.push({ index: i, errors: movementErrors });
+      } else {
+        validMovements.push(movement);
+      }
+    }
+
+    // Return validation results if validateOnly
+    if (validateOnly) {
+      return {
+        valid: errors.length === 0,
+        errors,
+        validCount: validMovements.length,
+        totalCount: movements.length,
+      };
+    }
+
+    // If errors found, don't proceed
+    if (errors.length > 0) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: `Validation failed for ${errors.length} movements`,
+        cause: errors,
+      });
+    }
+
+    // Process valid movements in a transaction
+    const createdMovements = await ctx.prisma.$transaction(async (tx) => {
+      const created = [];
+
+      // Group movements by reference for efficiency
+      const referenceId = `BATCH-${new Date().toISOString()}`;
+
+      for (const movement of validMovements) {
+        // Handle source inventory
+        if (movement.fromLocationId) {
+          const sourceInventory = await tx.inventory.findFirst({
+            where: {
+              itemId: movement.itemId,
+              locationId: movement.fromLocationId,
+              lotId: movement.lotId,
+            },
+          });
+
+          if (sourceInventory) {
+            await tx.inventory.update({
+              where: { id: sourceInventory.id },
+              data: {
+                qtyOnHand: sourceInventory.qtyOnHand - movement.qty,
+              },
+            });
+          }
+        }
+
+        // Handle destination inventory
+        if (movement.toLocationId) {
           const destInventory = await tx.inventory.findFirst({
             where: {
-              itemId: input.itemId,
-              locationId: input.toLocationId,
-              lotId: input.lotId,
+              itemId: movement.itemId,
+              locationId: movement.toLocationId,
+              lotId: movement.lotId,
             },
           });
 
           if (destInventory) {
-            // Update existing inventory
             await tx.inventory.update({
               where: { id: destInventory.id },
               data: {
-                qtyOnHand: destInventory.qtyOnHand + input.qty,
+                qtyOnHand: destInventory.qtyOnHand + movement.qty,
               },
             });
           } else {
-            // Create new inventory record
             await tx.inventory.create({
               data: {
-                itemId: input.itemId,
-                locationId: input.toLocationId,
-                lotId: input.lotId,
-                qtyOnHand: input.qty,
+                itemId: movement.itemId,
+                locationId: movement.toLocationId,
+                lotId: movement.lotId,
+                qtyOnHand: movement.qty,
                 qtyReserved: 0,
                 qtyInTransit: 0,
                 organizationId: ctx.user.organizationId!,
@@ -351,272 +576,55 @@ export const stockMovementsRouter = createTRPCRouter({
         // Create movement record
         const newMovement = await tx.stockMovement.create({
           data: {
-            itemId: input.itemId,
-            lotId: input.lotId,
-            fromLocationId: input.fromLocationId,
-            toLocationId: input.toLocationId,
-            qty: input.qty,
-            movementType: input.movementType,
-            refType: input.referenceType,
-            refId: input.referenceId,
+            ...movement,
             movedById: ctx.user.id,
             movedAt: new Date(),
-            notes: input.notes,
+            refType: movement.referenceType || 'TRANSFER',
+            refId: movement.referenceId || referenceId,
             organizationId: ctx.user.organizationId!,
-          },
-          include: {
-            item: true,
-            fromLocation: true,
-            toLocation: true,
           },
         });
 
-        // Handle serial numbers if provided
-        if (input.serialNumbers && input.serialNumbers.length > 0) {
-          // Validate serial number count
-          if (input.serialNumbers.length !== input.qty) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Serial number count (${input.serialNumbers.length}) must match quantity (${input.qty})`,
-            });
-          }
+        created.push(newMovement);
+      }
 
-          // Update serial number locations
-          if (input.fromLocationId && input.toLocationId) {
-            await tx.serialNumber.updateMany({
-              where: {
-                serialNumber: { in: input.serialNumbers },
-                itemId: input.itemId,
-                locationId: input.fromLocationId,
-                status: 'AVAILABLE',
-              },
-              data: {
-                locationId: input.toLocationId,
-              },
-            });
-          } else if (input.fromLocationId) {
-            // Mark as sold/consumed for outbound
-            await tx.serialNumber.updateMany({
-              where: {
-                serialNumber: { in: input.serialNumbers },
-                itemId: input.itemId,
-                locationId: input.fromLocationId,
-              },
-              data: {
-                status: 'SOLD',
-                // TODO: Track sold date separately
-              },
-            });
-          }
-
-          // Create movement-serial number relationships
-          // TODO: Implement serial number tracking
-          /* await tx.stockMovementSerialNumber.createMany({
-            data: input.serialNumbers.map(sn => ({
-              movementId: newMovement.id,
-              serialNumberId: sn,
-            })),
-          }); */
-        }
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'stock_movements',
-            recordPk: newMovement.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newMovement,
+      // Create audit log for batch operation
+      await tx.auditLog.create({
+        data: {
+          tableName: 'stock_movements',
+          recordPk: created[0]?.refId || referenceId,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: {
+            type: 'BATCH_MOVEMENT',
+            count: created.length,
+            referenceId,
           },
-        });
-
-        return newMovement;
+        },
       });
 
-      return movement;
-    }),
+      return created;
+    });
 
-  // Batch create movements
-  batchCreate: organizationProcedure
-    .input(batchMovementSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { movements, validateOnly } = input;
-      const errors: Array<{ index: number; errors: string[] }> = [];
-      const validMovements: typeof movements = [];
-
-      // Validate all movements
-      for (let i = 0; i < movements.length; i++) {
-        const movement = movements[i];
-        const movementErrors: string[] = [];
-
-        // Type-specific validation
-        if (movement.movementType === 'INBOUND' && !movement.toLocationId) {
-          movementErrors.push('Inbound movements require a destination location');
-        }
-        if (movement.movementType === 'OUTBOUND' && !movement.fromLocationId) {
-          movementErrors.push('Outbound movements require a source location');
-        }
-        if (movement.movementType === 'TRANSFER' && (!movement.fromLocationId || !movement.toLocationId)) {
-          movementErrors.push('Transfer movements require both source and destination locations');
-        }
-
-        // Check inventory availability for outbound/transfer
-        if (movement.fromLocationId) {
-          const inventory = await ctx.prisma.inventory.findFirst({
-            where: {
-              itemId: movement.itemId,
-              locationId: movement.fromLocationId,
-              lotId: movement.lotId,
-            },
-          });
-
-          if (!inventory) {
-            movementErrors.push('Source inventory not found');
-          } else {
-            const available = inventory.qtyOnHand - inventory.qtyReserved;
-            if (movement.qty > available) {
-              movementErrors.push(`Only ${available} units available (requested ${movement.qty})`);
-            }
-          }
-        }
-
-        if (movementErrors.length > 0) {
-          errors.push({ index: i, errors: movementErrors });
-        } else {
-          validMovements.push(movement);
-        }
-      }
-
-      // Return validation results if validateOnly
-      if (validateOnly) {
-        return {
-          valid: errors.length === 0,
-          errors,
-          validCount: validMovements.length,
-          totalCount: movements.length,
-        };
-      }
-
-      // If errors found, don't proceed
-      if (errors.length > 0) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: `Validation failed for ${errors.length} movements`,
-          cause: errors,
-        });
-      }
-
-      // Process valid movements in a transaction
-      const createdMovements = await ctx.prisma.$transaction(async (tx) => {
-        const created = [];
-
-        // Group movements by reference for efficiency
-        const referenceId = `BATCH-${new Date().toISOString()}`;
-
-        for (const movement of validMovements) {
-          // Handle source inventory
-          if (movement.fromLocationId) {
-            const sourceInventory = await tx.inventory.findFirst({
-              where: {
-                itemId: movement.itemId,
-                locationId: movement.fromLocationId,
-                lotId: movement.lotId,
-              },
-            });
-
-            if (sourceInventory) {
-              await tx.inventory.update({
-                where: { id: sourceInventory.id },
-                data: {
-                  qtyOnHand: sourceInventory.qtyOnHand - movement.qty,
-                },
-              });
-            }
-          }
-
-          // Handle destination inventory
-          if (movement.toLocationId) {
-            const destInventory = await tx.inventory.findFirst({
-              where: {
-                itemId: movement.itemId,
-                locationId: movement.toLocationId,
-                lotId: movement.lotId,
-              },
-            });
-
-            if (destInventory) {
-              await tx.inventory.update({
-                where: { id: destInventory.id },
-                data: {
-                  qtyOnHand: destInventory.qtyOnHand + movement.qty,
-                },
-              });
-            } else {
-              await tx.inventory.create({
-                data: {
-                  itemId: movement.itemId,
-                  locationId: movement.toLocationId,
-                  lotId: movement.lotId,
-                  qtyOnHand: movement.qty,
-                  qtyReserved: 0,
-                  qtyInTransit: 0,
-                  organizationId: ctx.user.organizationId!,
-                },
-              });
-            }
-          }
-
-          // Create movement record
-          const newMovement = await tx.stockMovement.create({
-            data: {
-              ...movement,
-              movedById: ctx.user.id,
-              movedAt: new Date(),
-              refType: movement.referenceType || 'TRANSFER',
-              refId: movement.referenceId || referenceId,
-              organizationId: ctx.user.organizationId!,
-            },
-          });
-
-          created.push(newMovement);
-        }
-
-        // Create audit log for batch operation
-        await tx.auditLog.create({
-          data: {
-            tableName: 'stock_movements',
-            recordPk: created[0]?.refId || referenceId,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: {
-              type: 'BATCH_MOVEMENT',
-              count: created.length,
-              referenceId,
-            },
-          },
-        });
-
-        return created;
-      });
-
-      return {
-        success: true,
-        created: createdMovements.length,
-        referenceId: createdMovements[0]?.refId,
-        movements: createdMovements,
-      };
-    }),
+    return {
+      success: true,
+      created: createdMovements.length,
+      referenceId: createdMovements[0]?.refId,
+      movements: createdMovements,
+    };
+  }),
 
   // Get movement history for an item
   getItemHistory: organizationProcedure
-    .input(z.object({
-      itemId: z.string().cuid(),
-      locationId: z.string().cuid().optional(),
-      days: z.number().int().min(1).max(365).default(30),
-      includeRelated: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        itemId: z.string().cuid(),
+        locationId: z.string().cuid().optional(),
+        days: z.number().int().min(1).max(365).default(30),
+        includeRelated: z.boolean().default(false),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const since = new Date();
       since.setDate(since.getDate() - input.days);
@@ -627,10 +635,7 @@ export const stockMovementsRouter = createTRPCRouter({
       };
 
       if (input.locationId) {
-        where.OR = [
-          { fromLocationId: input.locationId },
-          { toLocationId: input.locationId },
-        ];
+        where.OR = [{ fromLocationId: input.locationId }, { toLocationId: input.locationId }];
       }
 
       const movements = await ctx.prisma.stockMovement.findMany({
@@ -655,25 +660,28 @@ export const stockMovementsRouter = createTRPCRouter({
 
       // Calculate running balance
       let runningBalance = 0;
-      const movementsWithBalance = movements.reverse().map(movement => {
-        if (movement.toLocationId === input.locationId) {
-          runningBalance += movement.qty;
-        } else if (movement.fromLocationId === input.locationId) {
-          runningBalance -= movement.qty;
-        } else if (!input.locationId) {
-          // For item-level history without location filter
-          if (movement.movementType === 'INBOUND') {
+      const movementsWithBalance = movements
+        .reverse()
+        .map((movement) => {
+          if (movement.toLocationId === input.locationId) {
             runningBalance += movement.qty;
-          } else if (movement.movementType === 'OUTBOUND') {
+          } else if (movement.fromLocationId === input.locationId) {
             runningBalance -= movement.qty;
+          } else if (!input.locationId) {
+            // For item-level history without location filter
+            if (movement.movementType === 'INBOUND') {
+              runningBalance += movement.qty;
+            } else if (movement.movementType === 'OUTBOUND') {
+              runningBalance -= movement.qty;
+            }
           }
-        }
 
-        return {
-          ...movement,
-          runningBalance,
-        };
-      }).reverse();
+          return {
+            ...movement,
+            runningBalance,
+          };
+        })
+        .reverse();
 
       // Get current inventory levels
       const currentInventory = await ctx.prisma.inventory.aggregate({
@@ -726,7 +734,8 @@ export const stockMovementsRouter = createTRPCRouter({
           onHand: currentInventory._sum.qtyOnHand || 0,
           reserved: currentInventory._sum.qtyReserved || 0,
           inTransit: currentInventory._sum.qtyInTransit || 0,
-          available: (currentInventory._sum.qtyOnHand || 0) - (currentInventory._sum.qtyReserved || 0),
+          available:
+            (currentInventory._sum.qtyOnHand || 0) - (currentInventory._sum.qtyReserved || 0),
         },
         stats,
         period: {
@@ -738,49 +747,45 @@ export const stockMovementsRouter = createTRPCRouter({
     }),
 
   // Get movement summary/analytics
-  getSummary: organizationProcedure
-    .input(movementSummarySchema)
-    .query(async ({ ctx, input }) => {
-      const { warehouseId, dateFrom, dateTo, groupBy } = input;
+  getSummary: organizationProcedure.input(movementSummarySchema).query(async ({ ctx, input }) => {
+    const { warehouseId, dateFrom, dateTo, groupBy } = input;
 
-      const where: Prisma.StockMovementWhereInput = {
-        item: { organizationId: ctx.user.organizationId },
-        movedAt: {
-          gte: dateFrom,
-          lte: dateTo,
-        },
-      };
+    const where: Prisma.StockMovementWhereInput = {
+      item: { organizationId: ctx.user.organizationId },
+      movedAt: {
+        gte: dateFrom,
+        lte: dateTo,
+      },
+    };
 
-      if (warehouseId) {
-        where.OR = [
-          { fromLocation: { warehouseId } },
-          { toLocation: { warehouseId } },
-        ];
-      }
+    if (warehouseId) {
+      where.OR = [{ fromLocation: { warehouseId } }, { toLocation: { warehouseId } }];
+    }
 
-      const movements = await ctx.prisma.stockMovement.findMany({
-        where,
-        include: {
-          item: {
-            include: {
-              category: true,
-              unitOfMeasure: true,
-            },
-          },
-          fromLocation: {
-            include: { warehouse: true },
-          },
-          toLocation: {
-            include: { warehouse: true },
+    const movements = await ctx.prisma.stockMovement.findMany({
+      where,
+      include: {
+        item: {
+          include: {
+            category: true,
+            unitOfMeasure: true,
           },
         },
-      });
+        fromLocation: {
+          include: { warehouse: true },
+        },
+        toLocation: {
+          include: { warehouse: true },
+        },
+      },
+    });
 
-      // Group data based on input parameter
-      let grouped: Record<string, any> = {};
+    // Group data based on input parameter
+    let grouped: Record<string, any> = {};
 
-      if (groupBy === 'type') {
-        grouped = movements.reduce((acc: Record<string, any>, movement) => {
+    if (groupBy === 'type') {
+      grouped = movements.reduce(
+        (acc: Record<string, any>, movement) => {
           const key = movement.movementType;
           if (!acc[key]) {
             acc[key] = {
@@ -798,16 +803,18 @@ export const stockMovementsRouter = createTRPCRouter({
           acc[key].value += movement.qty * (Number(movement.item.defaultCost) || 0);
 
           return acc;
-        }, {} as Record<string, any>);
+        },
+        {} as Record<string, any>
+      );
 
-        // Convert sets to counts
-        Object.values(grouped).forEach((g: any) => {
-          g.itemCount = g.items.size;
-          delete g.items;
-        });
-
-      } else if (groupBy === 'item') {
-        grouped = movements.reduce((acc: Record<string, any>, movement) => {
+      // Convert sets to counts
+      Object.values(grouped).forEach((g: any) => {
+        g.itemCount = g.items.size;
+        delete g.items;
+      });
+    } else if (groupBy === 'item') {
+      grouped = movements.reduce(
+        (acc: Record<string, any>, movement) => {
           const key = movement.item.sku;
           if (!acc[key]) {
             acc[key] = {
@@ -840,19 +847,27 @@ export const stockMovementsRouter = createTRPCRouter({
           } else if (movement.movementType === 'OUTBOUND') {
             acc[key].netChange -= movement.qty;
           } else if (movement.movementType === 'TRANSFER') {
-            if (movement.toLocationId && (!warehouseId || movement.toLocation?.warehouseId === warehouseId)) {
+            if (
+              movement.toLocationId &&
+              (!warehouseId || movement.toLocation?.warehouseId === warehouseId)
+            ) {
               acc[key].netChange += movement.qty;
             }
-            if (movement.fromLocationId && (!warehouseId || movement.fromLocation?.warehouseId === warehouseId)) {
+            if (
+              movement.fromLocationId &&
+              (!warehouseId || movement.fromLocation?.warehouseId === warehouseId)
+            ) {
               acc[key].netChange -= movement.qty;
             }
           }
 
           return acc;
-        }, {} as Record<string, any>);
-
-      } else if (groupBy === 'warehouse') {
-        grouped = movements.reduce((acc: Record<string, any>, movement) => {
+        },
+        {} as Record<string, any>
+      );
+    } else if (groupBy === 'warehouse') {
+      grouped = movements.reduce(
+        (acc: Record<string, any>, movement) => {
           // Handle source warehouse
           if (movement.fromLocation) {
             const key = movement.fromLocation.warehouse.name;
@@ -888,11 +903,13 @@ export const stockMovementsRouter = createTRPCRouter({
           }
 
           return acc;
-        }, {} as Record<string, any>);
-
-      } else {
-        // Group by date
-        grouped = movements.reduce((acc: Record<string, any>, movement) => {
+        },
+        {} as Record<string, any>
+      );
+    } else {
+      // Group by date
+      grouped = movements.reduce(
+        (acc: Record<string, any>, movement) => {
           const key = movement.movedAt.toISOString().split('T')[0];
           if (!acc[key]) {
             acc[key] = {
@@ -920,48 +937,55 @@ export const stockMovementsRouter = createTRPCRouter({
           acc[key].uniqueItems.add(movement.itemId);
 
           return acc;
-        }, {} as Record<string, any>);
-
-        // Convert sets to counts
-        Object.values(grouped).forEach((g: any) => {
-          g.itemCount = g.uniqueItems.size;
-          delete g.uniqueItems;
-        });
-      }
-
-      // Calculate overall summary
-      const summary = {
-        totalMovements: movements.length,
-        totalQuantity: movements.reduce((sum: number, m) => sum + m.qty, 0),
-        totalValue: movements.reduce((sum: number, m) => sum + (m.qty * (Number(m.item.defaultCost) || 0)), 0),
-        uniqueItems: new Set(movements.map(m => m.itemId)).size,
-        period: {
-          from: dateFrom,
-          to: dateTo,
-          days: Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)),
         },
-      };
+        {} as Record<string, any>
+      );
 
-      return {
-        grouped: Object.values(grouped),
-        summary,
-      };
-    }),
+      // Convert sets to counts
+      Object.values(grouped).forEach((g: any) => {
+        g.itemCount = g.uniqueItems.size;
+        delete g.uniqueItems;
+      });
+    }
+
+    // Calculate overall summary
+    const summary = {
+      totalMovements: movements.length,
+      totalQuantity: movements.reduce((sum: number, m) => sum + m.qty, 0),
+      totalValue: movements.reduce(
+        (sum: number, m) => sum + m.qty * (Number(m.item.defaultCost) || 0),
+        0
+      ),
+      uniqueItems: new Set(movements.map((m) => m.itemId)).size,
+      period: {
+        from: dateFrom,
+        to: dateTo,
+        days: Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24)),
+      },
+    };
+
+    return {
+      grouped: Object.values(grouped),
+      summary,
+    };
+  }),
 
   // Export movements data
   export: organizationProcedure
-    .input(z.object({
-      filters: movementFilterSchema,
-      format: z.enum(['csv', 'excel']).default('csv'),
-      columns: z.array(z.string()).optional(),
-    }))
+    .input(
+      z.object({
+        filters: movementFilterSchema,
+        format: z.enum(['csv', 'excel']).default('csv'),
+        columns: z.array(z.string()).optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get movements with filters
       const where = {
         ...input.filters,
         item: { organizationId: ctx.user.organizationId },
       } as Prisma.StockMovementWhereInput;
-      
+
       const movements = await ctx.prisma.stockMovement.findMany({
         where,
         include: {
@@ -990,7 +1014,7 @@ export const stockMovementsRouter = createTRPCRouter({
       });
 
       // Prepare data for export
-      const exportData = movements.map(movement => ({
+      const exportData = movements.map((movement) => ({
         id: movement.id,
         date: movement.movedAt.toISOString(),
         type: movement.movementType,
@@ -1035,11 +1059,13 @@ export const stockMovementsRouter = createTRPCRouter({
 
   // Reverse a movement (create compensating movement)
   reverse: organizationProcedure
-    .input(z.object({
-      movementId: z.string().cuid(),
-      reason: z.string().min(1),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        movementId: z.string().cuid(),
+        reason: z.string().min(1),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
@@ -1051,7 +1077,7 @@ export const stockMovementsRouter = createTRPCRouter({
 
       // Get original movement
       const originalMovement = await ctx.prisma.stockMovement.findFirst({
-        where: { 
+        where: {
           id: input.movementId,
           item: { organizationId: ctx.user.organizationId },
         },

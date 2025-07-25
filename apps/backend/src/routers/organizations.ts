@@ -8,8 +8,11 @@ import { createTRPCRouter, protectedProcedure } from '../trpc/trpc.js';
 // Input validation schemas
 const createOrganizationSchema = z.object({
   name: z.string().min(1).max(100),
-  slug: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/, 
-    'Slug must contain only lowercase letters, numbers, and hyphens'),
+  slug: z
+    .string()
+    .min(3)
+    .max(50)
+    .regex(/^[a-z0-9-]+$/, 'Slug must contain only lowercase letters, numbers, and hyphens'),
   domain: z.string().url().optional(),
   logoUrl: z.string().url().optional(),
   billingEmail: z.string().email().optional(),
@@ -70,169 +73,162 @@ async function checkOrgPermission(
 
 export const organizationsRouter = createTRPCRouter({
   // Get current user's organizations
-  list: protectedProcedure
-    .query(async ({ ctx }) => {
-      const memberships = await ctx.prisma.organizationMember.findMany({
-        where: {
-          userId: ctx.user.id,
-        },
-        include: {
-          organization: true,
-        },
-        orderBy: {
-          joinedAt: 'desc',
-        },
-      });
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const memberships = await ctx.prisma.organizationMember.findMany({
+      where: {
+        userId: ctx.user.id,
+      },
+      include: {
+        organization: true,
+      },
+      orderBy: {
+        joinedAt: 'desc',
+      },
+    });
 
-      // Get active organization from cookie
-      const { CookieService } = await import('../services/cookie-service.js');
-      const activeOrgId = CookieService.getActiveOrganization(ctx.req);
+    // Get active organization from cookie
+    const { CookieService } = await import('../services/cookie-service.js');
+    const activeOrgId = CookieService.getActiveOrganization(ctx.req);
 
-      return {
-        organizations: memberships.map((m) => ({
-          ...m.organization,
-          role: m.role,
-          joinedAt: m.joinedAt,
-        })),
-        activeOrganizationId: activeOrgId || null,
-      };
-    }),
+    return {
+      organizations: memberships.map((m) => ({
+        ...m.organization,
+        role: m.role,
+        joinedAt: m.joinedAt,
+      })),
+      activeOrganizationId: activeOrgId || null,
+    };
+  }),
 
   // Get organization details
-  get: protectedProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const membership = await ctx.prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.id,
-            userId: ctx.user.id,
-          },
+  get: protectedProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
+    const membership = await ctx.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: input.id,
+          userId: ctx.user.id,
         },
-        include: {
-          organization: {
-            include: {
-              _count: {
-                select: {
-                  members: true,
-                  items: true,
-                  orders: true,
-                  customers: true,
-                  suppliers: true,
-                },
+      },
+      include: {
+        organization: {
+          include: {
+            _count: {
+              select: {
+                members: true,
+                items: true,
+                orders: true,
+                customers: true,
+                suppliers: true,
               },
             },
           },
         },
+      },
+    });
+
+    if (!membership) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Organization not found or you do not have access',
       });
+    }
 
-      if (!membership) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Organization not found or you do not have access',
-        });
-      }
-
-      return {
-        ...membership.organization,
-        role: membership.role,
-        joinedAt: membership.joinedAt,
-      };
-    }),
+    return {
+      ...membership.organization,
+      role: membership.role,
+      joinedAt: membership.joinedAt,
+    };
+  }),
 
   // Create new organization
-  create: protectedProcedure
-    .input(createOrganizationSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check if slug is already taken
-      const existing = await ctx.prisma.organization.findUnique({
-        where: { slug: input.slug },
+  create: protectedProcedure.input(createOrganizationSchema).mutation(async ({ ctx, input }) => {
+    // Check if slug is already taken
+    const existing = await ctx.prisma.organization.findUnique({
+      where: { slug: input.slug },
+    });
+
+    if (existing) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'An organization with this slug already exists',
       });
+    }
 
-      if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'An organization with this slug already exists',
-        });
-      }
-
-      // Create organization with the current user as owner
-      const organization = await ctx.prisma.organization.create({
-        data: {
-          ...input,
-          members: {
-            create: {
-              userId: ctx.user.id,
-              role: 'OWNER',
-            },
+    // Create organization with the current user as owner
+    const organization = await ctx.prisma.organization.create({
+      data: {
+        ...input,
+        members: {
+          create: {
+            userId: ctx.user.id,
+            role: 'OWNER',
           },
         },
-        include: {
-          members: {
-            where: {
-              userId: ctx.user.id,
-            },
+      },
+      include: {
+        members: {
+          where: {
+            userId: ctx.user.id,
           },
         },
-      });
+      },
+    });
 
-      // Log creation
-      await ctx.prisma.auditLog.create({
-        data: {
-          tableName: 'organizations',
-          recordPk: organization.id,
-          action: 'CREATE',
-          userId: ctx.user.id,
-          organizationId: ctx.user.organizationId!,
-          afterData: organization,
-        },
-      });
+    // Log creation
+    await ctx.prisma.auditLog.create({
+      data: {
+        tableName: 'organizations',
+        recordPk: organization.id,
+        action: 'CREATE',
+        userId: ctx.user.id,
+        organizationId: ctx.user.organizationId!,
+        afterData: organization,
+      },
+    });
 
-      return organization;
-    }),
+    return organization;
+  }),
 
   // Update organization
-  update: protectedProcedure
-    .input(updateOrganizationSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+  update: protectedProcedure.input(updateOrganizationSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...updateData } = input;
 
-      // Check permissions
-      await checkOrgPermission(ctx, id, ['ADMIN', 'OWNER']);
+    // Check permissions
+    await checkOrgPermission(ctx, id, ['ADMIN', 'OWNER']);
 
-      // Get current data for audit log
-      const before = await ctx.prisma.organization.findUnique({
-        where: { id },
+    // Get current data for audit log
+    const before = await ctx.prisma.organization.findUnique({
+      where: { id },
+    });
+
+    if (!before) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Organization not found',
       });
+    }
 
-      if (!before) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Organization not found',
-        });
-      }
+    // Update organization
+    const organization = await ctx.prisma.organization.update({
+      where: { id },
+      data: updateData,
+    });
 
-      // Update organization
-      const organization = await ctx.prisma.organization.update({
-        where: { id },
-        data: updateData,
-      });
+    // Log update
+    await ctx.prisma.auditLog.create({
+      data: {
+        tableName: 'organizations',
+        recordPk: id,
+        action: 'UPDATE',
+        userId: ctx.user.id,
+        organizationId: ctx.user.organizationId!,
+        beforeData: before,
+        afterData: organization,
+      },
+    });
 
-      // Log update
-      await ctx.prisma.auditLog.create({
-        data: {
-          tableName: 'organizations',
-          recordPk: id,
-          action: 'UPDATE',
-          userId: ctx.user.id,
-          organizationId: ctx.user.organizationId!,
-          beforeData: before,
-          afterData: organization,
-        },
-      });
-
-      return organization;
-    }),
+    return organization;
+  }),
 
   // Get organization members
   getMembers: protectedProcedure
@@ -273,76 +269,76 @@ export const organizationsRouter = createTRPCRouter({
     }),
 
   // Invite user to organization
-  inviteUser: protectedProcedure
-    .input(inviteUserSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check permissions
-      await checkOrgPermission(ctx, input.organizationId, ['ADMIN', 'OWNER']);
+  inviteUser: protectedProcedure.input(inviteUserSchema).mutation(async ({ ctx, input }) => {
+    // Check permissions
+    await checkOrgPermission(ctx, input.organizationId, ['ADMIN', 'OWNER']);
 
-      // Check if user exists
-      const user = await ctx.prisma.user.findUnique({
-        where: { email: input.email },
+    // Check if user exists
+    const user = await ctx.prisma.user.findUnique({
+      where: { email: input.email },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User with this email does not exist',
       });
+    }
 
-      if (!user) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'User with this email does not exist',
-        });
-      }
-
-      // Check if already member
-      const existing = await ctx.prisma.organizationMember.findUnique({
-        where: {
-          organizationId_userId: {
-            organizationId: input.organizationId,
-            userId: user.id,
-          },
-        },
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: 'CONFLICT',
-          message: 'User is already a member of this organization',
-        });
-      }
-
-      // Create invitation token
-      const invitationToken = crypto.randomUUID();
-
-      // Add member
-      const member = await ctx.prisma.organizationMember.create({
-        data: {
+    // Check if already member
+    const existing = await ctx.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_userId: {
           organizationId: input.organizationId,
           userId: user.id,
-          role: input.role,
-          invitedById: ctx.user.id,
-          invitationToken,
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
+      },
+    });
+
+    if (existing) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'User is already a member of this organization',
+      });
+    }
+
+    // Create invitation token
+    const invitationToken = crypto.randomUUID();
+
+    // Add member
+    const member = await ctx.prisma.organizationMember.create({
+      data: {
+        organizationId: input.organizationId,
+        userId: user.id,
+        role: input.role,
+        invitedById: ctx.user.id,
+        invitationToken,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
           },
         },
-      });
+      },
+    });
 
-      // TODO: Send invitation email
+    // TODO: Send invitation email
 
-      return member;
-    }),
+    return member;
+  }),
 
   // Remove member from organization
   removeMember: protectedProcedure
-    .input(z.object({
-      organizationId: z.string(),
-      userId: z.string(),
-    }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+        userId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       const membership = await checkOrgPermission(ctx, input.organizationId, ['ADMIN', 'OWNER']);
@@ -505,9 +501,11 @@ export const organizationsRouter = createTRPCRouter({
 
   // Switch active organization
   switchOrganization: protectedProcedure
-    .input(z.object({
-      organizationId: z.string(),
-    }))
+    .input(
+      z.object({
+        organizationId: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Verify user has access to this organization
       const membership = await ctx.prisma.organizationMember.findUnique({

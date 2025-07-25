@@ -5,32 +5,40 @@ This section covers everything related to deploying Ventry to production.
 ## 📚 Documentation Structure
 
 ### [Deployment Overview](./deployment-overview.md)
+
 Complete guide to deploying Ventry, including architecture, environments, and deployment strategies.
 
 ### [Vercel Deployment](./vercel-deployment.md)
+
 Step-by-step guide for deploying the Next.js frontend to Vercel, including configuration and optimization.
 
 ### [Backend Deployment](./backend-deployment.md)
+
 Guide for deploying the tRPC + Fastify backend, including containerization and hosting options.
 
 ### [Environment Configuration](./environment-configuration.md)
+
 Comprehensive guide to environment variables, secrets management, and configuration best practices.
 
 ### [Performance Optimization](./performance-optimization.md)
+
 Techniques and strategies for optimizing Ventry's performance in production.
 
 ### [Monitoring Setup](./monitoring-setup.md)
+
 Setting up monitoring, logging, and alerting for production deployments.
 
 ## 🚀 Quick Deployment Guide
 
 ### Prerequisites
+
 - Node.js 20 LTS
 - PostgreSQL 16+ database
 - Vercel account (for frontend)
 - Docker (for backend containerization)
 
 ### Frontend Deployment (Vercel)
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -40,6 +48,7 @@ vercel --prod
 ```
 
 ### Backend Deployment (Docker)
+
 ```bash
 # Build container
 docker build -t ventry-backend apps/backend
@@ -49,6 +58,7 @@ docker run -p 4000:4000 --env-file .env.production ventry-backend
 ```
 
 ### Database Setup
+
 ```bash
 # Run migrations
 DATABASE_URL=your-production-url pnpm db:migrate:deploy
@@ -60,16 +70,19 @@ pnpm db:verify-rls
 ## 🌍 Deployment Environments
 
 ### Development
+
 - **Frontend**: http://localhost:6061
 - **Backend**: http://localhost:6060
 - **Database**: Local PostgreSQL with Docker
 
 ### Staging
+
 - **Frontend**: https://staging.ventry.app
 - **Backend**: https://api-staging.ventry.app
 - **Database**: Staging PostgreSQL instance
 
 ### Production
+
 - **Frontend**: https://ventry.app
 - **Backend**: https://api.ventry.app
 - **Database**: Production PostgreSQL with backups
@@ -77,6 +90,7 @@ pnpm db:verify-rls
 ## 🔧 Deployment Checklist
 
 ### Pre-Deployment
+
 - [ ] All tests passing
 - [ ] Security audit completed
 - [ ] Environment variables configured
@@ -84,6 +98,7 @@ pnpm db:verify-rls
 - [ ] Monitoring configured
 
 ### Deployment
+
 - [ ] Deploy database migrations
 - [ ] Deploy backend services
 - [ ] Deploy frontend application
@@ -91,6 +106,7 @@ pnpm db:verify-rls
 - [ ] Test critical paths
 
 ### Post-Deployment
+
 - [ ] Monitor error rates
 - [ ] Check performance metrics
 - [ ] Verify data integrity
@@ -127,6 +143,7 @@ pnpm db:verify-rls
 ## 🔄 Rollback Procedures
 
 ### Quick Rollback
+
 ```bash
 # Revert to previous version
 vercel rollback
@@ -136,6 +153,7 @@ kubectl rollout undo deployment/ventry-backend
 ```
 
 ### Database Rollback
+
 ```bash
 # Always backup first!
 pg_dump $DATABASE_URL > backup.sql

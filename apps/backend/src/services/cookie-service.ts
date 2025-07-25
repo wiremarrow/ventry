@@ -1,11 +1,11 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { createLogger } from '../lib/logger.js';
-import { 
-  setCookie as baseSetCookie, 
-  clearCookie as baseClearCookie, 
+import {
+  setCookie as baseSetCookie,
+  clearCookie as baseClearCookie,
   getCookie as baseGetCookie,
   getSignedCookie as baseGetSignedCookie,
-  type CookieOptions 
+  type CookieOptions,
 } from '../lib/cookies.js';
 
 const logger = createLogger('cookie-service');
@@ -24,7 +24,12 @@ export class CookieService {
   /**
    * Set a signed cookie
    */
-  static setSignedCookie(res: FastifyReply, name: string, value: string, options?: CookieOptions): void {
+  static setSignedCookie(
+    res: FastifyReply,
+    name: string,
+    value: string,
+    options?: CookieOptions
+  ): void {
     try {
       baseSetCookie(res, name, value, options);
       logger.debug({ cookieName: name }, 'Signed cookie set successfully');
@@ -137,7 +142,9 @@ export class CookieService {
    * Check if a signed cookie string has been provided (for error handling)
    */
   static isCookieSignatureError(error: unknown): boolean {
-    return error instanceof Error && 
-           error.message.toLowerCase().includes('signed cookie string must be provided');
+    return (
+      error instanceof Error &&
+      error.message.toLowerCase().includes('signed cookie string must be provided')
+    );
   }
 }

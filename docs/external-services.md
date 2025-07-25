@@ -36,6 +36,7 @@ We provide automated scripts that configure ~90% of the external services setup:
 ### What's Automated vs Manual
 
 #### ✅ Fully Automated (via scripts)
+
 - Branch protection with all required CI jobs
 - Security features (vulnerability alerts, Dependabot)
 - Environment creation (staging, production)
@@ -43,6 +44,7 @@ We provide automated scripts that configure ~90% of the external services setup:
 - Setup validation and verification
 
 #### ⚠️ Still Manual (external services)
+
 - Creating accounts on external services
 - Getting API tokens from these services
 - Linking Vercel project
@@ -69,7 +71,9 @@ git push -u origin main
 Configure branch protection for the `main` branch with these settings:
 
 #### Required Status Checks
+
 All these checks must pass before merging:
+
 - **Documentation Check** - Enforces README.md/TODO.md updates
 - **Lint and Type Check** - ESLint + TypeScript validation
 - **Unit Tests** - Vitest on Node.js 20 LTS
@@ -84,6 +88,7 @@ All these checks must pass before merging:
 - **Coverage Gate** - Test coverage threshold validation
 
 #### Pull Request Settings
+
 - ✅ Require a pull request before merging
   - ✅ Require approvals: 1
   - ✅ Dismiss stale pull request approvals when new commits are pushed
@@ -99,6 +104,7 @@ All these checks must pass before merging:
 Create two environments in **Settings** → **Environments**:
 
 #### Staging Environment
+
 - No protection rules
 - Secrets:
   - `DATABASE_URL` - Staging database connection string
@@ -107,6 +113,7 @@ Create two environments in **Settings** → **Environments**:
   - `ANTHROPIC_API_KEY` - Staging API key
 
 #### Production Environment
+
 - Required reviewers: 1-2 team members
 - Deployment branches: `main` only
 - Secrets:
@@ -123,20 +130,20 @@ Create two environments in **Settings** → **Environments**:
 
 Navigate to **Settings** → **Secrets and variables** → **Actions** and add:
 
-| Secret Name | Description | Required | How to Get |
-|------------|-------------|----------|------------|
-| `TURBO_TOKEN` | Turborepo remote caching | Yes | [Sign up at turbo.build](https://turbo.build/repo/docs/core-concepts/remote-caching) |
-| `TURBO_TEAM` | Your Turborepo team name | Yes | From your Turbo dashboard |
-| `DATABASE_URL` | PostgreSQL connection string | Yes | From your database provider |
-| `VERCEL_TOKEN` | Vercel deployment token | Yes | [Get from Vercel dashboard](https://vercel.com/account/tokens) |
-| `VERCEL_ORG_ID` | Vercel organization ID | Yes | Run `vercel link` locally |
-| `VERCEL_PROJECT_ID` | Vercel project ID | Yes | Run `vercel link` locally |
-| `SENTRY_DSN` | Error tracking DSN | Yes | From Sentry project settings |
-| `SENTRY_ORG` | Sentry organization slug | Yes | From Sentry settings |
-| `SENTRY_PROJECT` | Sentry project slug | Yes | From Sentry settings |
-| `SENTRY_AUTH_TOKEN` | Sentry API token | Yes | [Create auth token](https://sentry.io/settings/auth-tokens/) |
-| `CODECOV_TOKEN` | Code coverage reporting | No | [Sign up at codecov.io](https://codecov.io/) |
-| `SLACK_WEBHOOK_URL` | Deployment notifications | No | [Create Slack webhook](https://api.slack.com/messaging/webhooks) |
+| Secret Name         | Description                  | Required | How to Get                                                                           |
+| ------------------- | ---------------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `TURBO_TOKEN`       | Turborepo remote caching     | Yes      | [Sign up at turbo.build](https://turbo.build/repo/docs/core-concepts/remote-caching) |
+| `TURBO_TEAM`        | Your Turborepo team name     | Yes      | From your Turbo dashboard                                                            |
+| `DATABASE_URL`      | PostgreSQL connection string | Yes      | From your database provider                                                          |
+| `VERCEL_TOKEN`      | Vercel deployment token      | Yes      | [Get from Vercel dashboard](https://vercel.com/account/tokens)                       |
+| `VERCEL_ORG_ID`     | Vercel organization ID       | Yes      | Run `vercel link` locally                                                            |
+| `VERCEL_PROJECT_ID` | Vercel project ID            | Yes      | Run `vercel link` locally                                                            |
+| `SENTRY_DSN`        | Error tracking DSN           | Yes      | From Sentry project settings                                                         |
+| `SENTRY_ORG`        | Sentry organization slug     | Yes      | From Sentry settings                                                                 |
+| `SENTRY_PROJECT`    | Sentry project slug          | Yes      | From Sentry settings                                                                 |
+| `SENTRY_AUTH_TOKEN` | Sentry API token             | Yes      | [Create auth token](https://sentry.io/settings/auth-tokens/)                         |
+| `CODECOV_TOKEN`     | Code coverage reporting      | No       | [Sign up at codecov.io](https://codecov.io/)                                         |
+| `SLACK_WEBHOOK_URL` | Deployment notifications     | No       | [Create Slack webhook](https://api.slack.com/messaging/webhooks)                     |
 
 ### Turborepo Setup
 
@@ -160,14 +167,17 @@ turbo link
 ### Initial Setup
 
 1. **Install Vercel CLI**
+
    ```bash
    npm install -g vercel
    ```
 
 2. **Link your project**
+
    ```bash
    vercel link
    ```
+
    This creates `.vercel` directory with project configuration and generates the VERCEL_ORG_ID and VERCEL_PROJECT_ID.
 
 3. **Get Vercel Token**
@@ -248,6 +258,7 @@ vercel env pull
 Choose one of these managed PostgreSQL providers:
 
 #### Option 1: Neon (Recommended for Serverless)
+
 1. Go to [neon.tech](https://neon.tech)
 2. Create account and new project
 3. Copy connection string from dashboard
@@ -258,6 +269,7 @@ Choose one of these managed PostgreSQL providers:
    - Free tier available
 
 #### Option 2: Supabase
+
 1. Go to [supabase.com](https://supabase.com)
 2. Create new project
 3. Go to Settings → Database
@@ -269,6 +281,7 @@ Choose one of these managed PostgreSQL providers:
    - Free tier available
 
 #### Option 3: Railway
+
 1. Go to [railway.app](https://railway.app)
 2. New Project → Provision PostgreSQL
 3. Copy connection string from dashboard
@@ -279,6 +292,7 @@ Choose one of these managed PostgreSQL providers:
    - Usage-based pricing
 
 #### Option 4: AWS RDS (Enterprise)
+
 1. Create RDS PostgreSQL instance
 2. Configure security groups
 3. Enable SSL/TLS
@@ -338,6 +352,7 @@ pnpm db:reset
 ### Configuration
 
 Add these values to GitHub secrets and Vercel environment variables:
+
 - `SENTRY_DSN` - Your project DSN
 - `SENTRY_ORG` - Organization slug
 - `SENTRY_PROJECT` - Project slug
@@ -346,6 +361,7 @@ Add these values to GitHub secrets and Vercel environment variables:
 ### Alert Configuration
 
 In Sentry Dashboard → Alerts → Create Alert Rule:
+
 - **Error Alert**: 10 errors in 5 minutes
 - **Performance Alert**: P95 > 3 seconds
 - **Crash Rate Alert**: > 1% crash rate
@@ -373,6 +389,7 @@ In Sentry Dashboard → Alerts → Create Alert Rule:
 ### Docker Hub (If not using GitHub Container Registry)
 
 Add these secrets:
+
 - `DOCKER_USERNAME`
 - `DOCKER_PASSWORD`
 
@@ -475,6 +492,7 @@ Enable in **Settings** → **Security & analysis**:
 ### Common Issues
 
 #### Vercel Build Failures
+
 ```bash
 # Check build logs
 vercel logs [deployment-url]
@@ -487,24 +505,28 @@ vercel env pull
 ```
 
 #### Database Connection Issues
+
 - Verify DATABASE_URL format
 - Check SSL requirements (`?sslmode=require`)
 - Test connection: `pnpm db:push`
 - Verify IP allowlist in database provider
 
 #### Sentry Not Receiving Events
+
 - Verify DSN is correct
 - Check auth token permissions
 - Look for errors in browser console
 - Ensure SENTRY_DSN is in environment variables
 
 #### CI/CD Pipeline Failures
+
 - Check GitHub Actions logs
 - Verify all secrets are set
 - Run tests locally: `pnpm test`
 - Check branch protection settings
 
 #### "Resource not accessible by integration"
+
 - Check repository permissions
 - Ensure secrets are set at correct level
 - Verify GitHub App permissions
@@ -545,18 +567,21 @@ pnpm test:e2e
 ## Maintenance Checklist
 
 ### Weekly
+
 - [ ] Review Dependabot PRs
 - [ ] Check Sentry for new errors
 - [ ] Monitor database performance
 - [ ] Review CI/CD pipeline status
 
 ### Monthly
+
 - [ ] Update workflow versions
 - [ ] Review security alerts
 - [ ] Check service usage/costs
 - [ ] Update dependencies
 
 ### Quarterly
+
 - [ ] Rotate secrets and API keys
 - [ ] Review and update documentation
 - [ ] Audit third-party service access
@@ -569,22 +594,26 @@ pnpm test:e2e
 ### Service Tiers
 
 #### Vercel
+
 - **Free**: 100GB bandwidth, suitable for development
 - **Pro**: $20/month per member, production features
 - **Enterprise**: Custom pricing
 
 #### Database
+
 - **Neon Free**: 3GB storage, 1 compute hour/day
 - **Supabase Free**: 500MB storage, 2GB bandwidth
 - **Railway**: Usage-based pricing
 - **AWS RDS**: Pay per instance hour
 
 #### Sentry
+
 - **Free**: 5k errors/month
 - **Team**: $26/month, 50k errors
 - **Business**: Custom pricing
 
 ### Cost Monitoring
+
 - Set up billing alerts in each service
 - Use free tiers for development/staging
 - Monitor usage dashboards regularly

@@ -20,7 +20,11 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
               // Don't retry on 4xx errors
               if (typeof error === 'object' && error !== null && 'data' in error) {
                 const errorData = error.data as { httpStatus?: number };
-                if (errorData?.httpStatus && errorData.httpStatus >= 400 && errorData.httpStatus < 500) {
+                if (
+                  errorData?.httpStatus &&
+                  errorData.httpStatus >= 400 &&
+                  errorData.httpStatus < 500
+                ) {
                   return false;
                 }
               }
@@ -38,9 +42,7 @@ export function TRPCProvider({ children }: TRPCProviderProps) {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         {children}
-        {process.env.NODE_ENV === 'development' && (
-          <ReactQueryDevtools initialIsOpen={false} />
-        )}
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </QueryClientProvider>
     </trpc.Provider>
   );

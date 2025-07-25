@@ -7,7 +7,7 @@ test.describe('Dashboard', () => {
     await page.fill('input[type="email"]', 'admin@ventry.com');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
-    
+
     // Wait for redirect to dashboard
     await expect(page).toHaveURL(/.*dashboard/);
   });
@@ -15,20 +15,20 @@ test.describe('Dashboard', () => {
   test('should display dashboard with stats cards', async ({ page }) => {
     // Wait for dashboard to fully load
     await page.waitForLoadState('networkidle');
-    
+
     // Check dashboard title - use exact text match
     await expect(page.locator('h1').filter({ hasText: 'Dashboard' })).toBeVisible();
     await expect(page.locator('text=Overview of your inventory management system')).toBeVisible();
-    
+
     // Wait for stats cards to load
     await page.waitForSelector('text=Total Products', { timeout: 10000 });
-    
-    // Check for stats cards
-    await expect(page.locator('text=Total Products')).toBeVisible();
-    await expect(page.locator('text=Total Locations')).toBeVisible();
-    await expect(page.locator('text=Inventory Items')).toBeVisible();
-    await expect(page.locator('text=Total Quantity')).toBeVisible();
-    await expect(page.locator('text=Low Stock Items')).toBeVisible();
+
+    // Check for stats cards - use more specific selectors to avoid conflicts
+    await expect(page.getByRole('heading', { name: 'Total Products' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Total Locations' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Total Inventory' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Inventory Value' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Low Stock Items' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Recent Movements' })).toBeVisible();
   });
 
@@ -63,7 +63,7 @@ test.describe('Dashboard', () => {
     await expect(page.locator('text=API Status')).toBeVisible();
     await expect(page.locator('text=Database')).toBeVisible();
     await expect(page.locator('text=Last Sync')).toBeVisible();
-    
+
     // Check for online status indicators
     await expect(page.locator('text=Online')).toBeVisible();
     await expect(page.locator('text=Connected')).toBeVisible();
@@ -71,30 +71,33 @@ test.describe('Dashboard', () => {
 
   test('should handle logout', async ({ page }) => {
     await page.click('text=Sign Out');
-    
+
     // Should redirect to login page
     await expect(page).toHaveURL(/.*login/);
     await expect(page.locator('h2')).toContainText('Welcome to Ventry');
   });
 
-  test.skip('should navigate to inventory page from quick actions', async ({ page }) => {
-    // SKIP: Inventory page doesn't exist yet
+  test('should navigate to inventory page from quick actions', async ({ page }) => {
     await page.click('text=View Inventory');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*inventory/);
+    // Verify we're on the inventory page
+    await expect(page.locator('h1').filter({ hasText: 'Inventory' })).toBeVisible();
   });
 
-  test.skip('should navigate to products page from quick actions', async ({ page }) => {
-    // SKIP: Products page doesn't exist yet
+  test('should navigate to products page from quick actions', async ({ page }) => {
     await page.click('text=Manage Products');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*products/);
+    // Verify we're on the products page
+    await expect(page.locator('h1').filter({ hasText: 'Products' })).toBeVisible();
   });
 
-  test.skip('should navigate to movements page from quick actions', async ({ page }) => {
-    // SKIP: Movements page doesn't exist yet
+  test('should navigate to movements page from quick actions', async ({ page }) => {
     await page.getByRole('link', { name: 'Recent Movements' }).click();
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(/.*movements/);
+    // Verify we're on the movements page
+    await expect(page.locator('h1').filter({ hasText: 'Stock Movements' })).toBeVisible();
   });
 });

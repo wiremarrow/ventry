@@ -55,7 +55,7 @@ module.exports = {
           'parent',
           'sibling',
           'index',
-          'type'
+          'type',
         ],
         pathGroups: [
           {

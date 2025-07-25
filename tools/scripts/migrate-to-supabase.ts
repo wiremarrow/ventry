@@ -2,7 +2,7 @@
 
 /**
  * Supabase Migration Script
- * 
+ *
  * This script helps migrate data from the current schema to the new Supabase schema.
  * It handles the mapping between old and new table structures.
  */
@@ -15,9 +15,9 @@ const newPrisma = new NewPrismaClient();
 
 async function migrateUsers() {
   console.log('🔄 Migrating users...');
-  
+
   const users = await oldPrisma.user.findMany();
-  
+
   for (const user of users) {
     await newPrisma.user.create({
       data: {
@@ -35,15 +35,15 @@ async function migrateUsers() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${users.length} users`);
 }
 
 async function migrateCategories() {
   console.log('🔄 Migrating categories...');
-  
+
   const categories = await oldPrisma.category.findMany();
-  
+
   for (const category of categories) {
     await newPrisma.itemCategory.create({
       data: {
@@ -55,17 +55,17 @@ async function migrateCategories() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${categories.length} categories`);
 }
 
 async function migrateProducts() {
   console.log('🔄 Migrating products to items...');
-  
+
   const products = await oldPrisma.product.findMany({
     include: { category: true },
   });
-  
+
   // Create default unit of measure if it doesn't exist
   const defaultUOM = await newPrisma.unitOfMeasure.upsert({
     where: { code: 'EA' },
@@ -77,7 +77,7 @@ async function migrateProducts() {
     },
     update: {},
   });
-  
+
   for (const product of products) {
     await newPrisma.item.create({
       data: {
@@ -95,15 +95,15 @@ async function migrateProducts() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${products.length} products to items`);
 }
 
 async function migrateLocations() {
   console.log('🔄 Migrating locations...');
-  
+
   const locations = await oldPrisma.location.findMany();
-  
+
   // Create default warehouse if it doesn't exist
   const defaultWarehouse = await newPrisma.warehouse.upsert({
     where: { code: 'MAIN' },
@@ -118,7 +118,7 @@ async function migrateLocations() {
     },
     update: {},
   });
-  
+
   for (const location of locations) {
     await newPrisma.location.create({
       data: {
@@ -131,15 +131,15 @@ async function migrateLocations() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${locations.length} locations`);
 }
 
 async function migrateInventory() {
   console.log('🔄 Migrating inventory items...');
-  
+
   const inventoryItems = await oldPrisma.inventoryItem.findMany();
-  
+
   for (const item of inventoryItems) {
     await newPrisma.inventory.create({
       data: {
@@ -152,15 +152,15 @@ async function migrateInventory() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${inventoryItems.length} inventory items`);
 }
 
 async function migrateStockMovements() {
   console.log('🔄 Migrating inventory movements...');
-  
+
   const movements = await oldPrisma.inventoryMovement.findMany();
-  
+
   for (const movement of movements) {
     // Map old movement types to new ones
     const movementTypeMap: Record<string, any> = {
@@ -170,7 +170,7 @@ async function migrateStockMovements() {
       TRANSFER: 'TRANSFER',
       RETURN: 'RETURN',
     };
-    
+
     await newPrisma.stockMovement.create({
       data: {
         itemId: movement.productId,
@@ -183,15 +183,15 @@ async function migrateStockMovements() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${movements.length} stock movements`);
 }
 
 async function migrateAuditLogs() {
   console.log('🔄 Migrating audit logs...');
-  
+
   const auditLogs = await oldPrisma.auditLog.findMany();
-  
+
   for (const log of auditLogs) {
     await newPrisma.auditLog.create({
       data: {
@@ -205,14 +205,14 @@ async function migrateAuditLogs() {
       },
     });
   }
-  
+
   console.log(`✅ Migrated ${auditLogs.length} audit logs`);
 }
 
 async function main() {
   try {
     console.log('🚀 Starting Supabase migration...\n');
-    
+
     // Migrate in dependency order
     await migrateUsers();
     await migrateCategories();
@@ -221,7 +221,7 @@ async function main() {
     await migrateInventory();
     await migrateStockMovements();
     await migrateAuditLogs();
-    
+
     console.log('\n✅ Migration completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed:', error);

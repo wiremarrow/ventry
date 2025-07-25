@@ -5,19 +5,20 @@ This guide covers comprehensive backup strategies, recovery procedures, and disa
 ## Backup Strategy Overview
 
 ### 3-2-1 Rule
+
 - **3** copies of important data
 - **2** different storage media types
 - **1** offsite backup copy
 
 ### Backup Types
 
-| Type | Frequency | Retention | Recovery Time |
-|------|-----------|-----------|---------------|
-| Database Full | Daily | 30 days | 1-2 hours |
-| Database Incremental | Hourly | 7 days | 30 minutes |
-| Database Transaction Log | 15 minutes | 24 hours | 15 minutes |
-| Application State | Daily | 7 days | 30 minutes |
-| File Storage | Daily | 30 days | 1 hour |
+| Type                     | Frequency  | Retention | Recovery Time |
+| ------------------------ | ---------- | --------- | ------------- |
+| Database Full            | Daily      | 30 days   | 1-2 hours     |
+| Database Incremental     | Hourly     | 7 days    | 30 minutes    |
+| Database Transaction Log | 15 minutes | 24 hours  | 15 minutes    |
+| Application State        | Daily      | 7 days    | 30 minutes    |
+| File Storage             | Daily      | 30 days   | 1 hour        |
 
 ## Database Backups
 
@@ -56,11 +57,11 @@ pg_basebackup \
 # Verify backup
 if [ $? -eq 0 ]; then
   echo "Backup completed successfully"
-  
+
   # Upload to S3
   aws s3 sync ${BACKUP_DIR}/${DATE} s3://${S3_BUCKET}/postgres/${DATE}/ \
     --storage-class STANDARD_IA
-  
+
   # Clean up old local backups
   find ${BACKUP_DIR} -type d -mtime +${RETENTION_DAYS} -exec rm -rf {} \;
 else
@@ -136,15 +137,15 @@ rm -rf ${VERIFY_DIR}
 ```terraform
 resource "aws_db_instance" "postgres" {
   # ... other configuration ...
-  
+
   # Backup configuration
   backup_retention_period = 30
   backup_window          = "03:00-04:00"
-  
+
   # Enable automated backups
   skip_final_snapshot       = false
   final_snapshot_identifier = "ventry-final-snapshot-${timestamp()}"
-  
+
   # Enable point-in-time recovery
   enabled_cloudwatch_logs_exports = ["postgresql"]
 }
@@ -157,27 +158,27 @@ resource "aws_backup_vault" "database" {
 
 resource "aws_backup_plan" "database" {
   name = "ventry-database-backup-plan"
-  
+
   rule {
     rule_name         = "daily_backups"
     target_vault_name = aws_backup_vault.database.name
     schedule          = "cron(0 3 * * ? *)"
-    
+
     lifecycle {
       delete_after = 30
     }
-    
+
     recovery_point_tags = {
       Environment = "production"
       Type        = "automated"
     }
   }
-  
+
   rule {
     rule_name         = "weekly_backups"
     target_vault_name = aws_backup_vault.database.name
     schedule          = "cron(0 4 ? * SUN *)"
-    
+
     lifecycle {
       delete_after       = 90
       cold_storage_after = 30
@@ -229,28 +230,33 @@ import * as tar from 'tar';
 
 export class BackupService {
   private s3 = new S3Client({ region: process.env.AWS_REGION });
-  
+
   async backupUploads() {
     const date = new Date().toISOString().split('T')[0];
     const backupFile = `/tmp/uploads-backup-${date}.tar.gz`;
-    
+
     // Create tar archive
-    await tar.create({
-      gzip: true,
-      file: backupFile,
-      cwd: '/uploads',
-    }, ['.']);
-    
+    await tar.create(
+      {
+        gzip: true,
+        file: backupFile,
+        cwd: '/uploads',
+      },
+      ['.']
+    );
+
     // Upload to S3
     const fileStream = createReadStream(backupFile);
-    await this.s3.send(new PutObjectCommand({
-      Bucket: 'ventry-backups',
-      Key: `uploads/${date}/uploads.tar.gz`,
-      Body: fileStream,
-      StorageClass: 'STANDARD_IA',
-      ServerSideEncryption: 'AES256',
-    }));
-    
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: 'ventry-backups',
+        Key: `uploads/${date}/uploads.tar.gz`,
+        Body: fileStream,
+        StorageClass: 'STANDARD_IA',
+        ServerSideEncryption: 'AES256',
+      })
+    );
+
     // Log success
     logger.info('Upload backup completed', { date, size: fileStream.bytesRead });
   }
@@ -323,28 +329,28 @@ spec:
   template:
     spec:
       containers:
-      - name: restore
-        image: ventry/restore-tools:latest
-        command:
-        - /bin/bash
-        - -c
-        - |
-          # Download configuration backup
-          aws s3 cp s3://ventry-backups/config/latest.tar.gz.gpg /tmp/
-          
-          # Decrypt
-          gpg --decrypt /tmp/latest.tar.gz.gpg > /tmp/config.tar.gz
-          
-          # Extract
-          tar -xzf /tmp/config.tar.gz -C /tmp/config
-          
-          # Restore Kubernetes resources
-          kubectl apply -f /tmp/config/k8s-secrets.yaml
-          kubectl apply -f /tmp/config/k8s-configmaps.yaml
-          
-          # Restart applications
-          kubectl rollout restart deployment/ventry-backend
-          kubectl rollout restart deployment/ventry-frontend
+        - name: restore
+          image: ventry/restore-tools:latest
+          command:
+            - /bin/bash
+            - -c
+            - |
+              # Download configuration backup
+              aws s3 cp s3://ventry-backups/config/latest.tar.gz.gpg /tmp/
+
+              # Decrypt
+              gpg --decrypt /tmp/latest.tar.gz.gpg > /tmp/config.tar.gz
+
+              # Extract
+              tar -xzf /tmp/config.tar.gz -C /tmp/config
+
+              # Restore Kubernetes resources
+              kubectl apply -f /tmp/config/k8s-secrets.yaml
+              kubectl apply -f /tmp/config/k8s-configmaps.yaml
+
+              # Restart applications
+              kubectl rollout restart deployment/ventry-backend
+              kubectl rollout restart deployment/ventry-frontend
       restartPolicy: Never
 ```
 
@@ -365,11 +371,11 @@ provider "aws" {
 resource "aws_s3_bucket_replication_configuration" "backups" {
   role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.backups.id
-  
+
   rule {
     id     = "replicate-to-dr"
     status = "Enabled"
-    
+
     destination {
       bucket        = aws_s3_bucket.backups_dr.arn
       storage_class = "STANDARD_IA"
@@ -380,9 +386,9 @@ resource "aws_s3_bucket_replication_configuration" "backups" {
 # DR Database (RDS Read Replica)
 resource "aws_db_instance" "postgres_dr" {
   provider = aws.dr
-  
+
   replicate_source_db = aws_db_instance.postgres.id
-  
+
   # Promote to master in DR scenario
   skip_final_snapshot = true
 }
@@ -390,27 +396,29 @@ resource "aws_db_instance" "postgres_dr" {
 
 ### 2. DR Runbook
 
-```markdown
+````markdown
 # Disaster Recovery Runbook
 
 ## Prerequisites
+
 - Access to AWS Console
 - PagerDuty admin access
 - Backup encryption keys
 - Communication channels ready
 
 ## Detection Phase (0-15 minutes)
+
 1. Confirm primary region failure
    - [ ] Check monitoring dashboards
    - [ ] Verify network connectivity
    - [ ] Test application endpoints
-   
 2. Declare disaster
    - [ ] Get approval from CTO/VP
    - [ ] Activate DR team
    - [ ] Start incident communication
 
 ## Failover Phase (15-45 minutes)
+
 1. Database failover
    ```bash
    # Promote read replica
@@ -418,8 +426,10 @@ resource "aws_db_instance" "postgres_dr" {
      --db-instance-identifier ventry-dr \
      --region us-west-2
    ```
+````
 
 2. Update DNS
+
    ```bash
    # Update Route53 records
    aws route53 change-resource-record-sets \
@@ -428,17 +438,19 @@ resource "aws_db_instance" "postgres_dr" {
    ```
 
 3. Deploy applications to DR region
+
    ```bash
    # Update kubeconfig
    aws eks update-kubeconfig \
      --name ventry-dr-cluster \
      --region us-west-2
-   
+
    # Deploy applications
    kubectl apply -f k8s/dr-deployment.yaml
    ```
 
 ## Validation Phase (45-60 minutes)
+
 1. Verify services
    - [ ] Database connectivity
    - [ ] API endpoints responding
@@ -451,11 +463,13 @@ resource "aws_db_instance" "postgres_dr" {
    - [ ] Monitor user reports
 
 ## Communication
+
 - [ ] Update status page
 - [ ] Send customer notification
 - [ ] Internal team updates
 - [ ] Prepare RCA document
-```
+
+````
 
 ### 3. DR Testing Schedule
 
@@ -470,7 +484,7 @@ tests:
       - Verify data integrity
       - Test application connectivity
       - Document results
-      
+
   - name: "Partial Failover Test"
     frequency: "Quarterly"
     duration: "4 hours"
@@ -479,7 +493,7 @@ tests:
       - Monitor performance
       - Test critical paths
       - Failback to primary
-      
+
   - name: "Full DR Simulation"
     frequency: "Annually"
     duration: "8 hours"
@@ -489,7 +503,7 @@ tests:
       - Run all validations
       - Practice communications
       - Full failback procedure
-```
+````
 
 ## Backup Monitoring
 
@@ -505,22 +519,20 @@ export class BackupMonitor {
       this.checkBackupIntegrity(),
       this.checkReplicationLag(),
     ]);
-    
-    const failures = checks.filter(c => !c.success);
+
+    const failures = checks.filter((c) => !c.success);
     if (failures.length > 0) {
       await this.alertOncall(failures);
     }
-    
+
     // Update metrics
-    metrics.gauge('backup.health_score', 
-      (checks.length - failures.length) / checks.length * 100
-    );
+    metrics.gauge('backup.health_score', ((checks.length - failures.length) / checks.length) * 100);
   }
-  
+
   async checkLatestBackup() {
     const latestBackup = await this.getLatestBackupTime();
     const hoursSinceBackup = (Date.now() - latestBackup) / (1000 * 60 * 60);
-    
+
     return {
       success: hoursSinceBackup < 25, // Daily backups
       message: `Last backup was ${hoursSinceBackup.toFixed(1)} hours ago`,
@@ -534,7 +546,7 @@ export class BackupMonitor {
 ```sql
 -- Backup monitoring queries
 -- Last successful backup
-SELECT 
+SELECT
   backup_type,
   MAX(completed_at) as last_backup,
   EXTRACT(EPOCH FROM (NOW() - MAX(completed_at)))/3600 as hours_ago
@@ -543,7 +555,7 @@ WHERE status = 'success'
 GROUP BY backup_type;
 
 -- Backup sizes trend
-SELECT 
+SELECT
   DATE_TRUNC('day', completed_at) as backup_date,
   backup_type,
   AVG(size_bytes) as avg_size,
@@ -554,7 +566,7 @@ GROUP BY 1, 2
 ORDER BY 1 DESC;
 
 -- Failed backups
-SELECT 
+SELECT
   backup_type,
   started_at,
   error_message,
@@ -567,12 +579,12 @@ ORDER BY started_at DESC;
 
 ## Recovery Time Objectives
 
-| Scenario | RTO | RPO | Tested |
-|----------|-----|-----|--------|
-| Database corruption | 30 min | 15 min | Monthly |
-| Application failure | 15 min | 0 min | Weekly |
-| Region failure | 60 min | 15 min | Quarterly |
-| Complete disaster | 4 hours | 1 hour | Annually |
+| Scenario            | RTO     | RPO    | Tested    |
+| ------------------- | ------- | ------ | --------- |
+| Database corruption | 30 min  | 15 min | Monthly   |
+| Application failure | 15 min  | 0 min  | Weekly    |
+| Region failure      | 60 min  | 15 min | Quarterly |
+| Complete disaster   | 4 hours | 1 hour | Annually  |
 
 ## Best Practices
 
@@ -588,24 +600,28 @@ ORDER BY started_at DESC;
 ## Backup Checklist
 
 ### Daily
+
 - [ ] Verify all backups completed
 - [ ] Check backup sizes are normal
 - [ ] Review any backup failures
 - [ ] Confirm replication is current
 
 ### Weekly
+
 - [ ] Test restore procedure
 - [ ] Verify backup retention
 - [ ] Check storage usage
 - [ ] Review backup performance
 
 ### Monthly
+
 - [ ] Full restore test
 - [ ] Update documentation
 - [ ] Review RTO/RPO metrics
 - [ ] Audit backup access logs
 
 ### Quarterly
+
 - [ ] DR drill
 - [ ] Backup infrastructure review
 - [ ] Cost optimization

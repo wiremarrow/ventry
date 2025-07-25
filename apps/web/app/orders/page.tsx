@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Input, Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@ventry/ui';
+import {
+  Card,
+  Input,
+  Button,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@ventry/ui';
 import { Plus, Search } from 'lucide-react';
 import { trpc } from '@/lib/trpc';
 import { formatCurrency } from '@/lib/utils';
@@ -13,7 +22,9 @@ import { CreateOrderDialog } from '@/components/orders/create-order-dialog';
 export default function OrdersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<'PENDING' | 'CONFIRMED' | 'PICKING' | 'PACKED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    'PENDING' | 'CONFIRMED' | 'PICKING' | 'PACKED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'all'
+  >('all');
 
   // Fetch orders for stats
   const { data: ordersData } = trpc.orders.list.useQuery({
@@ -23,9 +34,12 @@ export default function OrdersPage() {
   // Calculate stats
   const stats = {
     total: ordersData?.orders?.length || 0,
-    pending: ordersData?.orders?.filter(o => o.status === 'PENDING').length || 0,
-    processing: ordersData?.orders?.filter(o => ['CONFIRMED', 'PICKING', 'PACKED'].includes(o.status)).length || 0,
-    totalRevenue: ordersData?.orders?.reduce((sum, o) => sum + parseFloat(o.total.toString()), 0) || 0,
+    pending: ordersData?.orders?.filter((o) => o.status === 'PENDING').length || 0,
+    processing:
+      ordersData?.orders?.filter((o) => ['CONFIRMED', 'PICKING', 'PACKED'].includes(o.status))
+        .length || 0,
+    totalRevenue:
+      ordersData?.orders?.reduce((sum, o) => sum + parseFloat(o.total.toString()), 0) || 0,
   };
 
   return (
@@ -36,9 +50,7 @@ export default function OrdersPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Sales Orders</h1>
-              <p className="text-muted-foreground">
-                Manage customer orders and track fulfillment
-              </p>
+              <p className="text-muted-foreground">Manage customer orders and track fulfillment</p>
             </div>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -86,7 +98,22 @@ export default function OrdersPage() {
                   className="pl-10"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'PENDING' | 'CONFIRMED' | 'PICKING' | 'PACKED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'all')}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) =>
+                  setStatusFilter(
+                    value as
+                      | 'PENDING'
+                      | 'CONFIRMED'
+                      | 'PICKING'
+                      | 'PACKED'
+                      | 'SHIPPED'
+                      | 'DELIVERED'
+                      | 'CANCELLED'
+                      | 'all'
+                  )
+                }
+              >
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
@@ -105,7 +132,10 @@ export default function OrdersPage() {
           </Card>
 
           {/* Order List */}
-          <OrderList searchTerm={searchTerm} status={statusFilter === 'all' ? undefined : statusFilter} />
+          <OrderList
+            searchTerm={searchTerm}
+            status={statusFilter === 'all' ? undefined : statusFilter}
+          />
 
           {/* Create Order Dialog */}
           <CreateOrderDialog open={createOpen} onOpenChange={setCreateOpen} />

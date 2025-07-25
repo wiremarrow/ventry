@@ -11,7 +11,7 @@ The Ventry dashboard provides real-time inventory insights through live data int
 The dashboard displays real-time data from the following sources:
 
 - **Inventory Analytics**: Live inventory metrics including total products, inventory value, and low stock alerts
-- **Warehouse Data**: Real-time location counts and warehouse statistics  
+- **Warehouse Data**: Real-time location counts and warehouse statistics
 - **System Health**: API status, database connectivity, and system performance metrics
 - **Operations Data**: Recent inventory movements, receipts, shipments, and transfers
 
@@ -69,6 +69,7 @@ The dashboard uses three main tRPC endpoints:
 **Purpose**: Main inventory and operations metrics
 
 **Input Schema**:
+
 ```typescript
 {
   period: 'last30days' | 'last7days' | 'last90days' | 'custom'
@@ -80,12 +81,13 @@ The dashboard uses three main tRPC endpoints:
 ```
 
 **Output Data**:
+
 - `entities.activeItems`: Total number of active products
 - `inventory.totalOnHand`: Total inventory quantity
 - `inventory.totalValue`: Total inventory value in currency
 - `inventory.lowStockItems`: Count of items below reorder point
 - `operations.receipts`: Recent receipt operations
-- `operations.shipments`: Recent shipment operations  
+- `operations.shipments`: Recent shipment operations
 - `operations.transfers`: Recent transfer operations
 
 #### 2. Warehouses List (`trpc.warehouses.list`)
@@ -93,15 +95,17 @@ The dashboard uses three main tRPC endpoints:
 **Purpose**: Warehouse and location counts
 
 **Input Schema**:
+
 ```typescript
 {
-  search: string
-  limit: number
-  includeLocationCount: boolean
+  search: string;
+  limit: number;
+  includeLocationCount: boolean;
 }
 ```
 
 **Output Data**:
+
 - `warehouses[]`: Array of warehouse objects
 - `warehouses[].locationCount`: Number of locations per warehouse
 
@@ -110,6 +114,7 @@ The dashboard uses three main tRPC endpoints:
 **Purpose**: System status monitoring
 
 **Output Data**:
+
 - `services.api`: API service status ('healthy' | 'unhealthy')
 - `services.database.status`: Database connection ('connected' | 'disconnected')
 - `services.database.error`: Database error message if any
@@ -147,7 +152,7 @@ export default function DashboardPage() {
             <RefreshCw className={isLoading ? 'animate-spin' : ''} />
             Refresh
           </Button>
-          <Button 
+          <Button
             variant={autoRefresh ? 'default' : 'outline'}
             onClick={() => setAutoRefresh(!autoRefresh)}
           >
@@ -155,7 +160,7 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
-      
+
       {/* Dashboard content */}
     </div>
   );
@@ -214,7 +219,7 @@ export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps) {
       description: 'Active products in catalog',
     },
     {
-      title: 'Total Locations', 
+      title: 'Total Locations',
       value: totalLocations,
       icon: Building,
       description: 'Storage locations',
@@ -261,7 +266,7 @@ Default refresh intervals can be configured:
 // Default: 30 seconds
 const DEFAULT_REFRESH_INTERVAL = 30000;
 
-// Fast refresh for critical data: 10 seconds  
+// Fast refresh for critical data: 10 seconds
 const FAST_REFRESH_INTERVAL = 10000;
 
 // Slow refresh for static data: 2 minutes
@@ -274,12 +279,12 @@ React Query options for dashboard queries:
 
 ```typescript
 const queryOptions = {
-  refetchInterval: refreshInterval,           // Refresh interval in ms
-  refetchIntervalInBackground: true,          // Continue when tab inactive
-  staleTime: 5000,                           // Consider data stale after 5 seconds
-  cacheTime: 60000,                          // Cache for 1 minute
-  retry: 3,                                  // Retry failed queries 3 times
-  retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+  refetchInterval: refreshInterval, // Refresh interval in ms
+  refetchIntervalInBackground: true, // Continue when tab inactive
+  staleTime: 5000, // Consider data stale after 5 seconds
+  cacheTime: 60000, // Cache for 1 minute
+  retry: 3, // Retry failed queries 3 times
+  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
 };
 ```
 
@@ -333,7 +338,7 @@ describe('StatsCards', () => {
     });
 
     render(<StatsCards />);
-    
+
     expect(screen.getByText('150')).toBeInTheDocument();
     expect(screen.getByText('Total Products')).toBeInTheDocument();
   });
@@ -373,14 +378,14 @@ import { test, expect } from '@playwright/test';
 
 test('dashboard displays live data', async ({ page }) => {
   await page.goto('/dashboard');
-  
+
   // Wait for dashboard to load
   await expect(page.locator('h1')).toContainText('Dashboard');
-  
+
   // Check that data cards are displayed
   await expect(page.locator('[data-testid="total-products"]')).toBeVisible();
   await expect(page.locator('[data-testid="inventory-value"]')).toBeVisible();
-  
+
   // Test auto-refresh toggle
   await page.click('[data-testid="auto-refresh-toggle"]');
   await expect(page.locator('text=Auto-refresh OFF')).toBeVisible();
@@ -396,11 +401,13 @@ test('dashboard displays live data', async ({ page }) => {
 **Symptoms**: Dashboard cards show 0 values or "No data available"
 
 **Causes**:
+
 - Database not seeded with demo data
 - User not logged in or no organization access
 - Analytics router returning empty results
 
 **Solutions**:
+
 ```bash
 # Seed database with demo data
 pnpm --filter @ventry/database db:seed:comprehensive
@@ -414,11 +421,13 @@ pnpm --filter @ventry/database db:seed:comprehensive
 **Symptoms**: Dashboard doesn't update automatically
 
 **Causes**:
+
 - Auto-refresh disabled
 - Browser tab suspended (mobile Safari)
 - Network connectivity issues
 
 **Solutions**:
+
 - Check auto-refresh toggle is ON
 - Use manual refresh button to test connectivity
 - Check browser dev tools Network tab for failed requests
@@ -428,11 +437,13 @@ pnpm --filter @ventry/database db:seed:comprehensive
 **Symptoms**: Dashboard takes long time to load or update
 
 **Causes**:
+
 - Large dataset queries
 - Missing database indexes
 - Network latency
 
 **Solutions**:
+
 - Optimize analytics queries with proper indexes
 - Consider pagination for large datasets
 - Implement query result caching
@@ -451,8 +462,9 @@ const { data, isLoading, error } = trpc.analytics.dashboard.useQuery(input, {
 ```
 
 Check network requests in browser dev tools:
+
 1. Open Developer Tools (F12)
-2. Go to Network tab  
+2. Go to Network tab
 3. Filter by "trpc" to see dashboard API calls
 4. Check for failed requests or slow response times
 

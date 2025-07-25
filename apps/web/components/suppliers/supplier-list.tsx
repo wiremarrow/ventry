@@ -2,14 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@ventry/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
 import {
@@ -120,110 +113,121 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
                   <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No suppliers found</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    {searchTerm ? 'Try adjusting your search' : 'Start by adding your first supplier'}
+                    {searchTerm
+                      ? 'Try adjusting your search'
+                      : 'Start by adding your first supplier'}
                   </p>
                 </TableCell>
               </TableRow>
             ) : (
               // Supplier rows
               data?.suppliers.map((supplier) => {
-                const supplierWithStats = supplier as typeof supplier & { lastOrderDate?: Date | string; totalOrderValue12Months?: number };
-                const hasRecentOrders = supplierWithStats.lastOrderDate && 
-                  new Date(supplierWithStats.lastOrderDate) > new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
-                
+                const supplierWithStats = supplier as typeof supplier & {
+                  lastOrderDate?: Date | string;
+                  totalOrderValue12Months?: number;
+                };
+                const hasRecentOrders =
+                  supplierWithStats.lastOrderDate &&
+                  new Date(supplierWithStats.lastOrderDate) >
+                    new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
                 return (
-                <TableRow key={supplier.id}>
-                  <TableCell>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <Building2 className={`h-5 w-5 ${hasRecentOrders ? 'text-green-500' : 'text-gray-400'}`} />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{supplier.name}</p>
-                        <p className="text-sm text-gray-600">Code: {supplier.supplierCode}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {supplier.email && (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Mail className="h-3 w-3 text-gray-400" />
-                          <span className="text-gray-600">{supplier.email}</span>
+                  <TableRow key={supplier.id}>
+                    <TableCell>
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          <Building2
+                            className={`h-5 w-5 ${hasRecentOrders ? 'text-green-500' : 'text-gray-400'}`}
+                          />
                         </div>
-                      )}
-                      {supplier.phone && (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          <span className="text-gray-600">{supplier.phone}</span>
+                        <div>
+                          <p className="font-medium text-gray-900">{supplier.name}</p>
+                          <p className="text-sm text-gray-600">Code: {supplier.supplierCode}</p>
                         </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{supplier.city}, {supplier.country}</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {supplier.leadTimeDays ? (
-                      <div className="flex items-center justify-center gap-1">
-                        <Clock className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm">{supplier.leadTimeDays} days</span>
                       </div>
-                    ) : (
-                      <span className="text-sm text-gray-400">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {supplier._count.purchaseOrders || 0}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <DollarSign className="h-3 w-3 text-gray-400" />
-                      <span className="font-medium">
-                        ${(supplierWithStats.totalOrderValue12Months || 0).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {supplier.email && (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Mail className="h-3 w-3 text-gray-400" />
+                            <span className="text-gray-600">{supplier.email}</span>
+                          </div>
+                        )}
+                        {supplier.phone && (
+                          <div className="flex items-center gap-1 text-sm">
+                            <Phone className="h-3 w-3 text-gray-400" />
+                            <span className="text-gray-600">{supplier.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">
+                        {supplier.city}, {supplier.country}
                       </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-600">
-                      {supplier.paymentTerms || 'Net 30'}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Open menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <BarChart className="mr-2 h-4 w-4" />
-                          View Performance
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            archiveMutation.mutate({
-                              id: supplier.id,
-                            })
-                          }
-                          className="text-red-600"
-                        >
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {supplier.leadTimeDays ? (
+                        <div className="flex items-center justify-center gap-1">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="text-sm">{supplier.leadTimeDays} days</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {supplier._count.purchaseOrders || 0}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <DollarSign className="h-3 w-3 text-gray-400" />
+                        <span className="font-medium">
+                          ${(supplierWithStats.totalOrderValue12Months || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {supplier.paymentTerms || 'Net 30'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Open menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => setEditingSupplier(supplier)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <BarChart className="mr-2 h-4 w-4" />
+                            View Performance
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              archiveMutation.mutate({
+                                id: supplier.id,
+                              })
+                            }
+                            className="text-red-600"
+                          >
+                            <Archive className="mr-2 h-4 w-4" />
+                            Archive
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
                 );
               })
             )}
@@ -234,8 +238,8 @@ export function SupplierList({ searchTerm }: SupplierListProps) {
         {data && data.pagination.totalPages > 1 && (
           <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
-              Showing {(page - 1) * limit + 1} to{' '}
-              {Math.min(page * limit, data.pagination.total)} of {data.pagination.total} suppliers
+              Showing {(page - 1) * limit + 1} to {Math.min(page * limit, data.pagination.total)} of{' '}
+              {data.pagination.total} suppliers
             </p>
             <div className="flex gap-2">
               <Button

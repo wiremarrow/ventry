@@ -102,9 +102,9 @@ describe('RLS Proxy', () => {
 
     it('should return the data from the operation', async () => {
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       const result = await proxy.user.findMany();
-      
+
       expect(result).toEqual([{ id: '1', name: 'Test User' }]);
     });
 
@@ -123,10 +123,10 @@ describe('RLS Proxy', () => {
 
     it('should cache model proxies for performance', async () => {
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       const userProxy1 = proxy.user;
       const userProxy2 = proxy.user;
-      
+
       expect(userProxy1).toBe(userProxy2);
     });
   });
@@ -134,7 +134,7 @@ describe('RLS Proxy', () => {
   describe('Transaction Handling', () => {
     it('should wrap interactive transactions', async () => {
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       const callback = vi.fn().mockResolvedValue('transaction result');
       const result = await proxy.$transaction(callback);
 
@@ -144,14 +144,11 @@ describe('RLS Proxy', () => {
 
     it('should handle batch transactions with warning', async () => {
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
-      const promises = [
-        Promise.resolve('result1'),
-        Promise.resolve('result2'),
-      ];
-      
+
+      const promises = [Promise.resolve('result1'), Promise.resolve('result2')];
+
       const result = await proxy.$transaction(promises);
-      
+
       expect(result).toEqual(['result1', 'result2']);
     });
   });
@@ -164,7 +161,7 @@ describe('RLS Proxy', () => {
       (withRLS as any).mockRejectedValue(error);
 
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       await expect(proxy.user.findMany()).rejects.toThrow('Database error');
     });
 
@@ -177,7 +174,7 @@ describe('RLS Proxy', () => {
       (withRLS as any).mockRejectedValue(new Error('Invalid RLS context'));
 
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       await expect(proxy.user.findMany()).rejects.toThrow('Invalid RLS context');
     });
   });
@@ -185,10 +182,10 @@ describe('RLS Proxy', () => {
   describe('Non-Proxied Methods', () => {
     it('should not proxy $connect and $disconnect', async () => {
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       await proxy.$connect();
       await proxy.$disconnect();
-      
+
       expect(mockPrisma.$connect).toHaveBeenCalledTimes(1);
       expect(mockPrisma.$disconnect).toHaveBeenCalledTimes(1);
     });
@@ -196,9 +193,9 @@ describe('RLS Proxy', () => {
     it('should handle symbol properties', () => {
       const symbolProp = Symbol('test');
       mockPrisma[symbolProp] = 'symbol value';
-      
+
       const proxy = createRLSProxy(mockPrisma, getContext);
-      
+
       expect(proxy[symbolProp]).toBe('symbol value');
     });
   });

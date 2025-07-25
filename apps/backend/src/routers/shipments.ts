@@ -13,13 +13,17 @@ const shipmentCreateSchema = z.object({
   carrierService: z.string().optional(),
   trackingNumber: z.string().optional(),
   notes: z.string().optional(),
-  items: z.array(z.object({
-    orderItemId: z.string().cuid(),
-    itemId: z.string().cuid(),
-    qtyShipped: z.number().int().positive(),
-    lotId: z.string().cuid().optional(),
-    serialId: z.string().cuid().optional(),
-  })).min(1),
+  items: z
+    .array(
+      z.object({
+        orderItemId: z.string().cuid(),
+        itemId: z.string().cuid(),
+        qtyShipped: z.number().int().positive(),
+        lotId: z.string().cuid().optional(),
+        serialId: z.string().cuid().optional(),
+      })
+    )
+    .min(1),
 });
 
 const shipmentUpdateSchema = z.object({
@@ -31,12 +35,16 @@ const shipmentUpdateSchema = z.object({
   shippingCost: z.number().positive().optional(),
   notes: z.string().optional(),
   shipDate: z.date().optional(),
-  status: z.enum(['PENDING', 'PACKED', 'SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'RETURNED']).optional(),
+  status: z
+    .enum(['PENDING', 'PACKED', 'SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'RETURNED'])
+    .optional(),
 });
 
 const shipmentFilterSchema = z.object({
   search: z.string().optional(),
-  status: z.enum(['PENDING', 'PACKED', 'SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'RETURNED']).optional(),
+  status: z
+    .enum(['PENDING', 'PACKED', 'SHIPPED', 'IN_TRANSIT', 'DELIVERED', 'RETURNED'])
+    .optional(),
   warehouseId: z.string().cuid().optional(),
   carrierId: z.string().cuid().optional(),
   customerId: z.string().cuid().optional(),
@@ -50,160 +58,161 @@ const shipmentFilterSchema = z.object({
 
 export const shipmentsRouter = createTRPCRouter({
   // List shipments with filtering
-  list: organizationProcedure
-    .input(shipmentFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        status,
+  list: organizationProcedure.input(shipmentFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      status,
+      warehouseId,
+      carrierId,
+      customerId,
+      dateFrom,
+      dateTo,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
+
+    const where: Prisma.ShipmentWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { shipmentNumber: { contains: search, mode: 'insensitive' } },
+        { trackingNumber: { contains: search, mode: 'insensitive' } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Status filter
+    if (status) {
+      where.status = status;
+    }
+
+    // Warehouse filter
+    if (warehouseId) {
+      where.shippedFromLocation = {
         warehouseId,
-        carrierId,
-        customerId,
-        dateFrom,
-        dateTo,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
-
-      const where: Prisma.ShipmentWhereInput = {
-        organizationId: ctx.user.organizationId,
       };
+    }
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { shipmentNumber: { contains: search, mode: 'insensitive' } },
-          { trackingNumber: { contains: search, mode: 'insensitive' } },
-          { notes: { contains: search, mode: 'insensitive' } },
-        ];
-      }
+    // Carrier filter
+    if (carrierId) {
+      where.carrierId = carrierId;
+    }
 
-      // Status filter
-      if (status) {
-        where.status = status;
-      }
+    // Customer filter
+    if (customerId) {
+      where.order = {
+        customerId,
+      };
+    }
 
-      // Warehouse filter
-      if (warehouseId) {
-        where.shippedFromLocation = {
-          warehouseId,
-        };
-      }
+    // Date filters
+    if (dateFrom || dateTo) {
+      where.createdAt = {
+        ...(dateFrom && { gte: dateFrom }),
+        ...(dateTo && { lte: dateTo }),
+      };
+    }
 
-      // Carrier filter
-      if (carrierId) {
-        where.carrierId = carrierId;
-      }
+    // Get total count
+    const totalCount = await ctx.prisma.shipment.count({ where });
 
-      // Customer filter
-      if (customerId) {
-        where.order = {
-          customerId,
-        };
-      }
-
-      // Date filters
-      if (dateFrom || dateTo) {
-        where.createdAt = {
-          ...(dateFrom && { gte: dateFrom }),
-          ...(dateTo && { lte: dateTo }),
-        };
-      }
-
-      // Get total count
-      const totalCount = await ctx.prisma.shipment.count({ where });
-
-      // Get paginated results
-      const shipments = await ctx.prisma.shipment.findMany({
-        where,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
-        include: {
-          items: {
-            include: {
-              item: true,
-              orderItem: true,
-            },
-          },
-          order: {
-            include: {
-              customer: true,
-            },
-          },
-          carrier: true,
-          shippedFromLocation: {
-            include: {
-              warehouse: true,
-            },
-          },
-          shippedBy: true,
-          _count: {
-            select: {
-              items: true,
-            },
+    // Get paginated results
+    const shipments = await ctx.prisma.shipment.findMany({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      include: {
+        items: {
+          include: {
+            item: true,
+            orderItem: true,
           },
         },
-      });
+        order: {
+          include: {
+            customer: true,
+          },
+        },
+        carrier: true,
+        shippedFromLocation: {
+          include: {
+            warehouse: true,
+          },
+        },
+        shippedBy: true,
+        _count: {
+          select: {
+            items: true,
+          },
+        },
+      },
+    });
 
-      // Calculate summary stats
-      const stats = await ctx.prisma.shipment.groupBy({
-        by: ['status'],
-        where,
-        _count: true,
-      });
+    // Calculate summary stats
+    const stats = await ctx.prisma.shipment.groupBy({
+      by: ['status'],
+      where,
+      _count: true,
+    });
 
-      const statusCounts = stats.reduce((acc, stat) => {
+    const statusCounts = stats.reduce(
+      (acc, stat) => {
         acc[stat.status] = stat._count;
         return acc;
-      }, {} as Record<string, number>);
+      },
+      {} as Record<string, number>
+    );
 
-      // Get carrier performance
-      const carrierStats = await ctx.prisma.shipment.groupBy({
-        by: ['carrierId'],
-        where: {
-          ...where,
-          status: 'DELIVERED',
-        },
-        _avg: {
-          shippingCost: true,
-        },
-        _count: true,
-      });
+    // Get carrier performance
+    const carrierStats = await ctx.prisma.shipment.groupBy({
+      by: ['carrierId'],
+      where: {
+        ...where,
+        status: 'DELIVERED',
+      },
+      _avg: {
+        shippingCost: true,
+      },
+      _count: true,
+    });
 
-      return {
-        shipments,
-        pagination: {
-          total: totalCount,
-          page,
-          limit,
-          totalPages: Math.ceil(totalCount / limit),
-        },
-        stats: {
-          total: totalCount,
-          byStatus: statusCounts,
-          pending: statusCounts['PENDING'] || 0,
-          shipped: statusCounts['SHIPPED'] || 0,
-          delivered: statusCounts['DELIVERED'] || 0,
-          carrierPerformance: carrierStats.map(cs => ({
-            carrierId: cs.carrierId,
-            shipmentCount: cs._count,
-            avgCost: Number(cs._avg.shippingCost || 0),
-          })),
-        },
-      };
-    }),
+    return {
+      shipments,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit),
+      },
+      stats: {
+        total: totalCount,
+        byStatus: statusCounts,
+        pending: statusCounts['PENDING'] || 0,
+        shipped: statusCounts['SHIPPED'] || 0,
+        delivered: statusCounts['DELIVERED'] || 0,
+        carrierPerformance: carrierStats.map((cs) => ({
+          carrierId: cs.carrierId,
+          shipmentCount: cs._count,
+          avgCost: Number(cs._avg.shippingCost || 0),
+        })),
+      },
+    };
+  }),
 
   // Get shipment details
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const shipment = await ctx.prisma.shipment.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
@@ -247,259 +256,257 @@ export const shipmentsRouter = createTRPCRouter({
     }),
 
   // Create a new shipment
-  create: organizationProcedure
-    .input(shipmentCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { orderId, locationId, carrierId, carrierService, trackingNumber, notes, items } = input;
+  create: organizationProcedure.input(shipmentCreateSchema).mutation(async ({ ctx, input }) => {
+    const { orderId, locationId, carrierId, carrierService, trackingNumber, notes, items } = input;
 
-      // Validate location exists
-      const location = await ctx.prisma.location.findFirst({
-        where: { 
-          id: locationId,
-          warehouse: {
-            organizationId: ctx.user.organizationId,
+    // Validate location exists
+    const location = await ctx.prisma.location.findFirst({
+      where: {
+        id: locationId,
+        warehouse: {
+          organizationId: ctx.user.organizationId,
+        },
+      },
+    });
+
+    if (!location) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Location not found',
+      });
+    }
+
+    // Validate order
+    const order = await ctx.prisma.order.findFirst({
+      where: {
+        id: orderId,
+        organizationId: ctx.user.organizationId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Order not found',
+      });
+    }
+
+    if (!['CONFIRMED', 'PICKING', 'PACKED'].includes(order.status)) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Order must be confirmed and allocated before shipping',
+      });
+    }
+
+    // Validate order items
+    for (const item of items) {
+      if (item.orderItemId) {
+        const orderItem = order.items.find((oi) => oi.id === item.orderItemId);
+        if (!orderItem) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Order item ${item.orderItemId} not found`,
+          });
+        }
+
+        // Check if we've already shipped this order item
+        const alreadyShipped = orderItem.qtyShipped;
+        const availableToShip = orderItem.qtyOrdered - alreadyShipped;
+
+        if (item.qtyShipped > availableToShip) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Quantity ${item.qtyShipped} exceeds available to ship (${availableToShip}) for item ${item.itemId}`,
+          });
+        }
+      }
+    }
+
+    // Validate inventory availability
+    for (const item of items) {
+      const inventory = await ctx.prisma.inventory.findFirst({
+        where: {
+          itemId: item.itemId,
+          locationId,
+          ...(item.lotId && { lotId: item.lotId }),
+        },
+      });
+
+      if (!inventory) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Inventory not found for item ${item.itemId} at location`,
+        });
+      }
+
+      const available = inventory.qtyOnHand - inventory.qtyReserved;
+      if (available < item.qtyShipped) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Insufficient inventory for item ${item.itemId}. Available: ${available}, Requested: ${item.qtyShipped}`,
+        });
+      }
+    }
+
+    // Generate shipment number
+    const shipmentCount = await ctx.prisma.shipment.count({
+      where: {
+        organizationId: ctx.user.organizationId,
+        createdAt: {
+          gte: new Date(new Date().getFullYear(), 0, 1),
+        },
+      },
+    });
+
+    const shipmentNumber = `SHP-${new Date().getFullYear()}-${String(shipmentCount + 1).padStart(5, '0')}`;
+
+    // Create shipment in transaction
+    const newShipment = await ctx.prisma.$transaction(async (tx) => {
+      // Create shipment
+      const shipment = await tx.shipment.create({
+        data: {
+          organizationId: ctx.user.organizationId,
+          shipmentNumber,
+          orderId,
+          status: 'PENDING',
+          carrierId,
+          carrierService,
+          trackingNumber,
+          shippedFromLocationId: locationId,
+          shippedById: ctx.user.id,
+          notes,
+          items: {
+            create: items.map((item) => ({
+              orderItemId: item.orderItemId,
+              itemId: item.itemId,
+              qtyShipped: item.qtyShipped,
+              lotId: item.lotId,
+              serialId: item.serialId,
+              organizationId: ctx.user.organizationId!,
+            })),
+          },
+        },
+        include: {
+          items: {
+            include: {
+              item: true,
+            },
           },
         },
       });
 
-      if (!location) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Location not found',
-        });
-      }
-
-      // Validate order
-      const order = await ctx.prisma.order.findFirst({
-        where: { 
-          id: orderId,
-          organizationId: ctx.user.organizationId,
-        },
-        include: {
-          items: true,
-        },
-      });
-
-      if (!order) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Order not found',
-        });
-      }
-
-      if (!['CONFIRMED', 'PICKING', 'PACKED'].includes(order.status)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Order must be confirmed and allocated before shipping',
-        });
-      }
-
-      // Validate order items
+      // Reserve inventory
       for (const item of items) {
-        if (item.orderItemId) {
-          const orderItem = order.items.find(oi => oi.id === item.orderItemId);
-          if (!orderItem) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Order item ${item.orderItemId} not found`,
-            });
-          }
-
-          // Check if we've already shipped this order item
-          const alreadyShipped = orderItem.qtyShipped;
-          const availableToShip = orderItem.qtyOrdered - alreadyShipped;
-
-          if (item.qtyShipped > availableToShip) {
-            throw new TRPCError({
-              code: 'BAD_REQUEST',
-              message: `Quantity ${item.qtyShipped} exceeds available to ship (${availableToShip}) for item ${item.itemId}`,
-            });
-          }
-        }
-      }
-
-      // Validate inventory availability
-      for (const item of items) {
-        const inventory = await ctx.prisma.inventory.findFirst({
+        await tx.inventory.updateMany({
           where: {
             itemId: item.itemId,
             locationId,
             ...(item.lotId && { lotId: item.lotId }),
           },
+          data: {
+            qtyReserved: {
+              increment: item.qtyShipped,
+            },
+          },
         });
-
-        if (!inventory) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Inventory not found for item ${item.itemId} at location`,
-          });
-        }
-
-        const available = inventory.qtyOnHand - inventory.qtyReserved;
-        if (available < item.qtyShipped) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: `Insufficient inventory for item ${item.itemId}. Available: ${available}, Requested: ${item.qtyShipped}`,
-          });
-        }
       }
 
-      // Generate shipment number
-      const shipmentCount = await ctx.prisma.shipment.count({
-        where: {
-          organizationId: ctx.user.organizationId,
-          createdAt: {
-            gte: new Date(new Date().getFullYear(), 0, 1),
-          },
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'shipments',
+          recordPk: shipment.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: shipment,
         },
       });
 
-      const shipmentNumber = `SHP-${new Date().getFullYear()}-${String(shipmentCount + 1).padStart(5, '0')}`;
+      return shipment;
+    });
 
-      // Create shipment in transaction
-      const newShipment = await ctx.prisma.$transaction(async (tx) => {
-        // Create shipment
-        const shipment = await tx.shipment.create({
-          data: {
-            organizationId: ctx.user.organizationId,
-            shipmentNumber,
-            orderId,
-            status: 'PENDING',
-            carrierId,
-            carrierService,
-            trackingNumber,
-            shippedFromLocationId: locationId,
-            shippedById: ctx.user.id,
-            notes,
-            items: {
-              create: items.map((item) => ({
-                orderItemId: item.orderItemId,
-                itemId: item.itemId,
-                qtyShipped: item.qtyShipped,
-                lotId: item.lotId,
-                serialId: item.serialId,
-                organizationId: ctx.user.organizationId!,
-              })),
-            },
-          },
-          include: {
-            items: {
-              include: {
-                item: true,
-              },
-            },
-          },
-        });
-
-        // Reserve inventory
-        for (const item of items) {
-          await tx.inventory.updateMany({
-            where: {
-              itemId: item.itemId,
-              locationId,
-              ...(item.lotId && { lotId: item.lotId }),
-            },
-            data: {
-              qtyReserved: {
-                increment: item.qtyShipped,
-              },
-            },
-          });
-        }
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'shipments',
-            recordPk: shipment.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: shipment,
-          },
-        });
-
-        return shipment;
-      });
-
-      return newShipment;
-    }),
+    return newShipment;
+  }),
 
   // Update shipment
-  update: organizationProcedure
-    .input(shipmentUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...updateData } = input;
+  update: organizationProcedure.input(shipmentUpdateSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...updateData } = input;
 
-      // Check if shipment exists
-      const existingShipment = await ctx.prisma.shipment.findFirst({
-        where: { 
-          id,
-          organizationId: ctx.user.organizationId,
+    // Check if shipment exists
+    const existingShipment = await ctx.prisma.shipment.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!existingShipment) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Shipment not found',
+      });
+    }
+
+    // Check if shipment can be updated
+    if (['DELIVERED', 'CANCELLED'].includes(existingShipment.status)) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Cannot update delivered or cancelled shipment',
+      });
+    }
+
+    // Update shipment
+    const updatedShipment = await ctx.prisma.$transaction(async (tx) => {
+      const shipment = await tx.shipment.update({
+        where: { id },
+        data: updateData,
+        include: {
+          items: {
+            include: {
+              item: true,
+            },
+          },
         },
       });
 
-      if (!existingShipment) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Shipment not found',
-        });
-      }
-
-      // Check if shipment can be updated
-      if (['DELIVERED', 'CANCELLED'].includes(existingShipment.status)) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Cannot update delivered or cancelled shipment',
-        });
-      }
-
-      // Update shipment
-      const updatedShipment = await ctx.prisma.$transaction(async (tx) => {
-        const shipment = await tx.shipment.update({
-          where: { id },
-          data: updateData,
-          include: {
-            items: {
-              include: {
-                item: true,
-              },
-            },
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'shipments',
-            recordPk: id,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: existingShipment,
-            afterData: shipment,
-          },
-        });
-
-        return shipment;
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'shipments',
+          recordPk: id,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: existingShipment,
+          afterData: shipment,
+        },
       });
 
-      return updatedShipment;
-    }),
+      return shipment;
+    });
+
+    return updatedShipment;
+  }),
 
   // Ship shipment (update status and reduce inventory)
   ship: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      trackingNumber: z.string().optional(),
-      shippingCost: z.number().positive().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        trackingNumber: z.string().optional(),
+        shippingCost: z.number().positive().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, trackingNumber, shippingCost } = input;
 
       // Get shipment details
       const shipment = await ctx.prisma.shipment.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -546,7 +553,7 @@ export const shipmentsRouter = createTRPCRouter({
           // Create stock movement
           await tx.stockMovement.create({
             data: {
-              movementType: 'OUTBOUND',  // Using OUTBOUND for shipments
+              movementType: 'OUTBOUND', // Using OUTBOUND for shipments
               itemId: item.itemId,
               qty: item.qtyShipped,
               fromLocationId: shipment.shippedFromLocationId,
@@ -601,7 +608,7 @@ export const shipmentsRouter = createTRPCRouter({
           });
 
           if (order) {
-            const allShipped = order.items.every(oi => oi.qtyShipped >= oi.qtyOrdered);
+            const allShipped = order.items.every((oi) => oi.qtyShipped >= oi.qtyOrdered);
             if (allShipped) {
               await tx.order.update({
                 where: { id: shipment.orderId },
@@ -632,16 +639,18 @@ export const shipmentsRouter = createTRPCRouter({
 
   // Cancel shipment
   cancel: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      reason: z.string(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        reason: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, reason } = input;
 
       // Get shipment details
       const shipment = await ctx.prisma.shipment.findFirst({
-        where: { 
+        where: {
           id,
           organizationId: ctx.user.organizationId,
         },
@@ -686,7 +695,7 @@ export const shipmentsRouter = createTRPCRouter({
         const cancelledShipment = await tx.shipment.update({
           where: { id },
           data: {
-            status: 'RETURNED',  // Using RETURNED for cancelled shipments
+            status: 'RETURNED', // Using RETURNED for cancelled shipments
             notes: `${shipment.notes || ''}\nCancelled: ${reason}`.trim(),
           },
           include: {

@@ -20,7 +20,7 @@ export class SupabaseRealtimeService {
     callback: (payload: InventoryChangePayload) => void
   ) {
     const channelName = `inventory:${organizationId}:${itemId}`;
-    
+
     if (this.channels.has(channelName)) {
       return this.channels.get(channelName)!;
     }
@@ -59,7 +59,7 @@ export class SupabaseRealtimeService {
     callback: (payload: InventoryChangePayload) => void
   ) {
     const channelName = `inventory:${organizationId}`;
-    
+
     if (this.channels.has(channelName)) {
       return this.channels.get(channelName)!;
     }
@@ -98,7 +98,7 @@ export class SupabaseRealtimeService {
     callback: (payload: InventoryChangePayload) => void
   ) {
     const channelName = `alerts:${organizationId}:low-stock`;
-    
+
     if (this.channels.has(channelName)) {
       return this.channels.get(channelName)!;
     }
@@ -133,7 +133,7 @@ export class SupabaseRealtimeService {
     callback: (payload: InventoryChangePayload) => void
   ) {
     const channelName = `orders:${organizationId}:new`;
-    
+
     if (this.channels.has(channelName)) {
       return this.channels.get(channelName)!;
     }

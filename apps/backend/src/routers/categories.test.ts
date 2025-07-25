@@ -30,12 +30,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {
@@ -62,7 +62,7 @@ describe('Categories Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.itemCategory.findMany.mockReset();
     mockPrisma.itemCategory.findFirst.mockReset();
@@ -75,14 +75,14 @@ describe('Categories Router', () => {
     mockPrisma.item.count.mockReset();
     mockPrisma.inventory.aggregate.mockReset();
     mockPrisma.auditLog.create.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -90,8 +90,8 @@ describe('Categories Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN', // Need ADMIN or MANAGER role for category operations
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -194,9 +194,8 @@ describe('Categories Router', () => {
       );
     });
 
-
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -249,9 +248,9 @@ describe('Categories Router', () => {
     it('should throw NOT_FOUND when category does not exist', async () => {
       mockPrisma.itemCategory.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.categories.getById({ id: testId('nonexistent') })
-      ).rejects.toThrow('Category not found');
+      await expect(caller.categories.getById({ id: testId('nonexistent') })).rejects.toThrow(
+        'Category not found'
+      );
     });
   });
 
@@ -312,7 +311,6 @@ describe('Categories Router', () => {
       expect(result.parentId).toBe(testId('cat1'));
     });
 
-
     it('should throw NOT_FOUND when parent category does not exist', async () => {
       mockPrisma.itemCategory.findFirst.mockResolvedValue(null);
 
@@ -325,7 +323,7 @@ describe('Categories Router', () => {
     });
 
     it('should require MANAGER or ADMIN role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -437,7 +435,7 @@ describe('Categories Router', () => {
     });
 
     it('should require MANAGER or ADMIN role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'EMPLOYEE' },
@@ -490,9 +488,9 @@ describe('Categories Router', () => {
 
       mockPrisma.itemCategory.findFirst.mockResolvedValue(existingCategory);
 
-      await expect(
-        caller.categories.delete({ id: testId('cat1') })
-      ).rejects.toThrow('Cannot delete category with subcategories');
+      await expect(caller.categories.delete({ id: testId('cat1') })).rejects.toThrow(
+        'Cannot delete category with subcategories'
+      );
     });
 
     it('should prevent deleting category with items', async () => {
@@ -508,29 +506,29 @@ describe('Categories Router', () => {
 
       mockPrisma.itemCategory.findFirst.mockResolvedValue(existingCategory);
 
-      await expect(
-        caller.categories.delete({ id: testId('cat1') })
-      ).rejects.toThrow('Cannot delete category with items');
+      await expect(caller.categories.delete({ id: testId('cat1') })).rejects.toThrow(
+        'Cannot delete category with items'
+      );
     });
 
     it('should throw NOT_FOUND when category does not exist', async () => {
       mockPrisma.itemCategory.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.categories.delete({ id: testId('nonexistent') })
-      ).rejects.toThrow('Category not found');
+      await expect(caller.categories.delete({ id: testId('nonexistent') })).rejects.toThrow(
+        'Category not found'
+      );
     });
 
     it('should require ADMIN role', async () => {
-      const managerCaller = await createDirectCaller({ 
+      const managerCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: testId('org'), role: 'MANAGER' },
       });
 
-      await expect(
-        managerCaller.categories.delete({ id: testId('cat1') })
-      ).rejects.toThrow('Only administrators can delete categories');
+      await expect(managerCaller.categories.delete({ id: testId('cat1') })).rejects.toThrow(
+        'Only administrators can delete categories'
+      );
     });
   });
 
@@ -577,7 +575,6 @@ describe('Categories Router', () => {
       expect(result[1].name).toBe('Furniture');
       expect(result[1].children).toHaveLength(0);
     });
-
   });
 
   describe('stats', () => {
@@ -619,9 +616,7 @@ describe('Categories Router', () => {
       };
 
       mockPrisma.itemCategory.findFirst.mockResolvedValue(mockCategory);
-      mockPrisma.item.count
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      mockPrisma.item.count.mockResolvedValueOnce(0).mockResolvedValueOnce(0);
       mockPrisma.inventory.aggregate.mockResolvedValue({
         _sum: {
           qtyOnHand: null,
@@ -644,9 +639,9 @@ describe('Categories Router', () => {
     it('should throw NOT_FOUND when category does not exist', async () => {
       mockPrisma.itemCategory.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.categories.stats({ id: testId('nonexistent') })
-      ).rejects.toThrow('Category not found');
+      await expect(caller.categories.stats({ id: testId('nonexistent') })).rejects.toThrow(
+        'Category not found'
+      );
     });
   });
 });

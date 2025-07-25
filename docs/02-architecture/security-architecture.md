@@ -15,11 +15,13 @@ Ventry implements defense-in-depth security with multiple layers of protection f
 ### 1. Network Security
 
 #### HTTPS/TLS
+
 - Enforced in production
 - HSTS headers
 - Secure cookies only
 
 #### CORS Configuration
+
 ```typescript
 cors: {
   origin: process.env.FRONTEND_URL,
@@ -28,6 +30,7 @@ cors: {
 ```
 
 #### Rate Limiting
+
 - API endpoint protection
 - Brute force prevention
 - DDoS mitigation
@@ -37,11 +40,13 @@ cors: {
 #### Authentication System
 
 **JWT-Based Authentication**
+
 - Tokens stored in signed httpOnly cookies
 - 7-day expiration with refresh capability
 - No localStorage/sessionStorage usage
 
 **Cookie Security**
+
 ```typescript
 {
   httpOnly: true,    // Prevents XSS attacks
@@ -55,17 +60,19 @@ cors: {
 #### Authorization System
 
 **Role-Based Access Control (RBAC)**
+
 ```typescript
 enum Role {
   OWNER = 'OWNER',
   ADMIN = 'ADMIN',
   MANAGER = 'MANAGER',
   USER = 'USER',
-  VIEWER = 'VIEWER'
+  VIEWER = 'VIEWER',
 }
 ```
 
 **Permission Checks**
+
 - Middleware-based verification
 - Organization context validation
 - Resource-level permissions
@@ -75,6 +82,7 @@ enum Role {
 #### Row-Level Security (RLS)
 
 **Dual-User Pattern**
+
 ```sql
 -- Admin user (migrations only)
 CREATE USER ventry WITH BYPASSRLS;
@@ -84,6 +92,7 @@ CREATE USER ventry_app; -- No BYPASSRLS
 ```
 
 **RLS Policies**
+
 ```sql
 -- Enforce organization isolation
 CREATE POLICY tenant_isolation ON items
@@ -91,6 +100,7 @@ CREATE POLICY tenant_isolation ON items
 ```
 
 **Session Variables**
+
 - Set per request via `withRLS()`
 - Automatically cleared after query
 - CUID format validation
@@ -98,6 +108,7 @@ CREATE POLICY tenant_isolation ON items
 #### SQL Injection Prevention
 
 **Parameterized Queries**
+
 - Prisma ORM prevents SQL injection
 - Input validation with Zod
 - CUID format enforcement at DB level
@@ -105,6 +116,7 @@ CREATE POLICY tenant_isolation ON items
 ### 4. Input Validation
 
 #### Zod Schemas
+
 ```typescript
 const userInputSchema = z.object({
   email: z.string().email(),
@@ -114,6 +126,7 @@ const userInputSchema = z.object({
 ```
 
 #### Sanitization
+
 - HTML escaping
 - Path traversal prevention
 - Command injection prevention
@@ -121,11 +134,13 @@ const userInputSchema = z.object({
 ### 5. Session Management
 
 #### Session Security
+
 - Server-side session validation
 - Automatic session expiration
 - Concurrent session limits (future)
 
 #### Organization Context
+
 ```typescript
 // Priority order for organization selection
 1. Request header (x-organization-id)
@@ -139,26 +154,31 @@ const userInputSchema = z.object({
 ### Common Vulnerabilities
 
 #### XSS (Cross-Site Scripting)
+
 - React automatic escaping
 - Content Security Policy headers
 - httpOnly cookies
 
 #### CSRF (Cross-Site Request Forgery)
+
 - SameSite cookies
 - Origin verification
 - State-changing operations require POST
 
 #### SQL Injection
+
 - Prisma parameterized queries
 - Input validation
 - Database function validation
 
 #### Authentication Bypass
+
 - Signed cookie verification
 - JWT signature validation
 - Session invalidation on logout
 
 ### Security Headers
+
 ```typescript
 // Helmet.js configuration
 {
@@ -183,6 +203,7 @@ const userInputSchema = z.object({
 ### Audit Logging
 
 **What We Log**
+
 - Authentication events
 - Authorization failures
 - Data modifications
@@ -190,6 +211,7 @@ const userInputSchema = z.object({
 - Security violations
 
 **Log Format**
+
 ```typescript
 {
   timestamp: Date,
@@ -205,12 +227,14 @@ const userInputSchema = z.object({
 ### Compliance Considerations
 
 #### GDPR
+
 - Data encryption at rest
 - Right to deletion
 - Data portability
 - Consent management
 
 #### SOC 2
+
 - Access controls
 - Change management
 - Incident response
@@ -219,18 +243,18 @@ const userInputSchema = z.object({
 ## Security Monitoring
 
 ### Real-time Monitoring
+
 - Failed authentication attempts
 - Unusual access patterns
 - Permission violations
 - Rate limit violations
 
 ### Sentry Integration
+
 ```typescript
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
-  integrations: [
-    new Sentry.Integrations.Http({ tracing: true }),
-  ],
+  integrations: [new Sentry.Integrations.Http({ tracing: true })],
   tracesSampleRate: 0.1,
   profilesSampleRate: 0.1,
 });
@@ -239,6 +263,7 @@ Sentry.init({
 ## Incident Response
 
 ### Security Incident Checklist
+
 1. Identify and contain threat
 2. Assess impact and scope
 3. Notify affected users
@@ -246,6 +271,7 @@ Sentry.init({
 5. Document lessons learned
 
 ### Emergency Procedures
+
 - Database connection termination
 - User session invalidation
 - API endpoint disabling
@@ -254,6 +280,7 @@ Sentry.init({
 ## Security Best Practices
 
 ### Development
+
 1. Never commit secrets
 2. Use environment variables
 3. Regular dependency updates
@@ -261,6 +288,7 @@ Sentry.init({
 5. Penetration testing
 
 ### Operations
+
 1. Regular security audits
 2. Automated vulnerability scanning
 3. Security training for team
@@ -270,6 +298,7 @@ Sentry.init({
 ## Future Security Enhancements
 
 ### Planned Improvements
+
 1. **2FA/MFA**: Multi-factor authentication
 2. **OAuth**: Social login providers
 3. **API Keys**: Machine-to-machine auth
@@ -277,6 +306,7 @@ Sentry.init({
 5. **Encryption**: Field-level encryption
 
 ### Advanced Features
+
 1. **Anomaly Detection**: ML-based threat detection
 2. **Zero-Knowledge**: End-to-end encryption
 3. **Hardware Keys**: FIDO2/WebAuthn support
@@ -285,6 +315,7 @@ Sentry.init({
 ## Security Checklist
 
 ### Pre-Deployment
+
 - [ ] Environment variables configured
 - [ ] HTTPS certificates installed
 - [ ] Security headers enabled
@@ -292,6 +323,7 @@ Sentry.init({
 - [ ] Monitoring alerts set up
 
 ### Post-Deployment
+
 - [ ] Penetration test completed
 - [ ] Security audit performed
 - [ ] Incident response tested

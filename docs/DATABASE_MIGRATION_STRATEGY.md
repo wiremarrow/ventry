@@ -19,6 +19,7 @@ This document outlines the comprehensive strategy for managing database migratio
 ## Migration Overview
 
 ### Current State
+
 - **ORM**: Prisma 6.11.1
 - **Database**: PostgreSQL 16
 - **Migration Tool**: Prisma Migrate
@@ -26,6 +27,7 @@ This document outlines the comprehensive strategy for managing database migratio
 - **Migration History**: `/packages/database/prisma/migrations/`
 
 ### Migration Principles
+
 1. **Backward Compatibility**: Migrations must be backward compatible for zero-downtime deployments
 2. **Idempotency**: Migrations should be safe to run multiple times
 3. **Atomicity**: Each migration should be a complete, atomic change
@@ -39,6 +41,7 @@ This document outlines the comprehensive strategy for managing database migratio
 ### 1. Creating Migrations
 
 **Step 1: Modify Schema**
+
 ```prisma
 // packages/database/prisma/schema.prisma
 model Item {
@@ -51,6 +54,7 @@ model Item {
 ```
 
 **Step 2: Create Migration**
+
 ```bash
 # Navigate to database package
 cd packages/database
@@ -65,6 +69,7 @@ pnpm prisma migrate dev --name add_item_barcode_field
 ```
 
 **Step 3: Review Generated SQL**
+
 ```sql
 -- packages/database/prisma/migrations/20240115_add_item_barcode_field/migration.sql
 -- Review and optimize if needed
@@ -79,6 +84,7 @@ YYYYMMDDHHMMSS_descriptive_name
 ```
 
 Examples:
+
 - `20240115120000_add_barcode_to_items`
 - `20240116090000_create_audit_log_table`
 - `20240117150000_add_inventory_indexes`
@@ -109,6 +115,7 @@ pnpm prisma migrate dev --create-only --name <migration_name>
 ### 1. Schema Changes
 
 **Safe Operations** (No downtime):
+
 ```sql
 -- Adding nullable columns
 ALTER TABLE items ADD COLUMN barcode VARCHAR(50);
@@ -121,6 +128,7 @@ CREATE TABLE new_feature (...);
 ```
 
 **Unsafe Operations** (Require careful planning):
+
 ```sql
 -- DON'T: Drop columns immediately
 ALTER TABLE items DROP COLUMN old_field;
@@ -140,6 +148,7 @@ UPDATE items SET quantity = qty;
 ### 2. Index Management
 
 **Creating Indexes Safely:**
+
 ```sql
 -- Development migration
 CREATE INDEX idx_orders_status ON orders(status);
@@ -149,6 +158,7 @@ CREATE INDEX CONCURRENTLY idx_orders_status ON orders(status);
 ```
 
 **Index Creation Script:**
+
 ```typescript
 // tools/scripts/create-indexes.ts
 async function createIndexSafely(indexName: string, definition: string) {
@@ -158,7 +168,7 @@ async function createIndexSafely(indexName: string, definition: string) {
       SELECT 1 FROM pg_indexes 
       WHERE indexname = ${indexName}
     `;
-    
+
     if (!exists.length) {
       console.log(`Creating index ${indexName}...`);
       await prisma.$executeRawUnsafe(`
@@ -175,6 +185,7 @@ async function createIndexSafely(indexName: string, definition: string) {
 ### 3. Data Type Changes
 
 **Safe Type Migrations:**
+
 ```sql
 -- Expanding column size (safe)
 ALTER TABLE items ALTER COLUMN name TYPE VARCHAR(500);
@@ -204,6 +215,7 @@ ALTER TABLE orders DROP COLUMN total_amount_old;
 ## Migration Checklist: [Migration Name]
 
 ### Pre-Deployment
+
 - [ ] Migration tested on staging environment
 - [ ] Performance impact assessed on production-size data
 - [ ] Rollback script prepared and tested
@@ -212,16 +224,18 @@ ALTER TABLE orders DROP COLUMN total_amount_old;
 - [ ] Team notified of deployment
 
 ### Compatibility Checks
+
 - [ ] New code works with old schema
 - [ ] Old code works with new schema
 - [ ] No breaking changes to API
 - [ ] Client applications compatible
 
 ### Performance Validation
-- [ ] Migration time estimated: _____ minutes
+
+- [ ] Migration time estimated: **\_** minutes
 - [ ] Table locks required: Yes/No
 - [ ] Index creation method: CONCURRENT/STANDARD
-- [ ] Expected impact on queries: _____
+- [ ] Expected impact on queries: **\_**
 ```
 
 ### 2. Deployment Script
@@ -292,29 +306,30 @@ graph LR
 ```
 
 **Implementation:**
+
 ```typescript
 // tools/scripts/blue-green-migration.ts
 async function blueGreenMigration() {
   // 1. Create green database
   await createDatabase('ventry_green');
-  
+
   // 2. Copy data from blue
   await pg_dump('ventry_blue', 'ventry_green');
-  
+
   // 3. Apply migrations to green
   process.env.DATABASE_URL = greenDbUrl;
   await prisma.$executeRaw`SELECT pg_advisory_lock(1)`;
   await deployMigrations();
-  
+
   // 4. Set up replication
   await setupLogicalReplication('ventry_blue', 'ventry_green');
-  
+
   // 5. Validate green database
   await runValidationTests('ventry_green');
-  
+
   // 6. Switch application to green
   await updateConnectionPool(greenDbUrl);
-  
+
   // 7. Stop replication after stability
   await stopReplication();
 }
@@ -323,6 +338,7 @@ async function blueGreenMigration() {
 ### 2. Expand-Contract Pattern
 
 **Phase 1: Expand**
+
 ```sql
 -- Add new column alongside old
 ALTER TABLE users ADD COLUMN email_address VARCHAR(255);
@@ -332,18 +348,20 @@ UPDATE users SET email_address = email WHERE email_address IS NULL;
 ```
 
 **Application Code (Dual Write):**
+
 ```typescript
 // Write to both columns during transition
 await prisma.user.update({
   where: { id },
   data: {
-    email: newEmail,        // Old column
+    email: newEmail, // Old column
     emailAddress: newEmail, // New column
   },
 });
 ```
 
 **Phase 2: Contract**
+
 ```sql
 -- After all code deployed and data migrated
 ALTER TABLE users DROP COLUMN email;
@@ -352,6 +370,7 @@ ALTER TABLE users DROP COLUMN email;
 ### 3. Online Schema Change Tools
 
 **Using pg_repack for zero-downtime operations:**
+
 ```bash
 # Install pg_repack
 apt-get install postgresql-16-repack
@@ -377,31 +396,31 @@ async function rollbackMigration(migrationName: string) {
   try {
     // 1. Create rollback point
     await prisma.$executeRaw`SAVEPOINT before_rollback`;
-    
+
     // 2. Get migration to rollback
     const migration = await prisma.$queryRaw`
       SELECT * FROM _prisma_migrations 
       WHERE migration_name = ${migrationName}
     `;
-    
+
     if (!migration) {
       throw new Error('Migration not found');
     }
-    
+
     // 3. Execute rollback SQL
     const rollbackSql = await readRollbackScript(migrationName);
     await prisma.$executeRawUnsafe(rollbackSql);
-    
+
     // 4. Mark migration as rolled back
     await prisma.$executeRaw`
       UPDATE _prisma_migrations 
       SET rolled_back_at = NOW() 
       WHERE migration_name = ${migrationName}
     `;
-    
+
     // 5. Verify rollback
     await runRollbackValidation();
-    
+
     console.log(`Successfully rolled back migration: ${migrationName}`);
   } catch (error) {
     await prisma.$executeRaw`ROLLBACK TO SAVEPOINT before_rollback`;
@@ -413,6 +432,7 @@ async function rollbackMigration(migrationName: string) {
 ### 2. Rollback SQL Templates
 
 **For Adding Columns:**
+
 ```sql
 -- Migration
 ALTER TABLE items ADD COLUMN barcode VARCHAR(50);
@@ -422,6 +442,7 @@ ALTER TABLE items DROP COLUMN barcode;
 ```
 
 **For Creating Indexes:**
+
 ```sql
 -- Migration
 CREATE INDEX idx_items_barcode ON items(barcode);
@@ -431,9 +452,10 @@ DROP INDEX idx_items_barcode;
 ```
 
 **For Complex Changes:**
+
 ```sql
 -- Store original state before migration
-CREATE TABLE _rollback_data_20240115 AS 
+CREATE TABLE _rollback_data_20240115 AS
 SELECT * FROM items WHERE modified_date > NOW() - INTERVAL '1 day';
 
 -- Rollback using stored data
@@ -480,7 +502,7 @@ async function batchMigrate(
 ) {
   let offset = 0;
   let hasMore = true;
-  
+
   while (hasMore) {
     // Start transaction for each batch
     await prisma.$transaction(async (tx) => {
@@ -491,12 +513,12 @@ async function batchMigrate(
         LIMIT ${batchSize}
         OFFSET ${offset}
       `);
-      
+
       if (records.length === 0) {
         hasMore = false;
         return;
       }
-      
+
       // Transform and update
       for (const record of records) {
         const transformed = transformFn(record);
@@ -506,14 +528,14 @@ async function batchMigrate(
           WHERE id = ${record.id}
         `;
       }
-      
+
       console.log(`Migrated ${offset + records.length} records`);
     });
-    
+
     offset += batchSize;
-    
+
     // Prevent overwhelming the database
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
   }
 }
 ```
@@ -522,34 +544,27 @@ async function batchMigrate(
 
 ```typescript
 // tools/scripts/parallel-migrate.ts
-async function parallelMigrate(
-  workerCount: number = 4,
-  tableName: string
-) {
+async function parallelMigrate(workerCount: number = 4, tableName: string) {
   // Get total count and divide work
   const totalCount = await prisma.$queryRaw`
     SELECT COUNT(*) FROM ${tableName}
   `;
-  
+
   const recordsPerWorker = Math.ceil(totalCount / workerCount);
-  
+
   // Create worker promises
   const workers = Array.from({ length: workerCount }, (_, i) => {
     const offset = i * recordsPerWorker;
     const limit = recordsPerWorker;
-    
+
     return migratePartition(tableName, offset, limit);
   });
-  
+
   // Run migrations in parallel
   await Promise.all(workers);
 }
 
-async function migratePartition(
-  tableName: string,
-  offset: number,
-  limit: number
-) {
+async function migratePartition(tableName: string, offset: number, limit: number) {
   // Worker implementation
   console.log(`Worker starting: offset=${offset}, limit=${limit}`);
   // Migration logic here
@@ -567,31 +582,31 @@ async function liveMigration() {
     AFTER INSERT OR UPDATE OR DELETE ON source_table
     FOR EACH ROW EXECUTE FUNCTION log_changes();
   `;
-  
+
   // 2. Initial bulk copy
   await batchMigrate(10000, 'source_table', transformFn);
-  
+
   // 3. Apply captured changes
   let changes = await getCaputuredChanges();
   while (changes.length > 0) {
     await applyChanges(changes);
     changes = await getCaputuredChanges();
   }
-  
+
   // 4. Final cutover
   await prisma.$transaction(async (tx) => {
     // Lock source table briefly
     await tx.$executeRaw`LOCK TABLE source_table IN EXCLUSIVE MODE`;
-    
+
     // Apply final changes
     const finalChanges = await getCaputuredChanges();
     await applyChanges(finalChanges);
-    
+
     // Switch to new table
     await tx.$executeRaw`ALTER TABLE source_table RENAME TO source_table_old`;
     await tx.$executeRaw`ALTER TABLE new_table RENAME TO source_table`;
   });
-  
+
   // 5. Cleanup
   await prisma.$executeRaw`DROP TRIGGER capture_changes ON source_table_old`;
 }
@@ -611,44 +626,44 @@ import { PrismaClient } from '@prisma/client';
 describe('Database Migrations', () => {
   let prisma: PrismaClient;
   let testDbUrl: string;
-  
+
   beforeAll(async () => {
     // Create test database
     testDbUrl = await createTestDatabase();
     process.env.DATABASE_URL = testDbUrl;
     prisma = new PrismaClient();
   });
-  
+
   afterAll(async () => {
     await prisma.$disconnect();
     await dropTestDatabase(testDbUrl);
   });
-  
+
   test('migrations should be reversible', async () => {
     // Apply all migrations
     execSync('pnpm prisma migrate deploy');
-    
+
     // Verify schema
     const tables = await prisma.$queryRaw`
       SELECT tablename FROM pg_tables 
       WHERE schemaname = 'public'
     `;
     expect(tables).toContainEqual({ tablename: 'items' });
-    
+
     // Test rollback
     await rollbackLastMigration();
-    
+
     // Verify rollback
     // ... assertions
   });
-  
+
   test('migrations should handle existing data', async () => {
     // Insert test data
     await seedTestData();
-    
+
     // Apply migration
     execSync('pnpm prisma migrate deploy');
-    
+
     // Verify data integrity
     const items = await prisma.item.findMany();
     expect(items).toHaveLength(100);
@@ -668,28 +683,28 @@ async function testMigrationPerformance(migrationSql: string) {
     orders: 500_000,
     inventory: 2_000_000,
   });
-  
+
   // Measure migration time
   const startTime = Date.now();
-  
+
   await prisma.$executeRawUnsafe(migrationSql);
-  
+
   const duration = Date.now() - startTime;
-  
+
   // Check performance thresholds
   expect(duration).toBeLessThan(300000); // 5 minutes
-  
+
   // Verify query performance after migration
   const queries = [
     'SELECT * FROM items WHERE sku = $1',
     'SELECT COUNT(*) FROM inventory WHERE item_id = $1',
   ];
-  
+
   for (const query of queries) {
     const explainResult = await prisma.$queryRaw`
       EXPLAIN ANALYZE ${query}
     `;
-    
+
     console.log(`Query performance:`, explainResult);
   }
 }
@@ -703,14 +718,14 @@ async function testSchemaCompatibility() {
   // Test old code with new schema
   const oldAppVersion = 'v1.0.0';
   const newSchema = await applyMigrations();
-  
+
   const oldApp = await startApp(oldAppVersion, newSchema);
   await runIntegrationTests(oldApp);
-  
+
   // Test new code with old schema
   const newAppVersion = 'v2.0.0';
   const oldSchema = await getCurrentSchema();
-  
+
   const newApp = await startApp(newAppVersion, oldSchema);
   await runIntegrationTests(newApp);
 }
@@ -727,28 +742,31 @@ async function testSchemaCompatibility() {
 export class MigrationMonitor {
   async monitorMigration(migrationName: string) {
     const startTime = Date.now();
-    
+
     // Monitor database metrics
     const metrics = setInterval(async () => {
       const stats = await this.getDatabaseStats();
-      
-      logger.info({
-        migration: migrationName,
-        connections: stats.connections,
-        locks: stats.locks,
-        slowQueries: stats.slowQueries,
-        diskUsage: stats.diskUsage,
-      }, 'Migration metrics');
-      
+
+      logger.info(
+        {
+          migration: migrationName,
+          connections: stats.connections,
+          locks: stats.locks,
+          slowQueries: stats.slowQueries,
+          diskUsage: stats.diskUsage,
+        },
+        'Migration metrics'
+      );
+
       // Alert on issues
       if (stats.locks > 100) {
         await this.alert('High lock count during migration');
       }
     }, 5000);
-    
+
     // Monitor application metrics
     const appMetrics = await this.monitorApplication();
-    
+
     return {
       stopMonitoring: () => {
         clearInterval(metrics);
@@ -757,7 +775,7 @@ export class MigrationMonitor {
       duration: () => Date.now() - startTime,
     };
   }
-  
+
   private async getDatabaseStats() {
     const [connections, locks, slowQueries] = await Promise.all([
       prisma.$queryRaw`SELECT count(*) FROM pg_stat_activity`,
@@ -767,7 +785,7 @@ export class MigrationMonitor {
         WHERE mean_exec_time > 1000
       `,
     ]);
-    
+
     return { connections, locks, slowQueries };
   }
 }
@@ -779,15 +797,15 @@ export class MigrationMonitor {
 -- validation/post_migration_checks.sql
 
 -- Check migration was applied
-SELECT migration_name, finished_at, applied_steps_count 
-FROM _prisma_migrations 
+SELECT migration_name, finished_at, applied_steps_count
+FROM _prisma_migrations
 WHERE migration_name = '20240115_add_item_barcode'
 AND finished_at IS NOT NULL;
 
 -- Verify schema changes
 SELECT column_name, data_type, is_nullable
 FROM information_schema.columns
-WHERE table_name = 'items' 
+WHERE table_name = 'items'
 AND column_name = 'barcode';
 
 -- Check indexes were created
@@ -821,44 +839,42 @@ interface ValidationResult {
   }>;
 }
 
-async function validateMigration(
-  migrationName: string
-): Promise<ValidationResult> {
+async function validateMigration(migrationName: string): Promise<ValidationResult> {
   const checks = [];
-  
+
   // Check 1: Migration completed
   const migration = await prisma.$queryRaw`
     SELECT * FROM _prisma_migrations 
     WHERE migration_name = ${migrationName}
   `;
-  
+
   checks.push({
     name: 'Migration completed',
     passed: migration[0]?.finished_at != null,
     message: migration[0]?.logs,
   });
-  
+
   // Check 2: No locked queries
   const locks = await prisma.$queryRaw`
     SELECT count(*) as count FROM pg_locks 
     WHERE granted = false
   `;
-  
+
   checks.push({
     name: 'No blocking locks',
     passed: locks[0].count === 0,
     message: `Found ${locks[0].count} blocking locks`,
   });
-  
+
   // Check 3: Application health
   const healthCheck = await fetch('http://localhost:3000/health');
-  
+
   checks.push({
     name: 'Application healthy',
     passed: healthCheck.ok,
     message: await healthCheck.text(),
   });
-  
+
   // Check 4: Query performance
   const slowQueries = await prisma.$queryRaw`
     SELECT query, mean_exec_time 
@@ -867,15 +883,15 @@ async function validateMigration(
     ORDER BY mean_exec_time DESC
     LIMIT 5
   `;
-  
+
   checks.push({
     name: 'Query performance',
     passed: slowQueries.length === 0,
     message: `Found ${slowQueries.length} slow queries`,
   });
-  
+
   return {
-    passed: checks.every(c => c.passed),
+    passed: checks.every((c) => c.passed),
     checks,
   };
 }
@@ -888,6 +904,7 @@ async function validateMigration(
 ### Standard Migration Procedure
 
 1. **Development**
+
    ```bash
    # Create and test migration locally
    pnpm prisma migrate dev --name descriptive_name
@@ -896,6 +913,7 @@ async function validateMigration(
    ```
 
 2. **Staging Deployment**
+
    ```bash
    # Deploy to staging
    pnpm prisma migrate deploy
@@ -904,6 +922,7 @@ async function validateMigration(
    ```
 
 3. **Production Preparation**
+
    ```bash
    # Create backup
    ./scripts/backup-database.sh
@@ -912,6 +931,7 @@ async function validateMigration(
    ```
 
 4. **Production Deployment**
+
    ```bash
    # Deploy migration
    pnpm prisma migrate deploy
@@ -929,6 +949,7 @@ async function validateMigration(
 ### Emergency Procedures
 
 **If migration fails:**
+
 1. Don't panic
 2. Check error logs
 3. If safe, retry migration
@@ -936,6 +957,7 @@ async function validateMigration(
 5. Notify team
 
 **If application errors after migration:**
+
 1. Check if backward compatible
 2. If yes, rollback code only
 3. If no, rollback database and code

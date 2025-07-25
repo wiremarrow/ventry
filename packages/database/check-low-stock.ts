@@ -15,19 +15,19 @@ async function checkLowStock() {
   try {
     // First check organizations
     const orgs = await prisma.organization.findMany({
-      select: { id: true, name: true, slug: true }
+      select: { id: true, name: true, slug: true },
     });
     console.log('\n🏢 Organizations:');
-    orgs.forEach(org => console.log(`  - ${org.name} (${org.slug}): ${org.id}`));
+    orgs.forEach((org) => console.log(`  - ${org.name} (${org.slug}): ${org.id}`));
 
     // Check items count per org
     const itemCounts = await prisma.item.groupBy({
       by: ['organizationId'],
-      _count: true
+      _count: true,
     });
     console.log('\n📦 Items per organization:');
-    itemCounts.forEach(count => {
-      const org = orgs.find(o => o.id === count.organizationId);
+    itemCounts.forEach((count) => {
+      const org = orgs.find((o) => o.id === count.organizationId);
       console.log(`  - ${org?.name || count.organizationId}: ${count._count} items`);
     });
 
@@ -35,24 +35,31 @@ async function checkLowStock() {
     const inventory = await prisma.inventory.findMany({
       include: {
         item: true,
-        location: true
+        location: true,
       },
       orderBy: {
-        qtyOnHand: 'asc'
+        qtyOnHand: 'asc',
       },
-      take: 20
+      take: 20,
     });
 
     console.log('\n📊 Inventory Status for Ventry Corporation:');
-    console.log('═══════════════════════════════════════════════════════════════════════════════════');
+    console.log(
+      '═══════════════════════════════════════════════════════════════════════════════════'
+    );
     console.log('SKU          | Name                     | On Hand | Reserved | Reorder | Status');
-    console.log('═══════════════════════════════════════════════════════════════════════════════════');
-    
-    inventory.forEach(inv => {
-      const status = inv.qtyOnHand === 0 ? '🔴 OUT OF STOCK' :
-                     inv.qtyOnHand < inv.item.reorderPoint ? '🟡 LOW STOCK' : 
-                     '🟢 IN STOCK';
-      
+    console.log(
+      '═══════════════════════════════════════════════════════════════════════════════════'
+    );
+
+    inventory.forEach((inv) => {
+      const status =
+        inv.qtyOnHand === 0
+          ? '🔴 OUT OF STOCK'
+          : inv.qtyOnHand < inv.item.reorderPoint
+            ? '🟡 LOW STOCK'
+            : '🟢 IN STOCK';
+
       console.log(
         `${inv.item.sku.padEnd(12)} | ${inv.item.name.padEnd(24).substring(0, 24)} | ${String(inv.qtyOnHand).padStart(7)} | ${String(inv.qtyReserved).padStart(8)} | ${String(inv.item.reorderPoint).padStart(7)} | ${status}`
       );
@@ -76,7 +83,6 @@ async function checkLowStock() {
     console.log(`🔴 Out of stock: ${counts[0].out_of_stock}`);
     console.log(`🟡 Low stock: ${counts[0].low_stock}`);
     console.log(`🟢 In stock: ${counts[0].in_stock}`);
-
   } catch (error) {
     console.error('Error:', error);
   } finally {

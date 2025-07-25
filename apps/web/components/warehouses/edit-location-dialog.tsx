@@ -59,11 +59,7 @@ interface EditLocationDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function EditLocationDialog({ 
-  location, 
-  open, 
-  onOpenChange 
-}: EditLocationDialogProps) {
+export function EditLocationDialog({ location, open, onOpenChange }: EditLocationDialogProps) {
   const utils = trpc.useUtils();
 
   const updateMutation = trpc.warehouses.locations.update.useMutation({
@@ -114,9 +110,7 @@ export function EditLocationDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Edit Location</DialogTitle>
-          <DialogDescription>
-            Update location information and settings
-          </DialogDescription>
+          <DialogDescription>Update location information and settings</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -130,9 +124,7 @@ export function EditLocationDialog({
                   <FormControl>
                     <Input placeholder="A1-01-001" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Unique identifier for this location
-                  </FormDescription>
+                  <FormDescription>Unique identifier for this location</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -145,10 +137,7 @@ export function EditLocationDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter location description..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter location description..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -229,9 +218,7 @@ export function EditLocationDialog({
                       onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Maximum number of items this location can hold
-                  </FormDescription>
+                  <FormDescription>Maximum number of items this location can hold</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -249,21 +236,14 @@ export function EditLocationDialog({
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={updateMutation.isPending}>

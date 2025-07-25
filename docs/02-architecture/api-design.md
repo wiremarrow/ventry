@@ -16,23 +16,19 @@ Ventry uses tRPC for type-safe APIs, providing end-to-end TypeScript type infere
 ```typescript
 // Backend router definition
 export const itemsRouter = createTRPCRouter({
-  list: organizationProcedure
-    .input(itemFilterSchema)
-    .query(async ({ ctx, input }) => {
-      // Implementation
-    }),
-    
-  create: organizationProcedure
-    .input(itemCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Implementation
-    }),
+  list: organizationProcedure.input(itemFilterSchema).query(async ({ ctx, input }) => {
+    // Implementation
+  }),
+
+  create: organizationProcedure.input(itemCreateSchema).mutation(async ({ ctx, input }) => {
+    // Implementation
+  }),
 });
 
 // Frontend usage with full type inference
-const { data } = trpc.items.list.useQuery({ 
-  search: "widget",
-  page: 1 
+const { data } = trpc.items.list.useQuery({
+  search: 'widget',
+  page: 1,
 });
 ```
 
@@ -46,7 +42,7 @@ export const appRouter = createTRPCRouter({
   auth: authRouter,
   health: healthRouter,
   organizations: organizationsRouter,
-  
+
   // Business logic routers
   items: itemsRouter,
   warehouses: warehousesRouter,
@@ -58,7 +54,7 @@ export const appRouter = createTRPCRouter({
   purchaseOrders: purchaseOrdersRouter,
   returns: returnsRouter,
   shipments: shipmentsRouter,
-  
+
   // Analytics routers
   reports: reportsRouter,
   analytics: analyticsRouter,
@@ -87,6 +83,7 @@ const itemFilterSchema = z.object({
 ### 2. Consistent Response Format
 
 #### List Endpoints
+
 ```typescript
 {
   items: T[],
@@ -100,6 +97,7 @@ const itemFilterSchema = z.object({
 ```
 
 #### Single Item Endpoints
+
 ```typescript
 {
   id: string,
@@ -131,6 +129,7 @@ throw new TRPCError({
 ### 4. Middleware Pattern
 
 #### Authentication Middleware
+
 ```typescript
 const isAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.user) {
@@ -145,17 +144,17 @@ const isAuthed = t.middleware(({ ctx, next }) => {
 ```
 
 #### Organization Context
+
 ```typescript
-export const organizationProcedure = authedProcedure
-  .use(async ({ ctx, next }) => {
-    const organizationId = await extractOrganizationId(ctx);
-    return next({
-      ctx: {
-        ...ctx,
-        organizationId,
-      },
-    });
+export const organizationProcedure = authedProcedure.use(async ({ ctx, next }) => {
+  const organizationId = await extractOrganizationId(ctx);
+  return next({
+    ctx: {
+      ...ctx,
+      organizationId,
+    },
   });
+});
 ```
 
 ## API Conventions
@@ -163,6 +162,7 @@ export const organizationProcedure = authedProcedure
 ### Naming Conventions
 
 #### Procedures
+
 - `list` - Get paginated list
 - `getById` - Get single item
 - `create` - Create new item
@@ -171,6 +171,7 @@ export const organizationProcedure = authedProcedure
 - `archive` - Soft delete
 
 #### Custom Actions
+
 - `approve` - Approve workflow
 - `cancel` - Cancel operation
 - `duplicate` - Copy item
@@ -180,6 +181,7 @@ export const organizationProcedure = authedProcedure
 ### Query vs Mutation
 
 #### Queries (Read Operations)
+
 - `list`
 - `getById`
 - `search`
@@ -187,6 +189,7 @@ export const organizationProcedure = authedProcedure
 - `export`
 
 #### Mutations (Write Operations)
+
 - `create`
 - `update`
 - `delete`
@@ -211,16 +214,19 @@ subscription: organizationProcedure
 ## API Security
 
 ### Authentication
+
 - JWT tokens in signed httpOnly cookies
 - Automatic token refresh
 - Session management
 
 ### Authorization
+
 - Role-based access control (RBAC)
 - Organization-scoped operations
 - Row-Level Security at database
 
 ### Rate Limiting (Future)
+
 ```typescript
 const rateLimitMiddleware = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -231,12 +237,15 @@ const rateLimitMiddleware = rateLimit({
 ## API Documentation
 
 ### Self-Documenting
+
 tRPC provides automatic type documentation through TypeScript:
+
 - Hover over any procedure for full type info
 - IntelliSense shows available procedures
 - Type errors catch API misuse at compile time
 
 ### OpenAPI Export (Future)
+
 ```typescript
 import { generateOpenApiDocument } from 'trpc-openapi';
 
@@ -250,6 +259,7 @@ const openApiDocument = generateOpenApiDocument(appRouter, {
 ## Performance Optimization
 
 ### Query Batching
+
 tRPC automatically batches multiple queries in a single HTTP request:
 
 ```typescript
@@ -262,13 +272,16 @@ const [items, warehouses, categories] = await Promise.all([
 ```
 
 ### Caching Strategy
+
 React Query integration provides:
+
 - Automatic caching
 - Background refetching
 - Optimistic updates
 - Request deduplication
 
 ### Database Optimization
+
 - Indexed queries
 - Pagination limits
 - Field selection (future)
@@ -277,6 +290,7 @@ React Query integration provides:
 ## Testing API Endpoints
 
 ### Unit Tests
+
 ```typescript
 describe('Items Router', () => {
   it('should create item', async () => {
@@ -291,6 +305,7 @@ describe('Items Router', () => {
 ```
 
 ### Integration Tests
+
 ```typescript
 it('should enforce organization isolation', async () => {
   const caller = appRouter.createCaller(integrationContext);
@@ -302,11 +317,13 @@ it('should enforce organization isolation', async () => {
 ## API Versioning Strategy
 
 ### Current Approach
+
 - Single version with backward compatibility
 - Deprecation warnings for breaking changes
 - Migration guides for updates
 
 ### Future Versioning
+
 ```typescript
 // Potential v2 router structure
 export const appRouterV2 = createTRPCRouter({

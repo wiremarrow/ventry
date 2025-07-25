@@ -46,10 +46,10 @@ interface CreateLocationDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function CreateLocationDialog({ 
-  warehouseId, 
-  open, 
-  onOpenChange 
+export function CreateLocationDialog({
+  warehouseId,
+  open,
+  onOpenChange,
 }: CreateLocationDialogProps) {
   const utils = trpc.useUtils();
 
@@ -82,7 +82,7 @@ export function CreateLocationDialog({
 
   const onSubmit = (data: CreateLocationFormData) => {
     if (!warehouseId) return;
-    
+
     createMutation.mutate({
       warehouseId,
       ...data,
@@ -94,9 +94,7 @@ export function CreateLocationDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add New Location</DialogTitle>
-          <DialogDescription>
-            Create a new storage location within this warehouse
-          </DialogDescription>
+          <DialogDescription>Create a new storage location within this warehouse</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -110,9 +108,7 @@ export function CreateLocationDialog({
                   <FormControl>
                     <Input placeholder="A1-01-001" {...field} />
                   </FormControl>
-                  <FormDescription>
-                    Unique identifier for this location
-                  </FormDescription>
+                  <FormDescription>Unique identifier for this location</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -125,10 +121,7 @@ export function CreateLocationDialog({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Enter location description..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Enter location description..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -208,9 +201,7 @@ export function CreateLocationDialog({
                       onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Maximum number of items this location can hold
-                  </FormDescription>
+                  <FormDescription>Maximum number of items this location can hold</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -228,21 +219,14 @@ export function CreateLocationDialog({
                     </FormDescription>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}
             />
 
             <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" disabled={createMutation.isPending}>

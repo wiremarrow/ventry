@@ -26,9 +26,9 @@ interface TRPCMockProviderProps {
 }
 
 // Test wrapper that provides tRPC context
-export function TRPCMockProvider({ 
-  children, 
-  queryClient = createTestQueryClient() 
+export function TRPCMockProvider({
+  children,
+  queryClient = createTestQueryClient(),
 }: TRPCMockProviderProps) {
   const trpcClient = mockTrpc.createClient({
     links: [],
@@ -36,9 +36,7 @@ export function TRPCMockProvider({
 
   return (
     <mockTrpc.Provider client={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </mockTrpc.Provider>
   );
 }

@@ -18,27 +18,26 @@ async function checkDatabaseState() {
     const orgCount = await prisma.organization.count();
     const warehouseCount = await prisma.warehouse.count();
     const locationCount = await prisma.location.count();
-    
+
     console.log('Database State:');
     console.log('  Organizations:', orgCount);
     console.log('  Items:', itemCount);
     console.log('  Inventory records:', inventoryCount);
     console.log('  Warehouses:', warehouseCount);
     console.log('  Locations:', locationCount);
-    
+
     // Check specifically in Ventry org
     const ventryOrg = await prisma.organization.findFirst({
-      where: { slug: 'ventry-corp' }
+      where: { slug: 'ventry-corp' },
     });
-    
+
     if (ventryOrg) {
       const ventryItems = await prisma.item.count({
-        where: { organizationId: ventryOrg.id }
+        where: { organizationId: ventryOrg.id },
       });
       console.log('\nVentry Corporation:');
       console.log('  Items:', ventryItems);
     }
-    
   } catch (error) {
     console.error('Error:', error);
   } finally {

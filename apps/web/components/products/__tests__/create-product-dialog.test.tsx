@@ -69,7 +69,7 @@ describe('CreateProductDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     vi.mocked(trpc.itemCategories.list.useQuery).mockReturnValue({
       data: mockCategories,
       isLoading: false,
@@ -186,7 +186,9 @@ describe('CreateProductDialog', () => {
 
     // The select fields might not show validation until they're touched
     // For now, we'll just verify that the form doesn't submit without them
-    expect(vi.mocked(trpc.items.create.useMutation).mock.results[0].value.mutate).not.toHaveBeenCalled();
+    expect(
+      vi.mocked(trpc.items.create.useMutation).mock.results[0].value.mutate
+    ).not.toHaveBeenCalled();
   });
 
   it('submits form with valid data', async () => {
@@ -202,7 +204,7 @@ describe('CreateProductDialog', () => {
     // Fill required fields
     await user.type(screen.getByLabelText('SKU *'), 'TEST-001');
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
-    
+
     // Select category using combobox role
     const categoryCombobox = screen.getAllByRole('combobox')[0];
     await user.click(categoryCombobox);
@@ -253,7 +255,7 @@ describe('CreateProductDialog', () => {
     await user.type(screen.getByLabelText('SKU *'), 'TEST-002');
     await user.type(screen.getByLabelText('Product Name *'), 'Full Test Product');
     await user.type(screen.getByLabelText('Description'), 'This is a test description');
-    
+
     // Select category using combobox role
     const categoryCombobox2 = screen.getAllByRole('combobox')[0];
     await user.click(categoryCombobox2);
@@ -279,7 +281,7 @@ describe('CreateProductDialog', () => {
     // Fill inventory - properly set values for number inputs
     // For reorder point (default 0), typing '25' makes it 25
     await user.type(screen.getByLabelText('Reorder Point'), '{End}{Backspace}25');
-    
+
     // For reorder quantity (default 1), we need to clear it first
     const reorderQtyInput = screen.getByLabelText('Reorder Quantity');
     // Focus and select all text
@@ -344,7 +346,7 @@ describe('CreateProductDialog', () => {
   it('handles mutation success', async () => {
     const mockInvalidate = vi.fn();
     const mockReset = vi.fn();
-    
+
     vi.mocked(trpc.useUtils).mockReturnValue({
       items: {
         list: {
@@ -374,14 +376,14 @@ describe('CreateProductDialog', () => {
     // Fill minimum required fields
     await user.type(screen.getByLabelText('SKU *'), 'TEST-001');
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
-    
+
     // Select category
     const categoryCombobox = screen.getAllByRole('combobox')[0];
     await user.click(categoryCombobox);
     // Use getAllByText and select the last one (in dropdown)
     const electronicsOptions = screen.getAllByText('Electronics');
     await user.click(electronicsOptions[electronicsOptions.length - 1]);
-    
+
     // Select unit
     const unitCombobox = screen.getAllByRole('combobox')[1];
     await user.click(unitCombobox);
@@ -417,14 +419,14 @@ describe('CreateProductDialog', () => {
     // Fill minimum required fields
     await user.type(screen.getByLabelText('SKU *'), 'TEST-001');
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
-    
+
     // Select category
     const categoryCombobox = screen.getAllByRole('combobox')[0];
     await user.click(categoryCombobox);
     // Use getAllByText and select the last one (in dropdown)
     const electronicsOptions = screen.getAllByText('Electronics');
     await user.click(electronicsOptions[electronicsOptions.length - 1]);
-    
+
     // Select unit
     const unitCombobox = screen.getAllByRole('combobox')[1];
     await user.click(unitCombobox);
@@ -445,7 +447,7 @@ describe('CreateProductDialog', () => {
 
     const skuInput = screen.getByLabelText('SKU *');
     const longSku = 'A'.repeat(51);
-    
+
     await user.type(skuInput, longSku);
     fireEvent.blur(skuInput);
 
@@ -464,18 +466,18 @@ describe('CreateProductDialog', () => {
     // Type invalid number in cost field
     const costInput = screen.getByLabelText('Default Cost');
     await user.type(costInput, '-10');
-    
+
     // Fill required fields
     await user.type(screen.getByLabelText('SKU *'), 'TEST-001');
     await user.type(screen.getByLabelText('Product Name *'), 'Test Product');
-    
+
     // Select category
     const categoryCombobox = screen.getAllByRole('combobox')[0];
     await user.click(categoryCombobox);
     // Use getAllByText and select the last one (in dropdown)
     const electronicsOptions = screen.getAllByText('Electronics');
     await user.click(electronicsOptions[electronicsOptions.length - 1]);
-    
+
     // Select unit
     const unitCombobox = screen.getAllByRole('combobox')[1];
     await user.click(unitCombobox);

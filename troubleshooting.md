@@ -3,6 +3,7 @@
 This comprehensive guide consolidates all troubleshooting information for the Ventry project. It covers common issues, solutions, and debugging techniques for authentication, database, build, runtime, and performance problems.
 
 ## Table of Contents
+
 - [Common Issues and Solutions](#common-issues-and-solutions)
 - [Authentication Problems](#authentication-problems)
 - [Database Issues](#database-issues)
@@ -16,6 +17,7 @@ This comprehensive guide consolidates all troubleshooting information for the Ve
 ### Quick Start Problems
 
 #### Services Not Starting
+
 ```bash
 # Ensure all dependencies are installed
 pnpm install
@@ -33,6 +35,7 @@ pnpm dev
 ```
 
 #### Module Not Found Errors
+
 ```bash
 # Clear cache and reinstall
 rm -rf node_modules
@@ -54,6 +57,7 @@ pnpm typecheck --build --force
 If you receive an "Invalid credentials" error when trying to login:
 
 1. **Verify Database Seeding**: Ensure you've run the seed script:
+
    ```bash
    pnpm --filter @ventry/database db:seed
    # OR for comprehensive seed data:
@@ -71,11 +75,12 @@ If you receive an "Invalid credentials" error when trying to login:
    - Clear localStorage for auth-storage
    - Hard refresh the page (Cmd+Shift+R or Ctrl+Shift+F5)
 
-4. **Verify Backend is Running**: 
+4. **Verify Backend is Running**:
+
    ```bash
    # Check if backend is responding
    curl http://localhost:6060/health
-   
+
    # Ensure both services are running
    pnpm dev
    ```
@@ -83,6 +88,7 @@ If you receive an "Invalid credentials" error when trying to login:
 ### Dashboard Shows "UNAUTHORIZED" Error
 
 **Symptoms:**
+
 - Dashboard displays "Failed to load statistics" with "UNAUTHORIZED" error
 - Login appears successful but API calls fail
 - Organization list doesn't load
@@ -100,6 +106,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 ```
 
 **Verification Steps:**
+
 1. Check browser DevTools > Application > Cookies
 2. Verify `auth-token` cookie exists
 3. Check Network tab for API responses
@@ -110,6 +117,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 **Cause:** Attempting to unsign a cookie that doesn't exist
 
 **Solution:** Always check if cookie exists before unsigning:
+
 ```typescript
 const cookie = request.cookies['cookie-name'];
 const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
@@ -118,6 +126,7 @@ const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
 ### Organization Context Errors
 
 If you see "No organization selected" errors:
+
 - This is expected behavior for multi-tenant support
 - The login process automatically assigns your first organization
 - Use the organization switcher in the header to change organizations
@@ -126,6 +135,7 @@ If you see "No organization selected" errors:
 ### JWT Token Issues
 
 **401 Unauthorized errors:**
+
 1. Check if JWT token is expired (default: 7 days)
 2. Verify token is sent in Authorization header or cookie
 3. Check backend JWT_SECRET matches
@@ -136,6 +146,7 @@ If you see "No organization selected" errors:
 ### PostgreSQL Connection Problems
 
 #### "Connection terminated unexpectedly"
+
 ```bash
 # Check if PostgreSQL is running
 docker ps | grep postgres
@@ -151,6 +162,7 @@ echo $DATABASE_URL
 ```
 
 #### Database Not Found
+
 ```bash
 # Create database if missing
 createdb -h localhost -p 5487 -U ventry ventry_dev
@@ -169,6 +181,7 @@ pnpm --filter @ventry/database db:migrate
 **Cause:** Prisma runs migrations in transactions, but CONCURRENTLY requires non-transactional execution
 
 **Solution:** Remove CONCURRENTLY from migration files or run manually:
+
 ```sql
 -- Run outside of migration
 CREATE INDEX CONCURRENTLY idx_name ON table(column);
@@ -179,6 +192,7 @@ CREATE INDEX CONCURRENTLY idx_name ON table(column);
 #### Circular Dependency on Organization Loading
 
 **Symptoms:**
+
 - "Loading organization..." spinner never disappears
 - Can't query organizations list
 
@@ -195,14 +209,15 @@ USING (user_id = current_setting('app.current_user_id', true));
 #### Data Not Filtering by Organization
 
 **Verification:**
+
 ```sql
 -- Check if RLS is enabled
-SELECT relname, relrowsecurity 
-FROM pg_class 
+SELECT relname, relrowsecurity
+FROM pg_class
 WHERE relname = 'your_table';
 
 -- Check existing policies
-SELECT * FROM pg_policies 
+SELECT * FROM pg_policies
 WHERE tablename = 'your_table';
 ```
 
@@ -211,22 +226,26 @@ WHERE tablename = 'your_table';
 ### TypeScript Errors
 
 #### React Query v5 Migration Issues
+
 ```typescript
 // Old (v4)
-const { isLoading } = useQuery()
+const { isLoading } = useQuery();
 
 // New (v5)
-const { isPending } = useQuery()
+const { isPending } = useQuery();
 ```
 
 #### Prisma Decimal Type Conversions
+
 ```typescript
 // Convert Decimal to number
-const numericValue = parseFloat(decimalValue.toString())
+const numericValue = parseFloat(decimalValue.toString());
 ```
 
 #### Missing Required Fields
+
 Check that all required fields match the backend schema:
+
 - Customer: customerCode, firstName, lastName, email
 - Order: customerId, items array
 - Purchase Order: supplierId, items array
@@ -234,7 +253,9 @@ Check that all required fields match the backend schema:
 ### Next.js Build Issues
 
 #### Turbopack Compatibility Issue
-**Error:** 
+
+**Error:**
+
 ```
 [Error [TurbopackInternalError]: Next.js package not found
 Debug info:
@@ -242,12 +263,14 @@ Debug info:
 ```
 
 **Solution:** Turbopack is disabled due to monorepo compatibility issues. Use standard Webpack:
+
 ```bash
 # Don't use --turbopack flag
 pnpm --filter @ventry/web dev
 ```
 
 #### ESLint 9 Compatibility
+
 **Issue:** Next.js 15 with ESLint 9 causes `context.getScope is not a function` errors
 
 **Solution:** Custom ESLint configuration is implemented that bypasses the Next.js config. This is a known issue tracked in Next.js GitHub.
@@ -271,6 +294,7 @@ pnpm build
 ### CORS Errors
 
 **Verification:**
+
 1. Check FRONTEND_URL in backend .env: `FRONTEND_URL=http://localhost:6061`
 2. Check NEXT_PUBLIC_API_URL in frontend: `NEXT_PUBLIC_API_URL=http://localhost:6060`
 3. Ensure credentials are included in requests
@@ -278,6 +302,7 @@ pnpm build
 ### API Proxy Issues
 
 The frontend uses Next.js rewrites to proxy API requests. Check `next.config.js`:
+
 ```javascript
 async rewrites() {
   return [
@@ -292,6 +317,7 @@ async rewrites() {
 ### Node.js Type Stripping Warning
 
 **Warning during backend startup:**
+
 ```
 ExperimentalWarning: Type stripping is an experimental feature
 ```
@@ -303,7 +329,9 @@ ExperimentalWarning: Type stripping is an experimental feature
 ### Slow Queries
 
 **Debugging Steps:**
+
 1. Enable query logging in Prisma:
+
    ```typescript
    const prisma = new PrismaClient({
      log: ['query', 'info', 'warn', 'error'],
@@ -311,6 +339,7 @@ ExperimentalWarning: Type stripping is an experimental feature
    ```
 
 2. Check for missing indexes:
+
    ```sql
    -- Find slow queries
    SELECT query, calls, mean_exec_time
@@ -328,12 +357,15 @@ ExperimentalWarning: Type stripping is an experimental feature
 ### High Memory Usage
 
 **Common Causes:**
+
 1. Memory leaks in subscriptions
 2. Large result sets without pagination
 3. Unclosed database connections
 
 **Solutions:**
+
 1. Use pagination for large queries:
+
    ```typescript
    const items = await prisma.item.findMany({
      take: 20,
@@ -352,6 +384,7 @@ ExperimentalWarning: Type stripping is an experimental feature
 ### Dashboard Performance
 
 **Auto-refresh Issues:**
+
 - Default refresh interval: 30 seconds
 - Can be toggled off with the refresh button
 - Monitor Network tab for excessive API calls
@@ -361,11 +394,12 @@ ExperimentalWarning: Type stripping is an experimental feature
 ### Browser DevTools
 
 #### Console Commands
+
 ```javascript
 // Enable debug logging
-window.__DEBUG_API__ = true;      // Log all API calls
-window.__DEBUG_RENDERS__ = true;  // Track component renders
-window.__DEBUG_AUTH__ = true;     // Log auth state changes
+window.__DEBUG_API__ = true; // Log all API calls
+window.__DEBUG_RENDERS__ = true; // Track component renders
+window.__DEBUG_AUTH__ = true; // Log auth state changes
 
 // Check current auth state
 console.log(document.cookie);
@@ -373,19 +407,21 @@ console.log(localStorage.getItem('auth-storage'));
 ```
 
 #### Network Tab
+
 - Filter by XHR/Fetch to see API calls
 - Check request/response headers
 - Verify cookies are sent with requests
 - Look for failed requests (red entries)
 
 #### Application Tab
+
 - Cookies: Check auth-token and active-organization
 - Local Storage: Check auth-storage for user state
 - Session Storage: Check for temporary data
 
 ### React Developer Tools
 
-1. **Components Tab**: 
+1. **Components Tab**:
    - Inspect props and state
    - Search for specific components
    - View component tree
@@ -398,12 +434,14 @@ console.log(localStorage.getItem('auth-storage'));
 ### Sentry Integration
 
 **View Errors:**
+
 1. Go to https://sentry.io
 2. Select your Ventry project
 3. Check Issues tab for errors
 4. View Performance tab for slow operations
 
 **Test Sentry:**
+
 ```bash
 # Visit the test page
 open http://localhost:6061/sentry-test
@@ -432,6 +470,7 @@ useWhyDidYouUpdate('MyComponent', props);
 ### Backend Debugging
 
 #### Enable Verbose Logging
+
 ```typescript
 // In server.ts
 fastify.addHook('onRequest', async (request, reply) => {
@@ -444,6 +483,7 @@ fastify.addHook('onResponse', async (request, reply) => {
 ```
 
 #### tRPC Error Details
+
 ```typescript
 // Add detailed error logging
 .mutation(async ({ ctx, input }) => {
@@ -466,6 +506,7 @@ fastify.addHook('onResponse', async (request, reply) => {
 #### E2E Tests Failing
 
 **Pre-test Checklist:**
+
 ```bash
 # Ensure database is seeded
 pnpm --filter @ventry/database db:seed
@@ -484,7 +525,9 @@ pnpm test:e2e -- --grep "login"
 #### Integration Tests Timeout
 
 **Solutions:**
+
 1. Ensure test database exists:
+
    ```bash
    createdb -h localhost -p 5487 -U ventry ventry_integration_test
    ```
@@ -499,6 +542,7 @@ pnpm test:e2e -- --grep "login"
 ### Environment Variable Issues
 
 **Verification:**
+
 ```bash
 # Check all required variables
 cat .env | grep -E "DATABASE_URL|JWT_SECRET|FRONTEND_URL"

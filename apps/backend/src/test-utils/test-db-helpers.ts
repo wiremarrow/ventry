@@ -3,9 +3,9 @@ import { hash } from 'bcryptjs';
 
 /**
  * Test Database Helpers
- * 
+ *
  * Simple, direct functions for creating test data using the dual-connection pattern.
- * 
+ *
  * IMPORTANT: Always use adminPrisma for creating test data to bypass RLS.
  * Use appPrisma with withRLS for testing RLS enforcement.
  */
@@ -16,30 +16,33 @@ import { hash } from 'bcryptjs';
 export async function createTestOrg(adminPrisma: PrismaClient, name?: string) {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(7);
-  
+
   return await adminPrisma.organization.create({
     data: {
       name: name || 'Test Organization',
       slug: `test-org-${timestamp}-${randomSuffix}`,
-    }
+    },
   });
 }
 
 /**
  * Creates a test user with hashed password and unique identifiers
  */
-export async function createTestUser(adminPrisma: PrismaClient, data?: Partial<{
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  role: 'SUPERADMIN' | 'ADMIN' | 'USER';
-  isActive: boolean;
-}>) {
+export async function createTestUser(
+  adminPrisma: PrismaClient,
+  data?: Partial<{
+    email: string;
+    username: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    role: 'SUPERADMIN' | 'ADMIN' | 'USER';
+    isActive: boolean;
+  }>
+) {
   const timestamp = Date.now();
   const randomSuffix = Math.random().toString(36).substring(7);
-  
+
   return await adminPrisma.user.create({
     data: {
       email: data?.email || `test-${timestamp}-${randomSuffix}@test.com`,
@@ -49,7 +52,7 @@ export async function createTestUser(adminPrisma: PrismaClient, data?: Partial<{
       password: data?.password ? await hash(data.password, 10) : await hash('password123', 10),
       role: data?.role || 'USER',
       isActive: data?.isActive ?? true,
-    }
+    },
   });
 }
 
@@ -57,17 +60,17 @@ export async function createTestUser(adminPrisma: PrismaClient, data?: Partial<{
  * Links a user to an organization with the specified role
  */
 export async function linkUserToOrg(
-  adminPrisma: PrismaClient, 
-  userId: string, 
+  adminPrisma: PrismaClient,
+  userId: string,
   organizationId: string,
   role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER' = 'MEMBER'
 ) {
   return await adminPrisma.organizationMember.create({
-    data: { 
-      userId, 
-      organizationId, 
-      role 
-    }
+    data: {
+      userId,
+      organizationId,
+      role,
+    },
   });
 }
 
@@ -75,21 +78,24 @@ export async function linkUserToOrg(
  * Creates a complete test setup with org, user, and membership
  * Returns all created entities for easy cleanup
  */
-export async function createTestSetup(adminPrisma: PrismaClient, options?: {
-  orgName?: string;
-  userEmail?: string;
-  userRole?: 'SUPERADMIN' | 'ADMIN' | 'USER';
-  memberRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
-}) {
+export async function createTestSetup(
+  adminPrisma: PrismaClient,
+  options?: {
+    orgName?: string;
+    userEmail?: string;
+    userRole?: 'SUPERADMIN' | 'ADMIN' | 'USER';
+    memberRole?: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+  }
+) {
   const org = await createTestOrg(adminPrisma, options?.orgName);
-  const user = await createTestUser(adminPrisma, { 
+  const user = await createTestUser(adminPrisma, {
     email: options?.userEmail,
-    role: options?.userRole || 'ADMIN' // Default to ADMIN for tests
+    role: options?.userRole || 'ADMIN', // Default to ADMIN for tests
   });
   const membership = await linkUserToOrg(
-    adminPrisma, 
-    user.id, 
-    org.id, 
+    adminPrisma,
+    user.id,
+    org.id,
     options?.memberRole || 'MEMBER'
   );
 
@@ -99,16 +105,16 @@ export async function createTestSetup(adminPrisma: PrismaClient, options?: {
     membership,
     // Helper cleanup function
     cleanup: async () => {
-      await adminPrisma.organizationMember.delete({ 
-        where: { id: membership.id } 
+      await adminPrisma.organizationMember.delete({
+        where: { id: membership.id },
       });
-      await adminPrisma.user.delete({ 
-        where: { id: user.id } 
+      await adminPrisma.user.delete({
+        where: { id: user.id },
       });
-      await adminPrisma.organization.delete({ 
-        where: { id: org.id } 
+      await adminPrisma.organization.delete({
+        where: { id: org.id },
       });
-    }
+    },
   };
 }
 
@@ -125,20 +131,20 @@ export async function createTestItem(
   }>
 ) {
   const timestamp = Date.now();
-  
+
   // Create required category if not exists
   const category = await adminPrisma.itemCategory.upsert({
     where: {
       organizationId_name: {
         organizationId,
-        name: 'Test Category'
-      }
+        name: 'Test Category',
+      },
     },
     update: {},
     create: {
       organizationId,
       name: 'Test Category',
-    }
+    },
   });
 
   // Create required UOM if not exists
@@ -146,15 +152,15 @@ export async function createTestItem(
     where: {
       organizationId_code: {
         organizationId,
-        code: 'EA'
-      }
+        code: 'EA',
+      },
     },
     update: {},
     create: {
       organizationId,
       code: 'EA',
       description: 'Each',
-    }
+    },
   });
 
   return await adminPrisma.item.create({
@@ -167,6 +173,6 @@ export async function createTestItem(
       uomId: uom.id,
       reorderPoint: 10,
       reorderQty: 50,
-    }
+    },
   });
 }

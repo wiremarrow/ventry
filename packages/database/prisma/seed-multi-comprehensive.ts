@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
  * Multi-Organization Comprehensive Seeder
- * 
+ *
  * Creates 3 organizations with full comprehensive data:
  * - Ventry Corporation (default org)
  * - TechStart Inc.
  * - Global Retail Co.
- * 
+ *
  * Each organization gets the same volume of data:
  * - 45 products across 3 categories
  * - 4 warehouses with 40+ locations each
@@ -14,7 +14,7 @@
  * - 12 suppliers with contacts
  * - Purchase orders, sales orders, shipments, returns, etc.
  * - Full historical data for analytics
- * 
+ *
  * Run with: pnpm db:seed:multi
  */
 
@@ -28,7 +28,7 @@ faker.seed(12345);
 
 async function clearDatabase() {
   console.log('🧹 Clearing entire database...');
-  
+
   // Delete in reverse order of dependencies
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -72,7 +72,7 @@ async function clearDatabase() {
   await prisma.userRole.deleteMany();
   await prisma.employee.deleteMany();
   await prisma.user.deleteMany();
-  
+
   console.log('✅ Database cleared');
 }
 
@@ -86,14 +86,14 @@ function orgPrefix(orgSlug: string, value: string): string {
 
 async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
   console.log(`  📏 Creating units of measure...`);
-  
+
   const uomEach = await prisma.unitOfMeasure.create({
     data: {
       organizationId,
       code: 'EA',
       description: 'Each',
       isBase: true,
-    }
+    },
   });
 
   const uomBox = await prisma.unitOfMeasure.create({
@@ -103,7 +103,7 @@ async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
       description: 'Box',
       isBase: false,
       conversionFactorToBase: new Decimal(12),
-    }
+    },
   });
 
   const uomCase = await prisma.unitOfMeasure.create({
@@ -113,44 +113,78 @@ async function seedBasicDataForOrg(organizationId: string, orgSlug: string) {
       description: 'Case',
       isBase: false,
       conversionFactorToBase: new Decimal(24),
-    }
+    },
   });
 
   console.log(`  📁 Creating item categories...`);
-  
+
   const categories = await Promise.all([
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'ventry-corp' ? 'Electronics' : (orgSlug === 'techstart' ? 'Electronics' : 'Apparel'),
-        description: orgSlug === 'ventry-corp' ? 'Electronic devices and accessories' : (orgSlug === 'techstart' ? 'Electronic devices and accessories' : 'Clothing and accessories'),
-      }
+        name:
+          orgSlug === 'ventry-corp'
+            ? 'Electronics'
+            : orgSlug === 'techstart'
+              ? 'Electronics'
+              : 'Apparel',
+        description:
+          orgSlug === 'ventry-corp'
+            ? 'Electronic devices and accessories'
+            : orgSlug === 'techstart'
+              ? 'Electronic devices and accessories'
+              : 'Clothing and accessories',
+      },
     }),
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'ventry-corp' ? 'Office Supplies' : (orgSlug === 'techstart' ? 'Computer Accessories' : 'Home & Garden'),
-        description: orgSlug === 'ventry-corp' ? 'Office supplies and stationery' : (orgSlug === 'techstart' ? 'Keyboards, mice, cables, etc.' : 'Home decor and garden supplies'),
-      }
+        name:
+          orgSlug === 'ventry-corp'
+            ? 'Office Supplies'
+            : orgSlug === 'techstart'
+              ? 'Computer Accessories'
+              : 'Home & Garden',
+        description:
+          orgSlug === 'ventry-corp'
+            ? 'Office supplies and stationery'
+            : orgSlug === 'techstart'
+              ? 'Keyboards, mice, cables, etc.'
+              : 'Home decor and garden supplies',
+      },
     }),
     prisma.itemCategory.create({
       data: {
         organizationId,
-        name: orgSlug === 'ventry-corp' ? 'Furniture' : (orgSlug === 'techstart' ? 'Office Equipment' : 'Sports & Outdoors'),
-        description: orgSlug === 'ventry-corp' ? 'Office and home furniture' : (orgSlug === 'techstart' ? 'Printers, scanners, office supplies' : 'Sporting goods and outdoor equipment'),
-      }
+        name:
+          orgSlug === 'ventry-corp'
+            ? 'Furniture'
+            : orgSlug === 'techstart'
+              ? 'Office Equipment'
+              : 'Sports & Outdoors',
+        description:
+          orgSlug === 'ventry-corp'
+            ? 'Office and home furniture'
+            : orgSlug === 'techstart'
+              ? 'Printers, scanners, office supplies'
+              : 'Sporting goods and outdoor equipment',
+      },
     }),
   ]);
 
   return { uoms: [uomEach, uomBox, uomCase], categories };
 }
 
-async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: string, basicData: any) {
+async function seedComprehensiveDataForOrg(
+  organizationId: string,
+  orgSlug: string,
+  basicData: any
+) {
   const { uoms, categories } = basicData;
-  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
-  
+  const prefix = orgSlug === 'ventry-corp' ? '' : orgSlug === 'techstart' ? 'TS' : 'GR';
+
   console.log(`  🏭 Creating warehouses...`);
-  
+
   const warehouses = await Promise.all([
     prisma.warehouse.create({
       data: {
@@ -163,7 +197,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         postalCode: orgSlug === 'techstart' ? '95110' : '75201',
         country: 'USA',
         phone: orgSlug === 'techstart' ? '(408) 555-0100' : '(214) 555-0200',
-      }
+      },
     }),
     prisma.warehouse.create({
       data: {
@@ -176,7 +210,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         postalCode: orgSlug === 'techstart' ? '94103' : '90001',
         country: 'USA',
         phone: orgSlug === 'techstart' ? '(415) 555-0200' : '(213) 555-0300',
-      }
+      },
     }),
     prisma.warehouse.create({
       data: {
@@ -189,7 +223,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         postalCode: orgSlug === 'techstart' ? '02101' : '10001',
         country: 'USA',
         phone: orgSlug === 'techstart' ? '(617) 555-0300' : '(212) 555-0400',
-      }
+      },
     }),
     prisma.warehouse.create({
       data: {
@@ -202,12 +236,12 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         postalCode: '60601',
         country: 'USA',
         phone: orgSlug === 'techstart' ? '(312) 555-0400' : '(312) 555-0500',
-      }
+      },
     }),
   ]);
 
   console.log(`  📍 Creating warehouse locations...`);
-  
+
   // Create 10 locations per warehouse
   const locations = [];
   for (const warehouse of warehouses) {
@@ -222,21 +256,21 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
           zone: i <= 2 ? 'RECEIVING' : i <= 8 ? 'STORAGE' : 'SHIPPING',
           isTempControlled: i % 3 === 0,
           description: `${warehouse.code} Location ${i}`,
-          maxCapacity: 1000 + (i * 100),
-        }
+          maxCapacity: 1000 + i * 100,
+        },
       });
       locations.push(location);
     }
   }
 
   console.log(`  📦 Creating items...`);
-  
+
   // Create 15 items per category
   const items = [];
   for (const category of categories) {
     for (let i = 1; i <= 15; i++) {
       let name, description, cost, price;
-      
+
       if (orgSlug === 'techstart') {
         // TechStart items
         if (category.name === 'Electronics') {
@@ -244,21 +278,21 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
           const type = types[(i - 1) % types.length];
           name = `${type} Model ${i}`;
           description = `High-performance ${type.toLowerCase()} with advanced features`;
-          cost = 200 + (i * 50);
+          cost = 200 + i * 50;
           price = cost * 1.5;
         } else if (category.name === 'Computer Accessories') {
           const types = ['Keyboard', 'Mouse', 'USB Cable', 'HDMI Cable', 'Webcam'];
           const type = types[(i - 1) % types.length];
           name = `${type} Pro ${i}`;
           description = `Professional-grade ${type.toLowerCase()}`;
-          cost = 20 + (i * 5);
+          cost = 20 + i * 5;
           price = cost * 2;
         } else {
           const types = ['Printer', 'Scanner', 'Paper Shredder', 'Desk Lamp', 'Monitor Stand'];
           const type = types[(i - 1) % types.length];
           name = `${type} ${i}`;
           description = `Office ${type.toLowerCase()} for productivity`;
-          cost = 50 + (i * 10);
+          cost = 50 + i * 10;
           price = cost * 1.8;
         }
       } else {
@@ -268,25 +302,25 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
           const type = types[(i - 1) % types.length];
           name = `${type} Style ${i}`;
           description = `Fashionable ${type.toLowerCase()} in various colors`;
-          cost = 15 + (i * 3);
+          cost = 15 + i * 3;
           price = cost * 2.5;
         } else if (category.name === 'Home & Garden') {
           const types = ['Planter', 'Vase', 'Lamp', 'Rug', 'Curtains'];
           const type = types[(i - 1) % types.length];
           name = `${type} Collection ${i}`;
           description = `Beautiful ${type.toLowerCase()} for your home`;
-          cost = 25 + (i * 5);
+          cost = 25 + i * 5;
           price = cost * 2.2;
         } else {
           const types = ['Basketball', 'Tennis Racket', 'Yoga Mat', 'Camping Tent', 'Bicycle'];
           const type = types[(i - 1) % types.length];
           name = `${type} Pro ${i}`;
           description = `Professional ${type.toLowerCase()} for enthusiasts`;
-          cost = 30 + (i * 10);
+          cost = 30 + i * 10;
           price = cost * 2;
         }
       }
-      
+
       const item = await prisma.item.create({
         data: {
           organizationId,
@@ -300,14 +334,14 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
           reorderPoint: 50,
           reorderQty: 100,
           isActive: true,
-        }
+        },
       });
       items.push(item);
     }
   }
 
   console.log(`  🧑‍💼 Creating suppliers...`);
-  
+
   const suppliers = [];
   for (let i = 1; i <= 12; i++) {
     const supplier = await prisma.supplier.create({
@@ -343,16 +377,16 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
               email: faker.internet.email(),
               phone: faker.phone.number(),
             },
-          ]
-        }
+          ],
+        },
       },
-      include: { contacts: true }
+      include: { contacts: true },
     });
     suppliers.push(supplier);
   }
 
   console.log(`  👥 Creating customers...`);
-  
+
   const customers = [];
   for (let i = 1; i <= 25; i++) {
     const customer = await prisma.customer.create({
@@ -366,7 +400,7 @@ async function seedComprehensiveDataForOrg(organizationId: string, orgSlug: stri
         phone: faker.phone.number(),
         taxId: i % 2 === 0 ? faker.string.alphanumeric(9) : null,
         defaultPaymentTerms: ['NET30', 'NET60', 'COD'][i % 3],
-      }
+      },
     });
     customers.push(customer);
   }
@@ -389,17 +423,17 @@ async function seedInventoryAndOperationsForOrg(
   adminUser: any
 ) {
   const { items, locations, customers, suppliers, warehouses } = data;
-  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
-  
+  const prefix = orgSlug === 'ventry-corp' ? '' : orgSlug === 'techstart' ? 'TS' : 'GR';
+
   console.log(`  📊 Creating inventory records...`);
-  
+
   // Create inventory for each item in various locations
   const inventoryRecords = [];
   for (const item of items) {
     // Each item in 2-4 random locations
     const numLocations = 2 + Math.floor(Math.random() * 3);
     const selectedLocations = [...locations].sort(() => 0.5 - Math.random()).slice(0, numLocations);
-    
+
     for (const location of selectedLocations) {
       const inventory = await prisma.inventory.create({
         data: {
@@ -410,7 +444,7 @@ async function seedInventoryAndOperationsForOrg(
           qtyReserved: Math.floor(Math.random() * 50),
           qtyInTransit: Math.floor(Math.random() * 100),
           lastCountedAt: faker.date.recent({ days: 30 }),
-        }
+        },
       });
       inventoryRecords.push(inventory);
     }
@@ -418,80 +452,82 @@ async function seedInventoryAndOperationsForOrg(
 
   // Create low-stock test scenarios for each organization
   console.log('  🚨 Creating low-stock test items...');
-  
+
   // Critical stock items (first 5 items have 0-4 units)
   for (let i = 0; i < Math.min(5, items.length); i++) {
     const item = items[i];
     const location = locations[0];
-    
+
     // Find existing inventory record
     const existingInventory = inventoryRecords.find(
-      inv => inv.itemId === item.id && inv.locationId === location.id
+      (inv) => inv.itemId === item.id && inv.locationId === location.id
     );
-    
+
     if (existingInventory) {
       await prisma.inventory.update({
         where: { id: existingInventory.id },
         data: {
           qtyOnHand: Math.floor(Math.random() * 5), // 0-4 units
-          qtyReserved: 0
-        }
+          qtyReserved: 0,
+        },
       });
     }
   }
-  
+
   // Below reorder point items (next 5 items)
   for (let i = 5; i < Math.min(10, items.length); i++) {
     const item = items[i];
     const location = locations[0];
-    
+
     const existingInventory = inventoryRecords.find(
-      inv => inv.itemId === item.id && inv.locationId === location.id
+      (inv) => inv.itemId === item.id && inv.locationId === location.id
     );
-    
+
     if (existingInventory && item.reorderPoint > 0) {
       const belowReorderQty = Math.max(1, item.reorderPoint - Math.floor(Math.random() * 5) - 1);
       await prisma.inventory.update({
         where: { id: existingInventory.id },
         data: {
           qtyOnHand: belowReorderQty,
-          qtyReserved: 0
-        }
+          qtyReserved: 0,
+        },
       });
     }
   }
-  
+
   // Zero stock items (next 3 items)
   for (let i = 10; i < Math.min(13, items.length); i++) {
     const item = items[i];
     const location = locations[0];
-    
+
     const existingInventory = inventoryRecords.find(
-      inv => inv.itemId === item.id && inv.locationId === location.id
+      (inv) => inv.itemId === item.id && inv.locationId === location.id
     );
-    
+
     if (existingInventory) {
       await prisma.inventory.update({
         where: { id: existingInventory.id },
         data: {
           qtyOnHand: 0,
-          qtyReserved: 0
-        }
+          qtyReserved: 0,
+        },
       });
     }
   }
-  
+
   console.log('    ✓ Items 1-5: Critical stock (0-4 units)');
   console.log('    ✓ Items 6-10: Below reorder point');
   console.log('    ✓ Items 11-13: Zero stock');
 
   console.log(`  📈 Creating stock movements...`);
-  
+
   // Create historical stock movements
   for (let i = 0; i < 365; i++) {
     const inventory = inventoryRecords[Math.floor(Math.random() * inventoryRecords.length)];
-    const movementType = ['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT'][Math.floor(Math.random() * 4)];
-    
+    const movementType = ['INBOUND', 'OUTBOUND', 'TRANSFER', 'ADJUSTMENT'][
+      Math.floor(Math.random() * 4)
+    ];
+
     await prisma.stockMovement.create({
       data: {
         organizationId,
@@ -500,17 +536,19 @@ async function seedInventoryAndOperationsForOrg(
         fromLocationId: movementType === 'TRANSFER' ? inventory.locationId : null,
         toLocationId: movementType !== 'OUTBOUND' ? inventory.locationId : null,
         qty: Math.floor(Math.random() * 50) + 10,
-        refType: ['ORDER', 'PURCHASE_ORDER', 'ADJUSTMENT', 'RETURN'][Math.floor(Math.random() * 4)] as any,
+        refType: ['ORDER', 'PURCHASE_ORDER', 'ADJUSTMENT', 'RETURN'][
+          Math.floor(Math.random() * 4)
+        ] as any,
         refId: faker.string.uuid(),
         notes: faker.lorem.sentence(),
         movedById: adminUser.id,
         movedAt: faker.date.recent({ days: 180 }),
-      }
+      },
     });
   }
 
   console.log(`  📝 Creating sales orders...`);
-  
+
   // Create orders
   const orders = [];
   for (let i = 0; i < 33; i++) {
@@ -518,7 +556,7 @@ async function seedInventoryAndOperationsForOrg(
     const orderDate = faker.date.recent({ days: 90 });
     const orderItems = [];
     const numItems = Math.floor(Math.random() * 4) + 1;
-    
+
     let subtotal = 0;
     for (let j = 0; j < numItems; j++) {
       const item = items[Math.floor(Math.random() * items.length)];
@@ -526,7 +564,7 @@ async function seedInventoryAndOperationsForOrg(
       const price = item.defaultPrice;
       const lineTotal = price.mul(qty);
       subtotal += lineTotal.toNumber();
-      
+
       orderItems.push({
         itemId: item.id,
         qtyOrdered: qty,
@@ -537,10 +575,10 @@ async function seedInventoryAndOperationsForOrg(
         description: faker.lorem.sentence(),
       });
     }
-    
+
     const taxTotal = subtotal * 0.08;
     const grandTotal = subtotal + taxTotal;
-    
+
     const order = await prisma.order.create({
       data: {
         organizationId,
@@ -548,7 +586,9 @@ async function seedInventoryAndOperationsForOrg(
         customerId: customer.id,
         orderDate,
         requestedShipDate: faker.date.soon({ days: 14, refDate: orderDate }),
-        status: ['PENDING', 'CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'][Math.floor(Math.random() * 6)] as any,
+        status: ['PENDING', 'CONFIRMED', 'PICKING', 'PACKED', 'SHIPPED', 'DELIVERED'][
+          Math.floor(Math.random() * 6)
+        ] as any,
         notes: faker.lorem.sentence(),
         subtotal: new Decimal(subtotal),
         discountTotal: new Decimal(0),
@@ -557,13 +597,13 @@ async function seedInventoryAndOperationsForOrg(
         grandTotal: new Decimal(grandTotal + 15),
         createdById: adminUser.id,
         items: {
-          create: orderItems.map(item => ({
+          create: orderItems.map((item) => ({
             ...item,
             organizationId,
-          }))
-        }
+          })),
+        },
       },
-      include: { items: true }
+      include: { items: true },
     });
     orders.push(order);
   }
@@ -578,10 +618,10 @@ async function seedAllOtherDataForOrg(
   adminUser: any
 ) {
   const { suppliers, items, warehouses, customers, orders } = data;
-  const prefix = orgSlug === 'ventry-corp' ? '' : (orgSlug === 'techstart' ? 'TS' : 'GR');
-  
+  const prefix = orgSlug === 'ventry-corp' ? '' : orgSlug === 'techstart' ? 'TS' : 'GR';
+
   console.log(`  🚚 Creating shipping and payment methods...`);
-  
+
   // Create carriers
   const carriers = await Promise.all([
     prisma.carrier.create({
@@ -589,21 +629,21 @@ async function seedAllOtherDataForOrg(
         organizationId,
         name: `${prefix} UPS`,
         trackingUrlTpl: 'https://www.ups.com/track?tracknum=',
-      }
+      },
     }),
     prisma.carrier.create({
       data: {
         organizationId,
         name: `${prefix} FedEx`,
         trackingUrlTpl: 'https://www.fedex.com/fedextrack/?tracknumbers=',
-      }
+      },
     }),
     prisma.carrier.create({
       data: {
         organizationId,
         name: `${prefix} USPS`,
         trackingUrlTpl: 'https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=',
-      }
+      },
     }),
   ]);
 
@@ -616,7 +656,7 @@ async function seedAllOtherDataForOrg(
         serviceName: 'UPS Ground',
         transitDays: 5,
         baseCost: new Decimal(10),
-      }
+      },
     }),
     prisma.shippingMethod.create({
       data: {
@@ -625,7 +665,7 @@ async function seedAllOtherDataForOrg(
         serviceName: 'FedEx 2Day',
         transitDays: 2,
         baseCost: new Decimal(25),
-      }
+      },
     }),
     prisma.shippingMethod.create({
       data: {
@@ -634,7 +674,7 @@ async function seedAllOtherDataForOrg(
         serviceName: 'USPS Priority Mail',
         transitDays: 3,
         baseCost: new Decimal(15),
-      }
+      },
     }),
   ]);
 
@@ -646,7 +686,7 @@ async function seedAllOtherDataForOrg(
         methodName: 'Cash',
         provider: 'CASH',
         isActive: true,
-      }
+      },
     }),
     prisma.paymentMethod.create({
       data: {
@@ -654,7 +694,7 @@ async function seedAllOtherDataForOrg(
         methodName: 'Credit Card',
         provider: 'STRIPE',
         isActive: true,
-      }
+      },
     }),
     prisma.paymentMethod.create({
       data: {
@@ -662,12 +702,12 @@ async function seedAllOtherDataForOrg(
         methodName: 'Check',
         provider: 'CHECK',
         isActive: true,
-      }
+      },
     }),
   ]);
 
   console.log(`  🏠 Creating customer addresses...`);
-  
+
   // Add addresses for customers
   for (const customer of customers) {
     await prisma.address.create({
@@ -681,9 +721,9 @@ async function seedAllOtherDataForOrg(
         postalCode: faker.location.zipCode(),
         country: 'USA',
         isDefault: true,
-      }
+      },
     });
-    
+
     // Some customers have shipping addresses too
     if (Math.random() > 0.5) {
       await prisma.address.create({
@@ -697,13 +737,13 @@ async function seedAllOtherDataForOrg(
           postalCode: faker.location.zipCode(),
           country: 'USA',
           isDefault: false,
-        }
+        },
       });
     }
   }
 
   console.log(`  📋 Creating purchase orders...`);
-  
+
   // Create purchase orders
   const purchaseOrders = [];
   for (let i = 0; i < 15; i++) {
@@ -711,7 +751,7 @@ async function seedAllOtherDataForOrg(
     const orderDate = faker.date.recent({ days: 60 });
     const poItems = [];
     const numItems = Math.floor(Math.random() * 5) + 2;
-    
+
     let subtotal = 0;
     for (let j = 0; j < numItems; j++) {
       const item = items[Math.floor(Math.random() * items.length)];
@@ -719,7 +759,7 @@ async function seedAllOtherDataForOrg(
       const unitCost = item.defaultCost.mul(0.7); // Wholesale discount
       const lineTotal = unitCost.mul(qty);
       subtotal += lineTotal.toNumber();
-      
+
       poItems.push({
         itemId: item.id,
         qtyOrdered: qty,
@@ -727,10 +767,10 @@ async function seedAllOtherDataForOrg(
         totalCost: lineTotal,
       });
     }
-    
+
     const tax = subtotal * 0.08;
     const total = subtotal + tax;
-    
+
     const po = await prisma.purchaseOrder.create({
       data: {
         organizationId,
@@ -738,7 +778,9 @@ async function seedAllOtherDataForOrg(
         supplierId: supplier.id,
         orderDate,
         expectedDate: faker.date.soon({ days: supplier.leadTimeDays, refDate: orderDate }),
-        status: ['DRAFT', 'SUBMITTED', 'APPROVED', 'PARTIAL', 'RECEIVED'][Math.floor(Math.random() * 5)] as any,
+        status: ['DRAFT', 'SUBMITTED', 'APPROVED', 'PARTIAL', 'RECEIVED'][
+          Math.floor(Math.random() * 5)
+        ] as any,
         subtotal: new Decimal(subtotal),
         tax: new Decimal(tax),
         total: new Decimal(total),
@@ -746,19 +788,19 @@ async function seedAllOtherDataForOrg(
         createdById: adminUser.id,
         approvedById: Math.random() > 0.3 ? adminUser.id : null,
         items: {
-          create: poItems.map(item => ({
+          create: poItems.map((item) => ({
             ...item,
             organizationId,
-          }))
-        }
+          })),
+        },
       },
-      include: { items: true }
+      include: { items: true },
     });
     purchaseOrders.push(po);
   }
 
   console.log(`  📥 Creating receipts...`);
-  
+
   // Create receipts for some POs
   for (const po of purchaseOrders) {
     if (['PARTIAL', 'RECEIVED'].includes(po.status)) {
@@ -771,21 +813,22 @@ async function seedAllOtherDataForOrg(
           receivedById: adminUser.id,
           notes: faker.lorem.sentence(),
           items: {
-            create: po.items.map(poItem => ({
+            create: po.items.map((poItem) => ({
               organizationId,
               itemId: poItem.itemId,
-              qtyReceived: po.status === 'RECEIVED' ? poItem.qtyOrdered : Math.floor(poItem.qtyOrdered * 0.7),
+              qtyReceived:
+                po.status === 'RECEIVED' ? poItem.qtyOrdered : Math.floor(poItem.qtyOrdered * 0.7),
               unitCost: poItem.unitCost,
               locationId: data.locations[Math.floor(Math.random() * data.locations.length)].id,
-            }))
-          }
-        }
+            })),
+          },
+        },
       });
     }
   }
 
   console.log(`  📦 Creating shipments...`);
-  
+
   // Create shipments for shipped/delivered orders
   for (const order of orders) {
     if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
@@ -801,7 +844,7 @@ async function seedAllOtherDataForOrg(
           expectedDelivery: faker.date.soon({ days: 5 }),
           shippedFromLocationId: data.locations[0].id,
           shippedById: adminUser.id,
-          status: order.status === 'DELIVERED' ? 'DELIVERED' : 'IN_TRANSIT' as any,
+          status: order.status === 'DELIVERED' ? 'DELIVERED' : ('IN_TRANSIT' as any),
           shippingCost: new Decimal(15 + Math.random() * 35),
           notes: faker.lorem.sentence(),
           items: {
@@ -810,21 +853,21 @@ async function seedAllOtherDataForOrg(
               orderItemId: orderItem.id,
               itemId: orderItem.itemId,
               qtyShipped: orderItem.qtyOrdered,
-            }))
-          }
-        }
+            })),
+          },
+        },
       });
     }
   }
 
   console.log(`  🔄 Creating returns...`);
-  
+
   // Create some returns
   const deliveredOrders = orders.filter((o: any) => o.status === 'DELIVERED');
   for (let i = 0; i < Math.min(5, deliveredOrders.length); i++) {
     const order = deliveredOrders[i];
     const rmaNumber = `${prefix}-RMA-${faker.string.numeric(6)}`;
-    
+
     await prisma.return.create({
       data: {
         organizationId,
@@ -832,8 +875,12 @@ async function seedAllOtherDataForOrg(
         orderId: order.id,
         customerId: order.customerId,
         returnDate: faker.date.recent({ days: 10 }),
-        status: ['PENDING', 'APPROVED', 'RECEIVED', 'REFUNDED'][Math.floor(Math.random() * 4)] as any,
-        reason: ['DAMAGED', 'WRONG_ITEM', 'NOT_AS_DESCRIBED', 'CHANGED_MIND'][Math.floor(Math.random() * 4)],
+        status: ['PENDING', 'APPROVED', 'RECEIVED', 'REFUNDED'][
+          Math.floor(Math.random() * 4)
+        ] as any,
+        reason: ['DAMAGED', 'WRONG_ITEM', 'NOT_AS_DESCRIBED', 'CHANGED_MIND'][
+          Math.floor(Math.random() * 4)
+        ],
         notes: faker.lorem.sentence(),
         refundAmount: order.grandTotal.mul(0.9),
         restockFee: order.grandTotal.mul(0.1),
@@ -842,27 +889,32 @@ async function seedAllOtherDataForOrg(
             organizationId,
             orderItemId: orderItem.id,
             itemId: orderItem.itemId,
-            qtyReturned: Math.min(orderItem.qtyOrdered, Math.floor(Math.random() * orderItem.qtyOrdered) + 1),
-            condition: ['NEW', 'OPENED', 'DAMAGED', 'DEFECTIVE'][Math.floor(Math.random() * 4)] as any,
+            qtyReturned: Math.min(
+              orderItem.qtyOrdered,
+              Math.floor(Math.random() * orderItem.qtyOrdered) + 1
+            ),
+            condition: ['NEW', 'OPENED', 'DAMAGED', 'DEFECTIVE'][
+              Math.floor(Math.random() * 4)
+            ] as any,
             refundAmount: orderItem.totalPrice.mul(0.9),
-          }))
-        }
-      }
+          })),
+        },
+      },
     });
   }
 
   console.log(`  🔍 Creating cycle counts and adjustments...`);
-  
+
   // Create cycle counts
   for (const warehouse of warehouses) {
     for (let i = 0; i < 3; i++) {
       const cycleDate = faker.date.recent({ days: 90 });
       const locations = data.locations.filter((l: any) => l.warehouseId === warehouse.id);
       const selectedLocations = locations.slice(0, Math.min(5, locations.length));
-      
+
       const location = selectedLocations[0];
       if (!location) continue;
-      
+
       await prisma.cycleCount.create({
         data: {
           organizationId,
@@ -873,33 +925,38 @@ async function seedAllOtherDataForOrg(
           status: 'COMPLETED' as any,
           notes: faker.lorem.sentence(),
           items: {
-            create: selectedLocations.map((location: any) => {
-              const inventory = data.inventoryRecords.find((inv: any) => inv.locationId === location.id);
-              if (!inventory) return null;
-              
-              const systemQty = inventory.qtyOnHand;
-              const variance = Math.floor(Math.random() * 10) - 5;
-              const countedQty = Math.max(0, systemQty + variance);
-              
-              return {
-                organizationId,
-                itemId: inventory.itemId,
-                qtyCounted: countedQty,
-                qtySystem: systemQty,
-                variance,
-              };
-            }).filter(Boolean)
-          }
-        }
+            create: selectedLocations
+              .map((location: any) => {
+                const inventory = data.inventoryRecords.find(
+                  (inv: any) => inv.locationId === location.id
+                );
+                if (!inventory) return null;
+
+                const systemQty = inventory.qtyOnHand;
+                const variance = Math.floor(Math.random() * 10) - 5;
+                const countedQty = Math.max(0, systemQty + variance);
+
+                return {
+                  organizationId,
+                  itemId: inventory.itemId,
+                  qtyCounted: countedQty,
+                  qtySystem: systemQty,
+                  variance,
+                };
+              })
+              .filter(Boolean),
+          },
+        },
       });
     }
   }
 
   // Create stock adjustments
   for (let i = 0; i < 10; i++) {
-    const inventory = data.inventoryRecords[Math.floor(Math.random() * data.inventoryRecords.length)];
+    const inventory =
+      data.inventoryRecords[Math.floor(Math.random() * data.inventoryRecords.length)];
     const adjustmentQty = Math.floor(Math.random() * 20) - 10;
-    
+
     await prisma.stockAdjustment.create({
       data: {
         organizationId,
@@ -910,7 +967,7 @@ async function seedAllOtherDataForOrg(
         reason: ['DAMAGED', 'LOST', 'FOUND', 'CORRECTION', 'OTHER'][Math.floor(Math.random() * 5)],
         adjustedById: adminUser.id,
         notes: faker.lorem.sentence(),
-      }
+      },
     });
   }
 }
@@ -921,7 +978,7 @@ async function createOrganizationWithFullData(
   users: { admin: any; employee: any }
 ) {
   console.log(`\n🏢 Creating ${orgName}...`);
-  
+
   // Create organization
   const organization = await prisma.organization.create({
     data: {
@@ -940,10 +997,10 @@ async function createOrganizationWithFullData(
 
   // Create basic data (UOMs, categories)
   const basicData = await seedBasicDataForOrg(organization.id, orgSlug);
-  
+
   // Create comprehensive data (warehouses, items, suppliers, customers)
   const comprehensiveData = await seedComprehensiveDataForOrg(organization.id, orgSlug, basicData);
-  
+
   // Create inventory and operations
   const opsData = await seedInventoryAndOperationsForOrg(
     organization.id,
@@ -951,7 +1008,7 @@ async function createOrganizationWithFullData(
     comprehensiveData,
     users.admin
   );
-  
+
   // Create all other data (shipping, payments, POs, receipts, shipments, returns, etc.)
   await seedAllOtherDataForOrg(
     organization.id,
@@ -959,7 +1016,7 @@ async function createOrganizationWithFullData(
     { ...comprehensiveData, ...opsData },
     users.admin
   );
-  
+
   return organization;
 }
 
@@ -969,7 +1026,7 @@ async function main() {
   try {
     // Clear entire database first
     await clearDatabase();
-    
+
     // Create password hash once for all users
     const password = await bcrypt.hash('password123', 10);
 
@@ -1065,34 +1122,32 @@ async function main() {
     });
 
     // Create Ventry Corporation with full data
-    await createOrganizationWithFullData(
-      'Ventry Corporation',
-      'ventry-corp',
-      { admin, employee: manager }
-    );
-    
+    await createOrganizationWithFullData('Ventry Corporation', 'ventry-corp', {
+      admin,
+      employee: manager,
+    });
+
     // Add employee to Ventry org
     await prisma.organizationMember.create({
       data: {
-        organizationId: (await prisma.organization.findFirst({ where: { slug: 'ventry-corp' } }))!.id,
+        organizationId: (await prisma.organization.findFirst({ where: { slug: 'ventry-corp' } }))!
+          .id,
         userId: employee.id,
         role: 'MEMBER',
-      }
+      },
     });
 
     // Create TechStart with full data
-    await createOrganizationWithFullData(
-      'TechStart Inc.',
-      'techstart',
-      { admin: alice, employee: bob }
-    );
+    await createOrganizationWithFullData('TechStart Inc.', 'techstart', {
+      admin: alice,
+      employee: bob,
+    });
 
     // Create Global Retail with full data
-    await createOrganizationWithFullData(
-      'Global Retail Co.',
-      'global-retail',
-      { admin: charlie, employee: diana }
-    );
+    await createOrganizationWithFullData('Global Retail Co.', 'global-retail', {
+      admin: charlie,
+      employee: diana,
+    });
 
     console.log('\n✅ Multi-organization comprehensive seed completed!\n');
     console.log('📊 Summary:');
@@ -1106,7 +1161,7 @@ async function main() {
     console.log('  • bob@techstart.com / password123 (EMPLOYEE role)');
     console.log('  • charlie@globalretail.com / password123 (ADMIN role)');
     console.log('  • diana@globalretail.com / password123 (EMPLOYEE role)');
-    
+
     console.log('\n🏢 Organization 1: Ventry Corporation');
     console.log('   Members: admin (OWNER), manager (ADMIN), employee (MEMBER)');
     console.log('   Data:');
@@ -1116,7 +1171,7 @@ async function main() {
     console.log('   - 35 sales orders, 20 purchase orders');
     console.log('   - Full inventory with movements, shipments, returns');
     console.log('   - NO prefix for SKUs/codes');
-    
+
     console.log('\n🏢 Organization 2: TechStart Inc.');
     console.log('   Members: alice@techstart.com (OWNER), bob@techstart.com (MEMBER)');
     console.log('   Data:');
@@ -1126,7 +1181,7 @@ async function main() {
     console.log('   - 33 sales orders, 15 purchase orders');
     console.log('   - Full inventory with movements, shipments, returns');
     console.log('   - All items/codes prefixed with TS-');
-    
+
     console.log('\n🏢 Organization 3: Global Retail Co.');
     console.log('   Members: charlie@globalretail.com (OWNER), diana@globalretail.com (MEMBER)');
     console.log('   Data:');
@@ -1136,7 +1191,7 @@ async function main() {
     console.log('   - 33 sales orders, 15 purchase orders');
     console.log('   - Full inventory with movements, shipments, returns');
     console.log('   - All items/codes prefixed with GR-');
-    
+
     console.log('\n🧪 Testing Multi-Tenancy:');
     console.log('   1. Login as admin@ventry.com');
     console.log('      - Should see ONLY Ventry Corporation data');
@@ -1149,7 +1204,6 @@ async function main() {
     console.log('      - All SKUs start with GR-');
     console.log('   4. user@ventry.com has NO organization access');
     console.log('═══════════════════════════════════════════════════════════════');
-
   } catch (error) {
     console.error('Error seeding database:', error);
     throw error;

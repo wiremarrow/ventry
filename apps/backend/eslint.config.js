@@ -43,11 +43,19 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '**/*.test.ts', '**/*.spec.ts', '**/test-utils/**', '**/__tests__/**'],
+    ignores: [
+      'dist/**',
+      'node_modules/**',
+      'coverage/**',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/test-utils/**',
+      '**/__tests__/**',
+    ],
   },
 ];

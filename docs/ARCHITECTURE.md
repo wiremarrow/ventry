@@ -11,7 +11,7 @@ graph TB
         PROXY[Next.js Proxy<br/>/api/trpc/*]
         UI[Shared UI Components]
     end
-    
+
     subgraph "Backend Services"
         API[tRPC + Fastify Server<br/>Port: 6060]
         AUTH[Auth Router]
@@ -21,18 +21,18 @@ graph TB
         HEALTH[Health Router<br/>System Monitoring]
         AGENTS[AI Agents<br/>(Future)]
     end
-    
+
     subgraph "Data Layer"
         DB[(PostgreSQL)]
         PRISMA[Prisma ORM]
     end
-    
+
     subgraph "External Services"
         AI[AI Providers<br/>OpenAI/Anthropic]
         EMAIL[Email Service<br/>(Planned)]
         SENTRY[Sentry Monitoring]
     end
-    
+
     WEB --> PROXY
     PROXY --> API
     API --> PRISMA
@@ -44,6 +44,7 @@ graph TB
 ## Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 15 with App Router
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -53,6 +54,7 @@ graph TB
 - **Forms**: React Hook Form + Zod
 
 ### Backend
+
 - **Framework**: tRPC + Fastify
 - **Language**: TypeScript (strict mode)
 - **Database**: PostgreSQL 16 with Prisma ORM
@@ -65,6 +67,7 @@ graph TB
 - **Queue**: Bull (planned)
 
 ### Infrastructure
+
 - **Monorepo**: Turborepo
 - **Package Manager**: pnpm
 - **Containerization**: Docker
@@ -74,24 +77,28 @@ graph TB
 ## Core Design Principles
 
 ### 1. AI-Native Architecture
+
 - AI agents are first-class citizens
 - Every major decision can be augmented by AI
 - Human-in-the-loop for critical operations
 - Transparent AI decision logging
 
 ### 2. Event-Driven Design
+
 - Loose coupling between modules
 - Asynchronous processing for heavy operations
 - Real-time updates via WebSockets
 - Event sourcing for audit trails
 
 ### 3. Domain-Driven Design
+
 - Clear bounded contexts (Inventory, Users, AI Agents)
 - Rich domain models
 - Repository pattern for data access
 - Use cases encapsulated in services
 
 ### 4. Security First
+
 - Input validation at all layers
 - Role-based access control (RBAC)
 - API rate limiting
@@ -110,49 +117,49 @@ graph TD
         SC[StatsCards Component]
         AC[Auto-refresh Controls]
     end
-    
+
     subgraph "tRPC Client Layer"
         AQ[analytics.dashboard.useQuery]
         WQ[warehouses.list.useQuery]
         HQ[health.check.useQuery]
         RQ[React Query Cache]
     end
-    
+
     subgraph "Backend tRPC Routers"
         AR[Analytics Router]
         WR[Warehouses Router]
         HR[Health Router]
     end
-    
+
     subgraph "Data Sources"
         DB[(PostgreSQL)]
         SYS[System Health]
     end
-    
+
     DC --> AC
     DC --> SC
     SC --> AQ
     SC --> WQ
     DC --> HQ
-    
+
     AQ --> RQ
     WQ --> RQ
     HQ --> RQ
-    
+
     RQ --> AR
     RQ --> WR
     RQ --> HR
-    
+
     AR --> DB
     WR --> DB
     HR --> SYS
     HR --> DB
-    
+
     classDef frontend fill:#e1f5fe
     classDef trpc fill:#f3e5f5
     classDef backend fill:#e8f5e8
     classDef data fill:#fff3e0
-    
+
     class DC,SC,AC frontend
     class AQ,WQ,HQ,RQ trpc
     class AR,WR,HR backend
@@ -166,13 +173,20 @@ graph TD
 ```typescript
 // StatsCards Component Pattern
 export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps) {
-  const { data: analytics, isLoading, error } = trpc.analytics.dashboard.useQuery({
-    period: 'last30days',
-    includeAllWarehouses: true,
-  }, {
-    refetchInterval: refreshInterval,        // 30-second intervals
-    refetchIntervalInBackground: true,       // Continue when tab inactive
-  });
+  const {
+    data: analytics,
+    isLoading,
+    error,
+  } = trpc.analytics.dashboard.useQuery(
+    {
+      period: 'last30days',
+      includeAllWarehouses: true,
+    },
+    {
+      refetchInterval: refreshInterval, // 30-second intervals
+      refetchIntervalInBackground: true, // Continue when tab inactive
+    }
+  );
 }
 ```
 
@@ -183,7 +197,7 @@ export function StatsCards({ refreshInterval = 30000 }: StatsCardsProps) {
 export default function DashboardPage() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const refreshInterval = 30000;
-  
+
   // Health monitoring with auto-refresh
   const { data: health, refetch: refetchHealth } = trpc.health.check.useQuery(undefined, {
     refetchInterval: autoRefresh ? refreshInterval : false,
@@ -195,16 +209,19 @@ export default function DashboardPage() {
 ### Data Sources and Endpoints
 
 #### Analytics Router Endpoints
+
 - **`analytics.dashboard`**: Main inventory metrics, operations data
 - **Input**: `{ period, includeAllWarehouses, warehouseIds?, categoryIds? }`
 - **Output**: Inventory totals, operations counts, low stock alerts
 
-#### Warehouses Router Endpoints  
+#### Warehouses Router Endpoints
+
 - **`warehouses.list`**: Warehouse and location counts
 - **Input**: `{ search, limit, includeLocationCount }`
 - **Output**: Warehouse data with location counts for dashboard cards
 
 #### Health Router Endpoints
+
 - **`health.check`**: System status monitoring
 - **Input**: None
 - **Output**: API status, database connection, environment info, timestamps
@@ -212,12 +229,14 @@ export default function DashboardPage() {
 ### Performance Considerations
 
 #### Query Optimization
+
 - **Parallel Queries**: Multiple tRPC queries execute concurrently
 - **Background Refresh**: Queries continue when browser tab inactive
 - **Caching**: React Query provides automatic caching and deduplication
 - **Selective Updates**: Only changed data triggers re-renders
 
 #### User Experience
+
 - **Manual Override**: Users can manually trigger refresh
 - **Toggle Controls**: Auto-refresh can be disabled per user preference
 - **Loading States**: Skeleton loaders during initial load
@@ -237,12 +256,14 @@ To add new real-time dashboard features:
 ### Backend Routers
 
 #### Core Routers
+
 1. **AppRouter**: Root router combining all sub-routers
 2. **authRouter**: Authentication procedures (login, register, logout, refresh)
 3. **healthRouter**: System health checks and monitoring
 4. **organizationsRouter**: Multi-tenant organization management
 
 #### Business Logic Routers
+
 1. **itemsRouter**: Product/item catalog management
 2. **warehousesRouter**: Warehouse and location hierarchy
 3. **inventoryRouter**: Stock levels and movements
@@ -275,6 +296,7 @@ app/
 ## Data Flow
 
 ### Request Flow
+
 1. Client makes request to Next.js app
 2. Next.js app calls tRPC API
 3. API validates request (DTO validation)
@@ -284,12 +306,14 @@ app/
 7. Response transformed and returned
 
 ### Real-time Updates
+
 1. Client establishes WebSocket connection
 2. Server emits events on data changes
 3. Client updates UI optimistically
 4. Server confirms or corrects state
 
 ### AI Agent Flow
+
 1. Trigger event (manual or automated)
 2. Agent service prepares context
 3. LLM call with structured prompt
@@ -300,6 +324,7 @@ app/
 ## tRPC Architecture Pattern
 
 ### Factory Pattern Implementation
+
 ```
 src/trpc/
 ├── builder.ts       # tRPC instance creation (no local imports)
@@ -310,6 +335,7 @@ src/trpc/
 ```
 
 ### Why Factory Pattern?
+
 - **No Circular Dependencies**: Each file has clear one-way dependencies
 - **Separation of Concerns**: Single responsibility per file
 - **Testability**: Easy to mock individual components
@@ -319,11 +345,13 @@ src/trpc/
 ## Database Schema Design
 
 ### Multi-Tenant Architecture
+
 - **Organization**: Top-level tenant entity
 - **OrganizationMember**: User-organization relationships with roles
 - **All Business Entities**: Include organizationId for data isolation
 
 ### Core Entities (40+ tables)
+
 - **Item**: Inventory items (formerly Product)
 - **ItemCategory**: Hierarchical categorization
 - **Warehouse**: Physical locations
@@ -340,6 +368,7 @@ src/trpc/
 ## Security Architecture
 
 ### Authentication Flow
+
 1. User logs in with credentials
 2. Server validates and generates JWT
 3. JWT stored in httpOnly cookie (secure)
@@ -347,12 +376,14 @@ src/trpc/
 5. Server validates JWT from cookie and authorizes
 
 ### Cookie-Based Authentication
+
 - **JWT Storage**: httpOnly cookies prevent XSS attacks
 - **Same-Origin Requests**: Next.js proxy ensures cookies work in development
 - **Cookie Settings**: `SameSite=Lax`, `HttpOnly`, `Secure` (in production)
 - **Automatic Handling**: No manual token management in frontend
 
 ### API Proxy Pattern
+
 ```typescript
 // next.config.ts
 async rewrites() {
@@ -364,12 +395,14 @@ async rewrites() {
 ```
 
 **Why Proxy?**
+
 - Browsers block cross-origin cookies (even different ports)
 - Proxy makes all requests appear from same origin (localhost:6061)
 - Enables secure httpOnly cookie authentication in development
 - Production uses same pattern with proper domain configuration
 
 ### Data Protection
+
 - Encryption at rest (database)
 - Encryption in transit (HTTPS)
 - Sensitive data masking in logs
@@ -378,11 +411,13 @@ async rewrites() {
 ## Deployment Architecture
 
 ### Development
+
 - Docker Compose for local services
 - Hot reloading for all apps
 - Shared volumes for code
 
 ### Production
+
 - Containerized applications
 - Horizontal scaling capability
 - Load balancer for API
@@ -392,12 +427,14 @@ async rewrites() {
 ## Performance Considerations
 
 ### Backend
+
 - Database query optimization
 - Redis caching strategy
 - Background job processing
 - Connection pooling
 
 ### Frontend
+
 - Code splitting
 - Image optimization
 - Static generation where possible
@@ -411,7 +448,8 @@ Due to incompatibility between Next.js 15 (requires ESLint 9) and eslint-config-
 
 **Decision**: Use TypeScript ESLint v8 with custom flat config instead of Next.js defaults
 **Rationale**: Enables Next.js 15 adoption while maintaining type-safe linting
-**Impact**: 
+**Impact**:
+
 - Lose some Next.js-specific linting rules
 - Gain compatibility with latest tooling
 - Must maintain custom configuration
@@ -421,18 +459,21 @@ Due to incompatibility between Next.js 15 (requires ESLint 9) and eslint-config-
 ## Monitoring & Observability
 
 ### Metrics
+
 - Application performance
 - API response times
 - Database query performance
 - AI agent execution metrics
 
 ### Logging
+
 - Structured JSON logging
 - Correlation IDs for tracing
 - Error aggregation
 - Security event logging
 
 ### Alerting
+
 - Performance degradation
 - Error rate thresholds
 - Security incidents

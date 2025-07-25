@@ -78,16 +78,13 @@ interface SelectedItem {
   notes?: string;
 }
 
-export function CreatePurchaseOrderDialog({
-  open,
-  onOpenChange,
-}: CreatePurchaseOrderDialogProps) {
+export function CreatePurchaseOrderDialog({ open, onOpenChange }: CreatePurchaseOrderDialogProps) {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState('');
   const [showItemSearch, setShowItemSearch] = useState(false);
-  
+
   const utils = trpc.useUtils();
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -205,10 +202,7 @@ export function CreatePurchaseOrderDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Supplier</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a supplier" />
@@ -243,11 +237,7 @@ export function CreatePurchaseOrderDialog({
                               !field.value && 'text-muted-foreground'
                             )}
                           >
-                            {field.value ? (
-                              format(field.value, 'PPP')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
+                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
@@ -256,9 +246,7 @@ export function CreatePurchaseOrderDialog({
                           mode="single"
                           selected={field.value}
                           onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date()
-                          }
+                          disabled={(date) => date < new Date()}
                           initialFocus
                         />
                       </PopoverContent>
@@ -304,10 +292,7 @@ export function CreatePurchaseOrderDialog({
                 <FormItem>
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Additional notes..."
-                      {...field}
-                    />
+                    <Textarea placeholder="Additional notes..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -389,9 +374,7 @@ export function CreatePurchaseOrderDialog({
                             <TableCell>
                               <div>
                                 <div className="font-medium">{item.name}</div>
-                                <div className="text-sm text-gray-500">
-                                  {item.sku}
-                                </div>
+                                <div className="text-sm text-gray-500">{item.sku}</div>
                               </div>
                             </TableCell>
                             <TableCell>
@@ -487,11 +470,7 @@ export function CreatePurchaseOrderDialog({
             </div>
 
             <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
               <Button

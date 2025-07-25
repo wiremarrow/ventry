@@ -1,6 +1,6 @@
 /**
  * RLS (Row-Level Security) Module
- * 
+ *
  * This module provides a comprehensive, type-safe implementation of
  * Row-Level Security for multi-tenant applications using Prisma and PostgreSQL.
  */

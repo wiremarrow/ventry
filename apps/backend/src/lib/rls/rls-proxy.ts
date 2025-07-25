@@ -1,6 +1,6 @@
 /**
  * RLS (Row-Level Security) Proxy
- * 
+ *
  * This module provides a type-safe proxy for Prisma client that automatically
  * applies RLS context to all database operations.
  */
@@ -27,7 +27,7 @@ type PrismaModelDelegate = {
 /**
  * Type for functions that should not be proxied
  */
-type NonProxiedMethods = 
+type NonProxiedMethods =
   | '$connect'
   | '$disconnect'
   | '$on'
@@ -43,10 +43,7 @@ type NonProxiedMethods =
 /**
  * Creates a type-safe RLS proxy for Prisma client
  */
-export function createRLSProxy(
-  prisma: PrismaClient,
-  getContext: () => RLSContext
-): PrismaClient {
+export function createRLSProxy(prisma: PrismaClient, getContext: () => RLSContext): PrismaClient {
   // Create a cache for proxied models to improve performance
   const modelProxyCache = new Map<string, any>();
 
@@ -81,12 +78,7 @@ export function createRLSProxy(
           return modelProxyCache.get(prop);
         }
 
-        const modelProxy = createModelProxy(
-          original,
-          prop,
-          prisma,
-          getContext
-        );
+        const modelProxy = createModelProxy(original, prop, prisma, getContext);
         modelProxyCache.set(prop, modelProxy);
         return modelProxy;
       }
@@ -144,20 +136,16 @@ function createModelProxy(
           }
 
           // Wrap in RLS context
-          const result = await withRLS(
-            prisma,
-            validatedContext,
-            async (tx) => {
-              // Get the model from the transaction
-              const txModel = (tx as any)[modelName];
-              if (!txModel) {
-                throw new Error(`Model ${modelName} not found on transaction`);
-              }
-
-              // Call the original method on the transaction model
-              return txModel[prop].apply(txModel, args);
+          const result = await withRLS(prisma, validatedContext, async (tx) => {
+            // Get the model from the transaction
+            const txModel = (tx as any)[modelName];
+            if (!txModel) {
+              throw new Error(`Model ${modelName} not found on transaction`);
             }
-          );
+
+            // Call the original method on the transaction model
+            return txModel[prop].apply(txModel, args);
+          });
 
           logger.debug(
             {
@@ -212,7 +200,12 @@ function createTransactionProxy(
       const options = args[1];
 
       // Wrap the callback to set RLS context
-      const wrappedCallback = async (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => {
+      const wrappedCallback = async (
+        tx: Omit<
+          PrismaClient,
+          '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'
+        >
+      ) => {
         try {
           const validatedContext = validateRLSContext(context);
 
@@ -271,9 +264,5 @@ function isModelDelegate(
     return false;
   }
   const value = (prisma as any)[prop];
-  return (
-    value &&
-    typeof value === 'object' &&
-    typeof value.findMany === 'function'
-  );
+  return value && typeof value === 'object' && typeof value.findMany === 'function';
 }

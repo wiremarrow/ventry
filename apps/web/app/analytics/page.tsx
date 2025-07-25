@@ -30,7 +30,16 @@ import {
   YAxis,
 } from 'recharts';
 
-import { Badge, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Skeleton } from '@ventry/ui';
+import {
+  Badge,
+  Card,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+} from '@ventry/ui';
 
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { trpc } from '@/lib/trpc';
@@ -64,9 +73,11 @@ function MetricCard({ title, value, change, icon: Icon, loading }: MetricCardPro
         <div>
           <p className="text-sm text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold mt-1">{value}</p>
-          <div className={`flex items-center gap-1 mt-2 text-sm ${
-            isPositive ? 'text-green-600' : 'text-red-600'
-          }`}>
+          <div
+            className={`flex items-center gap-1 mt-2 text-sm ${
+              isPositive ? 'text-green-600' : 'text-red-600'
+            }`}
+          >
             {isPositive ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
             <span>{Math.abs(change)}%</span>
             <span className="text-muted-foreground">vs last month</span>
@@ -84,11 +95,17 @@ export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState('30');
 
   // Fetch analytics data
-  const period = dateRange === '1' ? 'today' : 
-                 dateRange === '7' ? 'last7days' : 
-                 dateRange === '30' ? 'last30days' : 
-                 dateRange === '90' ? 'last90days' : 'last30days';
-  
+  const period =
+    dateRange === '1'
+      ? 'today'
+      : dateRange === '7'
+        ? 'last7days'
+        : dateRange === '30'
+          ? 'last30days'
+          : dateRange === '90'
+            ? 'last90days'
+            : 'last30days';
+
   const { data: dashboardData, isLoading: dashboardLoading } = trpc.analytics.dashboard.useQuery({
     period,
   });
@@ -121,10 +138,11 @@ export default function AnalyticsPage() {
   }
 
   // Prepare chart data
-  const salesTrendData = trendsData?.data.map(item => ({
-    date: new Date(item.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    sales: item.value,
-  })) || [];
+  const salesTrendData =
+    trendsData?.data.map((item) => ({
+      date: new Date(item.period).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      sales: item.value,
+    })) || [];
 
   // TODO: Add categoryBreakdown to analytics API
   const categoryData = [] as { name: string; value: number }[];
@@ -139,9 +157,7 @@ export default function AnalyticsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-            <p className="text-muted-foreground">
-              Monitor your business performance and trends
-            </p>
+            <p className="text-muted-foreground">Monitor your business performance and trends</p>
           </div>
           <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-48">
@@ -196,13 +212,21 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Inventory Turnover</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-xl font-semibold">{(kpisData.kpis.inventoryTurnover?.value || 0).toFixed(2)}x</p>
+                  <p className="text-xl font-semibold">
+                    {(kpisData.kpis.inventoryTurnover?.value || 0).toFixed(2)}x
+                  </p>
                   {(kpisData.kpis.inventoryTurnover?.value || 0) > 4 ? (
-                    <Badge variant="default" className="text-xs">Good</Badge>
+                    <Badge variant="default" className="text-xs">
+                      Good
+                    </Badge>
                   ) : (kpisData.kpis.inventoryTurnover?.value || 0) > 2 ? (
-                    <Badge variant="secondary" className="text-xs">Average</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      Average
+                    </Badge>
                   ) : (
-                    <Badge variant="destructive" className="text-xs">Low</Badge>
+                    <Badge variant="destructive" className="text-xs">
+                      Low
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -215,13 +239,21 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Fulfillment Rate</p>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <p className="text-xl font-semibold">{(kpisData.kpis.orderFulfillmentRate?.value || 0).toFixed(1)}%</p>
+                  <p className="text-xl font-semibold">
+                    {(kpisData.kpis.orderFulfillmentRate?.value || 0).toFixed(1)}%
+                  </p>
                   {(kpisData.kpis.orderFulfillmentRate?.value || 0) > 95 ? (
-                    <Badge variant="default" className="text-xs">Excellent</Badge>
+                    <Badge variant="default" className="text-xs">
+                      Excellent
+                    </Badge>
                   ) : (kpisData.kpis.orderFulfillmentRate?.value || 0) > 90 ? (
-                    <Badge variant="secondary" className="text-xs">Good</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      Good
+                    </Badge>
                   ) : (
-                    <Badge variant="destructive" className="text-xs">Needs Improvement</Badge>
+                    <Badge variant="destructive" className="text-xs">
+                      Needs Improvement
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -241,10 +273,10 @@ export default function AnalyticsPage() {
                 <YAxis />
                 <Tooltip formatter={(value) => formatCurrency(value as number)} />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="sales" 
-                  stroke="#0088FE" 
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#0088FE"
                   strokeWidth={2}
                   dot={{ r: 4 }}
                   activeDot={{ r: 6 }}
@@ -299,29 +331,31 @@ export default function AnalyticsPage() {
           <Card className="p-6">
             <h3 className="font-semibold mb-4">Alerts & Insights</h3>
             <div className="space-y-4">
-              {dashboardData?.inventory.lowStockItems && dashboardData.inventory.lowStockItems > 0 && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Low Stock Alert</p>
-                    <p className="text-sm text-muted-foreground">
-                      {dashboardData.inventory.lowStockItems} items are below reorder point
-                    </p>
+              {dashboardData?.inventory.lowStockItems &&
+                dashboardData.inventory.lowStockItems > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">Low Stock Alert</p>
+                      <p className="text-sm text-muted-foreground">
+                        {dashboardData.inventory.lowStockItems} items are below reorder point
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {dashboardData?.inventory.expiringItems && dashboardData.inventory.expiringItems > 0 && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20">
-                  <Activity className="h-5 w-5 text-orange-600 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Expiring Items</p>
-                    <p className="text-sm text-muted-foreground">
-                      {dashboardData.inventory.expiringItems} items expiring within 30 days
-                    </p>
+                )}
+
+              {dashboardData?.inventory.expiringItems &&
+                dashboardData.inventory.expiringItems > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20">
+                    <Activity className="h-5 w-5 text-orange-600 mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">Expiring Items</p>
+                      <p className="text-sm text-muted-foreground">
+                        {dashboardData.inventory.expiringItems} items expiring within 30 days
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {trendsData?.summary?.trend && trendsData.summary.trend > 0 && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20">
@@ -329,7 +363,8 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="font-medium text-sm">Positive Trend</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales are up {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared to previous period
+                      Sales are up {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared to
+                      previous period
                     </p>
                   </div>
                 </div>
@@ -341,7 +376,8 @@ export default function AnalyticsPage() {
                   <div>
                     <p className="font-medium text-sm">Declining Trend</p>
                     <p className="text-sm text-muted-foreground">
-                      Sales are down {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared to previous period
+                      Sales are down {Math.abs(trendsData.summary.trend || 0).toFixed(1)}% compared
+                      to previous period
                     </p>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ This document provides an overview of the Ventry database schema. For the comple
 The Ventry database uses PostgreSQL 16 with Prisma ORM, implementing a comprehensive inventory management system with multi-tenant architecture.
 
 ### Schema Statistics
+
 - **Total Models**: 42
 - **Business Models**: 32 (with organizationId)
 - **System Models**: 10 (users, auth, etc.)
@@ -30,6 +31,7 @@ model Item {
 ### Inventory Management
 
 #### Items (Products)
+
 - Central product catalog
 - SKU management
 - Categories and units of measure
@@ -37,18 +39,21 @@ model Item {
 - Reorder points and quantities
 
 #### Warehouses & Locations
+
 - Hierarchical storage structure
 - Zone/Aisle/Shelf/Bin organization
 - Capacity tracking
 - Multi-location support
 
 #### Inventory
+
 - Real-time stock levels by location
 - Quantity on hand, reserved, available
 - Lot and serial number tracking
 - Stock valuation
 
 #### Stock Movements
+
 - Complete audit trail
 - Movement types (IN, OUT, TRANSFER, ADJUSTMENT)
 - Reference tracking (PO, Order, etc.)
@@ -57,12 +62,14 @@ model Item {
 ### Procurement
 
 #### Suppliers
+
 - Vendor management
 - Lead times and payment terms
 - Performance tracking
 - Contact information
 
 #### Purchase Orders
+
 - Multi-line orders
 - Approval workflow
 - Receipt tracking
@@ -71,12 +78,14 @@ model Item {
 ### Sales
 
 #### Customers
+
 - Customer profiles
 - Credit limits
 - Billing/shipping addresses
 - Order history
 
 #### Orders
+
 - Sales order processing
 - Line item management
 - Allocation and fulfillment
@@ -85,11 +94,13 @@ model Item {
 ### Supporting Models
 
 #### Organization
+
 - Multi-tenant root entity
 - Subscription management
 - Settings and configuration
 
 #### Users & Auth
+
 - User profiles
 - Organization membership
 - Role-based permissions
@@ -98,12 +109,14 @@ model Item {
 ## Naming Conventions
 
 ### Database Level
+
 - Tables: snake_case (via Prisma @@map)
 - Columns: snake_case
 - Indexes: descriptive names with table prefix
 - Constraints: table_column_type format
 
 ### Application Level
+
 - Models: PascalCase
 - Fields: camelCase
 - Relations: descriptive names
@@ -112,23 +125,27 @@ model Item {
 ## Key Relationships
 
 ### One-to-Many
+
 - Organization → Items, Warehouses, Customers, etc.
 - Warehouse → Locations
 - Item → Inventory records
 - Customer → Orders
 
 ### Many-to-Many
+
 - Items ↔ Categories (future)
 - Orders ↔ Items (via OrderItem)
 - PurchaseOrders ↔ Items (via PurchaseOrderItem)
 
 ### Self-Referential
+
 - Category → Category (parent/children)
 - Location → Location (hierarchical)
 
 ## Database Indexes
 
 All foreign keys are indexed for performance:
+
 - `organizationId` on all business tables
 - Lookup fields (sku, code, email)
 - Date fields used in queries
@@ -150,6 +167,7 @@ See [Row-Level Security](../04-security/row-level-security.md) for implementatio
 ## Migration Strategy
 
 ### Development
+
 ```bash
 # Push schema changes (dev only)
 pnpm db:push
@@ -159,6 +177,7 @@ pnpm db:migrate:dev
 ```
 
 ### Production
+
 ```bash
 # Apply migrations
 pnpm db:migrate:deploy

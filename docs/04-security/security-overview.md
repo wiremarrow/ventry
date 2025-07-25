@@ -5,6 +5,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Security Philosophy
 
 ### Core Principles
+
 1. **Security by Design**: Security built into architecture, not added later
 2. **Zero Trust**: Verify everything, trust nothing
 3. **Least Privilege**: Minimum necessary access
@@ -12,6 +13,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 5. **Fail Secure**: Deny by default
 
 ### Compliance Targets
+
 - **OWASP Top 10**: Protection against common vulnerabilities
 - **GDPR**: Data privacy and protection
 - **SOC 2**: Security controls and processes
@@ -20,24 +22,28 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Security Layers
 
 ### 1. Network Security
+
 - HTTPS/TLS encryption
 - CORS configuration
 - Rate limiting
 - DDoS protection
 
 ### 2. Application Security
+
 - JWT authentication
 - Role-based access control
 - Input validation
 - Output encoding
 
 ### 3. Database Security
+
 - Row-Level Security (RLS)
 - Encrypted connections
 - Parameterized queries
 - Audit logging
 
 ### 4. Infrastructure Security
+
 - Environment isolation
 - Secret management
 - Container security
@@ -46,6 +52,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Current Security Status
 
 ### ✅ Implemented
+
 - JWT authentication with signed cookies
 - Row-Level Security for multi-tenancy
 - Input validation with Zod
@@ -56,12 +63,14 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Audit logging framework
 
 ### 🚧 In Progress
+
 - Field-level encryption
 - Advanced threat detection
 - Security scanning automation
 - Penetration testing
 
 ### 📅 Planned
+
 - Multi-factor authentication (MFA)
 - OAuth/SSO integration
 - API key management
@@ -93,6 +102,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Key Security Features
 
 ### Authentication & Authorization
+
 - Secure JWT implementation
 - httpOnly signed cookies
 - Automatic token refresh
@@ -100,6 +110,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Organization context isolation
 
 ### Data Protection
+
 - Encryption in transit (TLS)
 - Encryption at rest (database)
 - Secure key management
@@ -107,6 +118,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Privacy by design
 
 ### Vulnerability Protection
+
 - SQL injection prevention
 - XSS protection
 - CSRF tokens
@@ -114,6 +126,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Directory traversal protection
 
 ### Monitoring & Response
+
 - Real-time security monitoring
 - Automated alerts
 - Incident response plan
@@ -123,6 +136,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Security Responsibilities
 
 ### Development Team
+
 - Follow secure coding practices
 - Regular security training
 - Code review for security
@@ -130,6 +144,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Security testing
 
 ### Operations Team
+
 - Infrastructure hardening
 - Access management
 - Monitoring and alerting
@@ -137,6 +152,7 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 - Backup and recovery
 
 ### All Team Members
+
 - Security awareness
 - Password hygiene
 - Phishing prevention
@@ -146,18 +162,21 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Security Roadmap
 
 ### Q1 2025
+
 - [x] Row-Level Security implementation
 - [x] Security audit completion
 - [ ] MFA implementation
 - [ ] Penetration testing
 
 ### Q2 2025
+
 - [ ] OAuth/SSO integration
 - [ ] Advanced threat detection
 - [ ] Security automation
 - [ ] Compliance certification
 
 ### Q3 2025
+
 - [ ] Zero-knowledge encryption
 - [ ] Hardware key support
 - [ ] Blockchain audit trail
@@ -166,12 +185,14 @@ Ventry implements enterprise-grade security with a defense-in-depth approach, en
 ## Security Resources
 
 ### Documentation
+
 - [Authentication Guide](./authentication.md)
 - [Row-Level Security](./row-level-security.md)
 - [Security Audit Findings](./security-audit-findings.md)
 - [Hardening Checklist](./hardening-checklist.md)
 
 ### External Resources
+
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [NIST Cybersecurity Framework](https://www.nist.gov/cyberframework)
 - [CIS Controls](https://www.cisecurity.org/controls)
@@ -193,6 +214,7 @@ We aim to respond within 24 hours and provide regular updates on the fix.
 ## Security Metrics
 
 ### Key Indicators
+
 - Mean time to detect (MTTD)
 - Mean time to respond (MTTR)
 - Vulnerability density
@@ -200,6 +222,7 @@ We aim to respond within 24 hours and provide regular updates on the fix.
 - Security training completion
 
 ### Current Performance
+
 - **MTTD**: < 1 hour
 - **MTTR**: < 4 hours
 - **Vulnerabilities**: 0 critical, 2 medium

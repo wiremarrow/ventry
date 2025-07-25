@@ -32,7 +32,9 @@ const customerFilterSchema = z.object({
   creditStatus: z.enum(['GOOD', 'WARNING', 'BLOCKED', 'ALL']).default('ALL'),
   page: z.number().int().min(1).default(1),
   limit: z.number().int().min(1).max(100).default(20),
-  sortBy: z.enum(['customerCode', 'firstName', 'lastName', 'createdAt', 'email']).default('lastName'),
+  sortBy: z
+    .enum(['customerCode', 'firstName', 'lastName', 'createdAt', 'email'])
+    .default('lastName'),
   sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
@@ -64,196 +66,185 @@ const customerMetricsSchema = z.object({
 
 export const customersRouter = createTRPCRouter({
   // Debug query to check RLS
-  debugCount: organizationProcedure
-    .query(async ({ ctx }) => {
-      // First, count with RLS proxy
-      const rlsCount = await ctx.prisma.customer.count({
-        where: { organizationId: ctx.user.organizationId }
-      });
-      
-      // Then count with base prisma (no RLS)
-      const { prisma: basePrisma } = await import('@ventry/database');
-      const directCount = await basePrisma.customer.count({
-        where: { organizationId: ctx.user.organizationId }
-      });
-      
-      // Also get total count regardless of organization
-      const totalCount = await basePrisma.customer.count();
-      
-      return {
-        organizationId: ctx.user.organizationId,
-        rlsCount,
-        directCount,
-        totalCount,
-        user: {
-          id: ctx.user.id,
-          email: ctx.user.email,
-        }
-      };
-    }),
+  debugCount: organizationProcedure.query(async ({ ctx }) => {
+    // First, count with RLS proxy
+    const rlsCount = await ctx.prisma.customer.count({
+      where: { organizationId: ctx.user.organizationId },
+    });
+
+    // Then count with base prisma (no RLS)
+    const { prisma: basePrisma } = await import('@ventry/database');
+    const directCount = await basePrisma.customer.count({
+      where: { organizationId: ctx.user.organizationId },
+    });
+
+    // Also get total count regardless of organization
+    const totalCount = await basePrisma.customer.count();
+
+    return {
+      organizationId: ctx.user.organizationId,
+      rlsCount,
+      directCount,
+      totalCount,
+      user: {
+        id: ctx.user.id,
+        email: ctx.user.email,
+      },
+    };
+  }),
 
   // List customers with filtering
-  list: organizationProcedure
-    .input(customerFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        hasOpenOrders,
-        customerType,
-        creditStatus,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
+  list: organizationProcedure.input(customerFilterSchema).query(async ({ ctx, input }) => {
+    const { search, hasOpenOrders, customerType, creditStatus, page, limit, sortBy, sortOrder } =
+      input;
 
-      const where: Prisma.CustomerWhereInput = {
-        organizationId: ctx.user.organizationId,
-      };
+    const where: Prisma.CustomerWhereInput = {
+      organizationId: ctx.user.organizationId,
+    };
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { customerCode: { contains: search, mode: 'insensitive' } },
-          { companyName: { contains: search, mode: 'insensitive' } },
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ];
+    // Search filter
+    if (search) {
+      where.OR = [
+        { customerCode: { contains: search, mode: 'insensitive' } },
+        { companyName: { contains: search, mode: 'insensitive' } },
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Remove active filter - field doesn't exist
+
+    // Customer type filter
+    if (customerType !== 'ALL') {
+      if (customerType === 'B2B') {
+        where.companyName = { not: null };
+      } else if (customerType === 'B2C') {
+        where.companyName = null;
       }
+    }
 
-      // Remove active filter - field doesn't exist
-
-      // Customer type filter
-      if (customerType !== 'ALL') {
-        if (customerType === 'B2B') {
-          where.companyName = { not: null };
-        } else if (customerType === 'B2C') {
-          where.companyName = null;
-        }
-      }
-
-      // Open orders filter
-      if (hasOpenOrders) {
-        where.orders = {
-          some: {
-            status: { in: ['PENDING', 'CONFIRMED', 'PICKING'] },
-          },
-        };
-      }
-
-      // Debug logging
-      console.log('Customer list query:', {
-        organizationId: ctx.user.organizationId,
-        where: JSON.stringify(where),
-        page,
-        limit,
-      });
-
-      // Execute queries
-      const [customers, total] = await Promise.all([
-        ctx.prisma.customer.findMany({
-          where,
-          include: {
-            _count: {
-              select: {
-                addresses: true,
-                orders: true,
-              },
-            },
-            orders: {
-              select: {
-                id: true,
-                orderDate: true,
-                grandTotal: true,
-                status: true,
-              },
-              orderBy: { orderDate: 'desc' },
-              take: 1,
-            },
-          },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: { [sortBy]: sortOrder },
-        }),
-        ctx.prisma.customer.count({ where }),
-      ]);
-
-      // Calculate additional metrics
-      const customersWithMetrics = await Promise.all(
-        customers.map(async (customer) => {
-          // Get lifetime statistics
-          const [orderStats, paymentStats] = await Promise.all([
-            ctx.prisma.order.aggregate({
-              where: {
-                customerId: customer.id,
-                status: { in: ['SHIPPED', 'DELIVERED'] },
-              },
-              _sum: { grandTotal: true },
-              _count: true,
-              _avg: { grandTotal: true },
-            }),
-            ctx.prisma.payment.aggregate({
-              where: {
-                order: { customerId: customer.id },
-                status: 'COMPLETED',
-              },
-              _sum: { amount: true },
-            }),
-          ]);
-
-          const totalRevenue = Number(orderStats._sum.grandTotal || 0);
-          const totalPaid = Number(paymentStats._sum.amount || 0);
-          const outstandingBalance = totalRevenue - totalPaid;
-
-          // Determine credit status based on balance
-          let creditStatus = 'GOOD';
-          if (outstandingBalance > 10000) {
-            creditStatus = 'BLOCKED';
-          } else if (outstandingBalance > 5000) {
-            creditStatus = 'WARNING';
-          }
-
-          return {
-            ...customer,
-            metrics: {
-              lifetimeRevenue: totalRevenue,
-              orderCount: orderStats._count,
-              avgOrderValue: orderStats._avg.grandTotal || 0,
-              outstandingBalance,
-              creditStatus,
-              lastOrderDate: customer.orders[0]?.orderDate || null,
-            },
-          };
-        })
-      );
-
-      // Apply credit status filter if needed
-      let filteredCustomers = customersWithMetrics;
-      if (creditStatus !== 'ALL') {
-        filteredCustomers = customersWithMetrics.filter(
-          c => c.metrics.creditStatus === creditStatus
-        );
-      }
-
-      const result = {
-        customers: filteredCustomers,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
+    // Open orders filter
+    if (hasOpenOrders) {
+      where.orders = {
+        some: {
+          status: { in: ['PENDING', 'CONFIRMED', 'PICKING'] },
         },
       };
+    }
 
-      console.log('Customer list result:', {
-        customerCount: result.customers.length,
-        total: result.pagination.total,
-        firstCustomer: result.customers[0]?.email,
-      });
+    // Debug logging
+    console.log('Customer list query:', {
+      organizationId: ctx.user.organizationId,
+      where: JSON.stringify(where),
+      page,
+      limit,
+    });
 
-      return result;
-    }),
+    // Execute queries
+    const [customers, total] = await Promise.all([
+      ctx.prisma.customer.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              addresses: true,
+              orders: true,
+            },
+          },
+          orders: {
+            select: {
+              id: true,
+              orderDate: true,
+              grandTotal: true,
+              status: true,
+            },
+            orderBy: { orderDate: 'desc' },
+            take: 1,
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { [sortBy]: sortOrder },
+      }),
+      ctx.prisma.customer.count({ where }),
+    ]);
+
+    // Calculate additional metrics
+    const customersWithMetrics = await Promise.all(
+      customers.map(async (customer) => {
+        // Get lifetime statistics
+        const [orderStats, paymentStats] = await Promise.all([
+          ctx.prisma.order.aggregate({
+            where: {
+              customerId: customer.id,
+              status: { in: ['SHIPPED', 'DELIVERED'] },
+            },
+            _sum: { grandTotal: true },
+            _count: true,
+            _avg: { grandTotal: true },
+          }),
+          ctx.prisma.payment.aggregate({
+            where: {
+              order: { customerId: customer.id },
+              status: 'COMPLETED',
+            },
+            _sum: { amount: true },
+          }),
+        ]);
+
+        const totalRevenue = Number(orderStats._sum.grandTotal || 0);
+        const totalPaid = Number(paymentStats._sum.amount || 0);
+        const outstandingBalance = totalRevenue - totalPaid;
+
+        // Determine credit status based on balance
+        let creditStatus = 'GOOD';
+        if (outstandingBalance > 10000) {
+          creditStatus = 'BLOCKED';
+        } else if (outstandingBalance > 5000) {
+          creditStatus = 'WARNING';
+        }
+
+        return {
+          ...customer,
+          metrics: {
+            lifetimeRevenue: totalRevenue,
+            orderCount: orderStats._count,
+            avgOrderValue: orderStats._avg.grandTotal || 0,
+            outstandingBalance,
+            creditStatus,
+            lastOrderDate: customer.orders[0]?.orderDate || null,
+          },
+        };
+      })
+    );
+
+    // Apply credit status filter if needed
+    let filteredCustomers = customersWithMetrics;
+    if (creditStatus !== 'ALL') {
+      filteredCustomers = customersWithMetrics.filter(
+        (c) => c.metrics.creditStatus === creditStatus
+      );
+    }
+
+    const result = {
+      customers: filteredCustomers,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+
+    console.log('Customer list result:', {
+      customerCount: result.customers.length,
+      total: result.pagination.total,
+      firstCustomer: result.customers[0]?.email,
+    });
+
+    return result;
+  }),
 
   // Get single customer with full details
   get: organizationProcedure
@@ -263,10 +254,7 @@ export const customersRouter = createTRPCRouter({
         where: { id: input.id },
         include: {
           addresses: {
-            orderBy: [
-              { isDefault: 'desc' },
-              { addressType: 'asc' },
-            ],
+            orderBy: [{ isDefault: 'desc' }, { addressType: 'asc' }],
           },
           orders: {
             select: {
@@ -385,22 +373,28 @@ export const customersRouter = createTRPCRouter({
         ...customer,
         statistics: {
           orders: {
-            byStatus: orderStats.reduce((acc, stat) => {
-              acc[stat.status] = {
-                count: stat._count,
-                value: Number(stat._sum.grandTotal || 0),
-              };
-              return acc;
-            }, {} as Record<string, any>),
+            byStatus: orderStats.reduce(
+              (acc, stat) => {
+                acc[stat.status] = {
+                  count: stat._count,
+                  value: Number(stat._sum.grandTotal || 0),
+                };
+                return acc;
+              },
+              {} as Record<string, any>
+            ),
             total: orderStats.reduce((sum, stat) => sum + stat._count, 0),
-            totalValue: orderStats.reduce((sum, stat) => sum + Number(stat._sum.grandTotal || 0), 0),
+            totalValue: orderStats.reduce(
+              (sum, stat) => sum + Number(stat._sum.grandTotal || 0),
+              0
+            ),
           },
           payments: {
             total: paymentStats._sum.amount || 0,
             count: paymentStats._count,
           },
-          outstandingBalance: 
-            orderStats.reduce((sum, stat) => sum + Number(stat._sum.grandTotal || 0), 0) - 
+          outstandingBalance:
+            orderStats.reduce((sum, stat) => sum + Number(stat._sum.grandTotal || 0), 0) -
             Number(paymentStats._sum.amount || 0),
           favoriteProducts,
         },
@@ -408,14 +402,100 @@ export const customersRouter = createTRPCRouter({
     }),
 
   // Create customer
-  create: organizationProcedure
-    .input(customerCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Check for duplicate customer code
-      const existing = await ctx.prisma.customer.findFirst({
-        where: { 
+  create: organizationProcedure.input(customerCreateSchema).mutation(async ({ ctx, input }) => {
+    // Check for duplicate customer code
+    const existing = await ctx.prisma.customer.findFirst({
+      where: {
+        organizationId: ctx.user.organizationId,
+        customerCode: input.customerCode,
+      },
+    });
+
+    if (existing) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'A customer with this code already exists',
+      });
+    }
+
+    // Check for duplicate email
+    const existingEmail = await ctx.prisma.customer.findFirst({
+      where: {
+        organizationId: ctx.user.organizationId,
+        email: input.email,
+      },
+    });
+
+    if (existingEmail) {
+      throw new TRPCError({
+        code: 'CONFLICT',
+        message: 'A customer with this email already exists',
+      });
+    }
+
+    // Create customer with audit log
+    const customer = await ctx.prisma.$transaction(async (tx) => {
+      const newCustomer = await tx.customer.create({
+        data: {
+          ...input,
           organizationId: ctx.user.organizationId,
-          customerCode: input.customerCode,
+        },
+      });
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'customers',
+          recordPk: newCustomer.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newCustomer,
+        },
+      });
+
+      // Create notification for sales team
+      await tx.notification.create({
+        data: {
+          notifType: 'NEW_CUSTOMER',
+          message: `New customer ${newCustomer.companyName || `${newCustomer.firstName} ${newCustomer.lastName}`} has been registered`,
+          relatedTable: 'CUSTOMER',
+          relatedId: newCustomer.id,
+          userId: ctx.user.id,
+        },
+      });
+
+      return newCustomer;
+    });
+
+    return customer;
+  }),
+
+  // Update customer
+  update: organizationProcedure.input(customerUpdateSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
+
+    // Get current customer
+    const currentCustomer = await ctx.prisma.customer.findFirst({
+      where: {
+        id,
+        organizationId: ctx.user.organizationId,
+      },
+    });
+
+    if (!currentCustomer) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Customer not found',
+      });
+    }
+
+    // Check for code uniqueness if updating
+    if (data.customerCode && data.customerCode !== currentCustomer.customerCode) {
+      const existing = await ctx.prisma.customer.findFirst({
+        where: {
+          organizationId: ctx.user.organizationId,
+          customerCode: data.customerCode,
         },
       });
 
@@ -425,12 +505,14 @@ export const customersRouter = createTRPCRouter({
           message: 'A customer with this code already exists',
         });
       }
+    }
 
-      // Check for duplicate email
+    // Check for email uniqueness if updating
+    if (data.email && data.email !== currentCustomer.email) {
       const existingEmail = await ctx.prisma.customer.findFirst({
-        where: { 
+        where: {
           organizationId: ctx.user.organizationId,
-          email: input.email,
+          email: data.email,
         },
       });
 
@@ -440,132 +522,42 @@ export const customersRouter = createTRPCRouter({
           message: 'A customer with this email already exists',
         });
       }
+    }
 
-      // Create customer with audit log
-      const customer = await ctx.prisma.$transaction(async (tx) => {
-        const newCustomer = await tx.customer.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId,
-          },
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'customers',
-            recordPk: newCustomer.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newCustomer,
-          },
-        });
-
-        // Create notification for sales team
-        await tx.notification.create({
-          data: {
-            notifType: 'NEW_CUSTOMER',
-            message: `New customer ${newCustomer.companyName || `${newCustomer.firstName} ${newCustomer.lastName}`} has been registered`,
-            relatedTable: 'CUSTOMER',
-            relatedId: newCustomer.id,
-            userId: ctx.user.id,
-          },
-        });
-
-        return newCustomer;
+    // Update customer with audit log
+    const updatedCustomer = await ctx.prisma.$transaction(async (tx) => {
+      const updated = await tx.customer.update({
+        where: { id },
+        data,
       });
 
-      return customer;
-    }),
-
-  // Update customer
-  update: organizationProcedure
-    .input(customerUpdateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input;
-
-      // Get current customer
-      const currentCustomer = await ctx.prisma.customer.findFirst({
-        where: { 
-          id,
-          organizationId: ctx.user.organizationId,
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'customers',
+          recordPk: id,
+          action: 'UPDATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          beforeData: currentCustomer,
+          afterData: updated,
         },
       });
 
-      if (!currentCustomer) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Customer not found',
-        });
-      }
+      return updated;
+    });
 
-      // Check for code uniqueness if updating
-      if (data.customerCode && data.customerCode !== currentCustomer.customerCode) {
-        const existing = await ctx.prisma.customer.findFirst({
-          where: { 
-            organizationId: ctx.user.organizationId,
-            customerCode: data.customerCode,
-          },
-        });
-
-        if (existing) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'A customer with this code already exists',
-          });
-        }
-      }
-
-      // Check for email uniqueness if updating
-      if (data.email && data.email !== currentCustomer.email) {
-        const existingEmail = await ctx.prisma.customer.findFirst({
-          where: { 
-            organizationId: ctx.user.organizationId,
-            email: data.email,
-          },
-        });
-
-        if (existingEmail) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'A customer with this email already exists',
-          });
-        }
-      }
-
-      // Update customer with audit log
-      const updatedCustomer = await ctx.prisma.$transaction(async (tx) => {
-        const updated = await tx.customer.update({
-          where: { id },
-          data,
-        });
-
-        // Create audit log
-        await tx.auditLog.create({
-          data: {
-            tableName: 'customers',
-            recordPk: id,
-            action: 'UPDATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            beforeData: currentCustomer,
-            afterData: updated,
-          },
-        });
-
-        return updated;
-      });
-
-      return updatedCustomer;
-    }),
+    return updatedCustomer;
+  }),
 
   // Delete/deactivate customer
   delete: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      force: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        force: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (!['ADMIN', 'MANAGER'].includes(ctx.user.role)) {
@@ -592,7 +584,7 @@ export const customersRouter = createTRPCRouter({
 
       // Get the customer before deletion
       const currentCustomer = await ctx.prisma.customer.findFirst({
-        where: { 
+        where: {
           id: input.id,
           organizationId: ctx.user.organizationId,
         },
@@ -638,49 +630,47 @@ export const customersRouter = createTRPCRouter({
       .query(async ({ ctx, input }) => {
         const addresses = await ctx.prisma.address.findMany({
           where: { customerId: input.customerId },
-          orderBy: [
-            { isDefault: 'desc' },
-            { addressType: 'asc' },
-          ],
+          orderBy: [{ isDefault: 'desc' }, { addressType: 'asc' }],
         });
 
         return addresses;
       }),
 
     // Create address
-    create: organizationProcedure
-      .input(addressSchema)
-      .mutation(async ({ ctx, input }) => {
-        // If marking as default, unmark others of same type
-        if (input.isDefault) {
-          await ctx.prisma.address.updateMany({
-            where: {
-              customerId: input.customerId,
-              addressType: input.addressType === 'BOTH' 
+    create: organizationProcedure.input(addressSchema).mutation(async ({ ctx, input }) => {
+      // If marking as default, unmark others of same type
+      if (input.isDefault) {
+        await ctx.prisma.address.updateMany({
+          where: {
+            customerId: input.customerId,
+            addressType:
+              input.addressType === 'BOTH'
                 ? { in: ['BILLING', 'SHIPPING', 'BOTH'] }
                 : input.addressType,
-              isDefault: true,
-            },
-            data: { isDefault: false },
-          });
-        }
-
-        const address = await ctx.prisma.address.create({
-          data: {
-            ...input,
-            organizationId: ctx.user.organizationId!,
+            isDefault: true,
           },
+          data: { isDefault: false },
         });
+      }
 
-        return address;
-      }),
+      const address = await ctx.prisma.address.create({
+        data: {
+          ...input,
+          organizationId: ctx.user.organizationId!,
+        },
+      });
+
+      return address;
+    }),
 
     // Update address
     update: organizationProcedure
-      .input(z.object({
-        id: z.string().cuid(),
-        data: addressSchema.partial(),
-      }))
+      .input(
+        z.object({
+          id: z.string().cuid(),
+          data: addressSchema.partial(),
+        })
+      )
       .mutation(async ({ ctx, input }) => {
         // If marking as default, unmark others
         if (input.data.isDefault) {
@@ -746,165 +736,167 @@ export const customersRouter = createTRPCRouter({
   }),
 
   // Check customer credit
-  checkCredit: organizationProcedure
-    .input(creditCheckSchema)
-    .query(async ({ ctx, input }) => {
-      const customer = await ctx.prisma.customer.findFirst({
-        where: { 
-          id: input.customerId,
-          organizationId: ctx.user.organizationId,
-        },
-        select: {
-          defaultPaymentTerms: true,
-        },
+  checkCredit: organizationProcedure.input(creditCheckSchema).query(async ({ ctx, input }) => {
+    const customer = await ctx.prisma.customer.findFirst({
+      where: {
+        id: input.customerId,
+        organizationId: ctx.user.organizationId,
+      },
+      select: {
+        defaultPaymentTerms: true,
+      },
+    });
+
+    if (!customer) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Customer not found',
       });
+    }
 
-      if (!customer) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Customer not found',
-        });
-      }
+    // Get current outstanding balance
+    const [orderTotal, paymentTotal] = await Promise.all([
+      ctx.prisma.order.aggregate({
+        where: {
+          customerId: input.customerId,
+          status: { in: ['PENDING', 'CONFIRMED', 'PICKING', 'SHIPPED'] },
+        },
+        _sum: { grandTotal: true },
+      }),
+      ctx.prisma.payment.aggregate({
+        where: {
+          order: { customerId: input.customerId },
+          status: 'COMPLETED',
+        },
+        _sum: { amount: true },
+      }),
+    ]);
 
-      // Get current outstanding balance
-      const [orderTotal, paymentTotal] = await Promise.all([
-        ctx.prisma.order.aggregate({
-          where: {
-            customerId: input.customerId,
-            status: { in: ['PENDING', 'CONFIRMED', 'PICKING', 'SHIPPED'] },
-          },
-          _sum: { grandTotal: true },
-        }),
-        ctx.prisma.payment.aggregate({
-          where: {
-            order: { customerId: input.customerId },
-            status: 'COMPLETED',
-          },
-          _sum: { amount: true },
-        }),
-      ]);
+    const currentBalance =
+      Number(orderTotal._sum.grandTotal || 0) - Number(paymentTotal._sum.amount || 0);
+    const projectedBalance = currentBalance + input.orderAmount;
 
-      const currentBalance = Number(orderTotal._sum.grandTotal || 0) - Number(paymentTotal._sum.amount || 0);
-      const projectedBalance = currentBalance + input.orderAmount;
+    const result = {
+      creditLimit: 0, // TODO: Implement credit limit tracking
+      currentBalance,
+      projectedBalance,
+      availableCredit: Infinity, // No credit limit implemented yet
+      orderAmount: input.orderAmount,
+      approved: true,
+      reason: '',
+    };
 
-      const result = {
-        creditLimit: 0, // TODO: Implement credit limit tracking
-        currentBalance,
-        projectedBalance,
-        availableCredit: Infinity, // No credit limit implemented yet
-        orderAmount: input.orderAmount,
-        approved: true,
-        reason: '',
-      };
+    // TODO: Implement credit limit checking
 
-      // TODO: Implement credit limit checking
-
-      return result;
-    }),
+    return result;
+  }),
 
   // Get customer metrics
-  getMetrics: organizationProcedure
-    .input(customerMetricsSchema)
-    .query(async ({ ctx, input }) => {
-      const { customerId, dateFrom, dateTo } = input;
+  getMetrics: organizationProcedure.input(customerMetricsSchema).query(async ({ ctx, input }) => {
+    const { customerId, dateFrom, dateTo } = input;
 
-      const where: Prisma.OrderWhereInput = {
-        customerId,
-        status: { in: ['SHIPPED', 'DELIVERED'] },
-      };
+    const where: Prisma.OrderWhereInput = {
+      customerId,
+      status: { in: ['SHIPPED', 'DELIVERED'] },
+    };
 
-      if (dateFrom || dateTo) {
-        where.orderDate = {};
-        if (dateFrom) where.orderDate.gte = dateFrom;
-        if (dateTo) where.orderDate.lte = dateTo;
-      }
+    if (dateFrom || dateTo) {
+      where.orderDate = {};
+      if (dateFrom) where.orderDate.gte = dateFrom;
+      if (dateTo) where.orderDate.lte = dateTo;
+    }
 
-      // Get orders and calculate metrics
-      const orders = await ctx.prisma.order.findMany({
-        where,
-        include: {
-          items: {
-            include: {
-              item: {
-                select: {
-                  id: true,
-                  sku: true,
-                  name: true,
-                  category: {
-                    select: { name: true },
-                  },
+    // Get orders and calculate metrics
+    const orders = await ctx.prisma.order.findMany({
+      where,
+      include: {
+        items: {
+          include: {
+            item: {
+              select: {
+                id: true,
+                sku: true,
+                name: true,
+                category: {
+                  select: { name: true },
                 },
               },
             },
           },
-          shipments: true,
-          returns: true,
-          payments: true,
         },
-      });
+        shipments: true,
+        returns: true,
+        payments: true,
+      },
+    });
 
-      // Calculate order metrics
-      const orderMetrics = {
-        count: orders.length,
-        totalRevenue: orders.reduce((sum, order) => sum + Number(order.grandTotal || 0), 0),
-        avgOrderValue: orders.length > 0 
-          ? orders.reduce((sum, order) => sum + Number(order.grandTotal || 0), 0) / orders.length 
+    // Calculate order metrics
+    const orderMetrics = {
+      count: orders.length,
+      totalRevenue: orders.reduce((sum, order) => sum + Number(order.grandTotal || 0), 0),
+      avgOrderValue:
+        orders.length > 0
+          ? orders.reduce((sum, order) => sum + Number(order.grandTotal || 0), 0) / orders.length
           : 0,
-        totalItems: orders.reduce((sum, order) => 
-          sum + order.items.reduce((itemSum, item) => itemSum + item.qtyOrdered, 0), 0
-        ),
-        returnRate: orders.length > 0
-          ? (orders.filter(order => order.returns.length > 0).length / orders.length) * 100
+      totalItems: orders.reduce(
+        (sum, order) => sum + order.items.reduce((itemSum, item) => itemSum + item.qtyOrdered, 0),
+        0
+      ),
+      returnRate:
+        orders.length > 0
+          ? (orders.filter((order) => order.returns.length > 0).length / orders.length) * 100
           : 0,
-      };
+    };
 
-      // Calculate product metrics
-      const productMap = new Map();
-      for (const order of orders) {
-        for (const item of order.items) {
-          const key = item.itemId;
-          if (!productMap.has(key)) {
-            productMap.set(key, {
-              ...item.item,
-              quantity: 0,
-              revenue: 0,
-              orders: 0,
-            });
-          }
-          const product = productMap.get(key);
-          product.quantity += item.qtyOrdered;
-          product.revenue += item.totalPrice;
-          product.orders += 1;
-        }
-      }
-
-      const topProducts = Array.from(productMap.values())
-        .sort((a, b) => b.revenue - a.revenue)
-        .slice(0, 10);
-
-      // Calculate category distribution
-      const categoryMap = new Map();
-      for (const product of productMap.values()) {
-        const category = product.category.name;
-        if (!categoryMap.has(category)) {
-          categoryMap.set(category, {
-            name: category,
+    // Calculate product metrics
+    const productMap = new Map();
+    for (const order of orders) {
+      for (const item of order.items) {
+        const key = item.itemId;
+        if (!productMap.has(key)) {
+          productMap.set(key, {
+            ...item.item,
             quantity: 0,
             revenue: 0,
             orders: 0,
           });
         }
-        const cat = categoryMap.get(category);
-        cat.quantity += product.quantity;
-        cat.revenue += product.revenue;
-        cat.orders += product.orders;
+        const product = productMap.get(key);
+        product.quantity += item.qtyOrdered;
+        product.revenue += item.totalPrice;
+        product.orders += 1;
       }
+    }
 
-      const categoryDistribution = Array.from(categoryMap.values())
-        .sort((a, b) => b.revenue - a.revenue);
+    const topProducts = Array.from(productMap.values())
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
 
-      // Calculate time-based metrics
-      const ordersByMonth = orders.reduce((acc, order) => {
+    // Calculate category distribution
+    const categoryMap = new Map();
+    for (const product of productMap.values()) {
+      const category = product.category.name;
+      if (!categoryMap.has(category)) {
+        categoryMap.set(category, {
+          name: category,
+          quantity: 0,
+          revenue: 0,
+          orders: 0,
+        });
+      }
+      const cat = categoryMap.get(category);
+      cat.quantity += product.quantity;
+      cat.revenue += product.revenue;
+      cat.orders += product.orders;
+    }
+
+    const categoryDistribution = Array.from(categoryMap.values()).sort(
+      (a, b) => b.revenue - a.revenue
+    );
+
+    // Calculate time-based metrics
+    const ordersByMonth = orders.reduce(
+      (acc, order) => {
         const month = order.orderDate.toISOString().substring(0, 7);
         if (!acc[month]) {
           acc[month] = {
@@ -916,64 +908,71 @@ export const customersRouter = createTRPCRouter({
         acc[month].count += 1;
         acc[month].revenue += order.grandTotal || 0;
         return acc;
-      }, {} as Record<string, any>);
+      },
+      {} as Record<string, any>
+    );
 
-      // Calculate fulfillment metrics
-      const fulfillmentMetrics = {
-        avgDaysToShip: 0,
-        avgDaysToDeliver: 0,
-        onTimeDeliveryRate: 0,
-      };
+    // Calculate fulfillment metrics
+    const fulfillmentMetrics = {
+      avgDaysToShip: 0,
+      avgDaysToDeliver: 0,
+      onTimeDeliveryRate: 0,
+    };
 
-      let shippedCount = 0;
-      let deliveredCount = 0;
-      let totalDaysToShip = 0;
-      let totalDaysToDeliver = 0;
-      let onTimeDeliveries = 0;
+    let shippedCount = 0;
+    let deliveredCount = 0;
+    let totalDaysToShip = 0;
+    let totalDaysToDeliver = 0;
+    let onTimeDeliveries = 0;
 
-      for (const order of orders) {
-        if (order.shipments.length > 0) {
-          const firstShipment = order.shipments[0];
-          if (firstShipment.shipDate) {
-            const daysToShip = Math.floor(
-              (firstShipment.shipDate.getTime() - order.orderDate.getTime()) / (1000 * 60 * 60 * 24)
-            );
-            totalDaysToShip += daysToShip;
-            shippedCount++;
-          }
+    for (const order of orders) {
+      if (order.shipments.length > 0) {
+        const firstShipment = order.shipments[0];
+        if (firstShipment.shipDate) {
+          const daysToShip = Math.floor(
+            (firstShipment.shipDate.getTime() - order.orderDate.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          totalDaysToShip += daysToShip;
+          shippedCount++;
+        }
 
-          // TODO: Track delivery date when implemented
-          if (firstShipment.status === 'DELIVERED') {
-            deliveredCount++;
-            // Check if delivered on time based on expected delivery
-            if (order.requestedShipDate && firstShipment.expectedDelivery && 
-                firstShipment.expectedDelivery <= order.requestedShipDate) {
-              onTimeDeliveries++;
-            }
+        // TODO: Track delivery date when implemented
+        if (firstShipment.status === 'DELIVERED') {
+          deliveredCount++;
+          // Check if delivered on time based on expected delivery
+          if (
+            order.requestedShipDate &&
+            firstShipment.expectedDelivery &&
+            firstShipment.expectedDelivery <= order.requestedShipDate
+          ) {
+            onTimeDeliveries++;
           }
         }
       }
+    }
 
-      if (shippedCount > 0) {
-        fulfillmentMetrics.avgDaysToShip = totalDaysToShip / shippedCount;
-      }
-      if (deliveredCount > 0) {
-        fulfillmentMetrics.avgDaysToDeliver = totalDaysToDeliver / deliveredCount;
-        fulfillmentMetrics.onTimeDeliveryRate = (onTimeDeliveries / deliveredCount) * 100;
-      }
+    if (shippedCount > 0) {
+      fulfillmentMetrics.avgDaysToShip = totalDaysToShip / shippedCount;
+    }
+    if (deliveredCount > 0) {
+      fulfillmentMetrics.avgDaysToDeliver = totalDaysToDeliver / deliveredCount;
+      fulfillmentMetrics.onTimeDeliveryRate = (onTimeDeliveries / deliveredCount) * 100;
+    }
 
-      return {
-        period: {
-          from: dateFrom || orders[orders.length - 1]?.orderDate,
-          to: dateTo || orders[0]?.orderDate,
-        },
-        orderMetrics,
-        topProducts,
-        categoryDistribution,
-        orderTrend: Object.values(ordersByMonth).sort((a: any, b: any) => a.month.localeCompare(b.month)),
-        fulfillmentMetrics,
-      };
-    }),
+    return {
+      period: {
+        from: dateFrom || orders[orders.length - 1]?.orderDate,
+        to: dateTo || orders[0]?.orderDate,
+      },
+      orderMetrics,
+      topProducts,
+      categoryDistribution,
+      orderTrend: Object.values(ordersByMonth).sort((a: any, b: any) =>
+        a.month.localeCompare(b.month)
+      ),
+      fulfillmentMetrics,
+    };
+  }),
 
   // Get customer recommendations
   getRecommendations: organizationProcedure
@@ -997,7 +996,7 @@ export const customersRouter = createTRPCRouter({
       });
 
       // Extract purchased items and categories
-      const purchasedItemIds = new Set(orderItems.map(oi => oi.itemId));
+      const purchasedItemIds = new Set(orderItems.map((oi) => oi.itemId));
       const purchasedCategories = new Map();
 
       for (const orderItem of orderItems) {
@@ -1035,10 +1034,11 @@ export const customersRouter = createTRPCRouter({
       });
 
       // Calculate availability and score
-      const scoredRecommendations = recommendations.map(item => {
+      const scoredRecommendations = recommendations.map((item) => {
         const totalStock = item.inventory.reduce((sum: number, inv) => sum + inv.qtyOnHand, 0);
         const totalAvailable = item.inventory.reduce(
-          (sum: number, inv) => sum + (inv.qtyOnHand - inv.qtyReserved), 0
+          (sum: number, inv) => sum + (inv.qtyOnHand - inv.qtyReserved),
+          0
         );
 
         // Score based on category purchase frequency
@@ -1062,10 +1062,12 @@ export const customersRouter = createTRPCRouter({
       });
 
       // Also get frequently bought together items
-      const frequentlyBoughtTogether = await ctx.prisma.$queryRaw<Array<{
-        item_id: string;
-        co_occurrence_count: bigint;
-      }>>`
+      const frequentlyBoughtTogether = await ctx.prisma.$queryRaw<
+        Array<{
+          item_id: string;
+          co_occurrence_count: bigint;
+        }>
+      >`
         SELECT 
           oi2.item_id,
           COUNT(*) as co_occurrence_count
@@ -1084,7 +1086,7 @@ export const customersRouter = createTRPCRouter({
 
       const crossSellItems = [];
       if (frequentlyBoughtTogether.length > 0) {
-        const itemIds = frequentlyBoughtTogether.map(row => row.item_id);
+        const itemIds = frequentlyBoughtTogether.map((row) => row.item_id);
         const items = await ctx.prisma.item.findMany({
           where: {
             id: { in: itemIds },
@@ -1097,7 +1099,7 @@ export const customersRouter = createTRPCRouter({
         });
 
         for (const row of frequentlyBoughtTogether) {
-          const item = items.find(i => i.id === row.item_id);
+          const item = items.find((i) => i.id === row.item_id);
           if (item) {
             crossSellItems.push({
               ...item,
@@ -1116,10 +1118,12 @@ export const customersRouter = createTRPCRouter({
 
   // Merge duplicate customers
   merge: organizationProcedure
-    .input(z.object({
-      primaryId: z.string().cuid(),
-      duplicateId: z.string().cuid(),
-    }))
+    .input(
+      z.object({
+        primaryId: z.string().cuid(),
+        duplicateId: z.string().cuid(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check permissions
       if (ctx.user.role !== 'ADMIN') {
@@ -1214,17 +1218,19 @@ export const customersRouter = createTRPCRouter({
 
   // Export customers
   export: organizationProcedure
-    .input(z.object({
-      filters: customerFilterSchema,
-      format: z.enum(['csv', 'excel']).default('csv'),
-      includeAddresses: z.boolean().default(false),
-      includeMetrics: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        filters: customerFilterSchema,
+        format: z.enum(['csv', 'excel']).default('csv'),
+        includeAddresses: z.boolean().default(false),
+        includeMetrics: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Get customers with filters
       const customers = await ctx.prisma.customer.findMany({
         where: {
-          ...input.filters as any,
+          ...(input.filters as any),
           organizationId: ctx.user.organizationId,
         },
         include: {
@@ -1238,7 +1244,7 @@ export const customersRouter = createTRPCRouter({
       });
 
       // Prepare export data
-      let exportData = customers.map(customer => ({
+      let exportData = customers.map((customer) => ({
         id: customer.id,
         code: customer.customerCode,
         companyName: customer.companyName || '',

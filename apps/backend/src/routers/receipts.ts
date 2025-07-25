@@ -10,17 +10,21 @@ const receiptCreateSchema = z.object({
   purchaseOrderId: z.string().cuid(),
   receivedDate: z.date().default(() => new Date()),
   notes: z.string().optional(),
-  items: z.array(z.object({
-    poItemId: z.string().cuid(),
-    qtyReceived: z.number().int().min(0),
-    qtyRejected: z.number().int().min(0).default(0),
-    locationId: z.string().cuid(),
-    lotNumber: z.string().optional(),
-    expirationDate: z.date().optional(),
-    serialNumbers: z.array(z.string()).optional(),
-    rejectionReason: z.string().optional(),
-    notes: z.string().optional(),
-  })).min(1),
+  items: z
+    .array(
+      z.object({
+        poItemId: z.string().cuid(),
+        qtyReceived: z.number().int().min(0),
+        qtyRejected: z.number().int().min(0).default(0),
+        locationId: z.string().cuid(),
+        lotNumber: z.string().optional(),
+        expirationDate: z.date().optional(),
+        serialNumbers: z.array(z.string()).optional(),
+        rejectionReason: z.string().optional(),
+        notes: z.string().optional(),
+      })
+    )
+    .min(1),
 });
 
 const receiptFilterSchema = z.object({
@@ -59,55 +63,53 @@ const discrepancyReportSchema = z.object({
 
 export const receiptsRouter = createTRPCRouter({
   // List receipts with filtering
-  list: organizationProcedure
-    .input(receiptFilterSchema)
-    .query(async ({ ctx, input }) => {
-      const {
-        search,
-        purchaseOrderId,
+  list: organizationProcedure.input(receiptFilterSchema).query(async ({ ctx, input }) => {
+    const {
+      search,
+      purchaseOrderId,
+      supplierId,
+      warehouseId,
+      status,
+      hasDiscrepancies,
+      dateFrom,
+      dateTo,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    } = input;
+
+    const where: Prisma.ReceiptWhereInput = {
+      purchaseOrder: {
+        organizationId: ctx.user.organizationId,
+      },
+    };
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { reference: { contains: search, mode: 'insensitive' } },
+        { purchaseOrder: { poNumber: { contains: search, mode: 'insensitive' } } },
+        { notes: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // PO filter
+    if (purchaseOrderId) {
+      where.poId = purchaseOrderId;
+    }
+
+    // Supplier filter
+    if (supplierId) {
+      where.purchaseOrder = {
+        ...(where.purchaseOrder as any),
         supplierId,
-        warehouseId,
-        status,
-        hasDiscrepancies,
-        dateFrom,
-        dateTo,
-        page,
-        limit,
-        sortBy,
-        sortOrder,
-      } = input;
-
-      const where: Prisma.ReceiptWhereInput = {
-        purchaseOrder: {
-          organizationId: ctx.user.organizationId,
-        },
       };
+    }
 
-      // Search filter
-      if (search) {
-        where.OR = [
-          { reference: { contains: search, mode: 'insensitive' } },
-          { purchaseOrder: { poNumber: { contains: search, mode: 'insensitive' } } },
-          { notes: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      // PO filter
-      if (purchaseOrderId) {
-        where.poId = purchaseOrderId;
-      }
-
-      // Supplier filter
-      if (supplierId) {
-        where.purchaseOrder = {
-          ...where.purchaseOrder as any,
-          supplierId,
-        };
-      }
-
-      // Warehouse filter - Note: PurchaseOrder doesn't have warehouseId in new schema
-      // TODO: Consider adding warehouse relation to PurchaseOrder if needed
-      /*
+    // Warehouse filter - Note: PurchaseOrder doesn't have warehouseId in new schema
+    // TODO: Consider adding warehouse relation to PurchaseOrder if needed
+    /*
       if (warehouseId) {
         where.purchaseOrder = {
           ...where.purchaseOrder as any,
@@ -116,107 +118,109 @@ export const receiptsRouter = createTRPCRouter({
       }
       */
 
-      // Status filter - Note: Receipt doesn't have status field in new schema
-      // TODO: Consider filtering by PurchaseOrder status or adding status to Receipt
-      /*
+    // Status filter - Note: Receipt doesn't have status field in new schema
+    // TODO: Consider filtering by PurchaseOrder status or adding status to Receipt
+    /*
       if (status) {
         where.status = status;
       }
       */
 
-      // Discrepancies filter - Note: Receipt doesn't have hasDiscrepancies field
-      // TODO: Implement discrepancy detection logic post-query
-      /*
+    // Discrepancies filter - Note: Receipt doesn't have hasDiscrepancies field
+    // TODO: Implement discrepancy detection logic post-query
+    /*
       if (hasDiscrepancies !== undefined) {
         where.hasDiscrepancies = hasDiscrepancies;
       }
       */
 
-      // Date filters
-      if (dateFrom || dateTo) {
-        where.receivedDate = {};
-        if (dateFrom) where.receivedDate.gte = dateFrom;
-        if (dateTo) where.receivedDate.lte = dateTo;
-      }
+    // Date filters
+    if (dateFrom || dateTo) {
+      where.receivedDate = {};
+      if (dateFrom) where.receivedDate.gte = dateFrom;
+      if (dateTo) where.receivedDate.lte = dateTo;
+    }
 
-      // Execute queries
-      const [receipts, total] = await Promise.all([
-        ctx.prisma.receipt.findMany({
-          where,
-          include: {
-            purchaseOrder: {
-              include: {
-                supplier: {
-                  select: {
-                    id: true,
-                    name: true,
-                    supplierCode: true,
-                  },
+    // Execute queries
+    const [receipts, total] = await Promise.all([
+      ctx.prisma.receipt.findMany({
+        where,
+        include: {
+          purchaseOrder: {
+            include: {
+              supplier: {
+                select: {
+                  id: true,
+                  name: true,
+                  supplierCode: true,
                 },
-                // Note: PurchaseOrder doesn't have warehouse relation in new schema
               },
-            },
-            receivedBy: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-              },
-            },
-            _count: {
-              select: {
-                items: true,
-              },
-            },
-            items: {
-              select: {
-                id: true,
-                qtyReceived: true,
-                // qtyRejected: true, // Not in schema
-              },
+              // Note: PurchaseOrder doesn't have warehouse relation in new schema
             },
           },
-          skip: (page - 1) * limit,
-          take: limit,
-          orderBy: sortBy === 'supplier'
+          receivedBy: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              items: true,
+            },
+          },
+          items: {
+            select: {
+              id: true,
+              qtyReceived: true,
+              // qtyRejected: true, // Not in schema
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy:
+          sortBy === 'supplier'
             ? { purchaseOrder: { supplier: { name: sortOrder } } }
             : sortBy === 'receiptNumber'
-            ? { reference: sortOrder } // Receipt doesn't have receiptNumber, using reference
-            : sortBy === 'status'
-            ? { receivedDate: sortOrder } // No status field, using receivedDate as fallback
-            : { [sortBy]: sortOrder },
-        }),
-        ctx.prisma.receipt.count({ where }),
-      ]);
+              ? { reference: sortOrder } // Receipt doesn't have receiptNumber, using reference
+              : sortBy === 'status'
+                ? { receivedDate: sortOrder } // No status field, using receivedDate as fallback
+                : { [sortBy]: sortOrder },
+      }),
+      ctx.prisma.receipt.count({ where }),
+    ]);
 
-      // Calculate metrics
-      const receiptsWithMetrics = receipts.map(receipt => ({
-        ...receipt,
-        itemCount: receipt._count?.items || 0,
-        totalReceived: receipt.items?.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) || 0,
-        totalRejected: 0, // qtyRejected not in schema
-        rejectionRate: 0, // Cannot calculate without qtyRejected
-        hasDiscrepancy: false, // TODO: Implement discrepancy detection
-      }));
+    // Calculate metrics
+    const receiptsWithMetrics = receipts.map((receipt) => ({
+      ...receipt,
+      itemCount: receipt._count?.items || 0,
+      totalReceived:
+        receipt.items?.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) || 0,
+      totalRejected: 0, // qtyRejected not in schema
+      rejectionRate: 0, // Cannot calculate without qtyRejected
+      hasDiscrepancy: false, // TODO: Implement discrepancy detection
+    }));
 
-      return {
-        receipts: receiptsWithMetrics,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages: Math.ceil(total / limit),
-        },
-      };
-    }),
+    return {
+      receipts: receiptsWithMetrics,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }),
 
   // Get single receipt with full details
   get: organizationProcedure
     .input(z.object({ id: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const receipt = await ctx.prisma.receipt.findFirst({
-        where: { 
+        where: {
           id: input.id,
           purchaseOrder: {
             organizationId: ctx.user.organizationId,
@@ -295,35 +299,42 @@ export const receiptsRouter = createTRPCRouter({
 
       // Calculate discrepancies
       const discrepancies: any[] = [];
-      const receiptWithRelations = receipt as typeof receipt & { 
-        items?: any[]; 
-        purchaseOrder?: { items?: any[] } 
+      const receiptWithRelations = receipt as typeof receipt & {
+        items?: any[];
+        purchaseOrder?: { items?: any[] };
       };
       if (receiptWithRelations.items) {
         for (const item of receiptWithRelations.items) {
-        // Find corresponding PO item by itemId
-        const poItem = receiptWithRelations.purchaseOrder?.items?.find((poi: any) => poi.itemId === item.itemId);
-        if (poItem) {
-          const expectedQty = poItem.qtyOrdered - poItem.qtyReceived + item.qtyReceived;
-          const actualQty = item.qtyReceived; // No qtyRejected in schema
-          
-          if (actualQty !== expectedQty) {
-            discrepancies.push({
-              item: poItem.item,
-              expectedQty,
-              actualQty,
-              variance: actualQty - expectedQty,
-              variancePercentage: expectedQty > 0 ? ((actualQty - expectedQty) / expectedQty) * 100 : 0,
-            });
+          // Find corresponding PO item by itemId
+          const poItem = receiptWithRelations.purchaseOrder?.items?.find(
+            (poi: any) => poi.itemId === item.itemId
+          );
+          if (poItem) {
+            const expectedQty = poItem.qtyOrdered - poItem.qtyReceived + item.qtyReceived;
+            const actualQty = item.qtyReceived; // No qtyRejected in schema
+
+            if (actualQty !== expectedQty) {
+              discrepancies.push({
+                item: poItem.item,
+                expectedQty,
+                actualQty,
+                variance: actualQty - expectedQty,
+                variancePercentage:
+                  expectedQty > 0 ? ((actualQty - expectedQty) / expectedQty) * 100 : 0,
+              });
+            }
           }
         }
-      }
       }
 
       // Calculate metrics
       const metrics = {
         itemCount: receiptWithRelations.items?.length || 0,
-        totalReceived: receiptWithRelations.items?.reduce((sum: number, item: any) => sum + item.qtyReceived, 0) || 0,
+        totalReceived:
+          receiptWithRelations.items?.reduce(
+            (sum: number, item: any) => sum + item.qtyReceived,
+            0
+          ) || 0,
         totalRejected: 0, // qtyRejected not in schema
         rejectionRate: 0, // Cannot calculate without qtyRejected
         discrepancyCount: discrepancies.length,
@@ -337,246 +348,246 @@ export const receiptsRouter = createTRPCRouter({
     }),
 
   // Create receipt
-  create: organizationProcedure
-    .input(receiptCreateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { purchaseOrderId, receivedDate, notes, items } = input;
+  create: organizationProcedure.input(receiptCreateSchema).mutation(async ({ ctx, input }) => {
+    const { purchaseOrderId, receivedDate, notes, items } = input;
 
-      // Check permissions
-      if (!['ADMIN', 'MANAGER', 'WAREHOUSE'].includes(ctx.user.role)) {
+    // Check permissions
+    if (!['ADMIN', 'MANAGER', 'WAREHOUSE'].includes(ctx.user.role)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Insufficient permissions to create receipts',
+      });
+    }
+
+    // Validate PO
+    const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
+      where: {
+        id: purchaseOrderId,
+        organizationId: ctx.user.organizationId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!purchaseOrder) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Purchase order not found',
+      });
+    }
+
+    if (purchaseOrder.status !== 'APPROVED') {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Only approved purchase orders can be received',
+      });
+    }
+
+    // Validate items
+    let hasDiscrepancies = false;
+    for (const receiptItem of items) {
+      // Note: input schema has poItemId but we need to match by itemId
+      const poItem = purchaseOrder.items.find((item) => item.id === receiptItem.poItemId);
+
+      if (!poItem) {
         throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Insufficient permissions to create receipts',
+          code: 'NOT_FOUND',
+          message: 'Purchase order item not found',
         });
       }
 
-      // Validate PO
-      const purchaseOrder = await ctx.prisma.purchaseOrder.findFirst({
-        where: { 
-          id: purchaseOrderId,
-          organizationId: ctx.user.organizationId,
-        },
-        include: {
-          items: true,
+      const remainingToReceive = poItem.qtyOrdered - poItem.qtyReceived;
+      if (receiptItem.qtyReceived > remainingToReceive) {
+        hasDiscrepancies = true;
+      }
+
+      // Note: qtyRejected in input but not in schema
+      if (receiptItem.qtyRejected && receiptItem.qtyRejected > 0) {
+        hasDiscrepancies = true;
+      }
+    }
+
+    // Create receipt in transaction
+    const receipt = await ctx.prisma.$transaction(async (tx) => {
+      // Generate receipt number
+      const receiptCount = await tx.receipt.count({
+        where: {
+          receivedDate: {
+            gte: new Date(new Date().getFullYear(), 0, 1),
+          },
         },
       });
 
-      if (!purchaseOrder) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Purchase order not found',
-        });
-      }
+      const reference = `REC-${new Date().getFullYear()}-${String(receiptCount + 1).padStart(6, '0')}`;
 
-      if (purchaseOrder.status !== 'APPROVED') {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message: 'Only approved purchase orders can be received',
-        });
-      }
+      // Create receipt
+      const newReceipt = await tx.receipt.create({
+        data: {
+          poId: purchaseOrderId,
+          reference,
+          receivedDate,
+          receivedById: ctx.user.id,
+          // status: 'PENDING', // Receipt doesn't have status field
+          // hasDiscrepancies, // Receipt doesn't have hasDiscrepancies field
+          notes,
+          organizationId: ctx.user.organizationId!,
+        },
+      });
 
-      // Validate items
-      let hasDiscrepancies = false;
-      for (const receiptItem of items) {
-        // Note: input schema has poItemId but we need to match by itemId
-        const poItem = purchaseOrder.items.find(item => item.id === receiptItem.poItemId);
-        
-        if (!poItem) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Purchase order item not found',
-          });
-        }
+      // Process items
+      for (const item of items) {
+        const poItem = purchaseOrder.items.find((poi) => poi.id === item.poItemId);
+        if (!poItem) continue;
 
-        const remainingToReceive = poItem.qtyOrdered - poItem.qtyReceived;
-        if (receiptItem.qtyReceived > remainingToReceive) {
-          hasDiscrepancies = true;
-        }
-
-        // Note: qtyRejected in input but not in schema
-        if (receiptItem.qtyRejected && receiptItem.qtyRejected > 0) {
-          hasDiscrepancies = true;
-        }
-      }
-
-      // Create receipt in transaction
-      const receipt = await ctx.prisma.$transaction(async (tx) => {
-        // Generate receipt number
-        const receiptCount = await tx.receipt.count({
-          where: {
-            receivedDate: {
-              gte: new Date(new Date().getFullYear(), 0, 1),
-            },
-          },
-        });
-
-        const reference = `REC-${new Date().getFullYear()}-${String(receiptCount + 1).padStart(6, '0')}`;
-
-        // Create receipt
-        const newReceipt = await tx.receipt.create({
-          data: {
-            poId: purchaseOrderId,
-            reference,
-            receivedDate,
-            receivedById: ctx.user.id,
-            // status: 'PENDING', // Receipt doesn't have status field
-            // hasDiscrepancies, // Receipt doesn't have hasDiscrepancies field
-            notes,
-            organizationId: ctx.user.organizationId!,
-          },
-        });
-
-        // Process items
-        for (const item of items) {
-          const poItem = purchaseOrder.items.find(poi => poi.id === item.poItemId);
-          if (!poItem) continue;
-
-          // Create lot if needed
-          let lotId = null;
-          if (item.lotNumber) {
-            const lot = await tx.lot.create({
-              data: {
-                lotNumber: item.lotNumber,
-                itemId: poItem.itemId,
-                supplierId: purchaseOrder.supplierId,
-                receivedDate,
-                expirationDate: item.expirationDate,
-                qtyInitial: item.qtyReceived,
-                qtyOnHand: item.qtyReceived,
-                unitCost: poItem.unitCost,
-                organizationId: ctx.user.organizationId!,
-              },
-            });
-            lotId = lot.id;
-          }
-
-          // Create receipt item
-          const receiptItem = await tx.receiptItem.create({
+        // Create lot if needed
+        let lotId = null;
+        if (item.lotNumber) {
+          const lot = await tx.lot.create({
             data: {
-              receiptId: newReceipt.id,
-              itemId: poItem.itemId, // Use itemId from PO item
-              qtyReceived: item.qtyReceived,
-              // qtyRejected: item.qtyRejected, // Not in schema
-              lotId,
-              locationId: item.locationId,
-              organizationId: ctx.user.organizationId!,
-              unitCost: poItem.unitCost,
+              lotNumber: item.lotNumber,
+              itemId: poItem.itemId,
+              supplierId: purchaseOrder.supplierId,
+              receivedDate,
               expirationDate: item.expirationDate,
-              serialNumber: item.serialNumbers?.[0], // Store first serial number if provided
-              // rejectionReason: item.rejectionReason, // Not in schema
-              // notes: item.notes, // Not in ReceiptItem schema
+              qtyInitial: item.qtyReceived,
+              qtyOnHand: item.qtyReceived,
+              unitCost: poItem.unitCost,
+              organizationId: ctx.user.organizationId!,
             },
           });
+          lotId = lot.id;
+        }
 
-          // Handle serial numbers
-          if (item.serialNumbers && item.serialNumbers.length > 0) {
-            for (const serialNumber of item.serialNumbers) {
-              const sn = await tx.serialNumber.create({
-                data: {
-                  serialNumber,
-                  itemId: poItem.itemId,
-                  locationId: item.locationId,
-                  lotId,
-                  status: 'AVAILABLE',
-                  // receivedDate, // Not in SerialNumber schema
-                  purchaseDate: receivedDate,
-                  organizationId: ctx.user.organizationId!,
-                },
-              });
+        // Create receipt item
+        const receiptItem = await tx.receiptItem.create({
+          data: {
+            receiptId: newReceipt.id,
+            itemId: poItem.itemId, // Use itemId from PO item
+            qtyReceived: item.qtyReceived,
+            // qtyRejected: item.qtyRejected, // Not in schema
+            lotId,
+            locationId: item.locationId,
+            organizationId: ctx.user.organizationId!,
+            unitCost: poItem.unitCost,
+            expirationDate: item.expirationDate,
+            serialNumber: item.serialNumbers?.[0], // Store first serial number if provided
+            // rejectionReason: item.rejectionReason, // Not in schema
+            // notes: item.notes, // Not in ReceiptItem schema
+          },
+        });
 
-              // Note: receiptSerialNumber table doesn't exist in schema
-            }
-          }
-
-          // Update inventory
-          if (item.qtyReceived > 0) {
-            const existingInventory = await tx.inventory.findFirst({
-              where: {
+        // Handle serial numbers
+        if (item.serialNumbers && item.serialNumbers.length > 0) {
+          for (const serialNumber of item.serialNumbers) {
+            const sn = await tx.serialNumber.create({
+              data: {
+                serialNumber,
                 itemId: poItem.itemId,
                 locationId: item.locationId,
                 lotId,
+                status: 'AVAILABLE',
+                // receivedDate, // Not in SerialNumber schema
+                purchaseDate: receivedDate,
+                organizationId: ctx.user.organizationId!,
               },
             });
 
-            if (existingInventory) {
-              await tx.inventory.update({
-                where: { id: existingInventory.id },
-                data: {
-                  qtyOnHand: {
-                    increment: item.qtyReceived,
-                  },
-                },
-              });
-            } else {
-              await tx.inventory.create({
-                data: {
-                  itemId: poItem.itemId,
-                  locationId: item.locationId,
-                  lotId,
-                  qtyOnHand: item.qtyReceived,
-                  qtyReserved: 0,
-                  qtyInTransit: 0,
-                  organizationId: ctx.user.organizationId!,
-                },
-              });
-            }
+            // Note: receiptSerialNumber table doesn't exist in schema
+          }
+        }
 
-            // Create stock movement
-            await tx.stockMovement.create({
+        // Update inventory
+        if (item.qtyReceived > 0) {
+          const existingInventory = await tx.inventory.findFirst({
+            where: {
+              itemId: poItem.itemId,
+              locationId: item.locationId,
+              lotId,
+            },
+          });
+
+          if (existingInventory) {
+            await tx.inventory.update({
+              where: { id: existingInventory.id },
+              data: {
+                qtyOnHand: {
+                  increment: item.qtyReceived,
+                },
+              },
+            });
+          } else {
+            await tx.inventory.create({
               data: {
                 itemId: poItem.itemId,
-                toLocationId: item.locationId,
-                qty: item.qtyReceived,
-                movementType: 'INBOUND',
-                refType: 'PO',
-                refId: purchaseOrderId,
-                movedById: ctx.user.id,
-                movedAt: receivedDate,
-                notes: `Receipt ${reference}`,
+                locationId: item.locationId,
                 lotId,
+                qtyOnHand: item.qtyReceived,
+                qtyReserved: 0,
+                qtyInTransit: 0,
                 organizationId: ctx.user.organizationId!,
               },
             });
           }
 
-          // Update PO item
-          await tx.purchaseOrderItem.update({
-            where: { id: item.poItemId },
+          // Create stock movement
+          await tx.stockMovement.create({
             data: {
-              qtyReceived: {
-                increment: item.qtyReceived,
-              },
+              itemId: poItem.itemId,
+              toLocationId: item.locationId,
+              qty: item.qtyReceived,
+              movementType: 'INBOUND',
+              refType: 'PO',
+              refId: purchaseOrderId,
+              movedById: ctx.user.id,
+              movedAt: receivedDate,
+              notes: `Receipt ${reference}`,
+              lotId,
+              organizationId: ctx.user.organizationId!,
             },
           });
         }
 
-        // TODO: Create audit log when needed
-        // Note: receiptActivity model doesn't exist in schema
-
-        // Create audit log
-        await tx.auditLog.create({
+        // Update PO item
+        await tx.purchaseOrderItem.update({
+          where: { id: item.poItemId },
           data: {
-            tableName: 'receipts',
-            recordPk: newReceipt.id,
-            action: 'CREATE',
-            userId: ctx.user.id,
-            organizationId: ctx.user.organizationId!,
-            afterData: newReceipt,
+            qtyReceived: {
+              increment: item.qtyReceived,
+            },
           },
         });
+      }
 
-        return newReceipt;
+      // TODO: Create audit log when needed
+      // Note: receiptActivity model doesn't exist in schema
+
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          tableName: 'receipts',
+          recordPk: newReceipt.id,
+          action: 'CREATE',
+          userId: ctx.user.id,
+          organizationId: ctx.user.organizationId!,
+          afterData: newReceipt,
+        },
       });
 
-      return receipt;
-    }),
+      return newReceipt;
+    });
+
+    return receipt;
+  }),
 
   // Add items to receipt
   addItems: organizationProcedure
-    .input(z.object({
-      receiptId: z.string().cuid(),
-      items: z.array(receiptItemSchema.omit({ receiptId: true })),
-    }))
+    .input(
+      z.object({
+        receiptId: z.string().cuid(),
+        items: z.array(receiptItemSchema.omit({ receiptId: true })),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { receiptId, items } = input;
 
@@ -739,11 +750,11 @@ export const receiptsRouter = createTRPCRouter({
 
         // Note: Receipt doesn't have hasDiscrepancies field
         // if (hasDiscrepancies !== receipt.hasDiscrepancies) {
-          // Note: Receipt doesn't have hasDiscrepancies field
-          // await tx.receipt.update({
-          //   where: { id: receiptId },
-          //   data: { hasDiscrepancies },
-          // });
+        // Note: Receipt doesn't have hasDiscrepancies field
+        // await tx.receipt.update({
+        //   where: { id: receiptId },
+        //   data: { hasDiscrepancies },
+        // });
         // }
 
         // TODO: Create audit log when needed
@@ -760,16 +771,20 @@ export const receiptsRouter = createTRPCRouter({
 
   // Update receipt items
   updateItems: organizationProcedure
-    .input(z.object({
-      items: z.array(z.object({
-        id: z.string().cuid(),
-        qtyReceived: z.number().int().min(0).optional(),
-        qtyRejected: z.number().int().min(0).optional(),
-        locationId: z.string().cuid().optional(),
-        rejectionReason: z.string().optional().nullable(),
-        notes: z.string().optional().nullable(),
-      })),
-    }))
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            id: z.string().cuid(),
+            qtyReceived: z.number().int().min(0).optional(),
+            qtyRejected: z.number().int().min(0).optional(),
+            locationId: z.string().cuid().optional(),
+            rejectionReason: z.string().optional().nullable(),
+            notes: z.string().optional().nullable(),
+          })
+        ),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { items } = input;
 
@@ -801,7 +816,8 @@ export const receiptsRouter = createTRPCRouter({
           // }
 
           // Calculate quantity changes
-          const qtyReceivedDiff = (item.qtyReceived ?? currentItem.qtyReceived) - currentItem.qtyReceived;
+          const qtyReceivedDiff =
+            (item.qtyReceived ?? currentItem.qtyReceived) - currentItem.qtyReceived;
           // Note: qtyRejected not in schema
           const qtyRejectedDiff = 0; // (item.qtyRejected ?? currentItem.qtyRejected) - currentItem.qtyRejected;
 
@@ -848,11 +864,11 @@ export const receiptsRouter = createTRPCRouter({
             if (poItem) {
               await tx.purchaseOrderItem.update({
                 where: { id: poItem.id },
-              data: {
-                qtyReceived: {
-                  increment: qtyReceivedDiff,
+                data: {
+                  qtyReceived: {
+                    increment: qtyReceivedDiff,
+                  },
                 },
-              },
               });
             }
           }
@@ -861,7 +877,7 @@ export const receiptsRouter = createTRPCRouter({
         }
 
         // Check for discrepancies
-        const receiptIds = [...new Set(updatedItems.map(item => item.receiptId))];
+        const receiptIds = [...new Set(updatedItems.map((item) => item.receiptId))];
         for (const receiptId of receiptIds) {
           const receiptItems = await tx.receiptItem.findMany({
             where: { receiptId },
@@ -900,15 +916,17 @@ export const receiptsRouter = createTRPCRouter({
 
   // Complete receipt
   complete: organizationProcedure
-    .input(z.object({
-      id: z.string().cuid(),
-      notes: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        id: z.string().cuid(),
+        notes: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const { id, notes } = input;
 
       const receipt = await ctx.prisma.receipt.findFirst({
-        where: { 
+        where: {
           id,
           purchaseOrder: {
             organizationId: ctx.user.organizationId,
@@ -964,9 +982,7 @@ export const receiptsRouter = createTRPCRouter({
           include: { items: true },
         });
 
-        const fullyReceived = updatedPO?.items.every(
-          item => item.qtyReceived >= item.qtyOrdered
-        );
+        const fullyReceived = updatedPO?.items.every((item) => item.qtyReceived >= item.qtyOrdered);
 
         if (fullyReceived) {
           await tx.purchaseOrder.update({
@@ -1013,7 +1029,7 @@ export const receiptsRouter = createTRPCRouter({
       const { receiptId, reportType, includeResolutions } = input;
 
       const receipt = await ctx.prisma.receipt.findFirst({
-        where: { 
+        where: {
           id: receiptId,
           purchaseOrder: {
             organizationId: ctx.user.organizationId,
@@ -1104,7 +1120,8 @@ export const receiptsRouter = createTRPCRouter({
               lot: item.lot,
             },
             discrepancy: {
-              type: variance > 0 ? 'OVER_RECEIPT' : variance < 0 ? 'UNDER_RECEIPT' : 'REJECTION_ONLY',
+              type:
+                variance > 0 ? 'OVER_RECEIPT' : variance < 0 ? 'UNDER_RECEIPT' : 'REJECTION_ONLY',
               expectedQty,
               actualQty: totalQty,
               variance,
@@ -1167,11 +1184,13 @@ export const receiptsRouter = createTRPCRouter({
 
   // Export receipts
   export: organizationProcedure
-    .input(z.object({
-      filters: receiptFilterSchema,
-      format: z.enum(['csv', 'excel']).default('csv'),
-      includeItems: z.boolean().default(false),
-    }))
+    .input(
+      z.object({
+        filters: receiptFilterSchema,
+        format: z.enum(['csv', 'excel']).default('csv'),
+        includeItems: z.boolean().default(false),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       const receipts = await ctx.prisma.receipt.findMany({
         where: {
@@ -1194,20 +1213,22 @@ export const receiptsRouter = createTRPCRouter({
               email: true,
             },
           },
-          items: input.includeItems ? {
-            include: {
-              item: true,
-              location: true,
-              lot: true,
-            },
-          } : false,
+          items: input.includeItems
+            ? {
+                include: {
+                  item: true,
+                  location: true,
+                  lot: true,
+                },
+              }
+            : false,
         },
         orderBy: { receivedDate: 'desc' },
       });
 
       // Prepare export data
       const exportData = [];
-      
+
       for (const receipt of receipts) {
         const baseData = {
           reference: receipt.reference || '',
@@ -1217,7 +1238,9 @@ export const receiptsRouter = createTRPCRouter({
           supplierCode: receipt.purchaseOrder?.supplier?.supplierCode || '',
           supplierName: receipt.purchaseOrder?.supplier?.name || '',
           // warehouse: receipt.purchaseOrder.warehouse.name, // PO doesn't have warehouse
-          receivedBy: receipt.receivedBy ? `${receipt.receivedBy.firstName} ${receipt.receivedBy.lastName}` : '',
+          receivedBy: receipt.receivedBy
+            ? `${receipt.receivedBy.firstName} ${receipt.receivedBy.lastName}`
+            : '',
           // hasDiscrepancies: receipt.hasDiscrepancies, // Not in schema
         };
 

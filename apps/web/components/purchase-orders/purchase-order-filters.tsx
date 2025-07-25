@@ -58,7 +58,9 @@ export function PurchaseOrderFilters() {
     if (value === 'all') {
       setFilters({ status: undefined });
     } else {
-      setFilters({ status: value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED' | 'REJECTED' });
+      setFilters({
+        status: value as 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED',
+      });
     }
   };
 
@@ -94,10 +96,7 @@ export function PurchaseOrderFilters() {
           />
         </div>
 
-        <Select
-          value={filters.status || 'all'}
-          onValueChange={handleStatusChange}
-        >
+        <Select value={filters.status || 'all'} onValueChange={handleStatusChange}>
           <SelectTrigger className="w-full sm:w-[180px]">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
@@ -110,10 +109,7 @@ export function PurchaseOrderFilters() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={filters.supplierId || 'all'}
-          onValueChange={handleSupplierChange}
-        >
+        <Select value={filters.supplierId || 'all'} onValueChange={handleSupplierChange}>
           <SelectTrigger className="w-full sm:w-[200px]">
             <SelectValue placeholder="Filter by supplier" />
           </SelectTrigger>
@@ -146,48 +142,30 @@ export function PurchaseOrderFilters() {
                 <div className="grid gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="justify-start text-left font-normal"
-                      >
-                        {dateRange.from ? (
-                          format(dateRange.from, 'PPP')
-                        ) : (
-                          <span>From date</span>
-                        )}
+                      <Button variant="outline" className="justify-start text-left font-normal">
+                        {dateRange.from ? format(dateRange.from, 'PPP') : <span>From date</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={dateRange.from}
-                        onSelect={(date) =>
-                          setDateRange((prev) => ({ ...prev, from: date }))
-                        }
+                        onSelect={(date) => setDateRange((prev) => ({ ...prev, from: date }))}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="justify-start text-left font-normal"
-                      >
-                        {dateRange.to ? (
-                          format(dateRange.to, 'PPP')
-                        ) : (
-                          <span>To date</span>
-                        )}
+                      <Button variant="outline" className="justify-start text-left font-normal">
+                        {dateRange.to ? format(dateRange.to, 'PPP') : <span>To date</span>}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
                         selected={dateRange.to}
-                        onSelect={(date) =>
-                          setDateRange((prev) => ({ ...prev, to: date }))
-                        }
+                        onSelect={(date) => setDateRange((prev) => ({ ...prev, to: date }))}
                         initialFocus
                       />
                     </PopoverContent>
@@ -235,12 +213,7 @@ export function PurchaseOrderFilters() {
         </Popover>
 
         {activeFilterCount > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={resetFilters}
-            className="gap-1"
-          >
+          <Button size="sm" variant="ghost" onClick={resetFilters} className="gap-1">
             <X className="h-3 w-3" />
             Clear filters
           </Button>
@@ -259,9 +232,7 @@ export function PurchaseOrderFilters() {
               Supplier: {suppliers.suppliers.find((s) => s.id === filters.supplierId)?.name}
             </Badge>
           )}
-          {filters.isOverdue && (
-            <Badge variant="secondary">Overdue orders only</Badge>
-          )}
+          {filters.isOverdue && <Badge variant="secondary">Overdue orders only</Badge>}
           {(filters.dateFrom || filters.dateTo) && (
             <Badge variant="secondary">
               Date: {filters.dateFrom && format(filters.dateFrom, 'PP')}

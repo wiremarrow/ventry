@@ -27,16 +27,19 @@ This is the web frontend for Ventry, providing a modern, responsive interface fo
 ## Development Setup
 
 1. **Install dependencies** (from monorepo root):
+
    ```bash
    pnpm install
    ```
 
 2. **Start the backend first**:
+
    ```bash
    pnpm --filter @ventry/backend dev
    ```
 
 3. **Start the frontend**:
+
    ```bash
    pnpm --filter @ventry/web dev
    ```
@@ -55,6 +58,7 @@ pnpm --filter @ventry/database db:seed
 ```
 
 **Demo Credentials**:
+
 - Admin: `admin@ventry.com` / `admin123`
 - Manager: `manager@ventry.com` / `manager123`
 - User: `user@ventry.com` / `user123`
@@ -131,6 +135,7 @@ NEXT_PUBLIC_ENABLE_ANALYTICS=false
 ## Dependencies
 
 Key workspace dependencies:
+
 - `@ventry/ui`: Shared UI component library
 - `@ventry/shared`: Shared types and utilities
 - `@ventry/backend`: Backend types for tRPC inference

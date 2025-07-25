@@ -31,6 +31,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -115,9 +116,7 @@ await client.organizations.update.mutate({
 // Invite members
 await client.organizations.inviteMembers.mutate({
   organizationId: 'org_456',
-  invites: [
-    { email: 'newuser@example.com', role: 'MEMBER' },
-  ],
+  invites: [{ email: 'newuser@example.com', role: 'MEMBER' }],
 });
 ```
 
@@ -160,7 +159,7 @@ await client.inventory.createMovement.mutate({
   itemId: 'itm_123',
   locationId: 'loc_456',
   quantity: 100,
-  unitCost: 25.50,
+  unitCost: 25.5,
   reference: 'PO-2024-001',
 });
 ```
@@ -238,11 +237,13 @@ const exportUrl = await client.reports.export.mutate({
 ### Items
 
 #### List Items
+
 ```http
 GET /api/items?page=1&limit=50&search=widget&category=electronics
 ```
 
 **Response:**
+
 ```json
 {
   "data": [
@@ -268,11 +269,13 @@ GET /api/items?page=1&limit=50&search=widget&category=electronics
 ```
 
 #### Get Item
+
 ```http
 GET /api/items/{id}
 ```
 
 #### Create Item
+
 ```http
 POST /api/items
 Content-Type: application/json
@@ -286,6 +289,7 @@ Content-Type: application/json
 ```
 
 #### Update Item
+
 ```http
 PUT /api/items/{id}
 Content-Type: application/json
@@ -297,6 +301,7 @@ Content-Type: application/json
 ```
 
 #### Delete Item
+
 ```http
 DELETE /api/items/{id}
 ```
@@ -304,11 +309,13 @@ DELETE /api/items/{id}
 ### Inventory
 
 #### Get Stock Levels
+
 ```http
 GET /api/inventory/stock?itemId=itm_123&locationId=loc_456
 ```
 
 **Response:**
+
 ```json
 {
   "itemId": "itm_123",
@@ -322,6 +329,7 @@ GET /api/inventory/stock?itemId=itm_123&locationId=loc_456
 ```
 
 #### Record Movement
+
 ```http
 POST /api/inventory/movements
 Content-Type: application/json
@@ -338,6 +346,7 @@ Content-Type: application/json
 ```
 
 #### Transfer Stock
+
 ```http
 POST /api/inventory/transfer
 Content-Type: application/json
@@ -354,11 +363,13 @@ Content-Type: application/json
 ### Orders
 
 #### List Orders
+
 ```http
 GET /api/orders?status=PENDING,CONFIRMED&dateFrom=2024-01-01&dateTo=2024-01-31
 ```
 
 #### Create Order
+
 ```http
 POST /api/orders
 Content-Type: application/json
@@ -383,6 +394,7 @@ Content-Type: application/json
 ```
 
 #### Update Order
+
 ```http
 PATCH /api/orders/{id}
 Content-Type: application/json
@@ -394,6 +406,7 @@ Content-Type: application/json
 ```
 
 #### Cancel Order
+
 ```http
 POST /api/orders/{id}/cancel
 Content-Type: application/json
@@ -406,16 +419,19 @@ Content-Type: application/json
 ### Warehouses
 
 #### List Warehouses
+
 ```http
 GET /api/warehouses
 ```
 
 #### Get Warehouse Details
+
 ```http
 GET /api/warehouses/{id}?include=locations,stats
 ```
 
 **Response:**
+
 ```json
 {
   "id": "wh_123",
@@ -441,7 +457,7 @@ GET /api/warehouses/{id}?include=locations,stats
     "occupiedLocations": 89,
     "utilizationRate": 0.593,
     "totalItems": 1234,
-    "totalValue": 567890.50
+    "totalValue": 567890.5
   }
 }
 ```
@@ -449,6 +465,7 @@ GET /api/warehouses/{id}?include=locations,stats
 ### Reports
 
 #### Generate Report
+
 ```http
 POST /api/reports/generate
 Content-Type: application/json
@@ -464,6 +481,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "reportId": "rpt_generated_123",
@@ -474,11 +492,13 @@ Content-Type: application/json
 ```
 
 #### Get Report Status
+
 ```http
 GET /api/reports/status/{reportId}
 ```
 
 **Response (when complete):**
+
 ```json
 {
   "reportId": "rpt_generated_123",
@@ -496,16 +516,16 @@ GET /api/reports/status/{reportId}
 
 When implemented, Ventry will be able to send webhooks for the following events:
 
-| Event | Description | Payload |
-|-------|-------------|---------|
-| `item.created` | New item created | Item object |
-| `item.updated` | Item details updated | Item object with changes |
-| `inventory.low_stock` | Item below reorder point | Stock level details |
-| `inventory.out_of_stock` | Item has zero stock | Item and location |
-| `order.created` | New order placed | Order object |
-| `order.confirmed` | Order confirmed | Order object |
-| `order.fulfilled` | Order shipped | Order with shipment |
-| `order.cancelled` | Order cancelled | Order with reason |
+| Event                    | Description              | Payload                  |
+| ------------------------ | ------------------------ | ------------------------ |
+| `item.created`           | New item created         | Item object              |
+| `item.updated`           | Item details updated     | Item object with changes |
+| `inventory.low_stock`    | Item below reorder point | Stock level details      |
+| `inventory.out_of_stock` | Item has zero stock      | Item and location        |
+| `order.created`          | New order placed         | Order object             |
+| `order.confirmed`        | Order confirmed          | Order object             |
+| `order.fulfilled`        | Order shipped            | Order with shipment      |
+| `order.cancelled`        | Order cancelled          | Order with reason        |
 
 ### Webhook Payload
 
@@ -538,11 +558,8 @@ Verify webhooks using:
 import crypto from 'crypto';
 
 function verifyWebhook(payload: string, signature: string, secret: string) {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-    
+  const expectedSignature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+
   return `sha256=${expectedSignature}` === signature;
 }
 ```
@@ -551,11 +568,11 @@ function verifyWebhook(payload: string, signature: string, secret: string) {
 
 API requests are rate limited based on your subscription plan:
 
-| Plan | Requests/Hour | Burst |
-|------|--------------|-------|
-| Free | 1,000 | 20/sec |
-| Pro | 10,000 | 50/sec |
-| Enterprise | 100,000 | 200/sec |
+| Plan       | Requests/Hour | Burst   |
+| ---------- | ------------- | ------- |
+| Free       | 1,000         | 20/sec  |
+| Pro        | 10,000        | 50/sec  |
+| Enterprise | 100,000       | 200/sec |
 
 Rate limit information is included in response headers:
 
@@ -587,15 +604,15 @@ All errors follow a consistent format:
 
 ### Common Error Codes
 
-| Code | HTTP Status | Description |
-|------|-------------|-------------|
-| `AUTH001` | 401 | Invalid credentials |
-| `AUTH002` | 401 | Token expired |
-| `AUTH003` | 403 | Insufficient permissions |
-| `VAL001` | 422 | Validation error |
-| `INV001` | 409 | Insufficient stock |
-| `ORG001` | 404 | Organization not found |
-| `SYS001` | 500 | Internal server error |
+| Code      | HTTP Status | Description              |
+| --------- | ----------- | ------------------------ |
+| `AUTH001` | 401         | Invalid credentials      |
+| `AUTH002` | 401         | Token expired            |
+| `AUTH003` | 403         | Insufficient permissions |
+| `VAL001`  | 422         | Validation error         |
+| `INV001`  | 409         | Insufficient stock       |
+| `ORG001`  | 404         | Organization not found   |
+| `SYS001`  | 500         | Internal server error    |
 
 ## SDK Libraries
 

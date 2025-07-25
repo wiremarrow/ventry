@@ -17,12 +17,15 @@ export interface MockTRPCUtils {
 }
 
 // Default query mock that can be customized
-export const createQueryMock = <T = unknown>(data?: T, options?: Partial<{
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  refetch: ReturnType<typeof vi.fn>;
-}>) => {
+export const createQueryMock = <T = unknown>(
+  data?: T,
+  options?: Partial<{
+    isLoading: boolean;
+    isError: boolean;
+    error: Error | null;
+    refetch: ReturnType<typeof vi.fn>;
+  }>
+) => {
   return vi.fn(() => ({
     data,
     isLoading: options?.isLoading ?? false,
@@ -37,11 +40,14 @@ export const createQueryMock = <T = unknown>(data?: T, options?: Partial<{
 };
 
 // Helper to create query result with minimal typing
-export const createQueryResult = <T = unknown>(data?: T, options?: Partial<{
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-}>) => ({
+export const createQueryResult = <T = unknown>(
+  data?: T,
+  options?: Partial<{
+    isLoading: boolean;
+    isError: boolean;
+    error: Error | null;
+  }>
+) => ({
   data,
   isLoading: options?.isLoading ?? false,
   isError: options?.isError ?? false,
@@ -63,7 +69,7 @@ export const createQueryResult = <T = unknown>(data?: T, options?: Partial<{
   failureCount: 0,
   failureReason: options?.error ?? null,
   fetchStatus: 'idle' as const,
-  status: options?.isLoading ? 'loading' : options?.isError ? 'error' : 'success' as const,
+  status: options?.isLoading ? 'loading' : options?.isError ? 'error' : ('success' as const),
   trpc: {},
 });
 
@@ -77,7 +83,7 @@ export const createMutationMock = (options?: {
     // Store callbacks if provided
     const onSuccess = mutationOptions?.onSuccess || options?.onSuccess;
     const onError = mutationOptions?.onError || options?.onError;
-    
+
     return {
       mutate: vi.fn((_variables?: unknown) => {
         // Simulate async behavior
@@ -206,7 +212,7 @@ export const createUseUtilsMock = (customUtils?: Partial<MockTRPCUtils>): MockTR
 // Main factory function to create a complete tRPC mock
 export const createTRPCMock = (customRouters?: Record<string, unknown>) => {
   const mockUtils = createUseUtilsMock();
-  
+
   const defaultMock = {
     useUtils: vi.fn(() => mockUtils),
     // Add any other global tRPC functions here
@@ -223,9 +229,12 @@ export const createTRPCMock = (customRouters?: Record<string, unknown>) => {
 };
 
 // Helper to create a complete router mock
-export const createRouterMock = (methods: Record<string, 'query' | 'mutation'>, customImplementations?: Record<string, unknown>) => {
+export const createRouterMock = (
+  methods: Record<string, 'query' | 'mutation'>,
+  customImplementations?: Record<string, { useQuery?: unknown; useMutation?: unknown }>
+) => {
   const router: Record<string, unknown> = {};
-  
+
   Object.entries(methods).forEach(([method, type]) => {
     if (type === 'query') {
       router[method] = {
@@ -237,30 +246,32 @@ export const createRouterMock = (methods: Record<string, 'query' | 'mutation'>, 
       };
     }
   });
-  
+
   return router;
 };
 
 // Pre-built router mocks for common routers
 export const mockRouters = {
-  items: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-    duplicate: 'mutation',
-    archive: 'mutation',
-  }),
-  
-  inventory: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    adjust: 'mutation',
-    transfer: 'mutation',
-    count: 'mutation',
-  }),
-  
+  items: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+      duplicate: 'mutation',
+      archive: 'mutation',
+    }),
+
+  inventory: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      adjust: 'mutation',
+      transfer: 'mutation',
+      count: 'mutation',
+    }),
+
   warehouses: () => ({
     ...createRouterMock({
       list: 'query',
@@ -276,123 +287,137 @@ export const mockRouters = {
       delete: { useMutation: createMutationMock() },
     },
   }),
-  
-  suppliers: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  orders: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    cancel: 'mutation',
-    fulfill: 'mutation',
-  }),
-  
-  purchaseOrders: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    submit: 'mutation',
-    approve: 'mutation',
-    reject: 'mutation',
-    cancel: 'mutation',
-    receive: 'mutation',
-  }),
-  
-  customers: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  categories: () => createRouterMock({
-    list: 'query',
-    getById: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  itemCategories: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  unitsOfMeasure: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  users: () => createRouterMock({
-    list: 'query',
-    getById: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    delete: 'mutation',
-  }),
-  
-  stockMovements: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    reverse: 'mutation',
-  }),
-  
-  receipts: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    cancel: 'mutation',
-  }),
-  
-  shipments: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    ship: 'mutation',
-    deliver: 'mutation',
-    cancel: 'mutation',
-  }),
-  
-  returns: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    approve: 'mutation',
-    reject: 'mutation',
-    receive: 'mutation',
-  }),
-  
-  auth: () => createRouterMock({
-    login: 'mutation',
-    logout: 'mutation',
-    register: 'mutation',
-    me: 'query',
-  }),
-  
-  organizations: () => createRouterMock({
-    list: 'query',
-    get: 'query',
-    create: 'mutation',
-    update: 'mutation',
-    switchOrganization: 'mutation',
-  }),
+
+  suppliers: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  orders: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      cancel: 'mutation',
+      fulfill: 'mutation',
+    }),
+
+  purchaseOrders: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      submit: 'mutation',
+      approve: 'mutation',
+      reject: 'mutation',
+      cancel: 'mutation',
+      receive: 'mutation',
+    }),
+
+  customers: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  categories: () =>
+    createRouterMock({
+      list: 'query',
+      getById: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  itemCategories: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  unitsOfMeasure: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  users: () =>
+    createRouterMock({
+      list: 'query',
+      getById: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      delete: 'mutation',
+    }),
+
+  stockMovements: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      reverse: 'mutation',
+    }),
+
+  receipts: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      cancel: 'mutation',
+    }),
+
+  shipments: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      ship: 'mutation',
+      deliver: 'mutation',
+      cancel: 'mutation',
+    }),
+
+  returns: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      approve: 'mutation',
+      reject: 'mutation',
+      receive: 'mutation',
+    }),
+
+  auth: () =>
+    createRouterMock({
+      login: 'mutation',
+      logout: 'mutation',
+      register: 'mutation',
+      me: 'query',
+    }),
+
+  organizations: () =>
+    createRouterMock({
+      list: 'query',
+      get: 'query',
+      create: 'mutation',
+      update: 'mutation',
+      switchOrganization: 'mutation',
+    }),
 };

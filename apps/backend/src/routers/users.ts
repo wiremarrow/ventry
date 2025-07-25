@@ -2,7 +2,12 @@ import { TRPCError } from '@trpc/server';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
-import { createTRPCRouter, organizationProcedure, organizationAdminProcedure, protectedProcedure } from '../trpc/trpc.js';
+import {
+  createTRPCRouter,
+  organizationProcedure,
+  organizationAdminProcedure,
+  protectedProcedure,
+} from '../trpc/trpc.js';
 
 const userUpdateSchema = z.object({
   firstName: z.string().optional(),
@@ -12,38 +17,37 @@ const userUpdateSchema = z.object({
 });
 
 export const usersRouter = createTRPCRouter({
-  list: organizationProcedure
-    .query(async ({ ctx }) => {
-      // Get all users in the current organization
-      const orgMembers = await ctx.prisma.organizationMember.findMany({
-        where: {
-          organizationId: ctx.user.organizationId,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-              isActive: true,
-              createdAt: true,
-              lastLoginAt: true,
-            },
+  list: organizationProcedure.query(async ({ ctx }) => {
+    // Get all users in the current organization
+    const orgMembers = await ctx.prisma.organizationMember.findMany({
+      where: {
+        organizationId: ctx.user.organizationId,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            role: true,
+            isActive: true,
+            createdAt: true,
+            lastLoginAt: true,
           },
         },
-        orderBy: {
-          user: {
-            createdAt: 'desc',
-          },
+      },
+      orderBy: {
+        user: {
+          createdAt: 'desc',
         },
-      });
+      },
+    });
 
-      // Extract users from organization members
-      return orgMembers.map(member => member.user);
-    }),
+    // Extract users from organization members
+    return orgMembers.map((member) => member.user);
+  }),
 
   getById: organizationProcedure
     .input(z.object({ id: z.string() }))
@@ -85,17 +89,22 @@ export const usersRouter = createTRPCRouter({
     }),
 
   update: protectedProcedure
-    .input(z.object({
-      id: z.string(),
-      data: userUpdateSchema,
-    }))
+    .input(
+      z.object({
+        id: z.string(),
+        data: userUpdateSchema,
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Users can update their own profile
       if (ctx.user.id === input.id) {
         // Allow self-update
       } else {
         // For updating other users, check organization admin permissions
-        if (!ctx.user.organizationId || !['OWNER', 'ADMIN'].includes(ctx.user.organizationRole || '')) {
+        if (
+          !ctx.user.organizationId ||
+          !['OWNER', 'ADMIN'].includes(ctx.user.organizationRole || '')
+        ) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You can only update your own profile',
@@ -126,7 +135,7 @@ export const usersRouter = createTRPCRouter({
         username?: string;
         password?: string;
       } = { ...input.data };
-      
+
       // Hash password if provided
       if (updateData.password) {
         updateData.password = await bcrypt.hash(updateData.password, 10);
@@ -135,12 +144,12 @@ export const usersRouter = createTRPCRouter({
       // Check username uniqueness if updating
       if (updateData.username) {
         const existing = await ctx.prisma.user.findFirst({
-          where: { 
+          where: {
             username: updateData.username,
             NOT: { id: input.id },
           },
         });
-        
+
         if (existing) {
           throw new TRPCError({
             code: 'CONFLICT',

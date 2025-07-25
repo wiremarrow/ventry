@@ -12,12 +12,12 @@ const procedures = createProcedures(t, middleware);
 export const createTRPCRouter = t.router;
 
 // Export all procedures
-export const { 
+export const {
   publicProcedure,
   protectedProcedure,
   organizationProcedure,
   organizationAdminProcedure,
-  organizationOwnerProcedure
+  organizationOwnerProcedure,
 } = procedures;
 
 // Legacy procedures for backward compatibility
@@ -26,7 +26,7 @@ export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== 'ADMIN') {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
-  
+
   return next({ ctx });
 });
 

@@ -14,8 +14,8 @@ export const trpcClient = trpc.createClient({
       maxURLLength: 2083, // Maximum URL length for GET requests
       // Include credentials for httpOnly cookies
       fetch: (url, options) => {
-        return fetch(url, { 
-          ...options, 
+        return fetch(url, {
+          ...options,
           credentials: 'include',
         });
       },

@@ -2,14 +2,7 @@
 
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@ventry/ui';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ventry/ui';
 import { Button } from '@ventry/ui';
 import { Skeleton } from '@ventry/ui';
 import {
@@ -44,7 +37,11 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
   const utils = trpc.useUtils();
 
   // Fetch warehouses
-  const { data: warehouses, isLoading, error } = trpc.warehouses.list.useQuery({
+  const {
+    data: warehouses,
+    isLoading,
+    error,
+  } = trpc.warehouses.list.useQuery({
     includeStats: true,
   });
 
@@ -72,11 +69,13 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
   }
 
   // Filter warehouses based on search term
-  const filteredWarehouses = warehouses?.filter(warehouse =>
-    warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    warehouse.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    warehouse.city.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredWarehouses =
+    warehouses?.filter(
+      (warehouse) =>
+        warehouse.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        warehouse.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        warehouse.city.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
   return (
     <>
@@ -111,7 +110,9 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
                   <Warehouse className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-900 font-medium">No warehouses found</p>
                   <p className="text-gray-600 text-sm mt-1">
-                    {searchTerm ? 'Try adjusting your search' : 'Start by adding your first warehouse'}
+                    {searchTerm
+                      ? 'Try adjusting your search'
+                      : 'Start by adding your first warehouse'}
                   </p>
                 </TableCell>
               </TableRow>
@@ -121,7 +122,7 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
                 const locationCount = warehouse._count?.locations || 0;
                 const totalCapacity = 0; // Stats not included in list query
                 const utilization = 0; // Stats not included in list query
-                
+
                 return (
                   <TableRow key={warehouse.id}>
                     <TableCell>
@@ -150,15 +151,21 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
                       <span className="text-sm font-medium">{locationCount}</span>
                     </TableCell>
                     <TableCell className="text-right">
-                      <span className="text-sm">{totalCapacity > 0 ? totalCapacity.toLocaleString() : '-'}</span>
+                      <span className="text-sm">
+                        {totalCapacity > 0 ? totalCapacity.toLocaleString() : '-'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-right">
                       {totalCapacity > 0 ? (
-                        <span className={`text-sm font-medium px-2 py-1 rounded ${
-                          utilization >= 90 ? 'text-red-600 bg-red-100' :
-                          utilization >= 75 ? 'text-yellow-600 bg-yellow-100' :
-                          'text-green-600 bg-green-100'
-                        }`}>
+                        <span
+                          className={`text-sm font-medium px-2 py-1 rounded ${
+                            utilization >= 90
+                              ? 'text-red-600 bg-red-100'
+                              : utilization >= 75
+                                ? 'text-yellow-600 bg-yellow-100'
+                                : 'text-green-600 bg-green-100'
+                          }`}
+                        >
                           {utilization}%
                         </span>
                       ) : (
@@ -205,7 +212,6 @@ export function WarehouseList({ searchTerm }: WarehouseListProps) {
             )}
           </TableBody>
         </Table>
-
       </div>
 
       {/* Edit Warehouse Dialog */}

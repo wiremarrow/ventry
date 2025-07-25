@@ -1,15 +1,15 @@
 #!/usr/bin/env tsx
 /**
  * Basic Database Seeder
- * 
+ *
  * Creates a clean slate with:
  * - 4 users (admin, manager, employee, user)
  * - 1 empty organization (Ventry Corporation)
  * - Proper role assignments
- * 
+ *
  * This is the minimal seed for development.
  * For comprehensive data, use seed-single-comprehensive or seed-multi-comprehensive.
- * 
+ *
  * Run with: pnpm db:seed
  */
 
@@ -18,7 +18,7 @@ import bcrypt from 'bcryptjs';
 
 async function clearDatabase() {
   console.log('🧹 Clearing entire database...');
-  
+
   // Delete in reverse order of dependencies
   await prisma.notification.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -147,10 +147,10 @@ async function seedOrganization(admin: any, manager: any, employee: any) {
           {
             userId: employee.id,
             role: 'MEMBER',
-          }
-        ]
-      }
-    }
+          },
+        ],
+      },
+    },
   });
 
   console.log('✅ Organization created');
@@ -190,7 +190,6 @@ async function main() {
     console.log('\n💡 For comprehensive data, run:');
     console.log('   pnpm db:seed:single  - Single org with full data');
     console.log('   pnpm db:seed:multi   - Multiple orgs with full data');
-
   } catch (error) {
     console.error('❌ Error during seeding:', error);
     throw error;
@@ -199,8 +198,7 @@ async function main() {
   }
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

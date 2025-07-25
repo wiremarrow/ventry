@@ -32,7 +32,6 @@ async function checkRLSSetup() {
       )
     `;
     console.log('RLS Policies on items table:', policies);
-
   } catch (error) {
     console.error('Error checking RLS setup:', error);
   } finally {

@@ -64,8 +64,8 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
-  return { 
+
+  return {
     prisma: mockPrisma,
     Prisma: {
       OrderWhereInput: {},
@@ -152,22 +152,22 @@ describe('Orders Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
       organizationId: testId('org'),
       organizationRole: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -307,13 +307,15 @@ describe('Orders Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
       });
 
-      await expect(noOrgCaller.orders.list({ page: 1, limit: 20 })).rejects.toThrow('No organization selected');
+      await expect(noOrgCaller.orders.list({ page: 1, limit: 20 })).rejects.toThrow(
+        'No organization selected'
+      );
     });
   });
 
@@ -362,9 +364,9 @@ describe('Orders Router', () => {
     it('should throw NOT_FOUND when order does not exist', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.orders.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Order not found');
+      await expect(caller.orders.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Order not found'
+      );
     });
 
     it('should only return orders from the user organization', async () => {
@@ -817,9 +819,9 @@ describe('Orders Router', () => {
 
       mockPrisma.orderItem.findUnique.mockResolvedValue(item);
 
-      await expect(
-        caller.orders.items.remove({ id: testId('item1') })
-      ).rejects.toThrow('Cannot remove item that has been partially shipped');
+      await expect(caller.orders.items.remove({ id: testId('item1') })).rejects.toThrow(
+        'Cannot remove item that has been partially shipped'
+      );
     });
   });
 
@@ -849,10 +851,10 @@ describe('Orders Router', () => {
       expect(result.availability[0].canFulfill).toBe(true); // 80 available >= 50 requested
       expect(result.availability[0].qtyAvailable).toBe(80);
       expect(result.availability[0].shortage).toBe(0);
-      
+
       expect(result.availability[1].canFulfill).toBe(false); // 80 available < 100 requested
       expect(result.availability[1].shortage).toBe(20);
-      
+
       expect(result.summary.canFulfillOrder).toBe(false);
       expect(result.summary.availableItems).toBe(1);
       expect(result.summary.partialItems).toBe(1); // Item 2 has 80 available but needs 100, so it's partial

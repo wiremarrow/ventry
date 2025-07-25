@@ -59,10 +59,7 @@ export default function ProductsPage() {
           />
 
           {/* Create Product Dialog */}
-          <CreateProductDialog
-            open={createDialogOpen}
-            onOpenChange={setCreateDialogOpen}
-          />
+          <CreateProductDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen} />
         </div>
       </DashboardLayout>
     </ProtectedRoute>

@@ -5,6 +5,7 @@
 ### Dashboard Shows "UNAUTHORIZED" Error
 
 **Symptoms:**
+
 - Dashboard displays "Failed to load statistics" with "UNAUTHORIZED" error
 - Login appears successful but API calls fail
 - Organization list doesn't load
@@ -22,6 +23,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 ```
 
 **Verification Steps:**
+
 1. Check browser DevTools > Application > Cookies
 2. Verify `auth-token` cookie exists
 3. Check Network tab for API responses
@@ -32,6 +34,7 @@ const token = authCookie ? request.unsignCookie(authCookie)?.value : undefined;
 **Cause:** Attempting to unsign a cookie that doesn't exist
 
 **Solution:** Always check if cookie exists before unsigning:
+
 ```typescript
 const cookie = request.cookies['cookie-name'];
 const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
@@ -40,6 +43,7 @@ const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
 ### Organization Context Not Set
 
 **Symptoms:**
+
 - API calls return "No organization selected"
 - Dashboard loads but shows no data
 
@@ -47,6 +51,7 @@ const value = cookie ? request.unsignCookie(cookie)?.value : undefined;
 Organization ID not being sent with requests
 
 **Solution:**
+
 1. Verify organization context is properly set in the application state
 2. Check `x-organization-id` header in API requests
 3. Ensure organization selection updates the context
@@ -56,6 +61,7 @@ Organization ID not being sent with requests
 ### Circular Dependency on Organization Loading
 
 **Symptoms:**
+
 - "Loading organization..." spinner never disappears
 - Can't query organizations list
 
@@ -75,23 +81,26 @@ USING (user_id = current_setting('app.current_user_id', true));
 ### Data Not Filtering by Organization
 
 **Symptoms:**
+
 - Users see data from other organizations
 - Queries return all data regardless of context
 
 **Causes:**
+
 1. RLS not enabled on table
 2. Missing RLS policy
 3. Organization context not set in query
 
 **Verification:**
+
 ```sql
 -- Check if RLS is enabled
-SELECT relname, relrowsecurity 
-FROM pg_class 
+SELECT relname, relrowsecurity
+FROM pg_class
 WHERE relname = 'your_table';
 
 -- Check existing policies
-SELECT * FROM pg_policies 
+SELECT * FROM pg_policies
 WHERE tablename = 'your_table';
 ```
 
@@ -100,11 +109,13 @@ WHERE tablename = 'your_table';
 ### "Connection terminated unexpectedly"
 
 **Causes:**
+
 1. Database server not running
 2. Connection pool exhausted
 3. Network issues
 
 **Solutions:**
+
 1. Check PostgreSQL is running: `docker ps | grep postgres`
 2. Restart database: `docker-compose restart postgres`
 3. Check connection pool settings in Prisma
@@ -116,6 +127,7 @@ WHERE tablename = 'your_table';
 **Cause:** Prisma runs migrations in transactions, but CONCURRENTLY requires non-transactional execution
 
 **Solution:** Remove CONCURRENTLY from migration files or run manually:
+
 ```sql
 -- Run outside of migration
 CREATE INDEX CONCURRENTLY idx_name ON table(column);
@@ -128,6 +140,7 @@ CREATE INDEX CONCURRENTLY idx_name ON table(column);
 **Error:** "address already in use :::6060"
 
 **Solution:**
+
 ```bash
 # Find process using port
 lsof -i :6060
@@ -142,11 +155,13 @@ PORT=6061 pnpm dev
 ### Module Not Found Errors
 
 **Common Causes:**
+
 1. Dependencies not installed
 2. Workspace dependencies not built
 3. TypeScript paths not configured
 
 **Solutions:**
+
 ```bash
 # Install all dependencies
 pnpm install
@@ -164,6 +179,7 @@ pnpm install
 ### Slow Queries
 
 **Debugging Steps:**
+
 1. Enable query logging in Prisma
 2. Check for missing indexes
 3. Analyze query plans
@@ -178,11 +194,13 @@ const prisma = new PrismaClient({
 ### High Memory Usage
 
 **Common Causes:**
+
 1. Memory leaks in subscriptions
 2. Large result sets
 3. Unclosed database connections
 
 **Solutions:**
+
 1. Use pagination for large queries
 2. Properly close subscriptions
 3. Monitor connection pool
@@ -192,11 +210,13 @@ const prisma = new PrismaClient({
 ### E2E Tests Failing
 
 **Common Causes:**
+
 1. Backend not running
 2. Wrong environment variables
 3. Database not seeded
 
 **Pre-test Checklist:**
+
 ```bash
 # Start services
 pnpm dev
@@ -214,6 +234,7 @@ pnpm test:e2e
 **Cause:** Database not accessible or slow
 
 **Solutions:**
+
 1. Ensure test database exists
 2. Check database performance
 3. Increase test timeout

@@ -39,12 +39,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {},
@@ -69,7 +69,7 @@ describe('Returns Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.return.findMany.mockReset();
     mockPrisma.return.findUnique.mockReset();
@@ -87,14 +87,14 @@ describe('Returns Router', () => {
     mockPrisma.inventory.create.mockReset();
     mockPrisma.inventory.update.mockReset();
     mockPrisma.stockMovement.create.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -102,8 +102,8 @@ describe('Returns Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -138,9 +138,7 @@ describe('Returns Router', () => {
 
       mockPrisma.return.count.mockResolvedValue(1);
       mockPrisma.return.findMany.mockResolvedValue(mockReturns);
-      mockPrisma.return.groupBy.mockResolvedValue([
-        { status: 'PENDING', _count: 1 },
-      ]);
+      mockPrisma.return.groupBy.mockResolvedValue([{ status: 'PENDING', _count: 1 }]);
 
       const result = await caller.returns.list({
         page: 1,
@@ -219,7 +217,7 @@ describe('Returns Router', () => {
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -269,9 +267,9 @@ describe('Returns Router', () => {
     it('should throw NOT_FOUND for non-existent return', async () => {
       mockPrisma.return.findUnique.mockResolvedValue(null);
 
-      await expect(
-        caller.returns.get({ id: testId('nonexistent') })
-      ).rejects.toThrow('Return not found');
+      await expect(caller.returns.get({ id: testId('nonexistent') })).rejects.toThrow(
+        'Return not found'
+      );
     });
   });
 
@@ -557,7 +555,7 @@ describe('Returns Router', () => {
     });
 
     it('should require ADMIN or MANAGER role', async () => {
-      const employeeCaller = await createDirectCaller({ 
+      const employeeCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: {
@@ -936,10 +934,7 @@ describe('Returns Router', () => {
           reason: 'Defective',
           createdAt: new Date('2024-01-15T10:00:00Z'),
           returnDate: new Date('2024-01-15T10:00:00Z'),
-          items: [
-            { qtyReturned: 2 },
-            { qtyReturned: 3 },
-          ],
+          items: [{ qtyReturned: 2 }, { qtyReturned: 3 }],
           order: {
             orderNumber: 'ORD-2024-00001',
             customer: { firstName: 'John', lastName: 'Doe' },

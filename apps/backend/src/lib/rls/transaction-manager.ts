@@ -1,6 +1,6 @@
 /**
  * RLS Transaction Manager
- * 
+ *
  * Manages database transactions with RLS context, ensuring proper
  * isolation, rollback strategies, and connection pool awareness.
  */
@@ -44,7 +44,12 @@ export interface RLSTransactionOptions {
 export async function executeRLSTransaction<T>(
   prisma: PrismaClient,
   context: RLSContext,
-  fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
+  fn: (
+    tx: Omit<
+      PrismaClient,
+      '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'
+    >
+  ) => Promise<T>,
   options?: RLSTransactionOptions
 ): Promise<RLSOperationResult<T>> {
   const startTime = Date.now();
@@ -129,8 +134,8 @@ export async function executeRLSTransaction<T>(
         userId: isValidatedContext(validatedContext)
           ? validatedContext.userId
           : isBypassContext(validatedContext)
-          ? (validatedContext as any).auditUserId
-          : undefined,
+            ? (validatedContext as any).auditUserId
+            : undefined,
         bypassed: isBypassContext(validatedContext),
       },
     };
@@ -153,9 +158,7 @@ export async function executeRLSTransaction<T>(
 export function createRLSRetryStrategy(
   maxRetries: number = 3,
   backoffMs: number = 100
-): <T>(
-  fn: () => Promise<T>
-) => Promise<T> {
+): <T>(fn: () => Promise<T>) => Promise<T> {
   return async function retry<T>(fn: () => Promise<T>): Promise<T> {
     let lastError: Error | undefined;
 
@@ -263,14 +266,24 @@ export function createPoolAwareTransactionExecutor(
   }
 ): <T>(
   context: RLSContext,
-  fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
+  fn: (
+    tx: Omit<
+      PrismaClient,
+      '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'
+    >
+  ) => Promise<T>,
   options?: RLSTransactionOptions
 ) => Promise<RLSOperationResult<T>> {
   let activeConnections = 0;
 
   return async function execute<T>(
     context: RLSContext,
-    fn: (tx: Omit<PrismaClient, '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'>) => Promise<T>,
+    fn: (
+      tx: Omit<
+        PrismaClient,
+        '$on' | '$connect' | '$disconnect' | '$use' | '$transaction' | '$extends'
+      >
+    ) => Promise<T>,
     options?: RLSTransactionOptions
   ): Promise<RLSOperationResult<T>> {
     // Check if pool is exhausted
@@ -286,15 +299,10 @@ export function createPoolAwareTransactionExecutor(
 
     activeConnections++;
     try {
-      return await executeRLSTransaction(
-        prisma,
-        context,
-        fn,
-        {
-          ...options,
-          timeout: options?.timeout ?? poolConfig.connectionTimeout,
-        }
-      );
+      return await executeRLSTransaction(prisma, context, fn, {
+        ...options,
+        timeout: options?.timeout ?? poolConfig.connectionTimeout,
+      });
     } finally {
       activeConnections--;
     }

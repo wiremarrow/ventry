@@ -13,31 +13,33 @@ Example: `AUTH001` - Authentication error #001
 
 ## Error Categories
 
-| Category | Code | Description |
-|----------|------|-------------|
-| Authentication | AUTH | Login, tokens, sessions |
-| Authorization | AUT | Permissions, access control |
-| Validation | VAL | Input validation, data format |
-| Business Logic | BIZ | Business rules, constraints |
-| Inventory | INV | Stock, movements, locations |
-| Orders | ORD | Sales, purchase orders |
-| Organization | ORG | Multi-tenant, membership |
-| System | SYS | Server, infrastructure |
-| Database | DB | Database operations |
-| External | EXT | Third-party services |
+| Category       | Code | Description                   |
+| -------------- | ---- | ----------------------------- |
+| Authentication | AUTH | Login, tokens, sessions       |
+| Authorization  | AUT  | Permissions, access control   |
+| Validation     | VAL  | Input validation, data format |
+| Business Logic | BIZ  | Business rules, constraints   |
+| Inventory      | INV  | Stock, movements, locations   |
+| Orders         | ORD  | Sales, purchase orders        |
+| Organization   | ORG  | Multi-tenant, membership      |
+| System         | SYS  | Server, infrastructure        |
+| Database       | DB   | Database operations           |
+| External       | EXT  | Third-party services          |
 
 ## Authentication Errors (AUTH)
 
 ### AUTH001 - Invalid Credentials
+
 - **Message**: "Invalid email or password"
 - **HTTP Status**: 401
 - **Cause**: Incorrect login credentials
-- **Resolution**: 
+- **Resolution**:
   - Verify email address is correct
   - Check password (case-sensitive)
   - Use password reset if forgotten
 
 ### AUTH002 - Token Expired
+
 - **Message**: "Authentication token has expired"
 - **HTTP Status**: 401
 - **Cause**: JWT token past expiration time
@@ -47,6 +49,7 @@ Example: `AUTH001` - Authentication error #001
   - Check system time synchronization
 
 ### AUTH003 - Invalid Token
+
 - **Message**: "Invalid authentication token"
 - **HTTP Status**: 401
 - **Cause**: Malformed or tampered token
@@ -56,6 +59,7 @@ Example: `AUTH001` - Authentication error #001
   - Verify JWT secret is correct
 
 ### AUTH004 - Account Locked
+
 - **Message**: "Account has been locked due to multiple failed login attempts"
 - **HTTP Status**: 403
 - **Cause**: Too many failed login attempts
@@ -65,6 +69,7 @@ Example: `AUTH001` - Authentication error #001
   - Use password reset
 
 ### AUTH005 - Account Suspended
+
 - **Message**: "Account has been suspended"
 - **HTTP Status**: 403
 - **Cause**: Administrative action or payment issue
@@ -74,6 +79,7 @@ Example: `AUTH001` - Authentication error #001
   - Review terms of service
 
 ### AUTH006 - Two-Factor Required (Reserved)
+
 - **Message**: "Two-factor authentication is required"
 - **HTTP Status**: 428
 - **Note**: This error code is reserved for future 2FA implementation
@@ -84,6 +90,7 @@ Example: `AUTH001` - Authentication error #001
   - Contact admin if device lost
 
 ### AUTH007 - Invalid Session
+
 - **Message**: "Session is invalid or has expired"
 - **HTTP Status**: 401
 - **Cause**: Session timeout or invalidation
@@ -95,6 +102,7 @@ Example: `AUTH001` - Authentication error #001
 ## Authorization Errors (AUT)
 
 ### AUT001 - Insufficient Permissions
+
 - **Message**: "You do not have permission to perform this action"
 - **HTTP Status**: 403
 - **Cause**: User role lacks required permission
@@ -104,6 +112,7 @@ Example: `AUTH001` - Authentication error #001
   - Verify correct organization context
 
 ### AUT002 - Resource Access Denied
+
 - **Message**: "Access denied to requested resource"
 - **HTTP Status**: 403
 - **Cause**: Resource belongs to different organization
@@ -113,6 +122,7 @@ Example: `AUTH001` - Authentication error #001
   - Request access from owner
 
 ### AUT003 - Feature Not Available
+
 - **Message**: "This feature is not available in your plan"
 - **HTTP Status**: 403
 - **Cause**: Feature requires plan upgrade
@@ -122,6 +132,7 @@ Example: `AUTH001` - Authentication error #001
   - Use alternative features
 
 ### AUT004 - API Access Disabled
+
 - **Message**: "API access is not enabled for this organization"
 - **HTTP Status**: 403
 - **Cause**: API feature not enabled
@@ -133,6 +144,7 @@ Example: `AUTH001` - Authentication error #001
 ## Validation Errors (VAL)
 
 ### VAL001 - Missing Required Field
+
 - **Message**: "Required field '{field}' is missing"
 - **HTTP Status**: 422
 - **Cause**: Required input not provided
@@ -142,6 +154,7 @@ Example: `AUTH001` - Authentication error #001
   - Verify request format
 
 ### VAL002 - Invalid Field Format
+
 - **Message**: "Field '{field}' has invalid format"
 - **HTTP Status**: 422
 - **Cause**: Data doesn't match expected format
@@ -151,6 +164,7 @@ Example: `AUTH001` - Authentication error #001
   - Validate before submission
 
 ### VAL003 - Value Out of Range
+
 - **Message**: "Value {value} is outside allowed range {min}-{max}"
 - **HTTP Status**: 422
 - **Cause**: Numeric value exceeds limits
@@ -160,6 +174,7 @@ Example: `AUTH001` - Authentication error #001
   - Verify unit of measure
 
 ### VAL004 - Invalid Email Format
+
 - **Message**: "Email address is not valid"
 - **HTTP Status**: 422
 - **Cause**: Email doesn't match pattern
@@ -169,6 +184,7 @@ Example: `AUTH001` - Authentication error #001
   - Check for typos
 
 ### VAL005 - Duplicate Value
+
 - **Message**: "Value already exists: {field}"
 - **HTTP Status**: 409
 - **Cause**: Unique constraint violation
@@ -180,6 +196,7 @@ Example: `AUTH001` - Authentication error #001
 ## Business Logic Errors (BIZ)
 
 ### BIZ001 - Invalid State Transition
+
 - **Message**: "Cannot transition from {current} to {target} state"
 - **HTTP Status**: 422
 - **Cause**: Invalid workflow transition
@@ -189,6 +206,7 @@ Example: `AUTH001` - Authentication error #001
   - Review state machine rules
 
 ### BIZ002 - Business Rule Violation
+
 - **Message**: "Operation violates business rule: {rule}"
 - **HTTP Status**: 422
 - **Cause**: Custom business rule failed
@@ -198,6 +216,7 @@ Example: `AUTH001` - Authentication error #001
   - Contact administrator
 
 ### BIZ003 - Approval Required
+
 - **Message**: "This operation requires approval"
 - **HTTP Status**: 422
 - **Cause**: Exceeds approval threshold
@@ -207,6 +226,7 @@ Example: `AUTH001` - Authentication error #001
   - Reduce amount below threshold
 
 ### BIZ004 - Budget Exceeded
+
 - **Message**: "Operation would exceed budget limit"
 - **HTTP Status**: 422
 - **Cause**: Insufficient budget allocation
@@ -218,6 +238,7 @@ Example: `AUTH001` - Authentication error #001
 ## Inventory Errors (INV)
 
 ### INV001 - Insufficient Stock
+
 - **Message**: "Insufficient stock available. Required: {required}, Available: {available}"
 - **HTTP Status**: 409
 - **Cause**: Not enough inventory
@@ -228,6 +249,7 @@ Example: `AUTH001` - Authentication error #001
   - Enable backorders
 
 ### INV002 - Item Not Found
+
 - **Message**: "Item {sku} not found"
 - **HTTP Status**: 404
 - **Cause**: Invalid item reference
@@ -237,6 +259,7 @@ Example: `AUTH001` - Authentication error #001
   - Search by name
 
 ### INV003 - Location Not Found
+
 - **Message**: "Location {location} not found"
 - **HTTP Status**: 404
 - **Cause**: Invalid location reference
@@ -246,6 +269,7 @@ Example: `AUTH001` - Authentication error #001
   - Create location first
 
 ### INV004 - Negative Stock Not Allowed
+
 - **Message**: "Operation would result in negative stock"
 - **HTTP Status**: 422
 - **Cause**: Stock would go below zero
@@ -255,6 +279,7 @@ Example: `AUTH001` - Authentication error #001
   - Receive stock first
 
 ### INV005 - Item Already Exists
+
 - **Message**: "Item with SKU {sku} already exists"
 - **HTTP Status**: 409
 - **Cause**: Duplicate SKU
@@ -264,6 +289,7 @@ Example: `AUTH001` - Authentication error #001
   - Check for typos
 
 ### INV006 - Cycle Count Mismatch
+
 - **Message**: "Cycle count variance exceeds threshold"
 - **HTTP Status**: 422
 - **Cause**: Large inventory adjustment
@@ -273,6 +299,7 @@ Example: `AUTH001` - Authentication error #001
   - Document reason
 
 ### INV007 - Serial Number Duplicate
+
 - **Message**: "Serial number {serial} already exists"
 - **HTTP Status**: 409
 - **Cause**: Duplicate serial number
@@ -282,6 +309,7 @@ Example: `AUTH001` - Authentication error #001
   - Use unique serial
 
 ### INV008 - Lot Expired
+
 - **Message**: "Lot {lot} has expired"
 - **HTTP Status**: 422
 - **Cause**: Using expired inventory
@@ -293,6 +321,7 @@ Example: `AUTH001` - Authentication error #001
 ## Order Errors (ORD)
 
 ### ORD001 - Order Not Found
+
 - **Message**: "Order {orderId} not found"
 - **HTTP Status**: 404
 - **Cause**: Invalid order reference
@@ -302,6 +331,7 @@ Example: `AUTH001` - Authentication error #001
   - Search by customer
 
 ### ORD002 - Cannot Modify Order
+
 - **Message**: "Order cannot be modified in {status} status"
 - **HTTP Status**: 422
 - **Cause**: Order in final state
@@ -311,6 +341,7 @@ Example: `AUTH001` - Authentication error #001
   - Contact support
 
 ### ORD003 - Customer Credit Limit
+
 - **Message**: "Order exceeds customer credit limit"
 - **HTTP Status**: 422
 - **Cause**: Insufficient credit
@@ -320,6 +351,7 @@ Example: `AUTH001` - Authentication error #001
   - Reduce order value
 
 ### ORD004 - Minimum Order Value
+
 - **Message**: "Order value {value} below minimum {minimum}"
 - **HTTP Status**: 422
 - **Cause**: Order too small
@@ -329,6 +361,7 @@ Example: `AUTH001` - Authentication error #001
   - Request exception
 
 ### ORD005 - Shipping Address Invalid
+
 - **Message**: "Shipping address is incomplete or invalid"
 - **HTTP Status**: 422
 - **Cause**: Address validation failed
@@ -338,6 +371,7 @@ Example: `AUTH001` - Authentication error #001
   - Check postal code
 
 ### ORD006 - Payment Failed
+
 - **Message**: "Payment processing failed"
 - **HTTP Status**: 422
 - **Cause**: Payment gateway error
@@ -349,6 +383,7 @@ Example: `AUTH001` - Authentication error #001
 ## Organization Errors (ORG)
 
 ### ORG001 - Organization Not Found
+
 - **Message**: "Organization not found"
 - **HTTP Status**: 404
 - **Cause**: Invalid organization ID
@@ -358,6 +393,7 @@ Example: `AUTH001` - Authentication error #001
   - Switch organization
 
 ### ORG002 - Not Organization Member
+
 - **Message**: "You are not a member of this organization"
 - **HTTP Status**: 403
 - **Cause**: No membership record
@@ -367,6 +403,7 @@ Example: `AUTH001` - Authentication error #001
   - Contact admin
 
 ### ORG003 - Organization Suspended
+
 - **Message**: "Organization has been suspended"
 - **HTTP Status**: 403
 - **Cause**: Billing or policy issue
@@ -376,6 +413,7 @@ Example: `AUTH001` - Authentication error #001
   - Update payment method
 
 ### ORG004 - Member Limit Reached
+
 - **Message**: "Organization has reached member limit"
 - **HTTP Status**: 422
 - **Cause**: Plan member limit
@@ -385,6 +423,7 @@ Example: `AUTH001` - Authentication error #001
   - Contact sales
 
 ### ORG005 - Cannot Leave Organization
+
 - **Message**: "Cannot leave organization as sole owner"
 - **HTTP Status**: 422
 - **Cause**: Last owner attempting to leave
@@ -396,6 +435,7 @@ Example: `AUTH001` - Authentication error #001
 ## System Errors (SYS)
 
 ### SYS001 - Internal Server Error
+
 - **Message**: "An unexpected error occurred"
 - **HTTP Status**: 500
 - **Cause**: Unhandled exception
@@ -405,6 +445,7 @@ Example: `AUTH001` - Authentication error #001
   - Check status page
 
 ### SYS002 - Service Unavailable
+
 - **Message**: "Service temporarily unavailable"
 - **HTTP Status**: 503
 - **Cause**: Maintenance or overload
@@ -414,6 +455,7 @@ Example: `AUTH001` - Authentication error #001
   - Use different region
 
 ### SYS003 - Rate Limit Exceeded
+
 - **Message**: "Too many requests. Please try again later"
 - **HTTP Status**: 429
 - **Cause**: API rate limit hit
@@ -423,6 +465,7 @@ Example: `AUTH001` - Authentication error #001
   - Upgrade plan for higher limits
 
 ### SYS004 - Request Timeout
+
 - **Message**: "Request processing timed out"
 - **HTTP Status**: 504
 - **Cause**: Long-running operation
@@ -432,6 +475,7 @@ Example: `AUTH001` - Authentication error #001
   - Optimize query
 
 ### SYS005 - File Too Large
+
 - **Message**: "File size exceeds maximum allowed size of {max}"
 - **HTTP Status**: 413
 - **Cause**: Upload size limit
@@ -443,6 +487,7 @@ Example: `AUTH001` - Authentication error #001
 ## Database Errors (DB)
 
 ### DB001 - Connection Failed
+
 - **Message**: "Failed to connect to database"
 - **HTTP Status**: 503
 - **Cause**: Database unavailable
@@ -452,6 +497,7 @@ Example: `AUTH001` - Authentication error #001
   - Check network
 
 ### DB002 - Query Timeout
+
 - **Message**: "Database query timed out"
 - **HTTP Status**: 504
 - **Cause**: Slow query execution
@@ -461,6 +507,7 @@ Example: `AUTH001` - Authentication error #001
   - Reduce data set
 
 ### DB003 - Constraint Violation
+
 - **Message**: "Database constraint violation: {constraint}"
 - **HTTP Status**: 409
 - **Cause**: Foreign key or check constraint
@@ -470,6 +517,7 @@ Example: `AUTH001` - Authentication error #001
   - Review constraints
 
 ### DB004 - Deadlock Detected
+
 - **Message**: "Database deadlock detected"
 - **HTTP Status**: 409
 - **Cause**: Concurrent transactions
@@ -481,6 +529,7 @@ Example: `AUTH001` - Authentication error #001
 ## External Service Errors (EXT)
 
 ### EXT001 - Email Service Error
+
 - **Message**: "Failed to send email"
 - **HTTP Status**: 502
 - **Cause**: SMTP service error
@@ -490,6 +539,7 @@ Example: `AUTH001` - Authentication error #001
   - Use backup service
 
 ### EXT002 - Storage Service Error
+
 - **Message**: "Failed to access storage service"
 - **HTTP Status**: 502
 - **Cause**: S3/storage unavailable
@@ -499,6 +549,7 @@ Example: `AUTH001` - Authentication error #001
   - Use local fallback
 
 ### EXT003 - Payment Gateway Error
+
 - **Message**: "Payment gateway communication error"
 - **HTTP Status**: 502
 - **Cause**: Gateway unavailable
@@ -508,6 +559,7 @@ Example: `AUTH001` - Authentication error #001
   - Use alternate gateway
 
 ### EXT004 - SMS Service Error
+
 - **Message**: "Failed to send SMS"
 - **HTTP Status**: 502
 - **Cause**: SMS provider error
@@ -519,6 +571,7 @@ Example: `AUTH001` - Authentication error #001
 ## Error Response Format
 
 ### Standard Error Response
+
 ```json
 {
   "error": {
@@ -539,6 +592,7 @@ Example: `AUTH001` - Authentication error #001
 ```
 
 ### Validation Error Response
+
 ```json
 {
   "error": {
@@ -580,7 +634,7 @@ try {
     // Generic error handling
     showGenericError(error.userMessage || 'An error occurred');
   }
-  
+
   // Log for debugging
   console.error(`Error ${error.code}:`, error);
 }
@@ -598,7 +652,7 @@ export class AppError extends Error {
   ) {
     super(message);
   }
-  
+
   toJSON() {
     return {
       code: this.code,
@@ -610,16 +664,11 @@ export class AppError extends Error {
 }
 
 // Usage
-throw new AppError(
-  'INV001',
-  'Insufficient stock available',
-  409,
-  {
-    itemId: item.id,
-    requested: quantity,
-    available: stock.available
-  }
-);
+throw new AppError('INV001', 'Insufficient stock available', 409, {
+  itemId: item.id,
+  requested: quantity,
+  available: stock.available,
+});
 ```
 
 ## Monitoring and Alerting
@@ -627,6 +676,7 @@ throw new AppError(
 ### Error Tracking
 
 Monitor these error patterns:
+
 - Sudden increase in specific error codes
 - New error codes appearing
 - Error rate by endpoint

@@ -27,13 +27,13 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const authState = useAuthStore.getState();
       authState.logout();
-      
+
       // Only redirect if not already on login page
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

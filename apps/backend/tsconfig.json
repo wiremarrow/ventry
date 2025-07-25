@@ -26,11 +26,5 @@
       "@ventry/shared": ["../../packages/shared/src"]
     }
   },
-  "exclude": [
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/test-utils/**",
-    "**/__tests__/**",
-    "dist/**"
-  ]
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test-utils/**", "**/__tests__/**", "dist/**"]
 }

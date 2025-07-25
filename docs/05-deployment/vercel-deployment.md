@@ -20,6 +20,7 @@ This guide covers deploying the Ventry Next.js frontend to Vercel, including con
    - Select the `apps/web` directory as root
 
 2. **Configure Project**
+
    ```yaml
    Framework Preset: Next.js
    Root Directory: apps/web
@@ -165,13 +166,13 @@ NEXT_PUBLIC_FEATURE_ADVANCED_ANALYTICS=false
 module.exports = {
   // Enable SWC minification
   swcMinify: true,
-  
+
   // Optimize images
   images: {
     domains: ['ventry.app', 'images.ventry.app'],
     formats: ['image/avif', 'image/webp'],
   },
-  
+
   // Bundle analyzer
   webpack: (config, { isServer }) => {
     if (process.env.ANALYZE) {
@@ -179,9 +180,7 @@ module.exports = {
       config.plugins.push(
         new BundleAnalyzerPlugin({
           analyzerMode: 'static',
-          reportFilename: isServer
-            ? '../analyze/server.html'
-            : './analyze/client.html',
+          reportFilename: isServer ? '../analyze/server.html' : './analyze/client.html',
         })
       );
     }
@@ -337,7 +336,6 @@ CNAME *     cname.vercel-dns.com
 ```yaml
 # Every push creates a preview
 https://ventry-git-feature-branch-team.vercel.app
-
 # Comment on PR with preview URL
 # Automatic lighthouse scores
 # Shareable links
@@ -351,7 +349,7 @@ export function middleware(request: NextRequest) {
   // Password protect preview deployments
   if (process.env.VERCEL_ENV === 'preview') {
     const basicAuth = request.headers.get('authorization');
-    
+
     if (!basicAuth || !verifyAuth(basicAuth)) {
       return new Response('Authentication required', {
         status: 401,
@@ -388,9 +386,7 @@ import * as Sentry from '@sentry/nextjs';
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.VERCEL_ENV,
-  integrations: [
-    new Sentry.BrowserTracing(),
-  ],
+  integrations: [new Sentry.BrowserTracing()],
   tracesSampleRate: 0.1,
 });
 ```
@@ -465,10 +461,11 @@ export async function GET() {
 ### Common Issues
 
 1. **Build Failures**
+
    ```bash
    # Check build logs
    vercel logs --build
-   
+
    # Common fixes:
    - Clear cache: vercel --force
    - Check Node version
@@ -476,6 +473,7 @@ export async function GET() {
    ```
 
 2. **Function Timeouts**
+
    ```javascript
    // Increase timeout
    export const maxDuration = 60; // seconds
@@ -501,7 +499,7 @@ vercel inspect deployment-url
 
 1. **Use Environment Variables**
    - Never hardcode secrets
-   - Use NEXT_PUBLIC_ prefix for client vars
+   - Use NEXT*PUBLIC* prefix for client vars
    - Different values per environment
 
 2. **Optimize Bundle Size**

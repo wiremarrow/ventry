@@ -55,7 +55,7 @@ export const cookieMiddleware = t.middleware(({ ctx, next }) => {
  */
 export const authProcedure = t.procedure.use(cookieMiddleware).use(async ({ ctx, next }) => {
   const result = await next();
-  
+
   // If this is a successful auth response with a token, set the cookie
   if (result.ok && result.data && typeof result.data === 'object') {
     const authResult = result.data as AuthResult;
@@ -63,6 +63,6 @@ export const authProcedure = t.procedure.use(cookieMiddleware).use(async ({ ctx,
       ctx.setCookie('auth-token', authResult.token);
     }
   }
-  
+
   return result;
 });

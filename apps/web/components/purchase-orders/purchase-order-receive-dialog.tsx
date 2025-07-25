@@ -57,6 +57,7 @@ interface PurchaseOrderReceiveDialogProps {
   onOpenChange: (open: boolean) => void;
   purchaseOrder: {
     id: string;
+    poNumber: string;
     items: Array<{
       id: string;
       itemId: string;
@@ -106,13 +107,13 @@ export function PurchaseOrderReceiveDialog({
       const message = result.fullyReceived
         ? 'Purchase order fully received'
         : `${result.itemsReceived} items received`;
-      
+
       if (result.hasDiscrepancies) {
         toast.warning(`${message} with discrepancies`);
       } else {
         toast.success(message);
       }
-      
+
       utils.purchaseOrders.get.invalidate({ id: purchaseOrder.id });
       utils.purchaseOrders.list.invalidate();
       onOpenChange(false);
@@ -122,7 +123,11 @@ export function PurchaseOrderReceiveDialog({
     },
   });
 
-  const handleUpdateItem = (index: number, field: keyof ReceiveItem, value: string | number | Date | string[] | undefined) => {
+  const handleUpdateItem = (
+    index: number,
+    field: keyof ReceiveItem,
+    value: string | number | Date | string[] | undefined
+  ) => {
     const updated = [...receiveItems];
     updated[index] = { ...updated[index], [field]: value };
     setReceiveItems(updated);
@@ -133,7 +138,7 @@ export function PurchaseOrderReceiveDialog({
     const missingLocations = receiveItems.filter(
       (item) => item.qtyToReceive > 0 && !item.locationId
     );
-    
+
     if (missingLocations.length > 0) {
       toast.error('Please select a location for all items being received');
       return;
@@ -149,7 +154,8 @@ export function PurchaseOrderReceiveDialog({
         locationId: item.locationId,
         lotNumber: item.lotNumber || undefined,
         expirationDate: item.expirationDate || undefined,
-        serialNumbers: item.serialNumbers && item.serialNumbers.length > 0 ? item.serialNumbers : undefined,
+        serialNumbers:
+          item.serialNumbers && item.serialNumbers.length > 0 ? item.serialNumbers : undefined,
         notes: item.notes || undefined,
       }));
 
@@ -176,9 +182,7 @@ export function PurchaseOrderReceiveDialog({
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Receive Items - {purchaseOrder.poNumber}</DialogTitle>
-          <DialogDescription>
-            Record receipt of items from this purchase order
-          </DialogDescription>
+          <DialogDescription>Record receipt of items from this purchase order</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -227,8 +231,8 @@ export function PurchaseOrderReceiveDialog({
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                The quantities being received don't match the ordered quantities.
-                This will be recorded as a discrepancy.
+                The quantities being received don't match the ordered quantities. This will be
+                recorded as a discrepancy.
               </AlertDescription>
             </Alert>
           )}
@@ -258,9 +262,7 @@ export function PurchaseOrderReceiveDialog({
                     </TableCell>
                     <TableCell className="text-center">{item.qtyOrdered}</TableCell>
                     <TableCell className="text-center">{item.qtyReceived}</TableCell>
-                    <TableCell className="text-center font-medium">
-                      {item.qtyPending}
-                    </TableCell>
+                    <TableCell className="text-center font-medium">{item.qtyPending}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -268,11 +270,7 @@ export function PurchaseOrderReceiveDialog({
                         max={item.qtyPending}
                         value={item.qtyToReceive}
                         onChange={(e) =>
-                          handleUpdateItem(
-                            index,
-                            'qtyToReceive',
-                            parseInt(e.target.value) || 0
-                          )
+                          handleUpdateItem(index, 'qtyToReceive', parseInt(e.target.value) || 0)
                         }
                       />
                     </TableCell>
@@ -283,28 +281,22 @@ export function PurchaseOrderReceiveDialog({
                         max={item.qtyToReceive}
                         value={item.qtyRejected}
                         onChange={(e) =>
-                          handleUpdateItem(
-                            index,
-                            'qtyRejected',
-                            parseInt(e.target.value) || 0
-                          )
+                          handleUpdateItem(index, 'qtyRejected', parseInt(e.target.value) || 0)
                         }
                       />
                     </TableCell>
                     <TableCell>
                       <Select
                         value={item.locationId}
-                        onValueChange={(value) =>
-                          handleUpdateItem(index, 'locationId', value)
-                        }
+                        onValueChange={(value) => handleUpdateItem(index, 'locationId', value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select location" />
                         </SelectTrigger>
                         <SelectContent>
                           {warehouses?.map((warehouse) => (
-                            <SelectItem 
-                              key={warehouse.id} 
+                            <SelectItem
+                              key={warehouse.id}
                               value={warehouse.id}
                               className="font-medium"
                             >
@@ -318,9 +310,7 @@ export function PurchaseOrderReceiveDialog({
                       <Input
                         placeholder="Optional"
                         value={item.lotNumber || ''}
-                        onChange={(e) =>
-                          handleUpdateItem(index, 'lotNumber', e.target.value)
-                        }
+                        onChange={(e) => handleUpdateItem(index, 'lotNumber', e.target.value)}
                       />
                     </TableCell>
                   </TableRow>
@@ -331,17 +321,12 @@ export function PurchaseOrderReceiveDialog({
 
           <div className="rounded-lg bg-gray-50 p-4">
             <div className="text-sm">
-              <span className="font-medium">Total items to receive:</span>{' '}
-              {totalToReceive}
+              <span className="font-medium">Total items to receive:</span> {totalToReceive}
             </div>
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button

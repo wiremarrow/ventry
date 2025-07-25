@@ -60,15 +60,15 @@ describe('createContext', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     mockRequest = {
       cookies: {},
       headers: {},
       unsignCookie: vi.fn(),
     };
-    
+
     mockReply = {};
-    
+
     // Reset CookieService mock
     vi.mocked(CookieService.getActiveOrganization).mockReturnValue(undefined);
   });
@@ -172,7 +172,7 @@ describe('createContext', () => {
 
       // Verify RLS proxy was called with correct context
       expect(createRLSProxy).toHaveBeenCalledWith(basePrisma, expect.any(Function));
-      
+
       // Check RLS context function
       const rlsContextFn = vi.mocked(createRLSProxy).mock.calls[0][1];
       expect(rlsContextFn()).toEqual({
@@ -264,7 +264,7 @@ describe('createContext', () => {
       };
 
       mockRequest.headers['x-organization-id'] = 'org-456';
-      
+
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
@@ -317,7 +317,7 @@ describe('createContext', () => {
 
       // Mock CookieService to return the organization ID
       vi.mocked(CookieService.getActiveOrganization).mockReturnValue('org-789');
-      
+
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
@@ -353,7 +353,7 @@ describe('createContext', () => {
       mockRequest.headers['x-organization-id'] = 'org-header';
       // Mock CookieService to return a different organization ID (should be ignored)
       vi.mocked(CookieService.getActiveOrganization).mockReturnValue('org-cookie');
-      
+
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
@@ -389,7 +389,7 @@ describe('createContext', () => {
       };
 
       mockRequest.headers['x-organization-id'] = 'org-invalid';
-      
+
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
@@ -399,7 +399,7 @@ describe('createContext', () => {
 
       expect(ctx.user?.organizationId).toBeUndefined();
       expect(ctx.user?.organizationRole).toBeUndefined();
-      
+
       // Should still have basic RLS context with just userId
       const rlsContextFn = vi.mocked(createRLSProxy).mock.calls[0][1];
       expect(rlsContextFn()).toEqual({
@@ -429,10 +429,10 @@ describe('createContext', () => {
         userId: 'user-123',
         role: 'MEMBER',
       };
-      
+
       // CookieService returns undefined for invalid cookies
       vi.mocked(CookieService.getActiveOrganization).mockReturnValue(undefined);
-      
+
       vi.mocked(getRawToken).mockReturnValue(mockToken);
       vi.mocked(verifyJwt).mockReturnValue(mockJwtPayload);
       vi.mocked(basePrisma.user.findUnique).mockResolvedValue(mockUser);
@@ -471,7 +471,7 @@ describe('createContext', () => {
 
       // Verify RLS proxy was called with correct context
       expect(createRLSProxy).toHaveBeenCalledWith(basePrisma, expect.any(Function));
-      
+
       // Check RLS context function
       const rlsContextFn = vi.mocked(createRLSProxy).mock.calls[0][1];
       expect(rlsContextFn()).toEqual({
@@ -505,7 +505,7 @@ describe('createContext', () => {
       // Context should still be created successfully
       expect(ctx.user).toBeTruthy();
       expect(ctx.user?.id).toBe('user-123');
-      
+
       // RLS proxy should be created with appropriate context
       expect(createRLSProxy).toHaveBeenCalled();
     });

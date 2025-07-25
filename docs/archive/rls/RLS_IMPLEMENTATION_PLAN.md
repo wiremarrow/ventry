@@ -12,7 +12,6 @@ This document outlines the enterprise-grade implementation of Row-Level Security
    - Validates input at database level
    - Prevents SQL injection
    - Sets session variables securely
-   
 2. **Row-Level Security Policies**
    - Enforces tenant isolation
    - Transparent to application code
@@ -31,7 +30,6 @@ This document outlines the enterprise-grade implementation of Row-Level Security
    - `set_rls_context(organization_id, user_id)` - Sets session variables
    - `clear_rls_context()` - Clears session variables
    - `get_rls_context()` - Returns current context
-   
 2. **Application Integration**
    - Updated RLS service to use secure functions
    - Removed SQL injection vulnerabilities
@@ -46,11 +44,9 @@ This document outlines the enterprise-grade implementation of Row-Level Security
 1. **RLS Policy Creation**
    - Need to create policies for all 32 tables
    - Test policy effectiveness
-   
 2. **Integration Testing**
    - Verify tenant isolation
    - Performance benchmarking
-   
 3. **Production Deployment**
    - Apply migrations
    - Enable RLS on all tables
@@ -73,10 +69,10 @@ BEGIN
     RAISE EXCEPTION 'Invalid organization_id format: %', p_organization_id
       USING ERRCODE = 'data_exception';
   END IF;
-  
+
   -- Set session variables securely
   PERFORM set_config('app.current_organization_id', p_organization_id, true);
-  
+
   IF p_user_id IS NOT NULL THEN
     IF p_user_id !~ '^[0-9a-z]{25}$' THEN
       RAISE EXCEPTION 'Invalid user_id format: %', p_user_id
@@ -89,6 +85,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
 **Key Security Features:**
+
 - SECURITY DEFINER runs with function owner privileges
 - Input validation at database level
 - No string concatenation or SQL injection risk
@@ -120,10 +117,10 @@ export async function withRLS<T>(
   return prisma.$transaction(async (tx) => {
     // Set context using secure function
     await tx.$queryRaw`SELECT set_rls_context(${context.organizationId}, ${context.userId})`;
-    
+
     // Execute operation with RLS active
     const result = await operation(tx);
-    
+
     // Context automatically cleared at transaction end
     return result;
   });
@@ -149,6 +146,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO app_user;
 ### Tables Requiring RLS (32 total)
 
 #### High Priority (Direct Organization Reference)
+
 - items
 - inventory
 - warehouses
@@ -161,6 +159,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO app_user;
 - purchase_order_items
 
 #### Medium Priority (Indirect Organization Reference)
+
 - stock_movements
 - shipments
 - shipment_items
@@ -172,6 +171,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO app_user;
 - receipt_items
 
 #### Low Priority (Reference Tables)
+
 - categories
 - units_of_measure
 - tax_rates
@@ -182,6 +182,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO app_user;
 - currencies
 
 #### System Tables (Special Handling)
+
 - organizations
 - users
 - user_organizations
@@ -195,15 +196,15 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON table_name TO app_user;
 ```typescript
 describe('RLS Context Functions', () => {
   it('should reject invalid organization IDs', async () => {
-    await expect(
-      tx.$queryRaw`SELECT set_rls_context(${'invalid-id'}, ${null})`
-    ).rejects.toThrow('Invalid organization_id format');
+    await expect(tx.$queryRaw`SELECT set_rls_context(${'invalid-id'}, ${null})`).rejects.toThrow(
+      'Invalid organization_id format'
+    );
   });
-  
+
   it('should set and retrieve context correctly', async () => {
     const orgId = 'cjld2cjxh0000qzrmn831i7rn';
     await tx.$queryRaw`SELECT set_rls_context(${orgId}, ${null})`;
-    
+
     const context = await tx.$queryRaw`SELECT * FROM get_rls_context()`;
     expect(context[0].organization_id).toBe(orgId);
   });
@@ -219,7 +220,7 @@ describe('RLS Tenant Isolation', () => {
     await withRLS(prisma, { organizationId: org1Id }, async (tx) => {
       await tx.item.create({ data: itemData });
     });
-    
+
     // Try to access from org2
     await withRLS(prisma, { organizationId: org2Id }, async (tx) => {
       const items = await tx.item.findMany();
@@ -255,6 +256,7 @@ CREATE INDEX CONCURRENTLY idx_orders_organization_id ON orders(organization_id);
 ## Security Best Practices
 
 ### 1. Never Bypass RLS in Production
+
 ```typescript
 // ❌ NEVER do this in production
 await prisma.$executeRawUnsafe(`SET LOCAL app.current_organization_id = '${orgId}'`);
@@ -264,24 +266,30 @@ await tx.$queryRaw`SELECT set_rls_context(${orgId}, ${userId})`;
 ```
 
 ### 2. Validate Context at Multiple Levels
+
 - Database function validates CUID format
 - Application validates business logic
 - RLS policies enforce at query time
 
 ### 3. Audit All RLS Operations
+
 ```typescript
-logger.info({
-  event: 'rls.context_set',
-  organizationId,
-  userId,
-  timestamp: new Date()
-}, 'RLS context established');
+logger.info(
+  {
+    event: 'rls.context_set',
+    organizationId,
+    userId,
+    timestamp: new Date(),
+  },
+  'RLS context established'
+);
 ```
 
 ### 4. Monitor RLS Performance
+
 ```sql
 -- Check RLS policy usage
-SELECT 
+SELECT
   schemaname,
   tablename,
   policyname,
@@ -296,6 +304,7 @@ WHERE schemaname = 'public';
 ## Deployment Steps
 
 ### 1. Development Environment
+
 ```bash
 # Apply RLS function migration
 pnpm db:migrate
@@ -305,6 +314,7 @@ psql $DATABASE_URL -c "\\df set_rls_context"
 ```
 
 ### 2. Staging Environment
+
 ```bash
 # Run migration with safety checks
 DATABASE_URL=$STAGING_URL pnpm db:migrate
@@ -314,6 +324,7 @@ pnpm test:integration
 ```
 
 ### 3. Production Deployment
+
 ```bash
 # Backup database first
 ./tools/scripts/backup-database.sh
@@ -350,8 +361,8 @@ SELECT * FROM get_rls_context();
 SELECT * FROM pg_policies WHERE schemaname = 'public';
 
 -- Check if RLS is enabled
-SELECT relname, relrowsecurity 
-FROM pg_class 
+SELECT relname, relrowsecurity
+FROM pg_class
 WHERE relnamespace = 'public'::regnamespace;
 ```
 

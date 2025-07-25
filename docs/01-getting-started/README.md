@@ -3,6 +3,7 @@
 This guide will help you get Ventry up and running on your local machine.
 
 ## Table of Contents
+
 1. [Prerequisites](./prerequisites.md)
 2. [Local Development Setup](./local-development.md)
 3. [External Services Configuration](./external-services.md)
@@ -28,12 +29,14 @@ pnpm dev
 ```
 
 The application will be available at:
+
 - Frontend: http://localhost:6061
 - Backend API: http://localhost:6060
 
 ### Demo Credentials
 
 After seeding, you can login with:
+
 - **Admin**: admin@ventry.com / password123
 - **Manager**: manager@ventry.com / password123
 - **Employee**: employee@ventry.com / password123

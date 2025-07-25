@@ -43,35 +43,22 @@ describe('CreateWarehouseDialog', () => {
   });
 
   it('renders dialog when open', () => {
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     expect(screen.getByText('Add New Warehouse')).toBeInTheDocument();
-    expect(screen.getByText('Create a new warehouse location for inventory storage')).toBeInTheDocument();
+    expect(
+      screen.getByText('Create a new warehouse location for inventory storage')
+    ).toBeInTheDocument();
   });
 
   it('does not render dialog when closed', () => {
-    render(
-      <CreateWarehouseDialog
-        open={false}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+    render(<CreateWarehouseDialog open={false} onOpenChange={mockOnOpenChange} />);
 
     expect(screen.queryByText('Add New Warehouse')).not.toBeInTheDocument();
   });
 
   it('has all required form fields', () => {
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     expect(screen.getByLabelText(/warehouse code/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/warehouse name/i)).toBeInTheDocument();
@@ -87,13 +74,8 @@ describe('CreateWarehouseDialog', () => {
 
   it('validates required fields', async () => {
     const user = userEvent.setup();
-    
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     // Try to submit without filling required fields
     const submitButton = screen.getByRole('button', { name: /create warehouse/i });
@@ -110,13 +92,8 @@ describe('CreateWarehouseDialog', () => {
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
-    
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     // Fill in required fields
     await user.type(screen.getByLabelText(/warehouse code/i), 'WH-001');
@@ -151,13 +128,8 @@ describe('CreateWarehouseDialog', () => {
 
   it('calls onOpenChange when cancel is clicked', async () => {
     const user = userEvent.setup();
-    
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
     await user.click(cancelButton);
@@ -171,12 +143,7 @@ describe('CreateWarehouseDialog', () => {
       isPending: true,
     });
 
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     const submitButton = screen.getByRole('button', { name: /creating/i });
     expect(submitButton).toBeDisabled();
@@ -185,13 +152,8 @@ describe('CreateWarehouseDialog', () => {
 
   it('validates postal code format', async () => {
     const user = userEvent.setup();
-    
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     // Fill in all required fields except postal code
     await user.type(screen.getByLabelText(/warehouse code/i), 'WH-001');
@@ -200,7 +162,7 @@ describe('CreateWarehouseDialog', () => {
     await user.type(screen.getByLabelText(/city/i), 'New York');
     await user.type(screen.getByLabelText(/state/i), 'NY');
     // Leave postal code empty
-    
+
     const submitButton = screen.getByRole('button', { name: /create warehouse/i });
     await user.click(submitButton);
 
@@ -212,12 +174,7 @@ describe('CreateWarehouseDialog', () => {
   });
 
   it('has default country value', () => {
-    render(
-      <CreateWarehouseDialog
-        open={true}
-        onOpenChange={mockOnOpenChange}
-      />
-    );
+    render(<CreateWarehouseDialog open={true} onOpenChange={mockOnOpenChange} />);
 
     const countryInput = screen.getByLabelText(/country/i) as HTMLInputElement;
     expect(countryInput.value).toBe('USA');

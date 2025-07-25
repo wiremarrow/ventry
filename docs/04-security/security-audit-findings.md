@@ -19,6 +19,7 @@ The audit identified several critical security issues that must be addressed bef
 **Finding**: Application was using database admin user with BYPASSRLS privilege, allowing access to all organizations' data.
 
 **Resolution**:
+
 - Created separate `ventry_app` user without BYPASSRLS
 - Implemented comprehensive RLS policies
 - Added RLS context management
@@ -33,6 +34,7 @@ The audit identified several critical security issues that must be addressed bef
 **Finding**: JWT secret and cookie secret had hardcoded fallbacks.
 
 **Resolution**:
+
 ```typescript
 // Before (INSECURE)
 const JWT_SECRET = process.env.JWT_SECRET || 'development-secret';
@@ -50,9 +52,10 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: 200+ console.log statements throughout codebase.
 
 **Resolution**:
+
 - Implemented structured logging with Pino
 - Created logger service with proper levels
-- Removed all console.* statements
+- Removed all console.\* statements
 - Added log sanitization
 
 ## High Priority Findings
@@ -66,6 +69,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: Race condition when setting cookies during organization switching.
 
 **Recommendation**:
+
 - Implement request queuing
 - Add optimistic locking
 - Use database transactions
@@ -79,8 +83,9 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: 90% of business logic routers lack tests.
 
 **Untested Routers**:
+
 - analyticsRouter
-- stockMovementsRouter  
+- stockMovementsRouter
 - suppliersRouter
 - customersRouter
 - ordersRouter
@@ -96,6 +101,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: 170+ uses of `any` type across codebase.
 
 **Locations**:
+
 - tRPC procedures
 - Event handlers
 - API responses
@@ -110,6 +116,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Impact**: Session hijacking risk
 
 **Current Implementation**:
+
 ```typescript
 {
   httpOnly: true,    ✓
@@ -121,6 +128,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 ```
 
 **Recommendations**:
+
 - Implement session rotation
 - Add CSRF tokens
 - Consider shorter session duration
@@ -144,6 +152,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: Inconsistent validation across endpoints.
 
 **Recommendations**:
+
 - Standardize Zod schemas
 - Add request size limits
 - Implement rate limiting
@@ -159,6 +168,7 @@ const JWT_SECRET = env.JWT_SECRET; // Throws if not set
 **Finding**: Detailed error messages exposed to clients.
 
 **Example**:
+
 ```typescript
 // Bad: Exposes internal details
 throw new Error(`User ${userId} not found in organization ${orgId}`);
@@ -174,11 +184,13 @@ throw new TRPCError({ code: 'NOT_FOUND', message: 'Resource not found' });
 **Impact**: Compliance, forensics
 
 **Current State**:
+
 - Basic logging implemented
 - Missing user actions
 - No centralized audit trail
 
 **Recommendations**:
+
 - Log all data modifications
 - Track authentication events
 - Implement log retention policy
@@ -192,6 +204,7 @@ throw new TRPCError({ code: 'NOT_FOUND', message: 'Resource not found' });
 **Finding**: Several outdated dependencies.
 
 **Recommendations**:
+
 - Enable Dependabot
 - Regular security scans
 - Audit dependency licenses
@@ -199,6 +212,7 @@ throw new TRPCError({ code: 'NOT_FOUND', message: 'Resource not found' });
 ## Security Improvements Implemented
 
 ### 1. Environment Security
+
 ```typescript
 // Strict environment validation
 const envSchema = z.object({
@@ -212,6 +226,7 @@ export const env = envSchema.parse(process.env);
 ```
 
 ### 2. Structured Logging
+
 ```typescript
 // Centralized logger with sanitization
 const logger = pino({
@@ -221,6 +236,7 @@ const logger = pino({
 ```
 
 ### 3. Database Indexes
+
 ```sql
 -- Added 50+ performance indexes
 CREATE INDEX idx_items_org_sku ON items(organization_id, sku);

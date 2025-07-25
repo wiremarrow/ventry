@@ -23,12 +23,12 @@ vi.mock('@ventry/database', () => {
     },
     $transaction: vi.fn(),
   };
-  
+
   // Set up transaction mock
   mockPrisma.$transaction.mockImplementation(async (fn) => {
     return await fn(mockPrisma);
   });
-  
+
   return {
     prisma: mockPrisma,
     Prisma: {
@@ -55,7 +55,7 @@ describe('UnitsOfMeasure Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     // Reset all mock implementations to avoid interference between tests
     mockPrisma.unitOfMeasure.findMany.mockReset();
     mockPrisma.unitOfMeasure.findFirst.mockReset();
@@ -65,14 +65,14 @@ describe('UnitsOfMeasure Router', () => {
     mockPrisma.unitOfMeasure.update.mockReset();
     mockPrisma.unitOfMeasure.delete.mockReset();
     mockPrisma.auditLog.create.mockReset();
-    
+
     // Create a proper mock response object
     mockRes = {
       setCookie: vi.fn(),
       clearCookie: vi.fn(),
       header: vi.fn(),
     };
-    
+
     // Default authenticated user with organization context
     const authenticatedUser = {
       ...mockAuthenticatedUser,
@@ -80,8 +80,8 @@ describe('UnitsOfMeasure Router', () => {
       organizationRole: 'ADMIN',
       role: 'ADMIN',
     };
-    
-    caller = await createDirectCaller({ 
+
+    caller = await createDirectCaller({
       prisma: mockPrisma as any,
       res: mockRes,
       user: authenticatedUser,
@@ -172,16 +172,13 @@ describe('UnitsOfMeasure Router', () => {
 
       expect(mockPrisma.unitOfMeasure.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: [
-            { isBase: 'desc' },
-            { code: 'asc' },
-          ],
+          orderBy: [{ isBase: 'desc' }, { code: 'asc' }],
         })
       );
     });
 
     it('should require organization context', async () => {
-      const noOrgCaller = await createDirectCaller({ 
+      const noOrgCaller = await createDirectCaller({
         prisma: mockPrisma as any,
         res: mockRes,
         user: { ...mockAuthenticatedUser, organizationId: undefined },
@@ -223,9 +220,9 @@ describe('UnitsOfMeasure Router', () => {
     it('should throw NOT_FOUND when unit does not exist', async () => {
       mockPrisma.unitOfMeasure.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.unitsOfMeasure.getById({ id: testId('nonexistent') })
-      ).rejects.toThrow('Unit of measure not found');
+      await expect(caller.unitsOfMeasure.getById({ id: testId('nonexistent') })).rejects.toThrow(
+        'Unit of measure not found'
+      );
     });
   });
 
@@ -289,9 +286,9 @@ describe('UnitsOfMeasure Router', () => {
         conversionFactorToBase: 2, // Invalid for base unit
       };
 
-      await expect(
-        caller.unitsOfMeasure.create(unitData)
-      ).rejects.toThrow('Base unit must have conversion factor of 1');
+      await expect(caller.unitsOfMeasure.create(unitData)).rejects.toThrow(
+        'Base unit must have conversion factor of 1'
+      );
     });
 
     it('should prevent duplicate code', async () => {
@@ -507,9 +504,9 @@ describe('UnitsOfMeasure Router', () => {
 
       mockPrisma.unitOfMeasure.findFirst.mockResolvedValue(existingUnit);
 
-      await expect(
-        caller.unitsOfMeasure.delete({ id: testId('uom1') })
-      ).rejects.toThrow('Cannot delete unit of measure that is in use');
+      await expect(caller.unitsOfMeasure.delete({ id: testId('uom1') })).rejects.toThrow(
+        'Cannot delete unit of measure that is in use'
+      );
     });
 
     it('should prevent deleting base unit if other units exist', async () => {
@@ -526,9 +523,9 @@ describe('UnitsOfMeasure Router', () => {
       mockPrisma.unitOfMeasure.findFirst.mockResolvedValue(existingUnit);
       mockPrisma.unitOfMeasure.count.mockResolvedValue(2); // Other units exist
 
-      await expect(
-        caller.unitsOfMeasure.delete({ id: testId('uom1') })
-      ).rejects.toThrow('Cannot delete base unit while other units exist');
+      await expect(caller.unitsOfMeasure.delete({ id: testId('uom1') })).rejects.toThrow(
+        'Cannot delete base unit while other units exist'
+      );
     });
 
     it('should allow deleting base unit if no other units', async () => {
@@ -556,9 +553,9 @@ describe('UnitsOfMeasure Router', () => {
     it('should throw NOT_FOUND when unit does not exist', async () => {
       mockPrisma.unitOfMeasure.findFirst.mockResolvedValue(null);
 
-      await expect(
-        caller.unitsOfMeasure.delete({ id: testId('nonexistent') })
-      ).rejects.toThrow('Unit of measure not found');
+      await expect(caller.unitsOfMeasure.delete({ id: testId('nonexistent') })).rejects.toThrow(
+        'Unit of measure not found'
+      );
     });
   });
 });

@@ -13,15 +13,17 @@ const logger = createLogger('token-extractor');
 // Type for Fastify request with cookies plugin
 interface FastifyRequestWithCookies extends FastifyRequest {
   cookies: { [cookieName: string]: string | undefined };
-  unsignCookie: (value: string) => {
-    valid: true;
-    renew: boolean;
-    value: string;
-  } | {
-    valid: false;
-    renew: false;
-    value: null;
-  };
+  unsignCookie: (value: string) =>
+    | {
+        valid: true;
+        renew: boolean;
+        value: string;
+      }
+    | {
+        valid: false;
+        renew: false;
+        value: null;
+      };
 }
 
 /**
@@ -49,14 +51,14 @@ function safeUnsignCookie(
 ): string | undefined {
   try {
     const signedValue = request.cookies[cookieName];
-    
+
     // Handle null, undefined, or empty cookie values
     if (!signedValue || typeof signedValue !== 'string') {
       return undefined;
     }
-    
+
     const unsigned = request.unsignCookie(signedValue);
-    
+
     if (!unsigned.valid || !unsigned.value) {
       logger.warn(
         { cookieName, reason: 'Invalid signature' },
@@ -64,14 +66,11 @@ function safeUnsignCookie(
       );
       return undefined;
     }
-    
+
     return unsigned.value;
   } catch (error) {
     // Log the error but don't throw - return undefined to handle gracefully
-    logger.warn(
-      { error, cookieName },
-      'Failed to unsign cookie'
-    );
+    logger.warn({ error, cookieName }, 'Failed to unsign cookie');
     return undefined;
   }
 }
@@ -79,7 +78,7 @@ function safeUnsignCookie(
 /**
  * Extracts the raw authentication token from the request
  * Prioritizes secure httpOnly cookies over Authorization headers
- * 
+ *
  * @param request - Fastify request object
  * @returns The raw token string or undefined if not found
  */
@@ -91,20 +90,20 @@ export function getRawToken(
   if (cookieToken) {
     return cookieToken;
   }
-  
+
   // Fallback to Authorization header for API clients
   const authHeader = request.headers.authorization;
-  
+
   if (authHeader && typeof authHeader === 'string') {
     // Support both "Bearer" and "bearer" (case-insensitive)
     const bearerMatch = authHeader.match(/^bearer\s+(.+)$/i);
-    
+
     if (bearerMatch && bearerMatch[1]) {
       // Trim any extra whitespace from the token
       return bearerMatch[1].trim();
     }
   }
-  
+
   // No token found in either location
   return undefined;
 }
@@ -112,7 +111,7 @@ export function getRawToken(
 /**
  * Extracts authentication token with detailed metadata
  * Provides information about the source and any errors for debugging
- * 
+ *
  * @param request - Fastify request object
  * @returns Detailed extraction result with token, source, and metadata
  */
@@ -122,16 +121,16 @@ export function extractAuthToken(
   try {
     // Type guard to check if cookies plugin is available
     const hasCookies = 'cookies' in request && 'unsignCookie' in request;
-    
+
     // Try cookie extraction first
     if (hasCookies) {
       const cookieName = COOKIE_NAMES.AUTH_TOKEN;
       const signedValue = (request as FastifyRequestWithCookies).cookies[cookieName];
-      
+
       if (signedValue && typeof signedValue === 'string') {
         try {
           const unsigned = (request as FastifyRequestWithCookies).unsignCookie(signedValue);
-          
+
           if (unsigned.valid && unsigned.value) {
             return {
               token: unsigned.value,
@@ -157,13 +156,13 @@ export function extractAuthToken(
         }
       }
     }
-    
+
     // Try Authorization header
     const authHeader = request.headers.authorization;
-    
+
     if (authHeader && typeof authHeader === 'string') {
       const bearerMatch = authHeader.match(/^(bearer)\s+(.+)$/i);
-      
+
       if (bearerMatch && bearerMatch[2]) {
         return {
           token: bearerMatch[2].trim(),
@@ -174,7 +173,7 @@ export function extractAuthToken(
         };
       }
     }
-    
+
     // No token found
     return {
       source: 'none',

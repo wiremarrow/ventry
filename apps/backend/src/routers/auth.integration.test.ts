@@ -10,35 +10,36 @@ describe('Auth Router Integration', () => {
     const testUsers = await prisma.user.findMany({
       where: {
         email: {
-          contains: 'integration.test'
-        }
-      }
+          contains: 'integration.test',
+        },
+      },
     });
-    
+
     for (const user of testUsers) {
       await prisma.auditLog.deleteMany({ where: { userId: user.id } });
       await prisma.organizationMember.deleteMany({ where: { userId: user.id } });
     }
-    
+
     await prisma.user.deleteMany({
       where: {
         email: {
-          contains: 'integration.test'
-        }
-      }
+          contains: 'integration.test',
+        },
+      },
     });
-    
+
     // Clean up test organizations too (in case previous test failed)
     const testOrgs = await prisma.organization.findMany({
       where: {
         slug: {
-          startsWith: 'test-org'
-        }
-      }
+          startsWith: 'test-org',
+        },
+      },
     });
 
     for (const org of testOrgs) {
       // Delete all related data first
+      await prisma.stockMovement.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.inventory.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.priceHistory.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.item.deleteMany({ where: { organizationId: org.id } });
@@ -49,13 +50,13 @@ describe('Auth Router Integration', () => {
       await prisma.supplier.deleteMany({ where: { organizationId: org.id } });
       await prisma.customer.deleteMany({ where: { organizationId: org.id } });
     }
-    
+
     await prisma.organization.deleteMany({
       where: {
         slug: {
-          startsWith: 'test-org'
-        }
-      }
+          startsWith: 'test-org',
+        },
+      },
     });
   });
 
@@ -64,35 +65,36 @@ describe('Auth Router Integration', () => {
     const testUsers = await prisma.user.findMany({
       where: {
         email: {
-          contains: 'integration.test'
-        }
-      }
+          contains: 'integration.test',
+        },
+      },
     });
-    
+
     for (const user of testUsers) {
       await prisma.auditLog.deleteMany({ where: { userId: user.id } });
       await prisma.organizationMember.deleteMany({ where: { userId: user.id } });
     }
-    
+
     await prisma.user.deleteMany({
       where: {
         email: {
-          contains: 'integration.test'
-        }
-      }
+          contains: 'integration.test',
+        },
+      },
     });
 
     // Clean up test organizations and their dependencies
     const testOrgs = await prisma.organization.findMany({
       where: {
         slug: {
-          startsWith: 'test-org'
-        }
-      }
+          startsWith: 'test-org',
+        },
+      },
     });
 
     for (const org of testOrgs) {
       // Delete all related data first
+      await prisma.stockMovement.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.inventory.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.priceHistory.deleteMany({ where: { item: { organizationId: org.id } } });
       await prisma.item.deleteMany({ where: { organizationId: org.id } });
@@ -103,13 +105,13 @@ describe('Auth Router Integration', () => {
       await prisma.supplier.deleteMany({ where: { organizationId: org.id } });
       await prisma.customer.deleteMany({ where: { organizationId: org.id } });
     }
-    
+
     await prisma.organization.deleteMany({
       where: {
         slug: {
-          startsWith: 'test-org'
-        }
-      }
+          startsWith: 'test-org',
+        },
+      },
     });
   });
 
@@ -139,7 +141,7 @@ describe('Auth Router Integration', () => {
 
       // Verify user was created in database
       const user = await prisma.user.findUnique({
-        where: { email: 'test@integration.test' }
+        where: { email: 'test@integration.test' },
       });
       expect(user).toBeTruthy();
       expect(user?.email).toBe('test@integration.test');
@@ -157,17 +159,19 @@ describe('Auth Router Integration', () => {
           firstName: 'First',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       // Try to create second user with same email
-      await expect(caller.auth.register({
-        email: 'duplicate@integration.test',
-        username: 'user2',
-        firstName: 'Second',
-        lastName: 'User',
-        password: 'password123',
-      })).rejects.toThrow();
+      await expect(
+        caller.auth.register({
+          email: 'duplicate@integration.test',
+          username: 'user2',
+          firstName: 'Second',
+          lastName: 'User',
+          password: 'password123',
+        })
+      ).rejects.toThrow();
     });
   });
 
@@ -181,7 +185,7 @@ describe('Auth Router Integration', () => {
         data: {
           name: 'Test Organization',
           slug: `test-org-${Date.now()}`,
-        }
+        },
       });
 
       // Create test user
@@ -192,7 +196,7 @@ describe('Auth Router Integration', () => {
           firstName: 'Login',
           lastName: 'User',
           password: await hash('password123', 10),
-        }
+        },
       });
 
       // Create organization membership
@@ -201,7 +205,7 @@ describe('Auth Router Integration', () => {
           organizationId: org.id,
           userId: user.id,
           role: 'MEMBER',
-        }
+        },
       });
 
       const result = await caller.auth.login({
@@ -223,7 +227,7 @@ describe('Auth Router Integration', () => {
         data: {
           name: 'Test Organization 2',
           slug: `test-org-2-${Date.now()}`,
-        }
+        },
       });
 
       // Create test user
@@ -234,7 +238,7 @@ describe('Auth Router Integration', () => {
           firstName: 'Wrong',
           lastName: 'Pass',
           password: await hash('correctpassword', 10),
-        }
+        },
       });
 
       // Create organization membership
@@ -243,13 +247,15 @@ describe('Auth Router Integration', () => {
           organizationId: org.id,
           userId: user.id,
           role: 'MEMBER',
-        }
+        },
       });
 
-      await expect(caller.auth.login({
-        email: 'wrongpass@integration.test',
-        password: 'wrongpassword',
-      })).rejects.toThrow('Invalid credentials');
+      await expect(
+        caller.auth.login({
+          email: 'wrongpass@integration.test',
+          password: 'wrongpassword',
+        })
+      ).rejects.toThrow('Invalid credentials');
     });
   });
 });

@@ -11,7 +11,6 @@ async function checkColumnTypes() {
       AND column_name IN ('organization_id', 'id')
     `;
     console.log('Column types:', columns);
-
   } catch (error) {
     console.error('Error checking column types:', error);
   } finally {

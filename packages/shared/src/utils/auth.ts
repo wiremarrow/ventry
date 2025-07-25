@@ -92,7 +92,7 @@ export const getRoleDisplayName = (role: string): string => {
     WAREHOUSE: 'Warehouse Staff',
     SALES: 'Sales Representative',
   };
-  
+
   return roleNames[role as keyof typeof roleNames] || role;
 };
 
@@ -105,6 +105,6 @@ export const getRoleColor = (role: string): string => {
     WAREHOUSE: 'orange',
     SALES: 'teal',
   };
-  
+
   return roleColors[role as keyof typeof roleColors] || 'gray';
 };

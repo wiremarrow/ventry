@@ -18,7 +18,7 @@ const logger = createLogger('server');
 const server = Fastify({
   logger: {
     level: env.LOG_LEVEL,
-    transport: !isProduction 
+    transport: !isProduction
       ? {
           target: 'pino-pretty',
           options: {
@@ -66,13 +66,16 @@ await server.register(fastifyTRPCPlugin, {
     createContext,
     onError({ path, error }) {
       // Log tRPC errors with structured logging
-      logger.error({
-        path,
-        code: error.code,
-        message: error.message,
-        cause: error.cause,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      }, `tRPC Error on path '${path}'`);
+      logger.error(
+        {
+          path,
+          code: error.code,
+          message: error.message,
+          cause: error.cause,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        `tRPC Error on path '${path}'`
+      );
     },
   } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
 });
@@ -101,16 +104,19 @@ const start = async () => {
   try {
     const port = parseInt(env.PORT, 10);
     const host = process.env.HOST || '0.0.0.0';
-    
+
     await server.listen({ port, host });
-    
-    logger.info({
-      port,
-      host,
-      trpcEndpoint: `http://localhost:${port}/trpc`,
-      healthEndpoint: `http://localhost:${port}/health`,
-      environment: env.NODE_ENV,
-    }, `Ventry tRPC Server started successfully`);
+
+    logger.info(
+      {
+        port,
+        host,
+        trpcEndpoint: `http://localhost:${port}/trpc`,
+        healthEndpoint: `http://localhost:${port}/health`,
+        environment: env.NODE_ENV,
+      },
+      `Ventry tRPC Server started successfully`
+    );
   } catch (err) {
     server.log.error(err);
     process.exit(1);

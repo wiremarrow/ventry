@@ -10,36 +10,38 @@ const logger = createLogger('dual-connection');
  */
 export function createTestConnections() {
   // Admin connection URL (defaults to superuser)
-  const adminUrl = process.env.DATABASE_ADMIN_URL || 
+  const adminUrl =
+    process.env.DATABASE_ADMIN_URL ||
     'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_integration_test';
-  
+
   // App connection URL (uses limited role)
-  const appUrl = process.env.DATABASE_URL || 
+  const appUrl =
+    process.env.DATABASE_URL ||
     'postgresql://ventry_app:ventry_app_password@localhost:5487/ventry_integration_test';
-  
+
   logger.debug('Creating dual connections for testing');
-  
+
   const adminPrisma = new PrismaClient({
     datasources: {
-      db: { url: adminUrl }
+      db: { url: adminUrl },
     },
-    log: process.env.DEBUG === 'true' ? ['query', 'warn', 'error'] : ['error']
+    log: process.env.DEBUG === 'true' ? ['query', 'warn', 'error'] : ['error'],
   });
-  
+
   const appPrisma = new PrismaClient({
     datasources: {
-      db: { url: appUrl }
+      db: { url: appUrl },
     },
-    log: process.env.DEBUG === 'true' ? ['query', 'warn', 'error'] : ['error']
+    log: process.env.DEBUG === 'true' ? ['query', 'warn', 'error'] : ['error'],
   });
-  
+
   return {
     adminPrisma,
     appPrisma,
     async cleanup() {
       await adminPrisma.$disconnect();
       await appPrisma.$disconnect();
-    }
+    },
   };
 }
 
@@ -47,13 +49,10 @@ export function createTestConnections() {
  * Helper to run test setup with admin connection and assertions with app connection
  */
 export async function withDualConnections<T>(
-  fn: (connections: { 
-    adminPrisma: PrismaClient; 
-    appPrisma: PrismaClient; 
-  }) => Promise<T>
+  fn: (connections: { adminPrisma: PrismaClient; appPrisma: PrismaClient }) => Promise<T>
 ): Promise<T> {
   const connections = createTestConnections();
-  
+
   try {
     return await fn(connections);
   } finally {

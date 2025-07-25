@@ -9,7 +9,7 @@ test.describe('Warehouses Page', () => {
 
   test('displays warehouses page with correct layout', async ({ page }) => {
     // Check page title and description
-    await expect(page.locator('h1')).toContainText('Warehouses');
+    await expect(page.getByRole('heading', { name: 'Warehouses', level: 1 })).toBeVisible();
     await expect(page.getByText('Manage warehouse locations and storage capacity')).toBeVisible();
 
     // Check action buttons
@@ -63,7 +63,7 @@ test.describe('Warehouses Page', () => {
     await page.getByRole('button', { name: /create warehouse/i }).click();
 
     // Check validation errors appear
-    await expect(page.getByText('Code is required')).toBeVisible();
+    await expect(page.getByText('Code is required', { exact: true })).toBeVisible();
     await expect(page.getByText('Name is required')).toBeVisible();
     await expect(page.getByText('Address is required')).toBeVisible();
     await expect(page.getByText('City is required')).toBeVisible();
@@ -90,7 +90,7 @@ test.describe('Warehouses Page', () => {
 
     // Verify filtered results
     await expect(page.getByText('Searchable Warehouse')).toBeVisible();
-    
+
     // Search for something that doesn't exist
     await page.getByPlaceholder('Search warehouses...').fill('nonexistent');
     await expect(page.getByText('No warehouses found')).toBeVisible();
@@ -111,15 +111,18 @@ test.describe('Warehouses Page', () => {
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
 
-    // Click on the dropdown menu for the warehouse
-    await page.locator('button[aria-label="Open menu"]').first().click();
+    // Find the specific warehouse row and click its menu
+    const warehouseRow = page.locator('tr', { hasText: 'DETAILS-WH-001' });
+    await warehouseRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click view details
     await page.getByText('View Details').click();
 
     // Check details dialog opens
     await expect(page.getByText('Details Test Warehouse')).toBeVisible();
-    await expect(page.getByText('Manage warehouse locations and view performance statistics')).toBeVisible();
+    await expect(
+      page.getByText('Manage warehouse locations and view performance statistics')
+    ).toBeVisible();
 
     // Check tabs are present
     await expect(page.getByText('Overview')).toBeVisible();
@@ -146,8 +149,9 @@ test.describe('Warehouses Page', () => {
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
 
-    // Open warehouse details
-    await page.locator('button[aria-label="Open menu"]').first().click();
+    // Find the specific warehouse row and open its menu
+    const warehouseRow = page.locator('tr', { hasText: 'LOC-WH-001' });
+    await warehouseRow.getByRole('button', { name: 'Open menu' }).click();
     await page.getByText('View Details').click();
 
     // Switch to locations tab
@@ -194,15 +198,18 @@ test.describe('Warehouses Page', () => {
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
 
-    // Click on the dropdown menu for the warehouse
-    await page.locator('button[aria-label="Open menu"]').first().click();
+    // Find the specific warehouse row and click its menu
+    const warehouseRow = page.locator('tr', { hasText: 'EDIT-WH-001' });
+    await warehouseRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click edit
     await page.getByText('Edit').click();
 
     // Check edit dialog opens with pre-filled data
     await expect(page.getByText('Edit Warehouse')).toBeVisible();
-    await expect(page.getByRole('textbox', { name: 'Warehouse Name *' })).toHaveValue('Original Warehouse Name');
+    await expect(page.getByRole('textbox', { name: 'Warehouse Name *' })).toHaveValue(
+      'Original Warehouse Name'
+    );
 
     // Update the name
     await page.getByLabel('Warehouse Name *').fill('Updated Warehouse Name');
@@ -233,8 +240,9 @@ test.describe('Warehouses Page', () => {
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
 
-    // Click on the dropdown menu for the warehouse
-    await page.locator('button[aria-label="Open menu"]').first().click();
+    // Find the specific warehouse row and click its menu
+    const warehouseRow = page.locator('tr', { hasText: 'DELETE-WH-001' });
+    await warehouseRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click delete
     await page.getByText('Delete').click();

@@ -29,16 +29,16 @@ const defaultFilters: PurchaseOrderFilters = {
 
 export const usePurchaseOrderFilters = create<PurchaseOrderFiltersStore>((set) => ({
   filters: defaultFilters,
-  
+
   setFilters: (newFilters) =>
     set((state) => {
       const filters = { ...state.filters, ...newFilters };
-      
+
       // Reset to page 1 when filters change (except page itself)
       if (!('page' in newFilters)) {
         filters.page = 1;
       }
-      
+
       // Calculate active filter count
       let count = 0;
       if (filters.search) count++;
@@ -46,15 +46,15 @@ export const usePurchaseOrderFilters = create<PurchaseOrderFiltersStore>((set) =
       if (filters.status) count++;
       if (filters.dateFrom || filters.dateTo) count++;
       if (filters.isOverdue) count++;
-      
+
       return { filters, activeFilterCount: count };
     }),
-    
+
   resetFilters: () =>
     set({
       filters: defaultFilters,
       activeFilterCount: 0,
     }),
-    
+
   activeFilterCount: 0,
 }));
