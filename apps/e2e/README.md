@@ -1,5 +1,19 @@
 # E2E Testing Guide
 
+## 🚨 IMPORTANT: Run E2E Tests from Repository Root
+
+**E2E tests MUST be run from the repository root directory**, not from the `apps/e2e` directory. This is required for proper environment variable loading and database connectivity.
+
+```bash
+# ✅ CORRECT - Run from repository root
+cd /path/to/ventry
+pnpm --filter @ventry/e2e test
+
+# ❌ WRONG - Do not run from apps/e2e directory
+cd apps/e2e
+pnpm test  # This will fail with DATABASE_URL errors
+```
+
 ## Overview
 
 This directory contains end-to-end tests for the Ventry application using Playwright. The tests are designed with proper isolation to ensure reliability and prevent race conditions.
@@ -98,18 +112,28 @@ test('product creation', async ({ browser }) => {
 
 ### Local Development
 
+**Remember: All commands must be run from the repository root directory!**
+
 ```bash
 # Run all E2E tests
 pnpm test:e2e
+# OR more explicitly:
+pnpm --filter @ventry/e2e test
 
 # Run specific test file
-pnpm test:e2e auth.spec.ts
+pnpm --filter @ventry/e2e test -- tests/auth.spec.ts
 
 # Run in headed mode (see browser)
-pnpm test:e2e --headed
+pnpm --filter @ventry/e2e test -- --headed
 
 # Debug mode
-pnpm test:e2e --debug
+pnpm --filter @ventry/e2e test -- --debug
+
+# Run specific test by name
+pnpm --filter @ventry/e2e test -- --grep "should display products page"
+
+# Run tests on specific browser
+pnpm --filter @ventry/e2e test -- --project=chromium
 ```
 
 ### Prerequisites
@@ -141,13 +165,18 @@ The global setup logs database statistics before and after cleanup:
 
 ### Common Issues
 
-1. **"Required seed user not found"**
+1. **"Environment variable not found: DATABASE_URL"**
+   - **You are running tests from the wrong directory!**
+   - Solution: Run tests from the repository root: `cd /path/to/ventry && pnpm test:e2e`
+   - The `dotenv-cli` in the E2E package requires the `.env` file from the root
+
+2. **"Required seed user not found"**
    - Run `pnpm db:seed` to create seed data
 
-2. **"Database connection failed"**
+3. **"Database connection failed"**
    - Ensure PostgreSQL is running: `./tools/scripts/switch-db.sh start`
 
-3. **"Port already in use"**
+4. **"Port already in use"**
    - Check for running dev servers: `lsof -i :6060` and `lsof -i :6061`
 
 ## Best Practices

@@ -24,14 +24,13 @@ test.describe('Products Page', () => {
     await expect(page.getByRole('combobox').filter({ hasText: 'All Status' })).toBeVisible();
 
     // Check table headers
-    const headerRow = page.locator('table').locator('rowgroup').first().locator('row').first();
-    await expect(headerRow.getByRole('cell', { name: 'Product' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'SKU' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'Category' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'Unit of Measure' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'Price' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'Reorder Point' })).toBeVisible();
-    await expect(headerRow.getByRole('cell', { name: 'Status' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Product' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'SKU' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Category' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Unit of Measure' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Price' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Reorder Point' })).toBeVisible();
+    await expect(page.locator('th').filter({ hasText: 'Status' })).toBeVisible();
   });
 
   test('should show empty state when no products exist', async ({ page }) => {

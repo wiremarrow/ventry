@@ -85,12 +85,17 @@ pnpm --filter @ventry/web test                  # Frontend tests
 
 ### E2E Tests (Playwright)
 
+> **🚨 IMPORTANT**: E2E tests MUST be run from the repository root directory! Running from `apps/e2e` will fail with DATABASE_URL errors.
+
 ```bash
 # Install Playwright browsers (first time only)
 pnpm playwright:install
 
-# Run all E2E tests
+# Run all E2E tests (from repository root)
 pnpm test:e2e
+
+# OR more explicitly:
+pnpm --filter @ventry/e2e test
 
 # Run E2E tests with UI mode (interactive)
 pnpm test:e2e:ui
@@ -99,12 +104,15 @@ pnpm test:e2e:ui
 pnpm test:e2e:debug
 
 # Run specific test file
-pnpm playwright test e2e/tests/auth.spec.ts
+pnpm --filter @ventry/e2e test -- tests/auth.spec.ts
 
 # Run tests for specific browser
-pnpm playwright test --project=chromium
-pnpm playwright test --project=firefox
-pnpm playwright test --project=webkit
+pnpm --filter @ventry/e2e test -- --project=chromium
+pnpm --filter @ventry/e2e test -- --project=firefox
+pnpm --filter @ventry/e2e test -- --project=webkit
+
+# Run specific test by name
+pnpm --filter @ventry/e2e test -- --grep "should display products page"
 
 # Run tests with sharding (like CI)
 pnpm playwright test --project=chromium --shard=1/2
@@ -488,6 +496,19 @@ pnpm test:integration        # Slower integration tests (real database)
 ```
 
 ## E2E Testing Troubleshooting
+
+### DATABASE_URL Not Found Error
+
+If you see this error when running E2E tests:
+```
+PrismaClientInitializationError: error: Environment variable not found: DATABASE_URL
+```
+
+**Solution**: You are running tests from the wrong directory!
+- ✅ Run from repository root: `cd /path/to/ventry && pnpm test:e2e`
+- ❌ Do NOT run from: `cd apps/e2e && pnpm test`
+
+The E2E tests use `dotenv-cli` which needs the `.env` file from the repository root.
 
 ### Cookie Authentication Issues
 

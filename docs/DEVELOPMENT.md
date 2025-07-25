@@ -67,8 +67,8 @@ pnpm --filter @ventry/web dev
 | `pnpm build`            | Build all packages for production                       |
 | `pnpm test`             | Run unit tests with Vitest (excludes integration tests) |
 | `pnpm test:integration` | Run integration tests with PostgreSQL                   |
-| `pnpm test:e2e`         | Run E2E tests with Playwright                           |
-| `pnpm test:e2e:ui`      | Run E2E tests with interactive UI                       |
+| `pnpm test:e2e`         | Run E2E tests with Playwright (MUST run from root!)     |
+| `pnpm test:e2e:ui`      | Run E2E tests with interactive UI (MUST run from root!) |
 | `pnpm lint`             | Run ESLint on all packages                              |
 | `pnpm typecheck`        | Run TypeScript type checking                            |
 | `pnpm format`           | Format code with Prettier                               |

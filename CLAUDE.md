@@ -197,6 +197,48 @@ pnpm format                # Format code
 - **Architecture**: **ESM-only** monorepo with workspace dependencies
 - **Monitoring**: Sentry error tracking + performance
 
+### **🧪 E2E TESTING - MUST RUN FROM ROOT DIRECTORY (CRITICAL)**
+
+**MANDATORY**: E2E tests MUST be run from the repository root directory, not from `apps/e2e/`.
+
+```bash
+# ✅ CORRECT - Run from repository root
+cd /path/to/ventry
+pnpm test:e2e
+# OR
+pnpm --filter @ventry/e2e test
+
+# ❌ WRONG - Will fail with DATABASE_URL errors
+cd apps/e2e
+pnpm test
+```
+
+**Why**: The E2E tests use `dotenv-cli` to load environment variables from the root `.env` file. Running from the `apps/e2e` directory will fail with:
+```
+PrismaClientInitializationError: error: Environment variable not found: DATABASE_URL
+```
+
+**E2E Test Commands**:
+```bash
+# Run all E2E tests
+pnpm test:e2e
+
+# Run specific test file
+pnpm --filter @ventry/e2e test -- tests/products.spec.ts
+
+# Run specific test by name
+pnpm --filter @ventry/e2e test -- --grep "should display products page"
+
+# Run on specific browser
+pnpm --filter @ventry/e2e test -- --project=chromium
+
+# Debug mode
+pnpm test:e2e:debug
+
+# UI mode
+pnpm test:e2e:ui
+```
+
 ### **🔐 DATABASE SECURITY - DUAL USER PATTERN (CRITICAL)**
 
 **MANDATORY**: The system uses TWO PostgreSQL users for security:

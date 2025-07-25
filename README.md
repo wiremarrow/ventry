@@ -81,6 +81,7 @@ ventry/
   - **Unit Tests**: **Vitest** with component testing for all UI components
   - **Integration Tests**: Real PostgreSQL database operations with proper isolation
   - **E2E Tests**: Dedicated `@ventry/e2e` workspace package with Playwright across 3 browsers
+    - **⚠️ IMPORTANT**: E2E tests must be run from the repository root directory using `pnpm test:e2e`
   - **Test Coverage**:
     - ✅ Inventory components and router (100% coverage)
     - ✅ Products/Items components and router (100% coverage)
@@ -512,7 +513,7 @@ pnpm tsx tools/scripts/migrate-to-supabase.ts
 # Run tests (3-tier testing strategy)
 pnpm test                    # Vitest unit tests across all packages
 pnpm test:integration        # PostgreSQL integration tests
-pnpm test:e2e               # Multi-browser E2E tests
+pnpm test:e2e               # Multi-browser E2E tests (MUST run from root directory!)
 
 # Backend-specific testing with coverage
 pnpm test:cov               # Vitest unit tests with coverage thresholds (backend only)
