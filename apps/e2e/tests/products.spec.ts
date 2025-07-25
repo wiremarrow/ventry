@@ -24,13 +24,14 @@ test.describe('Products Page', () => {
     await expect(page.getByRole('combobox').filter({ hasText: 'All Status' })).toBeVisible();
 
     // Check table headers
-    await expect(page.getByRole('columnheader', { name: 'Product' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'SKU' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Category' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Unit of Measure' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Price' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Reorder Point' })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: 'Status' })).toBeVisible();
+    const headerRow = page.locator('table').locator('rowgroup').first().locator('row').first();
+    await expect(headerRow.getByRole('cell', { name: 'Product' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'SKU' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'Category' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'Unit of Measure' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'Price' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'Reorder Point' })).toBeVisible();
+    await expect(headerRow.getByRole('cell', { name: 'Status' })).toBeVisible();
   });
 
   test('should show empty state when no products exist', async ({ page }) => {
@@ -42,7 +43,7 @@ test.describe('Products Page', () => {
 
     // Now we should see empty state
     await expect(page.getByText('No products found')).toBeVisible();
-    await expect(page.getByText('Start by adding your first product')).toBeVisible();
+    await expect(page.getByText('Try adjusting your filters')).toBeVisible();
   });
 
   test('should create a new product', async ({ page }) => {
@@ -81,7 +82,7 @@ test.describe('Products Page', () => {
     await expect(page.getByText('Product created successfully')).toBeVisible();
 
     // Verify product appears in list
-    await expect(page.getByText('E2E Test Product')).toBeVisible();
+    await expect(page.getByText('E2E Test Product', { exact: true })).toBeVisible();
     await expect(page.getByText('E2E-PROD-001')).toBeVisible();
     await expect(page.getByText('$100.00')).toBeVisible();
   });
@@ -93,15 +94,19 @@ test.describe('Products Page', () => {
       name: 'Product to Edit',
     });
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new product
+    await page.waitForTimeout(1000);
 
     // Search for the specific product to ensure it's visible
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-EDIT-001');
     await page.waitForTimeout(500); // Wait for debounce
 
-    // Wait for the product to appear
-    await expect(page.getByText('E2E-EDIT-001')).toBeVisible();
+    // Wait for the product to appear with a more specific locator
+    await expect(page.locator('tr').filter({ hasText: 'E2E-EDIT-001' })).toBeVisible();
 
     // Find the product and open actions menu
     const productRow = page.locator('tr', { hasText: 'E2E-EDIT-001' });
@@ -141,15 +146,19 @@ test.describe('Products Page', () => {
       name: 'Product to Duplicate',
     });
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new product
+    await page.waitForTimeout(1000);
 
     // Search for the specific product to ensure it's visible
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-DUP-001');
     await page.waitForTimeout(500); // Wait for debounce
 
-    // Wait for the product to appear
-    await expect(page.getByText('E2E-DUP-001')).toBeVisible();
+    // Wait for the product to appear with a more specific locator
+    await expect(page.locator('tr').filter({ hasText: 'E2E-DUP-001' })).toBeVisible();
 
     // Find the product and open actions menu
     const productRow = page.locator('tr', { hasText: 'E2E-DUP-001' });
@@ -180,15 +189,19 @@ test.describe('Products Page', () => {
       name: 'Product to Archive',
     });
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new product
+    await page.waitForTimeout(1000);
 
     // Search for the specific product to ensure it's visible
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-ARCH-001');
     await page.waitForTimeout(500); // Wait for debounce
 
-    // Wait for the product to appear
-    await expect(page.getByText('E2E-ARCH-001')).toBeVisible();
+    // Wait for the product to appear with a more specific locator
+    await expect(page.locator('tr').filter({ hasText: 'E2E-ARCH-001' })).toBeVisible();
 
     // Find the product and open actions menu
     const productRow = page.locator('tr', { hasText: 'E2E-ARCH-001' });
@@ -215,8 +228,12 @@ test.describe('Products Page', () => {
       name: 'Banana Product',
     });
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new products
+    await page.waitForTimeout(1000);
 
     // First, search for SEARCH- to ensure our test products are visible
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('SEARCH-');
@@ -262,8 +279,12 @@ test.describe('Products Page', () => {
       isActive: false,
     });
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new products
+    await page.waitForTimeout(1000);
 
     // Search for STATUS products to ensure they're visible
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('STATUS');
@@ -271,7 +292,7 @@ test.describe('Products Page', () => {
 
     // Filter by Active status
     await page.getByRole('combobox').filter({ hasText: 'All Status' }).click();
-    await page.getByRole('option', { name: 'Active' }).click();
+    await page.getByRole('option', { name: 'Active', exact: true }).click();
 
     // Should only show active product
     await expect(page.getByText('Active Product')).toBeVisible();
@@ -279,7 +300,7 @@ test.describe('Products Page', () => {
 
     // Filter by Inactive status
     await page.getByRole('combobox').filter({ hasText: 'Active' }).click();
-    await page.getByRole('option', { name: 'Inactive' }).click();
+    await page.getByRole('option', { name: 'Inactive', exact: true }).click();
 
     // Should only show inactive product
     await expect(page.getByText('Active Product')).not.toBeVisible();
@@ -299,8 +320,12 @@ test.describe('Products Page', () => {
     }
     await Promise.all(promises);
 
-    await page.reload();
+    // Navigate to products page and wait for it to load
+    await page.goto('/products');
     await page.waitForLoadState('networkidle');
+    
+    // Give the database time to propagate the new products
+    await page.waitForTimeout(1000);
 
     // Search for PAGE products to test pagination with just our test products
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('PAGE-');

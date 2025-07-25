@@ -39,6 +39,8 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('123 Test Street');
     await page.getByLabel('City *').fill('Test City');
     await page.getByLabel('State/Province *').fill('TC');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('12345');
     await page.getByLabel('Phone').fill('+1-555-0123');
     await page.getByLabel('Notes').fill('Created via E2E test');
@@ -46,7 +48,10 @@ test.describe('Warehouses Page', () => {
     // Submit form
     await page.getByRole('button', { name: /create warehouse/i }).click();
 
-    // Wait for success and dialog to close
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
+
+    // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
 
     // Verify warehouse appears in list
@@ -79,8 +84,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('456 Search Ave');
     await page.getByLabel('City *').fill('Search City');
     await page.getByLabel('State/Province *').fill('SC');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('54321');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
@@ -105,8 +115,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('789 Details Blvd');
     await page.getByLabel('City *').fill('Details City');
     await page.getByLabel('State/Province *').fill('DC');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('78901');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
@@ -143,8 +158,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('321 Location Lane');
     await page.getByLabel('City *').fill('Location City');
     await page.getByLabel('State/Province *').fill('LC');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('32100');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
@@ -192,8 +212,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('Original Address');
     await page.getByLabel('City *').fill('Original City');
     await page.getByLabel('State/Province *').fill('OC');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('11111');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
@@ -234,8 +259,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('Delete Me Street');
     await page.getByLabel('City *').fill('Delete City');
     await page.getByLabel('State/Province *').fill('DL');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('99999');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
@@ -264,8 +294,13 @@ test.describe('Warehouses Page', () => {
     await page.getByLabel('Address Line 1 *').fill('Stats Street');
     await page.getByLabel('City *').fill('Stats City');
     await page.getByLabel('State/Province *').fill('ST');
+    await page.getByLabel('Country *').clear();
+    await page.getByLabel('Country *').fill('USA');
     await page.getByLabel('Postal Code *').fill('55555');
     await page.getByRole('button', { name: /create warehouse/i }).click();
+
+    // Wait for success toast
+    await expect(page.getByText('Warehouse created successfully')).toBeVisible();
 
     // Wait for dialog to close and page to update
     await expect(page.getByText('Add New Warehouse')).not.toBeVisible();
