@@ -11,6 +11,7 @@ import { createContext } from './trpc/context.js';
 import { appRouter, type AppRouter } from './routers/app.js';
 import { env, isProduction } from './config/env.js';
 import { createLogger } from './lib/logger.js';
+import { prisma } from '@ventry/database';
 
 const logger = createLogger('server');
 
@@ -124,12 +125,29 @@ const start = async () => {
 };
 
 // Handle graceful shutdown
-const signals = ['SIGINT', 'SIGTERM'];
+const signals = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+let isShuttingDown = false;
+
 signals.forEach((signal) => {
   process.on(signal, async () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    
     logger.info({ signal }, 'Shutdown signal received, closing server gracefully');
-    await server.close();
-    process.exit(0);
+    
+    try {
+      // Close the server to stop accepting new connections
+      await server.close();
+      
+      // Close database connections
+      await prisma.$disconnect();
+      
+      logger.info('Server shutdown complete');
+      process.exit(0);
+    } catch (error) {
+      logger.error({ error }, 'Error during shutdown');
+      process.exit(1);
+    }
   });
 });
 

@@ -134,6 +134,26 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Updated permissions** - activate/deactivate now use organizationAdminProcedure
   - **Enhanced frontend** - shows organization-specific user counts and permissions
   - **Proper tenant isolation** - all user queries now respect organization boundaries
+
+✅ **Process Management & Testing Documentation COMPLETE** - Signal Handling and E2E Improvements (2025-01-26)
+
+- **Process Management Scripts**:
+  - **kill-ports.sh**: Kill processes on specific ports with graceful shutdown
+  - **cleanup-dev.sh**: Complete cleanup script for all dev processes and ports
+  - **dev-wrapper.js**: Process wrapper ensuring proper signal handling for dev commands
+- **E2E Test Improvements**:
+  - **Direct E2E commands**: Added `test:e2e:direct`, `test:e2e:ui:direct`, `test:e2e:debug:direct` that bypass Turborepo for better Ctrl+C handling
+  - **Signal propagation fix**: Resolved issue where Ctrl+C didn't stop E2E tests and servers
+  - **No orphaned processes**: Confirmed clean shutdown with new commands
+- **Comprehensive Documentation**:
+  - **Testing Guide in README**: Complete explanation of all test commands and when to use them
+  - **SKIP_WEBSERVER explained**: Clear documentation on why it's needed and how it works
+  - **E2E modes explained**: Difference between headless and UI mode testing
+  - **Process Management Guide**: Created DEVELOPMENT_PROCESS_MANAGEMENT.md with troubleshooting steps
+- **Developer Experience**:
+  - **Better signal handling**: No more stuck processes after Ctrl+C
+  - **Clear command purpose**: Each test command documented with its use case
+  - **Quick recovery**: `pnpm dev:cleanup` for when things go wrong
 - **E2E Test Enhancements**:
   - **Created comprehensive RLS isolation tests** verifying multi-tenant data security across all pages
   - **Fixed React hydration issue** with `waitForLoadState('networkidle')` and keyboard navigation

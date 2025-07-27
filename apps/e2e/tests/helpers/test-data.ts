@@ -13,10 +13,12 @@ export async function createTestItem(data: {
   defaultPrice?: number;
   reorderPoint?: number;
 }) {
-  // Get the first organization (assuming test setup creates one)
-  const organization = await prisma.organization.findFirst();
+  // Get the Ventry Corporation organization where admin user belongs
+  const organization = await prisma.organization.findFirst({
+    where: { name: 'Ventry Corporation' }
+  });
   if (!organization) {
-    throw new Error('No organization found for testing');
+    throw new Error('Ventry Corporation organization not found for testing');
   }
 
   // Get or create category
@@ -88,9 +90,11 @@ export async function deleteTestItems() {
 }
 
 export async function createTestSupplier(data: { code: string; name: string }) {
-  const organization = await prisma.organization.findFirst();
+  const organization = await prisma.organization.findFirst({
+    where: { name: 'Ventry Corporation' }
+  });
   if (!organization) {
-    throw new Error('No organization found for testing');
+    throw new Error('Ventry Corporation organization not found for testing');
   }
 
   return await prisma.supplier.create({
@@ -108,9 +112,11 @@ export async function createTestSupplier(data: { code: string; name: string }) {
 }
 
 export async function createTestWarehouse(data: { code: string; name: string }) {
-  const organization = await prisma.organization.findFirst();
+  const organization = await prisma.organization.findFirst({
+    where: { name: 'Ventry Corporation' }
+  });
   if (!organization) {
-    throw new Error('No organization found for testing');
+    throw new Error('Ventry Corporation organization not found for testing');
   }
 
   return await prisma.warehouse.create({

@@ -40,6 +40,11 @@ async function login(page: Page, email: string, password: string) {
 
   // Wait for page to be fully loaded
   await page.waitForLoadState('networkidle');
+  
+  // CRITICAL: On some browsers (especially Mobile Safari), there can be delayed
+  // navigation events after login. This additional wait ensures all redirects
+  // are complete before tests proceed with their own navigation.
+  await page.waitForTimeout(1000);
 }
 
 export async function logout(page: Page) {

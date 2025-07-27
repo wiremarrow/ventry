@@ -106,6 +106,20 @@ export function StockAdjustmentDialog({
       adjustedQuantity = data.quantity - inventory.qtyOnHand;
     }
 
+    // For COUNT adjustment type, use absolute value
+    if (data.adjustmentType === 'COUNT') {
+      adjustedQuantity = data.quantity;
+    } else {
+      // For other types, apply the adjustment based on type
+      if (data.type === 'ADD') {
+        adjustedQuantity = data.quantity;
+      } else if (data.type === 'REMOVE') {
+        adjustedQuantity = -data.quantity;
+      } else if (data.type === 'SET') {
+        adjustedQuantity = data.quantity - inventory.qtyOnHand;
+      }
+    }
+
     adjustMutation.mutate({
       inventoryId: inventory.id,
       qty: adjustedQuantity,

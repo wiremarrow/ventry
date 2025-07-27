@@ -83,31 +83,33 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: [
-    {
-      command: 'pnpm --filter @ventry/backend dev',
-      url: 'http://localhost:6060/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-      env: {
-        PORT: '6060',
-        DATABASE_URL:
-          process.env.DATABASE_URL ||
-          'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev',
-        JWT_SECRET: 'test-jwt-secret-key-for-e2e-tests-minimum-32-chars',
-        NODE_ENV: 'test',
-        COOKIE_SECRET: 'test-cookie-secret-key-for-e2e-tests-minimum-32-chars',
-      },
-    },
-    {
-      command: 'pnpm --filter web dev',
-      // Wait for frontend health endpoint which also checks backend connectivity
-      url: 'http://localhost:6061/api/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120 * 1000,
-      env: {
-        NEXT_PUBLIC_API_URL: '/api/trpc',
-      },
-    },
-  ],
+  webServer: process.env.SKIP_WEBSERVER
+    ? undefined
+    : [
+        {
+          command: 'pnpm --filter @ventry/backend dev',
+          url: 'http://localhost:6060/health',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+          env: {
+            PORT: '6060',
+            DATABASE_URL:
+              process.env.DATABASE_URL ||
+              'postgresql://ventry:ventry_dev_password@localhost:5487/ventry_dev',
+            JWT_SECRET: 'test-jwt-secret-key-for-e2e-tests-minimum-32-chars',
+            NODE_ENV: 'test',
+            COOKIE_SECRET: 'test-cookie-secret-key-for-e2e-tests-minimum-32-chars',
+          },
+        },
+        {
+          command: 'pnpm --filter web dev',
+          // Wait for frontend health endpoint which also checks backend connectivity
+          url: 'http://localhost:6061/api/health',
+          reuseExistingServer: !process.env.CI,
+          timeout: 120 * 1000,
+          env: {
+            NEXT_PUBLIC_API_URL: '/api/trpc',
+          },
+        },
+      ],
 });

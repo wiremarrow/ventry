@@ -5,8 +5,24 @@ import { createTestItem, deleteTestItems } from './helpers/test-data';
 test.describe('Products Page', () => {
   test.beforeEach(async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    
+    // Navigate to products with retry for Mobile Safari navigation interruptions
+    await test.step('Navigate to products', async () => {
+      let retries = 3;
+      while (retries > 0) {
+        try {
+          await page.goto('/products', { waitUntil: 'networkidle' });
+          break;
+        } catch (error) {
+          if (retries === 1 || !error.message?.includes('interrupted')) {
+            throw error;
+          }
+          // Wait a bit longer for any pending navigations to complete
+          await page.waitForTimeout(1500);
+          retries--;
+        }
+      }
+    });
   });
 
   test.afterEach(async () => {
@@ -93,22 +109,37 @@ test.describe('Products Page', () => {
       name: 'Product to Edit',
     });
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new product
+    // Wait a bit for the page to fully render
     await page.waitForTimeout(1000);
 
-    // Search for the specific product to ensure it's visible
-    await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-EDIT-001');
-    await page.waitForTimeout(500); // Wait for debounce
+    // Clear any existing search and wait for the list to refresh
+    const searchInput = page.getByPlaceholder('Search by SKU, name, or barcode...');
+    await searchInput.clear();
+    await page.waitForTimeout(500);
+    
+    // Now search for the specific product
+    await searchInput.fill('E2E-EDIT-001');
+    await page.waitForTimeout(1000); // Wait longer for search results
 
-    // Wait for the product to appear with a more specific locator
-    await expect(page.locator('tr').filter({ hasText: 'E2E-EDIT-001' })).toBeVisible();
+    // Wait for the product to appear - check for the row or empty state
+    const productRow = page.locator('tr').filter({ hasText: 'E2E-EDIT-001' });
+    const emptyState = page.getByText('No products found');
+    
+    // If empty state is visible, refresh the page and try again
+    if (await emptyState.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await page.reload({ waitUntil: 'networkidle' });
+      await searchInput.clear();
+      await searchInput.fill('E2E-EDIT-001');
+      await page.waitForTimeout(1000);
+    }
+    
+    // Now wait for the product to appear
+    await expect(productRow).toBeVisible({ timeout: 10000 });
 
-    // Find the product and open actions menu
-    const productRow = page.locator('tr', { hasText: 'E2E-EDIT-001' });
+    // Use the already found product row to open actions menu
     await productRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click Edit
@@ -145,22 +176,26 @@ test.describe('Products Page', () => {
       name: 'Product to Duplicate',
     });
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new product
+    // Wait a bit for the page to fully render
     await page.waitForTimeout(1000);
 
-    // Search for the specific product to ensure it's visible
-    await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-DUP-001');
-    await page.waitForTimeout(500); // Wait for debounce
+    // Clear any existing search and wait for the list to refresh
+    const searchInput = page.getByPlaceholder('Search by SKU, name, or barcode...');
+    await searchInput.clear();
+    await page.waitForTimeout(500);
+    
+    // Now search for the specific product
+    await searchInput.fill('E2E-DUP-001');
+    await page.waitForTimeout(1000); // Wait longer for search results
 
-    // Wait for the product to appear with a more specific locator
-    await expect(page.locator('tr').filter({ hasText: 'E2E-DUP-001' })).toBeVisible();
+    // Wait for the product to appear
+    const productRow = page.locator('tr').filter({ hasText: 'E2E-DUP-001' });
+    await expect(productRow).toBeVisible({ timeout: 10000 });
 
-    // Find the product and open actions menu
-    const productRow = page.locator('tr', { hasText: 'E2E-DUP-001' });
+    // Use the already found product row to open actions menu
     await productRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click Duplicate
@@ -188,22 +223,26 @@ test.describe('Products Page', () => {
       name: 'Product to Archive',
     });
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new product
+    // Wait a bit for the page to fully render
     await page.waitForTimeout(1000);
 
-    // Search for the specific product to ensure it's visible
-    await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('E2E-ARCH-001');
-    await page.waitForTimeout(500); // Wait for debounce
+    // Clear any existing search and wait for the list to refresh
+    const searchInput = page.getByPlaceholder('Search by SKU, name, or barcode...');
+    await searchInput.clear();
+    await page.waitForTimeout(500);
+    
+    // Now search for the specific product
+    await searchInput.fill('E2E-ARCH-001');
+    await page.waitForTimeout(1000); // Wait longer for search results
 
-    // Wait for the product to appear with a more specific locator
-    await expect(page.locator('tr').filter({ hasText: 'E2E-ARCH-001' })).toBeVisible();
+    // Wait for the product to appear
+    const productRow = page.locator('tr').filter({ hasText: 'E2E-ARCH-001' });
+    await expect(productRow).toBeVisible({ timeout: 10000 });
 
-    // Find the product and open actions menu
-    const productRow = page.locator('tr', { hasText: 'E2E-ARCH-001' });
+    // Use the already found product row to open actions menu
     await productRow.getByRole('button', { name: 'Open menu' }).click();
 
     // Click Archive
@@ -227,11 +266,10 @@ test.describe('Products Page', () => {
       name: 'Banana Product',
     });
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new products
+    // Wait a bit for the page to fully render
     await page.waitForTimeout(1000);
 
     // First, search for SEARCH- to ensure our test products are visible
@@ -278,11 +316,10 @@ test.describe('Products Page', () => {
       isActive: false,
     });
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new products
+    // Wait a bit for the page to fully render
     await page.waitForTimeout(1000);
 
     // Search for STATUS products to ensure they're visible
@@ -319,12 +356,11 @@ test.describe('Products Page', () => {
     }
     await Promise.all(promises);
 
-    // Navigate to products page and wait for it to load
-    await page.goto('/products');
-    await page.waitForLoadState('networkidle');
+    // Navigate to products page with fresh load
+    await page.goto('/products', { waitUntil: 'networkidle' });
     
-    // Give the database time to propagate the new products
-    await page.waitForTimeout(1000);
+    // Wait a bit for the page to fully render
+    await page.waitForTimeout(2000); // Wait longer for bulk insert
 
     // Search for PAGE products to test pagination with just our test products
     await page.getByPlaceholder('Search by SKU, name, or barcode...').fill('PAGE-');
@@ -332,16 +368,23 @@ test.describe('Products Page', () => {
 
     // Should show pagination controls for our 25 test products
     await expect(page.getByText(/Showing 1 to 20 of 25 products/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
-    await expect(page.getByRole('button', { name: 'Previous' })).toBeDisabled();
+    
+    // Find pagination buttons more reliably
+    const nextButton = page.getByRole('button').filter({ hasText: 'Next' });
+    const prevButton = page.getByRole('button').filter({ hasText: 'Previous' });
+    
+    await expect(nextButton).toBeEnabled();
+    await expect(prevButton).toBeDisabled();
 
     // Go to next page
-    await page.getByRole('button', { name: 'Next' }).click();
+    await nextButton.click();
 
     // Should show remaining products
     await expect(page.getByText(/Showing 21 to 25 of 25 products/)).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Next' })).toBeDisabled();
-    await expect(page.getByRole('button', { name: 'Previous' })).toBeEnabled();
+    
+    // Check button states on page 2
+    await expect(nextButton).toBeDisabled();
+    await expect(prevButton).toBeEnabled();
   });
 
   test('should validate required fields in create form', async ({ page }) => {
@@ -360,9 +403,10 @@ test.describe('Products Page', () => {
   });
 
   test('should handle SKU uniqueness validation', async ({ page }) => {
-    // Create a product with specific SKU
+    // Create a product with specific SKU using timestamp to ensure uniqueness
+    const uniqueSku = `UNIQUE-${Date.now()}`;
     await createTestItem({
-      sku: 'UNIQUE-001',
+      sku: uniqueSku,
       name: 'Existing Product',
     });
 
@@ -372,7 +416,7 @@ test.describe('Products Page', () => {
     // Try to create another product with same SKU
     await page.getByRole('button', { name: 'Add Product' }).click();
 
-    await page.getByLabel('SKU *').fill('UNIQUE-001');
+    await page.getByLabel('SKU *').fill(uniqueSku);
     await page.getByLabel('Product Name *').fill('Duplicate SKU Product');
 
     // Select category and unit
