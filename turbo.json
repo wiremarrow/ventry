@@ -10,15 +10,14 @@
     },
     "dev": {
       "dependsOn": ["^db:generate"],
-      "cache": false,
-      "persistent": true
+      "cache": false
     },
     "test": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
     },
-    "test:fast": {
+    "test:watch": {
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"],
       "cache": false

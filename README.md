@@ -510,21 +510,103 @@ pnpm dev
 # Run data migration from existing schema
 pnpm tsx tools/scripts/migrate-to-supabase.ts
 
-# Run tests (3-tier testing strategy)
-pnpm test                    # Vitest unit tests across all packages
-pnpm test:integration        # PostgreSQL integration tests
-pnpm test:e2e               # Multi-browser E2E tests (MUST run from root directory!)
-
-# Backend-specific testing with coverage
-pnpm test:cov               # Vitest unit tests with coverage thresholds (backend only)
-# OR: pnpm --filter @ventry/backend test:cov
-
-# Run all tests for CI
-pnpm lint                   # ESLint validation
-pnpm typecheck             # TypeScript strict mode validation
-
 # Build for production
 pnpm build
+```
+
+## 🧪 Testing Guide
+
+### Understanding Our Testing Strategy
+
+We have three types of tests:
+1. **Unit Tests** - Test individual functions/components in isolation (mocked dependencies)
+2. **Integration Tests** - Test with real database connections
+3. **E2E Tests** - Test the full application through a browser (requires running servers)
+
+### Understanding SKIP_WEBSERVER
+
+**What is SKIP_WEBSERVER?**
+- Environment variable that prevents E2E tests from automatically starting backend and frontend servers
+- When `SKIP_WEBSERVER=true`, the E2E Playwright configuration skips the `webServer` section
+
+**Usage:**
+- Set this variable when you already have servers running and want to run E2E tests against them
+- Not typically needed for standard development workflow
+
+**How it works:**
+```bash
+# In playwright.config.ts
+webServer: process.env.SKIP_WEBSERVER ? undefined : [/* server configs */]
+```
+
+### Testing Commands Explained
+
+#### Test Commands
+
+```bash
+# Unit and integration tests (excludes E2E)
+pnpm test
+
+# Unit tests only
+pnpm test:unit
+
+# Run tests in watch mode
+pnpm test:watch
+
+# Integration tests with real database
+pnpm test:integration
+
+# E2E tests (starts servers automatically)
+pnpm test:e2e
+
+# E2E tests with Playwright UI
+pnpm test:e2e:ui
+
+# E2E tests in debug mode
+pnpm test:e2e:debug
+
+# All tests including E2E
+pnpm test:all
+
+# Tests with coverage report
+pnpm test:cov
+```
+
+### E2E Testing Modes
+
+- **`test:e2e`** - Headless browser testing
+  - Fast execution for CI/CD
+  - Terminal output only
+  - Best for automated testing
+
+- **`test:e2e:ui`** - Interactive UI mode
+  - Visual test execution
+  - Click to run specific tests
+  - Time travel debugging
+  - Best for debugging
+
+- **`test:e2e:debug`** - Debug mode
+  - Step through tests with debugger
+  - Inspect browser state
+  - Best for complex issues
+
+### Development Workflow
+
+```bash
+# Quick feedback during development
+pnpm test:watch
+
+# Before committing
+pnpm test && pnpm test:e2e
+
+# Debugging failing tests
+pnpm test:e2e:ui
+
+# Full test suite
+pnpm test:all
+
+# Clean up stuck processes
+pnpm dev:cleanup
 ```
 
 ### Environment Variable Configuration
@@ -703,7 +785,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
   - **Field Name Fixes**: Corrected receipt table field names (poId, reference) in verification tool
   - **Documentation**: Updated CLAUDE.md seed command names to match actual scripts
 - ✅ **UI Bug Fixes (2025-07-23)**: Fixed frontend display issues
-  - **Categories Page**: Fixed limit validation error (changed from 1000 to 100 to comply with backend)
+  - **Categories Page**: Limit validation aligns with backend constraints
   - **Stock Movements**: Fixed double minus sign display for outbound quantities (removed redundant minus)
 - ✅ **ESLint Type Safety Improvements (2025-07-15)**: Fixed `any` type warnings in production code
   - **Page Components**: Fixed type inference for customer, organization member, and warehouse types
@@ -1021,11 +1103,28 @@ Our unified CI/CD pipeline enforces rigorous quality standards through multiple 
 ```bash
 # Development
 pnpm dev           # Start all services
+pnpm dev:cleanup   # Kill all dev processes and free ports
 pnpm build         # Build all packages
-pnpm test          # Run all tests
-pnpm test:cov      # Backend tests with coverage
 pnpm lint          # Check code quality
 pnpm typecheck     # Type checking
+
+# Testing Commands - Complete Reference
+# =====================================
+
+# Quick Testing Commands
+pnpm test          # Run unit & integration tests (excludes E2E) - fast feedback
+pnpm test:all      # Run ALL tests including E2E (with SKIP_WEBSERVER=true)
+pnpm test:e2e      # Run E2E tests with auto-started servers
+
+# Direct E2E Commands (Better Signal Handling)
+pnpm test:e2e:direct       # Run E2E tests directly - better Ctrl+C handling
+pnpm test:e2e:ui:direct    # Run E2E tests in UI mode - interactive browser
+pnpm test:e2e:debug:direct # Debug E2E tests - step through with debugger
+
+# Specialized Testing
+pnpm test:integration      # Run integration tests (real database)
+pnpm test:cov             # Backend tests with coverage report
+pnpm test:fast            # Fast unit tests (no build step)
 
 # Database (all use db-admin.sh for admin privileges)
 pnpm db:push       # Push schema changes

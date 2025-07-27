@@ -83,22 +83,24 @@ These checks **MUST** pass for every PR. **NO EXCEPTIONS**.
 # MANDATORY: All must pass
 pnpm lint                    # ESLint validation
 pnpm typecheck              # TypeScript strict mode
-pnpm test                    # All tests via Turbo (includes unit + integration)
-pnpm test:integration        # PostgreSQL integration tests
+pnpm test                    # Unit + integration tests (excludes E2E)
 pnpm test:e2e               # E2E tests (all browsers)
 pnpm build                  # Production build
 
-# Backend-specific commands (run from /apps/backend or use filter)
-pnpm test:cov               # Vitest unit tests with coverage thresholds
-pnpm test:integration       # Integration tests with PostgreSQL
-# OR: pnpm --filter @ventry/backend test:cov
-# OR: pnpm --filter @ventry/backend test:integration
-
-# Additional test commands
-pnpm test:unit              # Unit tests only (excludes e2e)
-pnpm test:unit:fast         # Fast unit tests
+# Test commands
+pnpm test                    # Unit + integration tests (fast)
+pnpm test:unit              # Unit tests only
+pnpm test:watch             # Tests in watch mode
+pnpm test:integration       # PostgreSQL integration tests
+pnpm test:e2e               # E2E tests with server startup
 pnpm test:e2e:ui            # Playwright UI mode
 pnpm test:e2e:debug         # Playwright debug mode
+pnpm test:all               # All tests including E2E
+pnpm test:cov               # Tests with coverage report
+
+# Backend-specific commands (run from /apps/backend or use filter)
+pnpm --filter @ventry/backend test:cov          # Backend coverage
+pnpm --filter @ventry/backend test:integration  # Backend integration tests
 ```
 
 ### **Database Testing Requirements**
@@ -238,6 +240,41 @@ pnpm test:e2e:debug
 # UI mode
 pnpm test:e2e:ui
 ```
+
+### **⚠️ MONOREPO TEST EXECUTION**
+
+**Test Command Structure:**
+
+```bash
+# Root package.json
+"test": "turbo test --filter='!@ventry/e2e'"      # Fast feedback (no E2E)
+"test:all": "turbo test"                          # Everything including E2E
+"test:e2e": "pnpm --filter @ventry/e2e test"      # Direct E2E execution
+```
+
+**Key Points:**
+- `pnpm test` excludes E2E for fast feedback
+- `pnpm test:all` runs everything with automatic server startup
+- E2E tests start backend (port 6060) and web (port 6061) automatically
+- Use SKIP_WEBSERVER=true if servers are already running
+
+**2. Vitest Run vs Watch Mode**
+
+All test scripts use `vitest run` instead of `vitest`:
+
+```bash
+# Correct for CI/monorepo
+"test": "vitest run"
+
+# Only for development
+"test:watch": "vitest"
+```
+
+**Why This Is Required:**
+- `vitest` (without run) starts in watch mode and never exits
+- `pnpm test` in monorepo needs all tests to complete and exit
+- CI/CD pipelines require exit codes to determine success/failure
+- Watch mode would cause the test command to hang indefinitely
 
 ### **🔐 DATABASE SECURITY - DUAL USER PATTERN (CRITICAL)**
 
