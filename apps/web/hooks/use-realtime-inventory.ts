@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 // TODO: Re-enable when Supabase migration is complete
 // import { createClient } from '../src/lib/supabase/client';
 import { trpc } from '@/lib/trpc';
@@ -9,7 +8,7 @@ export function useRealtimeInventory(locationId?: string) {
   // const [channel, setChannel] = useState<RealtimeChannel | null>(null);
 
   // Get initial data via tRPC
-  const { data: inventory, refetch } = trpc.inventory.list.useQuery(
+  const { data: inventory } = trpc.inventory.list.useQuery(
     { locationId },
     { enabled: !!locationId }
   );

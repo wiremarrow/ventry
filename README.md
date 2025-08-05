@@ -87,6 +87,11 @@ ventry/
     - ✅ Products/Items components and router (100% coverage)
     - ✅ Auth flow and organization context
     - ✅ RLS isolation tests ensuring multi-tenant data security
+    - ✅ Categories page (9 tests) - Tree view, CRUD operations, hierarchy management
+    - ✅ Locations page (12 tests) - Warehouse locations, filtering, capacity tracking
+    - ✅ Movements page (11 tests) - Stock movements, statistics, filtering
+    - ✅ Suppliers page (10 tests) - Supplier management, search, status updates
+    - ✅ Customers page (11 tests) - Customer CRUD, search, navigation
   - **E2E Architecture**: Enterprise-grade test isolation with dotenv-cli for environment management
   - **E2E Features**:
     - Multi-organization RLS isolation verification across all browsers
@@ -816,7 +821,7 @@ See `docs/DEVELOPMENT.md` for detailed troubleshooting and configuration informa
 - **Testing**: Production-ready 3-tier testing strategy validated:
   - **Unit Tests**: 253 tests across 18 test suites with strict coverage requirements
   - **Integration Tests**: 20 tests with real PostgreSQL database operations and proper isolation
-  - **E2E Tests**: 135 tests across 3 browsers (Chromium, Firefox, WebKit) with sharding
+  - **E2E Tests**: 188 tests across 3 browsers (Chromium, Firefox, WebKit) with sharding
   - **E2E Reliability**: Fixed critical authentication error handling and Playwright strict mode violations
   - **E2E Test Fixes (2025-01-25)**: Resolved timing issues, dialog selectors, and multi-org data isolation
 - **CI/CD**: Enterprise-grade pipeline with 12 mandatory status checks ready for production

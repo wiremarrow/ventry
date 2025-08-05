@@ -197,6 +197,20 @@ This TODO outlines the complete implementation roadmap for Ventry, an AI-native 
   - **Test Infrastructure**: Professional-grade mocking, database cleanup, and environment isolation
   - **Browser Compatibility**: Cross-browser testing with reliable error state management
   - **tRPC Testing**: Direct caller pattern for testing tRPC procedures with type safety
+
+✅ **E2E Test Expansion Complete** - 53 Additional Tests Across 5 Key Pages (2025-08-05)
+
+- **E2E Tests**: 188 tests total (increased from 135)
+- **New Test Suites Added**:
+  - **Categories Page** (9 tests) - Tree view navigation, CRUD operations, hierarchy management
+  - **Locations Page** (12 tests) - Warehouse location management, filtering, capacity tracking
+  - **Movements Page** (11 tests) - Stock movement tracking, statistics, filtering
+  - **Suppliers Page** (10 tests) - Supplier CRUD, search functionality, status updates
+  - **Customers Page** (11 tests) - Customer management, business vs individual, search
+- **Known Issues Identified**:
+  - **Backend Validation**: Movement creation fails due to fromLocationId expecting CUID even when disabled
+  - **Tree View UI**: Categories page uses tree structure instead of table format
+  - **Test Stability**: All tests created with proper retry patterns for Mobile Safari
 - **Code Quality**: ESLint 9 + TypeScript ESLint v8 compatibility resolved
 - **CI/CD Pipeline**: 13 mandatory status checks validated and production-ready
 - **Technical Issues Resolved**: Turbopack compatibility, environment variable loading, Tailwind CSS v4 configuration
