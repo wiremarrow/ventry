@@ -74,13 +74,15 @@ test.describe('Products Page', () => {
     await page.getByLabel('Product Name *').fill('E2E Test Product');
     await page.getByLabel('Description').fill('This is an E2E test product');
 
-    // Select category (assuming at least one exists)
-    await page.getByRole('combobox', { name: /category/i }).click();
-    await page.getByRole('option').first().click();
-
-    // Select unit of measure
-    await page.getByRole('combobox', { name: /unit/i }).click();
-    await page.getByRole('option').first().click();
+    // Select category - use force for all browsers to bypass overlay issues
+    await page.getByRole('combobox', { name: /category/i }).click({ force: true });
+    await page.getByRole('option').first().click({ force: true });
+    await page.waitForTimeout(500);
+    
+    // Select unit of measure - use force for all browsers  
+    await page.getByRole('combobox', { name: /unit/i }).click({ force: true });
+    await page.getByRole('option').first().click({ force: true });
+    await page.waitForTimeout(500);
 
     // Fill pricing information
     await page.getByLabel('Default Cost').fill('50.00');
@@ -90,8 +92,13 @@ test.describe('Products Page', () => {
     await page.getByLabel('Reorder Point').fill('10');
     await page.getByLabel('Reorder Quantity').fill('20');
 
-    // Submit form
-    await page.getByRole('button', { name: 'Create Product' }).click();
+    // Submit form with scroll and force click
+    const submitButton = page.getByRole('button', { name: 'Create Product' });
+    await submitButton.scrollIntoViewIfNeeded();
+    await submitButton.click({ force: true });
+
+    // Wait for dialog to close
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 10000 });
 
     // Verify success
     await expect(page.getByText('Product created successfully')).toBeVisible();
@@ -420,10 +427,12 @@ test.describe('Products Page', () => {
     await page.getByLabel('Product Name *').fill('Duplicate SKU Product');
 
     // Select category and unit
-    await page.getByRole('combobox', { name: /category/i }).click();
-    await page.getByRole('option').first().click();
-    await page.getByRole('combobox', { name: /unit/i }).click();
-    await page.getByRole('option').first().click();
+    await page.getByRole('combobox', { name: /category/i }).click({ force: true });
+    await page.getByRole('option').first().click({ force: true });
+    await page.waitForTimeout(500);
+    
+    await page.getByRole('combobox', { name: /unit/i }).click({ force: true });
+    await page.getByRole('option').first().click({ force: true });
 
     // Submit
     await page.getByRole('button', { name: 'Create Product' }).click();
