@@ -10,10 +10,19 @@
     },
     "dev": {
       "dependsOn": ["^db:generate"],
-      "cache": false,
-      "persistent": true
+      "cache": false
     },
     "test": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV"]
+    },
+    "test:watch": {
+      "outputs": ["coverage/**"],
+      "env": ["NODE_ENV"],
+      "cache": false
+    },
+    "test:cov": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV"]
@@ -22,6 +31,22 @@
       "dependsOn": ["build"],
       "outputs": ["coverage/**"],
       "env": ["NODE_ENV", "DATABASE_URL"]
+    },
+    "test:e2e": {
+      "dependsOn": ["^build"],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"]
+    },
+    "test:ui": {
+      "dependsOn": ["^build"],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"]
+    },
+    "test:debug": {
+      "dependsOn": ["^build"],
+      "outputs": ["playwright-report/**", "test-results/**"],
+      "env": ["NODE_ENV", "DATABASE_URL", "PLAYWRIGHT_BASE_URL"],
+      "cache": false
     },
     "lint": {
       "outputs": []
@@ -41,6 +66,11 @@
     "db:migrate": {
       "cache": false,
       "inputs": ["prisma/schema.prisma", "prisma/migrations/**"]
+    },
+    "db:migrate:deploy": {
+      "cache": false,
+      "inputs": ["prisma/schema.prisma", "prisma/migrations/**"],
+      "dependsOn": ["db:generate"]
     },
     "db:seed": {
       "cache": false,

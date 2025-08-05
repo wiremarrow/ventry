@@ -4,20 +4,29 @@
   "private": true,
   "description": "AI-Native Inventory Management System",
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "node tools/scripts/dev-wrapper.js turbo dev",
+    "dev:direct": "turbo dev",
+    "dev:cleanup": "./tools/scripts/cleanup-dev.sh",
+    "kill-ports": "./tools/scripts/kill-ports.sh",
     "build": "turbo build",
-    "test": "turbo test",
-    "test:integration": "turbo test:integration",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
-    "clean": "turbo clean && rm -rf node_modules",
+    "test": "turbo test --filter='!@ventry/e2e'",
+    "test:unit": "turbo test --filter='!@ventry/e2e' --filter='!*integration*'",
+    "test:watch": "turbo test:watch --filter='!@ventry/e2e'",
+    "test:integration": "turbo test:integration",
+    "test:e2e": "pnpm --filter @ventry/e2e test",
+    "test:e2e:ui": "pnpm --filter @ventry/e2e test:ui",
+    "test:e2e:debug": "pnpm --filter @ventry/e2e test:debug",
+    "test:all": "turbo test",
+    "test:cov": "turbo test:cov",
+    "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
     "db:migrate": "turbo db:migrate",
+    "db:migrate:deploy": "turbo db:migrate:deploy",
     "db:seed": "turbo db:seed",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,mdx}\"",
+    "clean": "turbo clean && rm -rf node_modules",
     "prepare": "husky install",
     "playwright:install": "playwright install --with-deps",
     "ci:setup": "./tools/scripts/setup-github-repo.sh && ./tools/scripts/setup-ci-secrets.sh",
@@ -33,7 +42,7 @@
     "lint-staged": "^15.1.0",
     "playwright": "^1.40.0",
     "prettier": "^3.1.0",
-    "prisma": "^5.20.0",
+    "prisma": "^6.11.1",
     "turbo": "^1.13.4",
     "typescript": "^5.3.0"
   },
@@ -48,7 +57,10 @@
   },
   "packageManager": "pnpm@8.10.0",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "pnpm": ">=8.0.0"
+  },
+  "dependencies": {
+    "date-fns": "^4.1.0"
   }
 }

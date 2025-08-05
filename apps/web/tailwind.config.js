@@ -9,4 +9,4 @@ module.exports = {
     // Include UI package components (source only for performance)
     '../../packages/ui/src/**/*.{js,ts,jsx,tsx}',
   ],
-}
+};

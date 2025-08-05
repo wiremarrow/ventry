@@ -1,0 +1,58 @@
+# Supabase Config
+
+[project]
+# A unique project ID (you can generate this using `supabase init`)
+id = "ventry"
+
+[api]
+# Port for the local API
+port = 54321
+# Schemas to expose in your API
+schemas = ["public", "storage", "graphql_public"]
+# Extra schemas to add to the search_path
+extra_search_path = ["public", "extensions"]
+# Maximum number of rows in a single response
+max_rows = 1000
+
+[db]
+# Port for the local database
+port = 54322
+# Port for local db pooler
+pooler_port = 54329
+# Major version of PostgreSQL
+major_version = 15
+
+[studio]
+# Port for Supabase Studio
+port = 54323
+
+[inbucket]
+# Port for the email testing server
+port = 54324
+
+[storage]
+# Buckets configuration
+enabled = true
+
+[auth]
+# Additional redirect URLs
+additional_redirect_urls = ["http://localhost:6061"]
+
+# Email auth
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+
+# External OAuth providers
+[auth.external.google]
+enabled = true
+client_id = "env(GOOGLE_CLIENT_ID)"
+secret = "env(GOOGLE_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"
+
+[auth.external.github]
+enabled = true
+client_id = "env(GITHUB_CLIENT_ID)"
+secret = "env(GITHUB_CLIENT_SECRET)"
+redirect_uri = "http://localhost:54321/auth/v1/callback"

@@ -1,0 +1,258 @@
+                                            version                                            
+-----------------------------------------------------------------------------------------------
+ PostgreSQL 16.9 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 14.2.0) 14.2.0, 64-bit
+(1 row)
+
+ schemaname |       tablename       | rowsecurity | forcerowsecurity 
+------------+-----------------------+-------------+------------------
+ public     | addresses             | f           | f
+ public     | audit_logs            | f           | f
+ public     | carriers              | f           | f
+ public     | customers             | f           | f
+ public     | cycle_count_items     | f           | f
+ public     | cycle_counts          | f           | f
+ public     | discounts             | f           | f
+ public     | employees             | f           | f
+ public     | inventory             | f           | f
+ public     | item_categories       | f           | f
+ public     | item_images           | f           | f
+ public     | items                 | f           | f
+ public     | locations             | f           | f
+ public     | lots                  | f           | f
+ public     | notifications         | f           | f
+ public     | order_items           | f           | f
+ public     | orders                | f           | f
+ public     | organization_members  | t           | f
+ public     | organizations         | f           | f
+ public     | payment_methods       | f           | f
+ public     | payments              | f           | f
+ public     | pos_transaction_items | f           | f
+ public     | pos_transactions      | f           | f
+ public     | price_history         | f           | f
+ public     | purchase_order_items  | f           | f
+ public     | purchase_orders       | f           | f
+ public     | receipt_items         | f           | f
+ public     | receipts              | f           | f
+ public     | return_items          | f           | f
+ public     | returns               | f           | f
+ public     | serial_numbers        | f           | f
+ public     | shipment_items        | f           | f
+ public     | shipments             | f           | f
+ public     | shipping_methods      | f           | f
+ public     | stock_adjustments     | f           | f
+ public     | stock_movements       | f           | f
+ public     | supplier_contacts     | f           | f
+ public     | suppliers             | f           | f
+ public     | units_of_measure      | f           | f
+ public     | user_roles            | f           | f
+ public     | users                 | f           | f
+ public     | warehouses            | f           | f
+(42 rows)
+
+      table_name      |      column_name       |          data_type          | is_nullable |        column_default        | ordinal_position 
+----------------------+------------------------+-----------------------------+-------------+------------------------------+------------------
+ audit_logs           | id                     | text                        | NO          |                              |                1
+ audit_logs           | action                 | USER-DEFINED                | NO          |                              |                2
+ audit_logs           | user_id                | text                        | NO          |                              |                3
+ audit_logs           | after_data             | jsonb                       | YES         |                              |                4
+ audit_logs           | before_data            | jsonb                       | YES         |                              |                5
+ audit_logs           | event_time             | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |                6
+ audit_logs           | ip_address             | text                        | YES         |                              |                7
+ audit_logs           | record_pk              | text                        | NO          |                              |                8
+ audit_logs           | table_name             | text                        | NO          |                              |                9
+ inventory            | id                     | text                        | NO          |                              |                1
+ inventory            | item_id                | text                        | NO          |                              |                2
+ inventory            | lot_id                 | text                        | YES         |                              |                3
+ inventory            | serial_id              | text                        | YES         |                              |                4
+ inventory            | location_id            | text                        | NO          |                              |                5
+ inventory            | qty_on_hand            | integer                     | NO          | 0                            |                6
+ inventory            | qty_reserved           | integer                     | NO          | 0                            |                7
+ inventory            | qty_in_transit         | integer                     | NO          | 0                            |                8
+ inventory            | last_counted_at        | timestamp without time zone | YES         |                              |                9
+ inventory            | updated_at             | timestamp without time zone | NO          |                              |               10
+ items                | id                     | text                        | NO          |                              |                1
+ items                | organization_id        | text                        | NO          |                              |                2
+ items                | sku                    | text                        | NO          |                              |                3
+ items                | upc                    | text                        | YES         |                              |                4
+ items                | name                   | text                        | NO          |                              |                5
+ items                | description            | text                        | YES         |                              |                6
+ items                | category_id            | text                        | NO          |                              |                7
+ items                | uom_id                 | text                        | NO          |                              |                8
+ items                | default_supplier_id    | text                        | YES         |                              |                9
+ items                | default_cost           | numeric                     | YES         |                              |               10
+ items                | default_price          | numeric                     | YES         |                              |               11
+ items                | weight_kg              | numeric                     | YES         |                              |               12
+ items                | length_cm              | numeric                     | YES         |                              |               13
+ items                | width_cm               | numeric                     | YES         |                              |               14
+ items                | height_cm              | numeric                     | YES         |                              |               15
+ items                | reorder_point          | integer                     | NO          | 0                            |               16
+ items                | reorder_qty            | integer                     | NO          | 0                            |               17
+ items                | is_active              | boolean                     | NO          | true                         |               18
+ items                | created_at             | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |               19
+ items                | updated_at             | timestamp without time zone | NO          |                              |               20
+ organization_members | id                     | text                        | NO          |                              |                1
+ organization_members | organization_id        | text                        | NO          |                              |                2
+ organization_members | user_id                | text                        | NO          |                              |                3
+ organization_members | role                   | USER-DEFINED                | NO          | 'MEMBER'::"OrganizationRole" |                4
+ organization_members | joined_at              | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |                5
+ organization_members | invited_by_id          | text                        | YES         |                              |                6
+ organization_members | invitation_token       | text                        | YES         |                              |                7
+ organization_members | invitation_accepted_at | timestamp without time zone | YES         |                              |                8
+ organizations        | id                     | text                        | NO          |                              |                1
+ organizations        | name                   | text                        | NO          |                              |                2
+ organizations        | slug                   | text                        | NO          |                              |                3
+ organizations        | domain                 | text                        | YES         |                              |                4
+ organizations        | logo_url               | text                        | YES         |                              |                5
+ organizations        | settings               | jsonb                       | NO          | '{}'::jsonb                  |                6
+ organizations        | subscription_tier      | text                        | NO          | 'free'::text                 |                7
+ organizations        | subscription_status    | text                        | NO          | 'active'::text               |                8
+ organizations        | trial_ends_at          | timestamp without time zone | YES         |                              |                9
+ organizations        | billing_email          | text                        | YES         |                              |               10
+ organizations        | created_at             | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |               11
+ organizations        | updated_at             | timestamp without time zone | NO          |                              |               12
+ users                | id                     | text                        | NO          |                              |                1
+ users                | email                  | text                        | NO          |                              |                2
+ users                | username               | text                        | NO          |                              |                3
+ users                | first_name             | text                        | NO          |                              |                4
+ users                | last_name              | text                        | NO          |                              |                5
+ users                | password               | text                        | NO          |                              |                6
+ users                | role                   | USER-DEFINED                | NO          | 'USER'::"Role"               |                7
+ users                | is_active              | boolean                     | NO          | true                         |                8
+ users                | created_at             | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |                9
+ users                | updated_at             | timestamp without time zone | NO          |                              |               10
+ users                | last_login_at          | timestamp without time zone | YES         |                              |               11
+ warehouses           | id                     | text                        | NO          |                              |                1
+ warehouses           | organization_id        | text                        | NO          |                              |                2
+ warehouses           | code                   | text                        | NO          |                              |                3
+ warehouses           | name                   | text                        | NO          |                              |                4
+ warehouses           | phone                  | text                        | YES         |                              |                5
+ warehouses           | line1                  | text                        | NO          |                              |                6
+ warehouses           | line2                  | text                        | YES         |                              |                7
+ warehouses           | city                   | text                        | NO          |                              |                8
+ warehouses           | state                  | text                        | NO          |                              |                9
+ warehouses           | postal_code            | text                        | NO          |                              |               10
+ warehouses           | country                | text                        | NO          |                              |               11
+ warehouses           | notes                  | text                        | YES         |                              |               12
+ warehouses           | created_at             | timestamp without time zone | NO          | CURRENT_TIMESTAMP            |               13
+ warehouses           | updated_at             | timestamp without time zone | NO          |                              |               14
+(84 rows)
+
+ schemaname |      tablename       |      policyname      |  roles   | policy_cmd |                        using_expression                        | with_check_expression 
+------------+----------------------+----------------------+----------+------------+----------------------------------------------------------------+-----------------------
+ public     | organization_members | org_members_read     | {public} | SELECT     | (user_id = current_setting('app.current_user_id'::text, true)) | 
+ public     | organization_members | org_members_read_own | {public} | SELECT     | (user_id = current_setting('app.current_user_id'::text, true)) | 
+(2 rows)
+
+   function_name   |               arguments                |                  returns                  |                                        comment                                        
+-------------------+----------------------------------------+-------------------------------------------+---------------------------------------------------------------------------------------
+ clear_rls_context |                                        | void                                      | Clears RLS context variables for the current transaction.                            +
+                   |                                        |                                           |       Used for cleanup and testing purposes.
+ get_rls_context   |                                        | TABLE(organization_id text, user_id text) | Returns the current RLS context variables.                                           +
+                   |                                        |                                           |       Useful for debugging and verification.
+ set_rls_context   | p_organization_id text, p_user_id text | void                                      | Securely sets RLS context variables for the current transaction.                     +
+                   |                                        |                                           |       Validates CUID format and prevents SQL injection.                              +
+                   |                                        |                                           |       Used by the application to establish tenant context for multi-tenant isolation.
+(3 rows)
+
+psql:introspect-rls-state.sql:104: ERROR:  relation "public._prisma_migrations" does not exist
+LINE 27: FROM public._prisma_migrations
+              ^
+psql:introspect-rls-state.sql:117: ERROR:  relation "public._prisma_migrations" does not exist
+LINE 8: FROM public._prisma_migrations
+             ^
+ current_org_id | current_user_id 
+----------------+-----------------
+                | 
+(1 row)
+
+      tablename       |                    indexname                     |                                                                  indexdef                                                                  
+----------------------+--------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------
+ customers            | customers_organization_id_customer_code_key      | CREATE UNIQUE INDEX customers_organization_id_customer_code_key ON public.customers USING btree (organization_id, customer_code)
+ customers            | customers_organization_id_idx                    | CREATE INDEX customers_organization_id_idx ON public.customers USING btree (organization_id)
+ employees            | employees_user_id_key                            | CREATE UNIQUE INDEX employees_user_id_key ON public.employees USING btree (user_id)
+ item_categories      | item_categories_organization_id_idx              | CREATE INDEX item_categories_organization_id_idx ON public.item_categories USING btree (organization_id)
+ item_categories      | item_categories_organization_id_name_key         | CREATE UNIQUE INDEX item_categories_organization_id_name_key ON public.item_categories USING btree (organization_id, name)
+ items                | items_organization_id_idx                        | CREATE INDEX items_organization_id_idx ON public.items USING btree (organization_id)
+ items                | items_organization_id_sku_key                    | CREATE UNIQUE INDEX items_organization_id_sku_key ON public.items USING btree (organization_id, sku)
+ orders               | orders_organization_id_idx                       | CREATE INDEX orders_organization_id_idx ON public.orders USING btree (organization_id)
+ orders               | orders_organization_id_order_number_key          | CREATE UNIQUE INDEX orders_organization_id_order_number_key ON public.orders USING btree (organization_id, order_number)
+ organization_members | organization_members_organization_id_user_id_idx | CREATE INDEX organization_members_organization_id_user_id_idx ON public.organization_members USING btree (organization_id, user_id)
+ organization_members | organization_members_organization_id_user_id_key | CREATE UNIQUE INDEX organization_members_organization_id_user_id_key ON public.organization_members USING btree (organization_id, user_id)
+ organization_members | organization_members_user_id_idx                 | CREATE INDEX organization_members_user_id_idx ON public.organization_members USING btree (user_id)
+ purchase_orders      | purchase_orders_organization_id_idx              | CREATE INDEX purchase_orders_organization_id_idx ON public.purchase_orders USING btree (organization_id)
+ purchase_orders      | purchase_orders_organization_id_po_number_key    | CREATE UNIQUE INDEX purchase_orders_organization_id_po_number_key ON public.purchase_orders USING btree (organization_id, po_number)
+ suppliers            | suppliers_organization_id_idx                    | CREATE INDEX suppliers_organization_id_idx ON public.suppliers USING btree (organization_id)
+ suppliers            | suppliers_organization_id_supplier_code_key      | CREATE UNIQUE INDEX suppliers_organization_id_supplier_code_key ON public.suppliers USING btree (organization_id, supplier_code)
+ units_of_measure     | units_of_measure_organization_id_code_key        | CREATE UNIQUE INDEX units_of_measure_organization_id_code_key ON public.units_of_measure USING btree (organization_id, code)
+ units_of_measure     | units_of_measure_organization_id_idx             | CREATE INDEX units_of_measure_organization_id_idx ON public.units_of_measure USING btree (organization_id)
+ warehouses           | warehouses_organization_id_code_key              | CREATE UNIQUE INDEX warehouses_organization_id_code_key ON public.warehouses USING btree (organization_id, code)
+ warehouses           | warehouses_organization_id_idx                   | CREATE INDEX warehouses_organization_id_idx ON public.warehouses USING btree (organization_id)
+(20 rows)
+
+      table_name      |   column_name   | status  | data_type 
+----------------------+-----------------+---------+-----------
+ audit_logs           | organization_id | MISSING | 
+ audit_logs           | user_id         | EXISTS  | text
+ inventory            | organization_id | MISSING | 
+ items                | organization_id | EXISTS  | text
+ organization_members | organization_id | EXISTS  | text
+ organization_members | user_id         | EXISTS  | text
+ users                | id              | EXISTS  | text
+ warehouses           | organization_id | EXISTS  | text
+(8 rows)
+
+      table_name      
+----------------------
+ audit_logs
+ organization_members
+ organizations
+ user_roles
+ users
+(5 rows)
+
+      table_name       | has_rls | policy_count |   rls_status    
+-----------------------+---------+--------------+-----------------
+ audit_logs            | f       |            0 | RLS NOT ENABLED
+ organization_members  | t       |            2 | READY
+ organizations         | f       |            0 | RLS NOT ENABLED
+ users                 | f       |            0 | RLS NOT ENABLED
+ addresses             | f       |            0 | RLS NOT ENABLED
+ carriers              | f       |            0 | RLS NOT ENABLED
+ customers             | f       |            0 | RLS NOT ENABLED
+ cycle_count_items     | f       |            0 | RLS NOT ENABLED
+ cycle_counts          | f       |            0 | RLS NOT ENABLED
+ discounts             | f       |            0 | RLS NOT ENABLED
+ employees             | f       |            0 | RLS NOT ENABLED
+ inventory             | f       |            0 | RLS NOT ENABLED
+ item_categories       | f       |            0 | RLS NOT ENABLED
+ item_images           | f       |            0 | RLS NOT ENABLED
+ items                 | f       |            0 | RLS NOT ENABLED
+ locations             | f       |            0 | RLS NOT ENABLED
+ lots                  | f       |            0 | RLS NOT ENABLED
+ notifications         | f       |            0 | RLS NOT ENABLED
+ order_items           | f       |            0 | RLS NOT ENABLED
+ orders                | f       |            0 | RLS NOT ENABLED
+ payment_methods       | f       |            0 | RLS NOT ENABLED
+ payments              | f       |            0 | RLS NOT ENABLED
+ pos_transaction_items | f       |            0 | RLS NOT ENABLED
+ pos_transactions      | f       |            0 | RLS NOT ENABLED
+ price_history         | f       |            0 | RLS NOT ENABLED
+ purchase_order_items  | f       |            0 | RLS NOT ENABLED
+ purchase_orders       | f       |            0 | RLS NOT ENABLED
+ receipt_items         | f       |            0 | RLS NOT ENABLED
+ receipts              | f       |            0 | RLS NOT ENABLED
+ return_items          | f       |            0 | RLS NOT ENABLED
+ returns               | f       |            0 | RLS NOT ENABLED
+ serial_numbers        | f       |            0 | RLS NOT ENABLED
+ shipment_items        | f       |            0 | RLS NOT ENABLED
+ shipments             | f       |            0 | RLS NOT ENABLED
+ shipping_methods      | f       |            0 | RLS NOT ENABLED
+ stock_adjustments     | f       |            0 | RLS NOT ENABLED
+ stock_movements       | f       |            0 | RLS NOT ENABLED
+ supplier_contacts     | f       |            0 | RLS NOT ENABLED
+ suppliers             | f       |            0 | RLS NOT ENABLED
+ units_of_measure      | f       |            0 | RLS NOT ENABLED
+ user_roles            | f       |            0 | RLS NOT ENABLED
+ warehouses            | f       |            0 | RLS NOT ENABLED
+(42 rows)
+

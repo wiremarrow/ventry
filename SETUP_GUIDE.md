@@ -1,6 +1,7 @@
 # Ventry Complete Setup Guide
 
 ## Table of Contents
+
 1. [Quick Start Checklist](#quick-start-checklist)
 2. [Detailed Configuration Reference](#detailed-configuration-reference)
 3. [Troubleshooting & Support](#troubleshooting--support)
@@ -10,6 +11,7 @@
 ## Quick Start Checklist
 
 ### ✅ Already Completed
+
 - [x] GitHub repository created and code pushed
 - [x] GitHub environments created (staging/production)
 - [x] Vulnerability alerts enabled
@@ -43,6 +45,7 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 **Branch name pattern:** `main`
 
 **Enable these settings:**
+
 ```
 ✅ Require a pull request before merging
   ✅ Require approvals: 1
@@ -51,12 +54,11 @@ We now provide automated scripts that configure ~90% of the CI/CD setup:
 
 ✅ Require status checks to pass before merging
   ✅ Require branches to be up to date before merging
-  
+
   Required status checks (add after first CI run):
   - Documentation Check
   - Lint and Type Check
-  - Unit Tests (18)
-  - Unit Tests (20)
+  - Unit Tests
   - PostgreSQL Integration Tests
   - E2E Tests - chromium (1)
   - E2E Tests - chromium (2)
@@ -107,12 +109,14 @@ SLACK_WEBHOOK_URL=   # From Slack app settings (optional)
 ##### A. Database (Choose One)
 
 **Option 1: Neon (Recommended)**
+
 1. Go to https://neon.tech
 2. Create account and new project
 3. Copy connection string
 4. Add to GitHub secrets as `DATABASE_URL`
 
 **Option 2: Supabase**
+
 1. Go to https://supabase.com
 2. Create new project
 3. Go to Settings → Database
@@ -120,6 +124,7 @@ SLACK_WEBHOOK_URL=   # From Slack app settings (optional)
 5. Add to GitHub secrets as `DATABASE_URL`
 
 **Option 3: Railway**
+
 1. Go to https://railway.app
 2. New Project → Provision PostgreSQL
 3. Copy connection string
@@ -143,11 +148,12 @@ SLACK_WEBHOOK_URL=   # From Slack app settings (optional)
 4. In your project: `vercel link`
 5. Follow prompts to create/link project
 6. Get tokens from Vercel dashboard → Settings → Tokens
-7. Add VERCEL_* values to GitHub secrets
+7. Add VERCEL\_\* values to GitHub secrets
 
 #### 4. Test the Setup
 
 **Create a test PR:**
+
 ```bash
 git checkout -b test/initial-setup
 echo "# Test" >> README.md
@@ -190,6 +196,7 @@ pnpm dev
 ```
 
 Your repository is now ready for production-level development with:
+
 - ✅ Automated testing and quality checks
 - ✅ Deployment pipelines
 - ✅ Error tracking and monitoring
@@ -203,6 +210,7 @@ Your repository is now ready for production-level development with:
 ### Overview of External Integrations
 
 #### Required Services
+
 1. **GitHub** - Source control, CI/CD, branch protection, automated updates
 2. **Vercel** - Frontend deployment, preview environments, edge functions
 3. **PostgreSQL** - Production database (Neon/Supabase recommended)
@@ -211,6 +219,7 @@ Your repository is now ready for production-level development with:
 6. **Turborepo** - Build caching and monorepo optimization
 
 #### Optional Services
+
 - **Codecov** - Code coverage reporting
 - **Slack** - Deployment notifications
 
@@ -232,33 +241,33 @@ on:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ventry_test # CI uses default PostgreSQL port
 
 jobs:
   docs-check:
     name: Documentation Check
     # Enforces README.md and TODO.md updates for feature PRs
-    
+
   lint-and-typecheck:
     name: Lint and Type Check
     # ESLint + TypeScript validation
-    
+
   test:
     name: Unit Tests
-    # Jest testing on Node.js 18 & 20 with coverage
-    
+    # Vitest testing on Node.js 20 LTS with coverage
+
   postgres-integration:
     name: PostgreSQL Integration Tests
     # Database operations with real PostgreSQL service
-    
+
   playwright-tests:
     name: E2E Tests
     # Browser matrix (Chromium, Firefox, WebKit) with sharding
-    
+
   build:
     name: Build
     # Production build with Sentry integration
-    
+
   coverage-gate:
     name: Coverage Gate
     # Test coverage threshold validation
@@ -267,12 +276,14 @@ jobs:
 #### GitHub Environments
 
 **Staging environment:**
+
 - No protection rules
 - Secrets:
   - `DATABASE_URL` (staging database)
   - `VERCEL_ENV` = "preview"
 
 **Production environment:**
+
 - Required reviewers: 1-2 team members
 - Deployment branches: `main` only
 - Secrets:
@@ -282,6 +293,7 @@ jobs:
 ### Vercel Configuration
 
 #### Project Setup Commands
+
 ```bash
 # Install Vercel CLI
 npm install -g vercel
@@ -344,11 +356,13 @@ NEXT_PUBLIC_ENABLE_ANALYTICS=true
 ### PostgreSQL Database Setup
 
 #### Connection String Format
+
 ```
 postgresql://[user]:[password]@[host]:[port]/[database]?sslmode=require
 ```
 
 #### Migration Commands
+
 ```bash
 # Generate migrations
 pnpm db:migrate:dev
@@ -387,17 +401,20 @@ pnpm db:reset
 #### Development Setup
 
 **Default (SQLite only, no Docker needed):**
+
 ```bash
 pnpm dev
 ```
 
 **With PostgreSQL:**
+
 ```bash
 docker-compose --profile postgres up -d
 pnpm dev
 ```
 
 **With PostgreSQL and Redis:**
+
 ```bash
 docker-compose --profile postgres --profile redis up -d
 pnpm dev
@@ -408,16 +425,17 @@ pnpm dev
 #### Environment Files
 
 **File:** `.env.local` (for development)
+
 ```bash
 # Database (SQLite for local dev)
 DATABASE_URL="file:./dev.db"
 
 # Or PostgreSQL if using Docker
-# DATABASE_URL="postgresql://ventry:ventry_dev@localhost:5432/ventry_dev"
+# DATABASE_URL="postgresql://ventry:ventry_dev@localhost:5487/ventry_dev"
 
 # API Configuration
-NEXT_PUBLIC_API_URL="http://localhost:3000"
-API_URL="http://localhost:3000"
+NEXT_PUBLIC_API_URL="http://localhost:6060"
+API_URL="http://localhost:6060"
 
 # Sentry (optional for local)
 NEXT_PUBLIC_SENTRY_DSN=""
@@ -434,7 +452,7 @@ NEXT_PUBLIC_ENABLE_ANALYTICS="false"
 # Auth
 JWT_SECRET="local-dev-secret-change-in-production"
 NEXTAUTH_SECRET="local-dev-secret-change-in-production"
-NEXTAUTH_URL="http://localhost:3001"
+FRONTEND_URL="http://localhost:6061"
 ```
 
 ### Verification Commands
@@ -469,36 +487,43 @@ gh secret list
 ### Common Issues
 
 #### 1. Vercel Build Failures
+
 - Check build logs in Vercel dashboard
 - Ensure all env vars are set
 - Try local build: `vercel build`
 
 #### 2. Database Connection Issues
+
 - Check DATABASE_URL format
 - Ensure SSL is enabled for production
 - Test with: `pnpm db:push`
 
 #### 3. Sentry Not Receiving Events
+
 - Verify DSN is correct
 - Check auth token permissions
 - Look for errors in browser console
 
 #### 4. CI Failures
+
 - Check GitHub Actions logs
 - Verify all secrets are set
 - Run locally: `act` (requires Docker)
 
 #### 5. Dependabot PR Failures
+
 - Check for breaking changes
 - Update tests if needed
 - Consider pinning versions
 
 #### 6. Branch Protection Issues
+
 - Ensure all required status checks are added
 - Check that check names match exactly
 - Verify administrators are included if needed
 
 #### 7. E2E Test Failures
+
 - Check Playwright browser installation
 - Verify application builds before tests
 - Review test artifacts in GitHub Actions
@@ -520,4 +545,4 @@ gh secret list
 
 ---
 
-*This completes the comprehensive setup guide for Ventry. The system is configured with production-ready settings, proper security, and monitoring. The CI/CD pipeline enforces quality gates including documentation updates, coverage requirements, and automated deployments.*
+_This completes the comprehensive setup guide for Ventry. The system is configured with production-ready settings, proper security, and monitoring. The CI/CD pipeline enforces quality gates including documentation updates, coverage requirements, and automated deployments._

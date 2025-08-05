@@ -2,23 +2,35 @@
   "name": "@ventry/database",
   "version": "0.1.0",
   "private": true,
-  "main": "index.ts",
-  "types": "index.ts",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma migrate reset --force"
+    "build": "tsc",
+    "db:generate": "dotenv -e ../../.env -- prisma generate",
+    "db:push": "./scripts/db-admin.sh db push --accept-data-loss",
+    "db:migrate": "./scripts/db-admin.sh migrate dev",
+    "db:migrate:deploy": "./scripts/db-admin.sh migrate deploy",
+    "db:studio": "dotenv -e ../../.env -- prisma studio",
+    "db:seed": "./scripts/db-admin.sh seed",
+    "db:seed:single": "./scripts/db-admin.sh seed-single",
+    "db:seed:multi": "./scripts/db-admin.sh seed-multi",
+    "db:reset": "./scripts/db-admin.sh migrate reset --force",
+    "db:verify": "./scripts/db-admin.sh verify",
+    "db:verify:help": "tsx scripts/db-verify.ts --help"
   },
   "dependencies": {
-    "@prisma/client": "^5.20.0",
+    "@prisma/client": "^6.11.1",
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@types/bcryptjs": "^2.4.6",
-    "prisma": "^5.20.0",
+    "@types/node": "^24.0.13",
+    "commander": "^14.0.0",
+    "dotenv-cli": "^8.0.0",
+    "prisma": "^6.11.1",
+    "ts-node": "^10.9.1",
     "tsx": "^4.19.1"
   },
   "prisma": {

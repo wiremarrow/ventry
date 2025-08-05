@@ -1,24 +1,30 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "declaration": true,
+    "composite": false,
+    "noEmit": false,
+    "outDir": "./dist",
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "target": "ES2022",
     "sourceMap": true,
-    "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
+    "strict": true,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ventry/database": ["../../packages/database/src"],
+      "@ventry/shared": ["../../packages/shared/src"]
     }
-  }
+  },
+  "exclude": ["**/*.test.ts", "**/*.spec.ts", "**/test-utils/**", "**/__tests__/**", "dist/**"]
 }

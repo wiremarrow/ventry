@@ -3,21 +3,34 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  BarChart3, 
-  Box, 
-  Building, 
-  ChevronLeft, 
-  ChevronRight, 
-  Home, 
-  Package, 
-  ShoppingCart, 
-  Tags, 
-  Users 
+import {
+  BarChart3,
+  Box,
+  Building,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Package,
+  ShoppingCart,
+  Tags,
+  TruckIcon,
+  Users,
+  UserCheck,
+  Warehouse,
+  FileCheck,
 } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import { canManageUsers, canManageProducts, canViewReports } from '@ventry/shared';
+import {
+  canManageUsers,
+  canManageProducts,
+  canViewReports,
+  canManageLocations,
+  canViewProducts,
+  canViewInventory,
+  canViewMovements,
+} from '@ventry/shared';
 import { cn } from '@ventry/ui';
 
 interface SidebarProps {
@@ -41,13 +54,55 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       label: 'Inventory',
       href: '/inventory',
       icon: Box,
-      show: true,
+      show: user ? canViewInventory(user) : false,
     },
     {
       label: 'Products',
       href: '/products',
       icon: Package,
-      show: true,
+      show: user ? canViewProducts(user) : false,
+    },
+    {
+      label: 'Warehouses',
+      href: '/warehouses',
+      icon: Warehouse,
+      show: user ? canManageLocations(user) : false,
+    },
+    {
+      label: 'Suppliers',
+      href: '/suppliers',
+      icon: Building2,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Customers',
+      href: '/customers',
+      icon: UserCheck,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Orders',
+      href: '/orders',
+      icon: ShoppingCart,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Purchase Orders',
+      href: '/purchase-orders',
+      icon: TruckIcon,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Receipts',
+      href: '/receipts',
+      icon: FileCheck,
+      show: true, // TODO: Add proper permission check
+    },
+    {
+      label: 'Shipments',
+      href: '/shipments',
+      icon: TruckIcon,
+      show: true, // TODO: Add proper permission check
     },
     {
       label: 'Categories',
@@ -65,7 +120,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       label: 'Movements',
       href: '/movements',
       icon: ShoppingCart,
-      show: true,
+      show: user ? canViewMovements(user) : false,
     },
     {
       label: 'Reports',
@@ -79,18 +134,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       icon: Users,
       show: user ? canManageUsers(user) : false,
     },
-  ].filter(item => item.show);
+  ].filter((item) => item.show);
 
   return (
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
-          onClick={onClose}
-        />
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={onClose} />
       )}
-      
+
       {/* Sidebar */}
       <aside
         className={cn(

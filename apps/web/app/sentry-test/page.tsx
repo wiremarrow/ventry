@@ -9,7 +9,7 @@ export default function SentryTestPage() {
 
   const testSentryError = () => {
     setIsLoading(true);
-    
+
     // Add breadcrumb
     Sentry.addBreadcrumb({
       category: 'test',
@@ -31,7 +31,7 @@ export default function SentryTestPage() {
           timestamp: new Date().toISOString(),
         },
       });
-      
+
       console.error('Test error sent to Sentry:', error);
       alert('Test error sent to Sentry! Check your Sentry dashboard.');
     } finally {
@@ -63,50 +63,33 @@ export default function SentryTestPage() {
   return (
     <div className="container mx-auto p-8">
       <h1 className="text-3xl font-bold mb-6">Sentry Integration Test</h1>
-      
+
       <div className="bg-white rounded-lg shadow p-6 max-w-2xl">
         <p className="mb-6 text-gray-600">
-          Use these buttons to test Sentry error tracking. Check your Sentry dashboard after clicking.
+          Use these buttons to test Sentry error tracking. Check your Sentry dashboard after
+          clicking.
         </p>
-        
+
         <div className="space-y-4">
           <div>
-            <Button 
-              onClick={testSentryError} 
-              disabled={isLoading}
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={testSentryError} disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? 'Sending...' : 'Send Test Error'}
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              Throws and captures a test error
-            </p>
+            <p className="text-sm text-gray-500 mt-2">Throws and captures a test error</p>
           </div>
 
           <div>
-            <Button 
-              onClick={testSentryMessage}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={testSentryMessage} variant="outline" className="w-full sm:w-auto">
               Send Test Message
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              Sends an info message to Sentry
-            </p>
+            <p className="text-sm text-gray-500 mt-2">Sends an info message to Sentry</p>
           </div>
 
           <div>
-            <Button 
-              onClick={testAuthError}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={testAuthError} variant="outline" className="w-full sm:w-auto">
               Simulate Auth Error
             </Button>
-            <p className="text-sm text-gray-500 mt-2">
-              Simulates an authentication error
-            </p>
+            <p className="text-sm text-gray-500 mt-2">Simulates an authentication error</p>
           </div>
         </div>
 
@@ -115,9 +98,9 @@ export default function SentryTestPage() {
           <p className="text-sm text-blue-700">
             After clicking any button above, check your Sentry dashboard at:
           </p>
-          <a 
-            href="https://sentry.io" 
-            target="_blank" 
+          <a
+            href="https://sentry.io"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 hover:underline text-sm"
           >

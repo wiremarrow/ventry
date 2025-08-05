@@ -4,7 +4,13 @@ import * as Sentry from '@sentry/nextjs';
 import { ErrorBoundary as ReactErrorBoundary } from 'react-error-boundary';
 import { Button } from '@ventry/ui';
 
-function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
+function ErrorFallback({
+  error,
+  resetErrorBoundary,
+}: {
+  error: Error;
+  resetErrorBoundary: () => void;
+}) {
   return (
     <div className="flex min-h-[400px] flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6">
@@ -41,7 +47,7 @@ export function ErrorBoundary({ children }: { children: React.ReactNode }) {
             },
           },
         });
-        
+
         // Log to console in development
         if (process.env.NODE_ENV === 'development') {
           console.error('ErrorBoundary caught an error:', error, errorInfo);

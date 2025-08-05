@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   transpilePackages: ['@ventry/ui', '@ventry/shared'],
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/api',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:6060/trpc',
   },
   turbopack: {
     rules: {
@@ -13,6 +13,15 @@ const nextConfig: NextConfig = {
         as: '*.js',
       },
     },
+  },
+  // Add rewrites to proxy API requests to avoid cross-origin cookie issues
+  async rewrites() {
+    return [
+      {
+        source: '/api/trpc/:path*',
+        destination: 'http://localhost:6060/trpc/:path*',
+      },
+    ];
   },
 };
 

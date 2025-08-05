@@ -1,13 +1,33 @@
-export * from '@prisma/client';
-export { PrismaClient, Role, InventoryMovementType, AuditAction } from '@prisma/client';
+export * from './generated/client/client.js';
+export {
+  PrismaClient,
+  Role,
+  OrganizationRole,
+  MovementType,
+  AuditAction,
+  AddressType,
+  OrderStatus,
+  POStatus,
+} from './generated/client/client.js';
+
+// Export the prisma client instance
+export { prisma } from './client.js';
 
 // Re-export types for easier imports
 export type {
   User,
-  Category,
-  Product,
+  Item,
+  ItemCategory,
   Location,
-  InventoryItem,
-  InventoryMovement,
+  Inventory,
+  StockMovement,
   AuditLog,
-} from '@prisma/client';
+  Warehouse,
+  Supplier,
+  Customer,
+  Address,
+  Order,
+  PurchaseOrder,
+  Organization,
+  OrganizationMember,
+} from './generated/client/client.js';

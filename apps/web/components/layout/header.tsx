@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { LogOut, Menu, Package, User } from 'lucide-react';
 import { Button } from '@ventry/ui';
 import { useAuthStore } from '@/lib/auth-store';
-import api from '@/lib/api';
-import { API_ENDPOINTS } from '@ventry/shared';
+import { trpc } from '@/lib/trpc';
+import OrganizationSwitcher from '@/components/organizations/organization-switcher';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,31 +15,35 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await api.post(API_ENDPOINTS.AUTH.LOGOUT);
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+  const logoutMutation = trpc.auth.logout.useMutation({
+    onSuccess: () => {
       logout();
       window.location.href = '/login';
-    }
+    },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      // Still logout on client side even if server logout fails
+      logout();
+      window.location.href = '/login';
+    },
+    onSettled: () => {
+      setIsLoggingOut(false);
+    },
+  });
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    logoutMutation.mutate();
   };
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMenuClick}
-            className="md:hidden"
-          >
+          <Button variant="ghost" size="icon" onClick={onMenuClick} className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          
+
           <div className="flex items-center space-x-2">
             <Package className="h-8 w-8 text-blue-600" />
             <h1 className="text-xl font-bold text-gray-900">Ventry</h1>
@@ -47,6 +51,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
+          <OrganizationSwitcher />
+
           <div className="flex items-center space-x-2">
             <User className="h-5 w-5 text-gray-500" />
             <span className="text-sm font-medium text-gray-700">
@@ -56,7 +62,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               {user?.role}
             </span>
           </div>
-          
+
           <Button
             variant="ghost"
             size="sm"

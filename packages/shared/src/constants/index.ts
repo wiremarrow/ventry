@@ -40,7 +40,7 @@ export const API_ENDPOINTS = {
 } as const;
 
 // Enums moved to @ventry/database for proper type safety:
-// - Role enum 
+// - Role enum
 // - InventoryMovementType enum
 // - AuditAction enum
 

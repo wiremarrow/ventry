@@ -1,0 +1,685 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import type { PrismaClient } from '@ventry/database';
+import { appRouter } from '../_app.js';
+import { createIntegrationContext } from '../../test-utils/trpc-test-client.js';
+
+describe('Inventory Router Integration Tests', () => {
+  let prisma: PrismaClient;
+  let caller: ReturnType<typeof appRouter.createCaller>;
+  let ctx: Awaited<ReturnType<typeof createIntegrationContext>>;
+  let organizationId: string;
+  let warehouseId: string;
+  let locationId: string;
+  let itemId: string;
+  let categoryId: string;
+  let uomId: string;
+
+  beforeAll(async () => {
+    ctx = await createIntegrationContext();
+    prisma = ctx.prisma;
+    caller = appRouter.createCaller(ctx);
+    organizationId = ctx.user.organizationId;
+
+    // Create test data
+    const [category, uom] = await Promise.all([
+      prisma.itemCategory.create({
+        data: {
+          name: 'Test Category',
+          organizationId,
+        },
+      }),
+      prisma.unitOfMeasure.create({
+        data: {
+          code: 'EA',
+          name: 'Each',
+          description: 'Each unit',
+          isBase: true,
+          conversionFactorToBase: 1,
+          organizationId,
+        },
+      }),
+    ]);
+    categoryId = category.id;
+    uomId = uom.id;
+
+    const warehouse = await prisma.warehouse.create({
+      data: {
+        name: 'Test Warehouse',
+        code: 'TW001',
+        line1: '123 Test St',
+        city: 'Test City',
+        state: 'TS',
+        postalCode: '12345',
+        country: 'US',
+        organizationId,
+      },
+    });
+    warehouseId = warehouse.id;
+
+    const location = await prisma.location.create({
+      data: {
+        code: 'A-1-1',
+        description: 'Test Location',
+        warehouseId,
+      },
+    });
+    locationId = location.id;
+
+    const item = await prisma.item.create({
+      data: {
+        sku: 'TEST001',
+        name: 'Test Item',
+        categoryId,
+        uomId,
+        reorderPoint: 10,
+        reorderQty: 20,
+        organizationId,
+      },
+    });
+    itemId = item.id;
+  });
+
+  afterAll(async () => {
+    // Clean up test data
+    await prisma.inventory.deleteMany({ where: { organizationId } });
+    await prisma.stockMovement.deleteMany({ where: { item: { organizationId } } });
+    await prisma.stockAdjustment.deleteMany({ where: { item: { organizationId } } });
+    await prisma.item.deleteMany({ where: { organizationId } });
+    await prisma.location.deleteMany({ where: { warehouse: { organizationId } } });
+    await prisma.warehouse.deleteMany({ where: { organizationId } });
+    await prisma.itemCategory.deleteMany({ where: { organizationId } });
+    await prisma.unitOfMeasure.deleteMany({ where: { organizationId } });
+  });
+
+  beforeEach(async () => {
+    // Clean up inventory between tests
+    await prisma.inventory.deleteMany({ where: { organizationId } });
+  });
+
+  describe('list', () => {
+    it('should list inventory across all locations', async () => {
+      // Create inventory records
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId,
+            locationId,
+            qtyOnHand: 100,
+            qtyReserved: 20,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId,
+            locationId: locationId, // Same location, different item would need another item
+            qtyOnHand: 50,
+            qtyReserved: 0,
+            qtyInTransit: 10,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.list({});
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toMatchObject({
+        itemId,
+        locationId,
+        qtyOnHand: expect.any(Number),
+        qtyReserved: expect.any(Number),
+      });
+    });
+
+    it('should filter by warehouse', async () => {
+      // Create another warehouse and location
+      const warehouse2 = await prisma.warehouse.create({
+        data: {
+          name: 'Warehouse 2',
+          code: 'WH002',
+          line1: '456 Test Ave',
+          city: 'Test City',
+          state: 'TS',
+          postalCode: '12345',
+          country: 'US',
+          organizationId,
+        },
+      });
+
+      const location2 = await prisma.location.create({
+        data: {
+          code: 'B-1-1',
+          description: 'Location 2',
+          warehouseId: warehouse2.id,
+        },
+      });
+
+      // Create inventory in both locations
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId,
+            locationId,
+            qtyOnHand: 100,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId,
+            locationId: location2.id,
+            qtyOnHand: 50,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.list({ warehouseId });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].locationId).toBe(locationId);
+
+      // Clean up
+      await prisma.inventory.deleteMany({ where: { locationId: location2.id } });
+      await prisma.location.delete({ where: { id: location2.id } });
+      await prisma.warehouse.delete({ where: { id: warehouse2.id } });
+    });
+
+    it('should filter by item', async () => {
+      // Create another item
+      const item2 = await prisma.item.create({
+        data: {
+          sku: 'TEST002',
+          name: 'Test Item 2',
+          categoryId,
+          uomId,
+          reorderPoint: 5,
+          reorderQty: 10,
+          organizationId,
+        },
+      });
+
+      // Create inventory for both items
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId,
+            locationId,
+            qtyOnHand: 100,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId: item2.id,
+            locationId,
+            qtyOnHand: 50,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.list({ itemId });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].itemId).toBe(itemId);
+
+      // Clean up
+      await prisma.inventory.deleteMany({ where: { itemId: item2.id } });
+      await prisma.item.delete({ where: { id: item2.id } });
+    });
+
+    it('should include related data', async () => {
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId,
+          qtyOnHand: 100,
+          qtyReserved: 0,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      const result = await caller.inventory.list({});
+
+      expect(result[0].item).toBeTruthy();
+      expect(result[0].item.name).toBe('Test Item');
+      expect(result[0].location).toBeTruthy();
+      expect(result[0].location.code).toBe('A-1-1');
+      expect(result[0].location.warehouse).toBeTruthy();
+      expect(result[0].location.warehouse.name).toBe('Test Warehouse');
+    });
+  });
+
+  describe('getByLocation', () => {
+    it('should get inventory for a specific location', async () => {
+      // Create multiple items in the location
+      const item2 = await prisma.item.create({
+        data: {
+          sku: 'LOC-TEST002',
+          name: 'Location Test Item 2',
+          categoryId,
+          uomId,
+          reorderPoint: 5,
+          reorderQty: 10,
+          organizationId,
+        },
+      });
+
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId,
+            locationId,
+            qtyOnHand: 100,
+            qtyReserved: 20,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId: item2.id,
+            locationId,
+            qtyOnHand: 50,
+            qtyReserved: 10,
+            qtyInTransit: 5,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.getByLocation({ locationId });
+
+      expect(result.inventory).toHaveLength(2);
+      expect(result.summary.totalItems).toBe(2);
+      expect(result.summary.totalQuantity).toBe(150);
+      expect(result.summary.totalReserved).toBe(30);
+      expect(result.summary.totalAvailable).toBe(120);
+
+      // Clean up
+      await prisma.inventory.deleteMany({ where: { itemId: item2.id } });
+      await prisma.item.delete({ where: { id: item2.id } });
+    });
+  });
+
+  describe('getByItem', () => {
+    it('should get inventory for a specific item across locations', async () => {
+      // Create another location
+      const location2 = await prisma.location.create({
+        data: {
+          code: 'A-2-1',
+          description: 'Test Location 2',
+          warehouseId,
+        },
+      });
+
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId,
+            locationId,
+            qtyOnHand: 100,
+            qtyReserved: 20,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId,
+            locationId: location2.id,
+            qtyOnHand: 50,
+            qtyReserved: 10,
+            qtyInTransit: 5,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.getByItem({ itemId });
+
+      expect(result.locations).toHaveLength(2);
+      expect(result.summary.totalOnHand).toBe(150);
+      expect(result.summary.totalReserved).toBe(30);
+      expect(result.summary.totalAvailable).toBe(120);
+      expect(result.summary.totalInTransit).toBe(5);
+
+      // Clean up
+      await prisma.inventory.deleteMany({ where: { locationId: location2.id } });
+      await prisma.location.delete({ where: { id: location2.id } });
+    });
+  });
+
+  describe('adjustStock', () => {
+    it('should adjust stock quantity and create adjustment record', async () => {
+      // Create initial inventory
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId,
+          qtyOnHand: 100,
+          qtyReserved: 0,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      const result = await caller.inventory.adjustStock({
+        itemId,
+        locationId,
+        newQuantity: 150,
+        reason: 'Test adjustment',
+      });
+
+      expect(result.qtyOnHand).toBe(150);
+
+      // Check adjustment record
+      const adjustment = await prisma.stockAdjustment.findFirst({
+        where: { itemId },
+      });
+
+      expect(adjustment).toBeTruthy();
+      expect(adjustment?.qtyBefore).toBe(100);
+      expect(adjustment?.qtyAfter).toBe(150);
+      expect(adjustment?.reason).toBe('Test adjustment');
+      expect(adjustment?.adjustedById).toBe(ctx.user.id);
+    });
+
+    it('should create inventory record if it does not exist', async () => {
+      // Ensure no inventory exists
+      await prisma.inventory.deleteMany({ where: { itemId, locationId } });
+
+      const result = await caller.inventory.adjustStock({
+        itemId,
+        locationId,
+        newQuantity: 75,
+        reason: 'Initial stock',
+      });
+
+      expect(result.qtyOnHand).toBe(75);
+      expect(result.qtyReserved).toBe(0);
+      expect(result.qtyInTransit).toBe(0);
+    });
+
+    it('should throw error for negative quantity', async () => {
+      await expect(
+        caller.inventory.adjustStock({
+          itemId,
+          locationId,
+          newQuantity: -1,
+          reason: 'Invalid adjustment',
+        })
+      ).rejects.toThrow('New quantity cannot be negative');
+    });
+
+    it('should handle reserved quantity validation', async () => {
+      // Create inventory with reserved quantity
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId,
+          qtyOnHand: 100,
+          qtyReserved: 30,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      // Try to adjust below reserved quantity
+      await expect(
+        caller.inventory.adjustStock({
+          itemId,
+          locationId,
+          newQuantity: 20,
+          reason: 'Test adjustment',
+        })
+      ).rejects.toThrow('New quantity cannot be less than reserved quantity');
+    });
+  });
+
+  describe('transferStock', () => {
+    let fromLocationId: string;
+    let toLocationId: string;
+
+    beforeEach(async () => {
+      // Create two locations for transfer
+      const [fromLoc, toLoc] = await Promise.all([
+        prisma.location.create({
+          data: {
+            code: 'FROM-1',
+            description: 'From Location',
+            warehouseId,
+          },
+        }),
+        prisma.location.create({
+          data: {
+            code: 'TO-1',
+            description: 'To Location',
+            warehouseId,
+          },
+        }),
+      ]);
+      fromLocationId = fromLoc.id;
+      toLocationId = toLoc.id;
+    });
+
+    afterEach(async () => {
+      await prisma.inventory.deleteMany({
+        where: { locationId: { in: [fromLocationId, toLocationId] } },
+      });
+      await prisma.location.deleteMany({
+        where: { id: { in: [fromLocationId, toLocationId] } },
+      });
+    });
+
+    it('should transfer stock between locations', async () => {
+      // Create inventory in source location
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId: fromLocationId,
+          qtyOnHand: 100,
+          qtyReserved: 0,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      const result = await caller.inventory.transferStock({
+        itemId,
+        fromLocationId,
+        toLocationId,
+        quantity: 30,
+        notes: 'Test transfer',
+      });
+
+      expect(result.fromInventory.qtyOnHand).toBe(70);
+      expect(result.toInventory.qtyOnHand).toBe(30);
+
+      // Check stock movement record
+      const movement = await prisma.stockMovement.findFirst({
+        where: { itemId, fromLocationId, toLocationId },
+      });
+
+      expect(movement).toBeTruthy();
+      expect(movement?.qty).toBe(30);
+      expect(movement?.movementType).toBe('TRANSFER');
+      expect(movement?.notes).toBe('Test transfer');
+    });
+
+    it('should throw error for insufficient stock', async () => {
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId: fromLocationId,
+          qtyOnHand: 10,
+          qtyReserved: 0,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      await expect(
+        caller.inventory.transferStock({
+          itemId,
+          fromLocationId,
+          toLocationId,
+          quantity: 20,
+          notes: 'Test transfer',
+        })
+      ).rejects.toThrow('Insufficient stock available for transfer');
+    });
+
+    it('should consider reserved quantity', async () => {
+      await prisma.inventory.create({
+        data: {
+          itemId,
+          locationId: fromLocationId,
+          qtyOnHand: 100,
+          qtyReserved: 80,
+          qtyInTransit: 0,
+          organizationId,
+        },
+      });
+
+      await expect(
+        caller.inventory.transferStock({
+          itemId,
+          fromLocationId,
+          toLocationId,
+          quantity: 30,
+          notes: 'Test transfer',
+        })
+      ).rejects.toThrow('Insufficient stock available for transfer');
+    });
+  });
+
+  describe('getLowStockItems', () => {
+    it('should return items below reorder point', async () => {
+      // Create items with different stock levels
+      const [lowStockItem, adequateStockItem] = await Promise.all([
+        prisma.item.create({
+          data: {
+            sku: 'LOW-001',
+            name: 'Low Stock Item',
+            categoryId,
+            uomId,
+            reorderPoint: 50,
+            reorderQty: 100,
+            organizationId,
+          },
+        }),
+        prisma.item.create({
+          data: {
+            sku: 'OK-001',
+            name: 'Adequate Stock Item',
+            categoryId,
+            uomId,
+            reorderPoint: 10,
+            reorderQty: 20,
+            organizationId,
+          },
+        }),
+      ]);
+
+      // Create inventory
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId: lowStockItem.id,
+            locationId,
+            qtyOnHand: 30, // Below reorder point of 50
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId: adequateStockItem.id,
+            locationId,
+            qtyOnHand: 100, // Above reorder point of 10
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.getLowStockItems({});
+
+      expect(result).toHaveLength(1);
+      expect(result[0].item.sku).toBe('LOW-001');
+      expect(result[0].totalOnHand).toBe(30);
+      expect(result[0].reorderPoint).toBe(50);
+      expect(result[0].shortageQty).toBe(20);
+
+      // Clean up
+      await prisma.inventory.deleteMany({
+        where: { itemId: { in: [lowStockItem.id, adequateStockItem.id] } },
+      });
+      await prisma.item.deleteMany({
+        where: { id: { in: [lowStockItem.id, adequateStockItem.id] } },
+      });
+    });
+
+    it('should consider stock across all locations', async () => {
+      // Create item with high reorder point
+      const multiLocItem = await prisma.item.create({
+        data: {
+          sku: 'MULTI-001',
+          name: 'Multi Location Item',
+          categoryId,
+          uomId,
+          reorderPoint: 100,
+          reorderQty: 200,
+          organizationId,
+        },
+      });
+
+      // Create second location
+      const location2 = await prisma.location.create({
+        data: {
+          code: 'LOW-2',
+          description: 'Low Stock Location 2',
+          warehouseId,
+        },
+      });
+
+      // Create inventory in multiple locations
+      await prisma.inventory.createMany({
+        data: [
+          {
+            itemId: multiLocItem.id,
+            locationId,
+            qtyOnHand: 40,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+          {
+            itemId: multiLocItem.id,
+            locationId: location2.id,
+            qtyOnHand: 30,
+            qtyReserved: 0,
+            qtyInTransit: 0,
+            organizationId,
+          },
+        ],
+      });
+
+      const result = await caller.inventory.getLowStockItems({});
+
+      const multiLocResult = result.find(r => r.item.sku === 'MULTI-001');
+      expect(multiLocResult).toBeTruthy();
+      expect(multiLocResult?.totalOnHand).toBe(70); // 40 + 30
+      expect(multiLocResult?.locationCount).toBe(2);
+      expect(multiLocResult?.shortageQty).toBe(30); // 100 - 70
+
+      // Clean up
+      await prisma.inventory.deleteMany({ where: { itemId: multiLocItem.id } });
+      await prisma.item.delete({ where: { id: multiLocItem.id } });
+      await prisma.location.delete({ where: { id: location2.id } });
+    });
+  });
+});

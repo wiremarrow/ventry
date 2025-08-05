@@ -31,37 +31,39 @@ export const isValidPostalCode = (postalCode: string, country = 'US'): boolean =
     CA: /^[A-Z]\d[A-Z] \d[A-Z]\d$/,
     UK: /^[A-Z]{1,2}\d[A-Z\d]? \d[A-Z]{2}$/,
   };
-  
+
   const pattern = patterns[country as keyof typeof patterns];
   return pattern ? pattern.test(postalCode.toUpperCase()) : true;
 };
 
-export const validatePassword = (password: string): {
+export const validatePassword = (
+  password: string
+): {
   isValid: boolean;
   errors: string[];
 } => {
   const errors: string[] = [];
-  
+
   if (password.length < 6) {
     errors.push('Password must be at least 6 characters long');
   }
-  
+
   if (!/[A-Z]/.test(password)) {
     errors.push('Password must contain at least one uppercase letter');
   }
-  
+
   if (!/[a-z]/.test(password)) {
     errors.push('Password must contain at least one lowercase letter');
   }
-  
+
   if (!/\d/.test(password)) {
     errors.push('Password must contain at least one number');
   }
-  
+
   if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
     errors.push('Password must contain at least one special character');
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
@@ -76,10 +78,7 @@ export const sanitizeInput = (input: string): string => {
     .replace(/on\w+\s*=/gi, '');
 };
 
-export const validateFileType = (
-  filename: string,
-  allowedTypes: string[]
-): boolean => {
+export const validateFileType = (filename: string, allowedTypes: string[]): boolean => {
   const extension = filename.split('.').pop()?.toLowerCase();
   return extension ? allowedTypes.includes(extension) : false;
 };

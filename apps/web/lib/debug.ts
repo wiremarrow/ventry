@@ -9,8 +9,7 @@ export const isDevelopment = process.env.NODE_ENV === 'development';
 /**
  * Enhanced console.log that only runs in development
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const devLog = (...args: any[]) => {
+export const devLog = (...args: unknown[]) => {
   if (isDevelopment) {
     console.log('[DEV]', ...args);
   }
@@ -19,8 +18,7 @@ export const devLog = (...args: any[]) => {
 /**
  * Log with component name for better tracking
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const componentLog = (componentName: string, ...args: any[]) => {
+export const componentLog = (componentName: string, ...args: unknown[]) => {
   if (isDevelopment) {
     console.log(`[${componentName}]`, ...args);
   }
@@ -29,18 +27,15 @@ export const componentLog = (componentName: string, ...args: any[]) => {
 /**
  * Track renders and why component re-rendered
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const useWhyDidYouUpdate = (name: string, props: Record<string, any>) => {
+export const useWhyDidYouUpdate = (name: string, props: Record<string, unknown>) => {
   if (!isDevelopment) return;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const previousProps = useRef<Record<string, any> | undefined>(undefined);
+  const previousProps = useRef<Record<string, unknown> | undefined>(undefined);
 
   useEffect(() => {
     if (previousProps.current) {
       const allKeys = Object.keys({ ...previousProps.current, ...props });
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const changedProps: Record<string, any> = {};
+      const changedProps: Record<string, unknown> = {};
 
       allKeys.forEach((key) => {
         if (previousProps.current![key] !== props[key]) {
@@ -63,8 +58,18 @@ export const useWhyDidYouUpdate = (name: string, props: Record<string, any>) => 
 /**
  * Log API errors with context
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const logApiError = (endpoint: string, error: any) => {
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+      [key: string]: unknown;
+    };
+    status?: number;
+  };
+  message?: string;
+}
+
+export const logApiError = (endpoint: string, error: ApiError) => {
   if (isDevelopment) {
     console.error(`[API Error] ${endpoint}:`, {
       message: error?.response?.data?.message || error?.message,
@@ -78,10 +83,7 @@ export const logApiError = (endpoint: string, error: any) => {
 /**
  * Performance tracking
  */
-export const measurePerformance = async <T,>(
-  name: string,
-  fn: () => Promise<T>
-): Promise<T> => {
+export const measurePerformance = async <T>(name: string, fn: () => Promise<T>): Promise<T> => {
   if (!isDevelopment) return fn();
 
   const start = performance.now();

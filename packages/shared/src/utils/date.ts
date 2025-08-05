@@ -1,6 +1,6 @@
 export const formatDate = (date: Date | string, format?: string): string => {
   const d = new Date(date);
-  
+
   if (format === 'short') {
     return d.toLocaleDateString('en-US', {
       month: 'short',
@@ -8,7 +8,7 @@ export const formatDate = (date: Date | string, format?: string): string => {
       year: 'numeric',
     });
   }
-  
+
   if (format === 'long') {
     return d.toLocaleDateString('en-US', {
       weekday: 'long',
@@ -17,7 +17,7 @@ export const formatDate = (date: Date | string, format?: string): string => {
       day: 'numeric',
     });
   }
-  
+
   if (format === 'time') {
     return d.toLocaleTimeString('en-US', {
       hour: 'numeric',
@@ -25,7 +25,7 @@ export const formatDate = (date: Date | string, format?: string): string => {
       hour12: true,
     });
   }
-  
+
   if (format === 'datetime') {
     return d.toLocaleString('en-US', {
       month: 'short',
@@ -36,7 +36,7 @@ export const formatDate = (date: Date | string, format?: string): string => {
       hour12: true,
     });
   }
-  
+
   return d.toLocaleDateString('en-US');
 };
 
@@ -47,7 +47,7 @@ export const formatRelativeTime = (date: Date | string): string => {
   const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
   const diffInHours = Math.floor(diffInMinutes / 60);
   const diffInDays = Math.floor(diffInHours / 24);
-  
+
   if (diffInMinutes < 1) {
     return 'Just now';
   } else if (diffInMinutes < 60) {
@@ -64,7 +64,7 @@ export const formatRelativeTime = (date: Date | string): string => {
 export const isToday = (date: Date | string): boolean => {
   const today = new Date();
   const target = new Date(date);
-  
+
   return (
     today.getDate() === target.getDate() &&
     today.getMonth() === target.getMonth() &&
@@ -76,7 +76,7 @@ export const isYesterday = (date: Date | string): boolean => {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const target = new Date(date);
-  
+
   return (
     yesterday.getDate() === target.getDate() &&
     yesterday.getMonth() === target.getMonth() &&

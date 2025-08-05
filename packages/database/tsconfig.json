@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+    "noUnusedLocals": false,
+    "module": "ES2022",
+    "target": "ES2022",
+    "moduleResolution": "node"
+  },
+  "include": ["index.ts", "client.ts", "prisma/**/*", "generated/**/*"],
+  "exclude": ["node_modules", "dist", "prisma/seed.ts", "prisma/seed-comprehensive.ts"]
+}

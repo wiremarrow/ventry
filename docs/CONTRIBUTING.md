@@ -63,6 +63,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 ```
 
 #### Types
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation only
@@ -73,6 +74,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 - `chore`: Maintenance tasks
 
 #### Examples
+
 ```
 feat(backend): add stock advisor agent endpoint
 
@@ -92,6 +94,7 @@ Previously showed total instead of per-location counts
 ### 5. Testing
 
 #### Running Tests
+
 ```bash
 # Run all tests
 pnpm test
@@ -105,6 +108,7 @@ pnpm test:cov
 ```
 
 #### Writing Tests
+
 - Place unit tests next to source files: `module.spec.ts`
 - Integration tests: `module.integration.spec.ts`
 - E2E tests in `e2e/` directories
@@ -113,6 +117,7 @@ pnpm test:cov
 ### 6. Documentation
 
 Update relevant documentation:
+
 - **Code comments**: For complex logic
 - **README files**: For new features
 - **API documentation**: For new endpoints
@@ -134,20 +139,24 @@ Update relevant documentation:
 
 ```markdown
 ## Description
+
 Brief description of changes
 
 ## Type of Change
+
 - [ ] Bug fix
 - [ ] New feature
 - [ ] Breaking change
 - [ ] Documentation update
 
 ## Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests pass
 - [ ] Manual testing completed
 
 ## Checklist
+
 - [ ] My code follows the project style
 - [ ] I have performed a self-review
 - [ ] I have commented complex code
@@ -167,18 +176,21 @@ Brief description of changes
 When contributing to AI agent features:
 
 ### Prompt Engineering
+
 - Use clear, structured prompts
 - Include examples for consistency
 - Version control prompt templates
 - Test with multiple scenarios
 
 ### Testing AI Features
+
 - Mock LLM responses in tests
 - Test error handling
 - Validate response parsing
 - Check rate limiting
 
 ### Best Practices
+
 - Log all AI interactions
 - Handle failures gracefully
 - Provide fallback options
@@ -186,19 +198,22 @@ When contributing to AI agent features:
 
 ## Project-Specific Guidelines
 
-### Backend (NestJS)
+### Backend (tRPC + Fastify)
+
 - Use dependency injection
 - Follow module boundaries
 - Implement DTOs for validation
 - Use proper decorators
 
 ### Frontend (Next.js)
+
 - Use App Router patterns
 - Implement proper loading states
 - Ensure mobile responsiveness
 - Follow React best practices
 
 ### Database (Prisma)
+
 - Create migrations for schema changes
 - Maintain referential integrity
 - Index frequently queried fields
@@ -214,6 +229,7 @@ When contributing to AI agent features:
 ## Recognition
 
 Contributors will be:
+
 - Listed in our CONTRIBUTORS file
 - Mentioned in release notes
 - Eligible for special badges
