@@ -24,18 +24,18 @@
     "ci:validate": "./tools/scripts/validate-ci-setup.sh"
   },
   "devDependencies": {
-    "@playwright/test": "^1.40.0",
+    "@playwright/test": "^1.57.0",
     "@sentry/nextjs": "^9.35.0",
-    "@sentry/node": "^7.91.0",
-    "@types/node": "^20.10.0",
-    "eslint": "^8.54.0",
-    "husky": "^8.0.3",
-    "lint-staged": "^15.1.0",
-    "playwright": "^1.40.0",
-    "prettier": "^3.1.0",
-    "prisma": "^5.20.0",
-    "turbo": "^1.13.4",
-    "typescript": "^5.3.0"
+    "@sentry/node": "^10.27.0",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "playwright": "^1.57.0",
+    "prettier": "^3.7.3",
+    "prisma": "^7.0.1",
+    "turbo": "^2.6.1",
+    "typescript": "^5.9.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
